@@ -66,10 +66,13 @@ def test_dbscan_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("centers", [10, None])
 @pytest.mark.parametrize("min_samples", [2, 5, 15])
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_dbscan_spmd_synthetic(

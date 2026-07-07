@@ -72,9 +72,11 @@ def test_sklearnex_import_basic_statistics(dataframe, queue):
     assert_allclose(expected_weighted_max, result.max_)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
     X = np.array([[0, 0], [1, 1]])
     X = X.astype(dtype=dtype)
@@ -106,12 +108,14 @@ def test_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
         assert_allclose(expected_min, result.min_)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_single_option_on_random_data(
     dataframe, queue, result_option, row_count, column_count, weighted, dtype
 ):
@@ -144,11 +148,12 @@ def test_single_option_on_random_data(
     assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("row_count", [500, 2000])
 @pytest.mark.parametrize("column_count", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_single_option_on_random_sparse_data(
     queue, result_option, row_count, column_count, dtype
 ):
@@ -187,11 +192,13 @@ def test_single_option_on_random_sparse_data(
     assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_multiple_options_on_random_data(
     dataframe, queue, row_count, column_count, weighted, dtype
 ):
@@ -232,10 +239,11 @@ def test_multiple_options_on_random_data(
     assert_allclose(gtr_sum, res_sum, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, dtype):
     seed = 77
 
@@ -274,11 +282,13 @@ def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, 
         assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_all_option_on_random_data(
     dataframe, queue, row_count, column_count, weighted, dtype
 ):
@@ -313,10 +323,11 @@ def test_all_option_on_random_data(
         assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype):
     seed = 77
 
@@ -350,11 +361,13 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
         assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("data_size", [100, 1000])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_1d_input_on_random_data(
     dataframe, queue, result_option, data_size, weighted, dtype
 ):

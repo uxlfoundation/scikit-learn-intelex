@@ -76,10 +76,15 @@ if daal_check_version((2024, "P", 600)):
         coefficients_manual, intercept_manual = _compute_ridge_coefficients(
             X, y, alpha, fit_intercept
         )
+        tol = (
+            1e-4
+            if queue is not None and not queue.sycl_device.has_aspect_fp64
+            else 1e-6
+        )
         if fit_intercept:
-            assert_allclose(inc_ridge.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+            assert_allclose(inc_ridge.intercept_, intercept_manual, rtol=tol, atol=tol)
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
     @pytest.mark.parametrize("batch_size", [2, 5])
@@ -107,7 +112,12 @@ if daal_check_version((2024, "P", 600)):
         xt_y = np.dot(X.T, y)
         coefficients_manual = np.dot(inverse_term, xt_y)
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        tol = (
+            1e-4
+            if queue is not None and not queue.sycl_device.has_aspect_fp64
+            else 1e-6
+        )
+        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=tol, atol=tol)
 
     def test_inc_ridge_score_before_fit():
         X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
@@ -150,12 +160,19 @@ if daal_check_version((2024, "P", 600)):
         if fit_intercept:
             y_pred_manual += intercept_manual
 
-        assert_allclose(_as_numpy(y_pred), y_pred_manual, rtol=1e-6, atol=1e-6)
+        tol = (
+            1e-4
+            if queue is not None and not queue.sycl_device.has_aspect_fp64
+            else 1e-6
+        )
+        assert_allclose(_as_numpy(y_pred), y_pred_manual, rtol=tol, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):
     import pickle
 

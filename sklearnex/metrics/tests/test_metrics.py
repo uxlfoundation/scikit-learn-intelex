@@ -51,8 +51,12 @@ def test_sklearnex_import_pairwise_distances():
     not sklearn_check_version("1.8"),
     reason="Functionality introduced in later versions of scikit-learn.",
 )
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
-def test_pairwise_distances_fallback_on_array_api(dataframe, queue):
+# Skip on fp64-less devices: sklearn's fallback path unconditionally
+# upcasts to fp64 in ``_euclidean_distances_upcast``.
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype", get_dataframes_and_queues(dtypes=[np.float64])
+)
+def test_pairwise_distances_fallback_on_array_api(dataframe, queue, dtype):
     from sklearnex import config_context
     from sklearnex.metrics import pairwise_distances
 

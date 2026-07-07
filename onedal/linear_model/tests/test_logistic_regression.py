@@ -28,8 +28,9 @@ if daal_check_version((2024, "P", 1)):
     from onedal.linear_model import LogisticRegression
     from onedal.tests.utils._device_selection import get_queues
 
-    @pytest.mark.parametrize("queue", get_queues("gpu"))
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues("gpu", dtypes=[np.float32, np.float64])
+    )
     def test_breast_cancer(queue, dtype):
         X, y = load_breast_cancer(return_X_y=True)
         X, y = X.astype(dtype), y.astype(dtype)
@@ -47,8 +48,9 @@ if daal_check_version((2024, "P", 1)):
         if daal_check_version((2024, "P", 300)):
             assert hasattr(model, "_n_inner_iter")
 
-    @pytest.mark.parametrize("queue", get_queues("gpu"))
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues("gpu", dtypes=[np.float32, np.float64])
+    )
     def test_pickle(queue, dtype):
         X, y = load_breast_cancer(return_X_y=True)
         X, y = X.astype(dtype), y.astype(dtype)
@@ -69,8 +71,9 @@ if daal_check_version((2024, "P", 1)):
 
 if daal_check_version((2024, "P", 700)):
 
-    @pytest.mark.parametrize("queue", get_queues("gpu"))
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues("gpu", dtypes=[np.float32, np.float64])
+    )
     @pytest.mark.parametrize(
         "dims", [(3007, 17, 0.05), (50000, 100, 0.01), (512, 10, 0.5)]
     )
@@ -89,7 +92,19 @@ if daal_check_version((2024, "P", 700)):
         model_sp.fit(X_sp, y, queue=queue)
         pred_sp = model_sp.predict(X_sp, queue=queue)
 
-        rtol = 2e-4
-        assert_allclose(pred, pred_sp, rtol=rtol)
-        assert_allclose(model.coef_, model_sp.coef_, rtol=rtol)
-        assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
+        fp64less = dtype == np.float32 or (
+            queue is not None and not queue.sycl_device.has_aspect_fp64
+        )
+        rtol = 1e-2 if fp64less else 2e-4
+        # Near-zero coefficients look proportionally noisy under fp32 even
+        # when their absolute error is tiny; atol absorbs that.
+        atol = 5e-3 if fp64less else 0
+        if fp64less:
+            # A handful of binary labels (<0.02% of samples) flip between the
+            # dense and sparse solver paths on fp32-only hardware — the label
+            # agreement can't be expressed as rtol, so fall back to accuracy.
+            assert accuracy_score(pred, pred_sp) > 0.999
+        else:
+            assert_allclose(pred, pred_sp, rtol=rtol)
+        assert_allclose(model.coef_, model_sp.coef_, rtol=rtol, atol=atol)
+        assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol, atol=atol)

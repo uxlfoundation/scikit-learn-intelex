@@ -64,7 +64,9 @@ test_frameworks = os.environ.get(
 )
 
 
-def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
+def get_dataframes_and_queues(
+    dataframe_filter_=None, device_filter_="cpu,gpu", dtypes=None
+):
     """Get supported dataframes for testing.
 
     This is meant to be used for testing purposes only.
@@ -78,13 +80,19 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     device_filter_ : str, default="cpu,gpu"
         Configure output pytest.params with certain sycl queue for the dataframe,
         where it is applicable.
+    dtypes : iterable of numpy dtypes, default=None
+        If provided, the returned params include a ``dtype`` dimension.
+        Combos are filtered per queue based on SYCL device aspect
+        support (``has_aspect_fp16`` / ``has_aspect_fp64``), so
+        fp32-only GPUs never receive fp64 parameters. Host entries
+        (``queue is None``) yield every requested dtype.
 
     Returns
     -------
     list[pytest.param]
-        The list of pytest params, included dataframe name (str),
-        sycl queue, if applicable for the test case, and test
-        case id (str).
+        When ``dtypes is None`` — legacy tuples of
+        ``(dataframe, queue)``. When ``dtypes`` is provided — tuples
+        of ``(dataframe, queue, dtype)``.
 
     Notes
     -----
@@ -95,8 +103,6 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     --------
     _convert_to_dataframe : Converted input object to certain dataframe format.
     """
-    dataframes_and_queues = []
-
     # filter dataframe_filter_ based on available test frameworks
     if dataframe_filter_:
         dataframe_filter_ = ",".join(
@@ -105,29 +111,42 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     else:
         dataframe_filter_ = test_frameworks
 
+    # Collect (dataframe, queue, id_prefix) triples before applying the
+    # optional dtype dimension, so host and device entries share a single
+    # expansion path.
+    base_entries = []
     if "numpy" in dataframe_filter_:
-        dataframes_and_queues.append(pytest.param("numpy", None, id="numpy"))
+        base_entries.append(("numpy", None, "numpy"))
     if "pandas" in dataframe_filter_:
-        dataframes_and_queues.append(pytest.param("pandas", None, id="pandas"))
-
-    def get_df_and_q(dataframe: str):
-        df_and_q = []
-        for queue in get_queues(device_filter_):
-            if queue:
-                id = "{}-{}".format(dataframe, queue.id)
-                df_and_q.append(pytest.param(dataframe, queue.values[0], id=id))
-        return df_and_q
+        base_entries.append(("pandas", None, "pandas"))
 
     if dpnp_available and "dpnp" in dataframe_filter_:
-        dataframes_and_queues.extend(get_df_and_q("dpnp"))
+        for q_param in get_queues(device_filter_):
+            if q_param is None:
+                continue
+            queue = q_param.values[0]
+            base_entries.append(("dpnp", queue, f"dpnp-{q_param.id}"))
+
     if (
         "array_api" in dataframe_filter_
         and "array_api" in array_api_modules
         or array_api_enabled()
     ):
-        dataframes_and_queues.append(pytest.param("array_api", None, id="array_api"))
+        base_entries.append(("array_api", None, "array_api"))
 
-    return dataframes_and_queues
+    if dtypes is None:
+        return [pytest.param(df, q, id=i) for df, q, i in base_entries]
+
+    from onedal.tests.utils._device_selection import _queue_supports_dtype
+
+    out = []
+    for df, q, prefix in base_entries:
+        for dtype in dtypes:
+            if not _queue_supports_dtype(q, dtype):
+                continue
+            dt_name = np.dtype(dtype).name
+            out.append(pytest.param(df, q, dtype, id=f"{prefix}-{dt_name}"))
+    return out
 
 
 def _as_numpy(obj, *args, **kwargs):

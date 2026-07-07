@@ -84,14 +84,23 @@ def test_linear_spmd_gold(dataframe, queue):
     spmd_model = LinearRegression_SPMD().fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LinearRegression_Batch().fit(X_train, y_train)
 
-    assert_allclose(_as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_))
-    assert_allclose(_as_numpy(spmd_model.intercept_), _as_numpy(batch_model.intercept_))
+    atol = (
+        1e-5
+        if (queue is not None and not queue.sycl_device.has_aspect_fp64)
+        else 1e-7
+    )
+    assert_allclose(
+        _as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_), atol=atol
+    )
+    assert_allclose(
+        _as_numpy(spmd_model.intercept_), _as_numpy(batch_model.intercept_), atol=atol
+    )
 
     # ensure predictions of batch algo match spmd
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    _spmd_assert_allclose(spmd_result, batch_result)
+    _spmd_assert_allclose(spmd_result, batch_result, atol=atol)
 
 
 @pytest.mark.skipif(
@@ -101,10 +110,13 @@ def test_linear_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("n_samples", [100, 10000])
 @pytest.mark.parametrize("n_features", [10, 100])
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_linear_spmd_synthetic(

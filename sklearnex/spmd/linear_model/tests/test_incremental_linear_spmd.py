@@ -36,12 +36,15 @@ from sklearnex.tests.utils.spmd import (
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_linear_regression_fit_spmd_gold(
     dataframe, queue, fit_intercept, macro_block, dtype
@@ -111,13 +114,16 @@ def test_incremental_linear_regression_fit_spmd_gold(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_linear_regression_partial_fit_spmd_gold(
     dataframe, queue, fit_intercept, num_blocks, macro_block, dtype
@@ -195,14 +201,17 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_samples", [100, 1000])
 @pytest.mark.parametrize("num_features", [5, 10])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_linear_regression_fit_spmd_random(
     dataframe, queue, fit_intercept, num_samples, num_features, macro_block, dtype
@@ -260,15 +269,18 @@ def test_incremental_linear_regression_fit_spmd_random(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("num_samples", [100, 1000])
 @pytest.mark.parametrize("num_features", [5, 10])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_linear_regression_partial_fit_spmd_random(

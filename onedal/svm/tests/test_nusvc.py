@@ -46,9 +46,10 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("array_constr", [np.array])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_libsvm_parameters(queue, array_constr, dtype):
     _test_libsvm_parameters(queue, array_constr, dtype)
 

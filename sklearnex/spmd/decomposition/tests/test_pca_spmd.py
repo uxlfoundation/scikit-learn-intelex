@@ -67,16 +67,25 @@ def test_pca_spmd_gold(dataframe, queue):
     spmd_result = PCA_SPMD(n_components=2).fit(local_dpt_data)
     batch_result = PCA_Batch(n_components=2).fit(data)
 
-    assert_allclose(spmd_result.mean_, batch_result.mean_)
-    assert_allclose(spmd_result.components_, batch_result.components_)
-    assert_allclose(spmd_result.singular_values_, batch_result.singular_values_)
+    atol = (
+        1e-5
+        if (queue is not None and not queue.sycl_device.has_aspect_fp64)
+        else 1e-7
+    )
+    assert_allclose(spmd_result.mean_, batch_result.mean_, atol=atol)
+    assert_allclose(spmd_result.components_, batch_result.components_, atol=atol)
+    assert_allclose(
+        spmd_result.singular_values_, batch_result.singular_values_, atol=atol
+    )
     assert_allclose(
         spmd_result.noise_variance_,
         batch_result.noise_variance_,
-        atol=1e-7,
+        atol=atol,
     )
     assert_allclose(
-        spmd_result.explained_variance_ratio_, batch_result.explained_variance_ratio_
+        spmd_result.explained_variance_ratio_,
+        batch_result.explained_variance_ratio_,
+        atol=atol,
     )
 
 
@@ -89,10 +98,13 @@ def test_pca_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("n_components", [0.5, 3, "mle", None])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_pca_spmd_synthetic(

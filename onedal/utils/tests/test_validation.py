@@ -26,7 +26,6 @@ from onedal.tests.utils._dataframes_support import (
 from onedal.utils.validation import check_all_finite
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "shape",
     [
@@ -40,7 +39,8 @@ from onedal.utils.validation import check_all_finite
 )
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues("numpy,dpnp,array_api", dtypes=[np.float32, np.float64]),
 )
 def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue):
     X = np.empty(shape, dtype=dtype)
@@ -49,7 +49,6 @@ def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue)
     assert check_all_finite(X, allow_nan=allow_nan)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "shape",
     [
@@ -65,7 +64,8 @@ def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue)
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues("numpy,dpnp,array_api", dtypes=[np.float32, np.float64]),
 )
 def test_assert_finite_random_location(
     dtype, shape, allow_nan, check, seed, dataframe, queue
@@ -85,12 +85,12 @@ def test_assert_finite_random_location(
         assert not check_all_finite(X, allow_nan=allow_nan)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues("numpy,dpnp,array_api", dtypes=[np.float32, np.float64]),
 )
 def test_assert_finite_random_shape_and_location(
     dtype, allow_nan, check, seed, dataframe, queue

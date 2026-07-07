@@ -24,11 +24,12 @@ from onedal.decomposition import IncrementalPCA
 from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("is_deterministic", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -108,7 +109,9 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
                 )
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("n_components", [None, 1, 5])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 10])
@@ -125,7 +128,6 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
         ),
     ],
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_on_random_data(
     queue, n_components, whiten, num_blocks, row_count, column_count, dtype
 ):
@@ -216,8 +218,9 @@ def test_on_random_data(
         assert_allclose(transformed_data, expected_transformed_data, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_incremental_estimator_pickle(queue, dtype):
     import pickle
 

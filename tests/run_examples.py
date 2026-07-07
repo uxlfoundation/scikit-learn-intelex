@@ -79,12 +79,19 @@ ex_log_dirs = [
 available_devices = ["cpu"]
 
 gpu_available = False
+fp64_supported = True
 if dpctl_available:
     import dpctl
 
     if dpctl.has_gpu_devices():
         gpu_available = True
         available_devices.append("gpu")
+        # oneDAL emits a RuntimeWarning when downcasting fp64 inputs on
+        # fp32-only GPUs. That's expected behavior, so skip ``-W error``
+        # when any GPU in the machine lacks fp64 support.
+        fp64_supported = not any(
+            d.is_gpu and not d.has_aspect_fp64 for d in dpctl.get_devices()
+        )
 
 print("GPU device available: {}".format(gpu_available))
 
@@ -210,14 +217,15 @@ def get_exe_cmd(ex, args):
             return None
         if not check_os(req_os[os.path.basename(ex)], system_os):
             return None
+    warn_flag = " -W error" if fp64_supported else ""
     if not args.nodist and ex.endswith("spmd.py"):
         if IS_WIN:
             return (
-                'mpiexec -localonly -n 4 "' + sys.executable + '" -W error "' + ex + '"'
+                f'mpiexec -localonly -n 4 "{sys.executable}"{warn_flag} "{ex}"'
             )
-        return 'mpirun -n 4 "' + sys.executable + '" -W error "' + ex + '"'
+        return f'mpirun -n 4 "{sys.executable}"{warn_flag} "{ex}"'
     else:
-        return '"' + sys.executable + '" -W error "' + ex + '"'
+        return f'"{sys.executable}"{warn_flag} "{ex}"'
 
 
 def run(exdir, logdir, args):

@@ -22,8 +22,9 @@ from onedal.datatypes import from_table
 from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_on_gold_data_unbiased(queue, dtype):
     from onedal.covariance import IncrementalEmpiricalCovariance
 
@@ -58,8 +59,9 @@ def test_on_gold_data_unbiased(queue, dtype):
     assert_allclose(expected_means, result.location_)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_on_gold_data_biased(queue, dtype):
     from onedal.covariance import IncrementalEmpiricalCovariance
 
@@ -94,12 +96,13 @@ def test_on_gold_data_biased(queue, dtype):
     assert_allclose(expected_means, result.location_)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("num_batches", [2, 4, 6, 8, 10])
 @pytest.mark.parametrize("row_count", [100, 1000, 2000])
 @pytest.mark.parametrize("column_count", [10, 100, 200])
 @pytest.mark.parametrize("bias", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_partial_fit_on_random_data(
     queue, num_batches, row_count, column_count, bias, dtype
 ):
@@ -123,8 +126,9 @@ def test_partial_fit_on_random_data(
     assert_allclose(expected_means, result.location_, atol=1e-6)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_incremental_estimator_pickle(queue, dtype):
     import pickle
 
