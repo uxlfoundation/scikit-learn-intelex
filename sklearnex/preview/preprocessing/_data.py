@@ -21,7 +21,7 @@ from sklearn.preprocessing._data import _handle_zeros_in_scale
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse, sklearn_check_version
+from daal4py.sklearn._utils import is_sparse
 from onedal._device_offload import support_sycl_format
 from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
@@ -31,11 +31,7 @@ from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
-from ...utils.validation import (
-    _finite_keyword,
-    assert_all_finite,
-    validate_data,
-)
+from ...utils.validation import assert_all_finite, validate_data
 
 __check_kwargs = {
     "dtype": None,
@@ -43,7 +39,7 @@ __check_kwargs = {
     "ensure_min_samples": 0,
     "ensure_min_features": 0,
     "accept_sparse": True,
-    _finite_keyword: False,
+    "ensure_all_finite": False,
 }
 
 _check_array = partial(check_array, **__check_kwargs)
@@ -54,10 +50,9 @@ _check_array = partial(check_array, **__check_kwargs)
 class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     __doc__ = _sklearn_MaxAbsScaler.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_MaxAbsScaler._parameter_constraints,
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_MaxAbsScaler._parameter_constraints,
+    }
 
     def __init__(self, *, copy=True, clip=False):
         self.copy = copy
@@ -146,8 +141,6 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         # For a full fit, we must reset the estimator and internal sample count to 0,
         # mimicking a fresh calculation.
         xp, _ = get_namespace(X)
-        if sklearn_check_version("1.2"):
-            self._validate_params()
         X = validate_data(
             self,
             X,
@@ -170,8 +163,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     def partial_fit(self, X, y=None):
         # We use dispatch so that validation occurs appropriately. The check_input feature
         # acts identically to sklearn's checking strategy, hence passed through.
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         # Scikit-Learn implements a check within partial fit natively, so we pass check_input=True implicitly.
         dispatch(
@@ -186,8 +178,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         return self
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,
