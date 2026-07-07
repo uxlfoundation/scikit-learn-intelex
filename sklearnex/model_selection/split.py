@@ -16,7 +16,8 @@
 
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.model_selection import train_test_split
-from onedal._device_offload import support_input_format
+
+from .._device_offload import support_input_format
 
 # Needed due to some issues with array API support on the scikit-learn side
 # for the internal safe indexer tool which daal4py uses. Note that this will

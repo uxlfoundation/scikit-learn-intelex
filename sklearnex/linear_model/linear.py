@@ -258,30 +258,16 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
 
         self._initialize_onedal_estimator()
 
-        try:
-            self._onedal_estimator.fit(X, y, queue=queue)
+        self._onedal_estimator.fit(X, y, queue=queue)
 
-            self.n_features_in_ = self._onedal_estimator.n_features_in_
-            self._sparse = False
-            self._coef_ = self._onedal_estimator.coef_
-            self._intercept_ = self._onedal_estimator.intercept_
+        self.n_features_in_ = self._onedal_estimator.n_features_in_
+        self._sparse = False
+        self._coef_ = self._onedal_estimator.coef_
+        self._intercept_ = self._onedal_estimator.intercept_
 
-            if self._coef_.shape[0] == 1 and y.ndim == 1:
-                self._coef_ = self._coef_[0, ...]  # set to 1d
-                self._intercept_ = self._intercept_[0]  # set 1d to scalar
-
-        except RuntimeError as e:
-            if get_config()["allow_sklearn_after_onedal"]:
-
-                logging.getLogger("sklearnex").info(
-                    f"{self.__class__.__name__}.fit "
-                    + get_patch_message("sklearn_after_onedal")
-                )
-
-                del self._onedal_estimator
-                super().fit(X, y)
-            else:
-                raise e
+        if self._coef_.shape[0] == 1 and y.ndim == 1:
+            self._coef_ = self._coef_[0, ...]  # set to 1d
+            self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
