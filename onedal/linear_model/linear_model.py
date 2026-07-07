@@ -18,8 +18,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from onedal import onedal_check_version
-
+from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted

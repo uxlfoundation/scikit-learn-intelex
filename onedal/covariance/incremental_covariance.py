@@ -16,8 +16,7 @@
 
 import numpy as np
 
-from onedal import onedal_check_version
-
+from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, return_type_constructor, to_table

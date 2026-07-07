@@ -19,11 +19,11 @@ from abc import ABC
 
 import numpy as np
 
-from onedal import onedal_check_version
-from onedal._device_offload import supports_queue
-from onedal.basic_statistics import BasicStatistics
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
+from .. import onedal_check_version
+from .._device_offload import supports_queue
+from ..basic_statistics import BasicStatistics
+from ..common._backend import bind_default_backend
+from ..utils import _sycl_queue_manager as QM
 
 if onedal_check_version(2023, 2, 0):
     from .kmeans_init import KMeansInit
