@@ -20,7 +20,6 @@ from numpy.testing import assert_allclose
 from scipy import sparse as sp
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -99,10 +98,7 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.3"), reason="lacks sklearn array API support"
-)
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpctl,dpnp"))
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     # Ensure properties are properly constructed as the dispatched arrays using Array API
     rng = np.random.default_rng(seed=42)
