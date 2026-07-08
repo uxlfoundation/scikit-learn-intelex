@@ -14,9 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import gen_batches
+from sklearn.utils._param_validation import StrOptions
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -30,9 +30,6 @@ from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
 from ...utils.validation import validate_data
 
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import StrOptions
-
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace
 
@@ -44,11 +41,10 @@ if sklearn_check_version("1.9"):
 class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     __doc__ = _sklearn_IncrementalPCA.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_IncrementalPCA._parameter_constraints,
-            "svd_solver": [StrOptions({"auto", "covariance_eigh", "onedal_svd"})],
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_IncrementalPCA._parameter_constraints,
+        "svd_solver": [StrOptions({"auto", "covariance_eigh", "onedal_svd"})],
+    }
 
     def __init__(
         self,
@@ -84,18 +80,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 "more rows than columns for IncrementalPCA "
                 "processing" % (self.n_components, n_features)
             )
-        elif n_components > n_samples and (
-            not sklearn_check_version("1.6") or first_pass
-        ):
+        elif n_components > n_samples and first_pass:
             raise ValueError(
                 "n_components=%r must be less or equal to "
                 "the batch number of samples "
-                "%d" % (self.n_components, n_samples)
-                + (
-                    " for the first partial_fit call."
-                    if sklearn_check_version("1.6")
-                    else ""
-                )
+                "%d for the first partial_fit call." % (self.n_components, n_samples)
             )
         else:
             self._n_components_ = n_components
@@ -216,8 +205,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # Taken from sklearn for conformance purposes
         self.components_ = None
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         xp, _ = get_namespace(X)
         X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
@@ -283,7 +271,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return patching_status
 
     def partial_fit(self, X, y=None, check_input=True):
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
 
         dispatch(
@@ -299,8 +287,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,
@@ -328,8 +315,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @wrap_output_data
     def fit_transform(self, X, y=None, **fit_params):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         return dispatch(
             self,
             "fit_transform",

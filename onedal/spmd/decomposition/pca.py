@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from ..._device_offload import support_input_format
 from ...common._backend import bind_spmd_backend
 from ...decomposition.pca import PCA as PCABatch
 

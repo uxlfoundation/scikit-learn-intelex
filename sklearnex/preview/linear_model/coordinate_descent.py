@@ -14,17 +14,12 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.linear_model import ElasticNet, Lasso
 
 from ...base import oneDALEstimator
 
-if sklearn_check_version("1.4"):
-    ElasticNet._doc_link_module = "daal4py"
-    ElasticNet._doc_link_url_param_generator = (
-        oneDALEstimator._doc_link_url_param_generator
-    )
+ElasticNet._doc_link_module = "daal4py"
+ElasticNet._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
 
-if sklearn_check_version("1.4"):
-    Lasso._doc_link_module = "daal4py"
-    Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
+Lasso._doc_link_module = "daal4py"
+Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

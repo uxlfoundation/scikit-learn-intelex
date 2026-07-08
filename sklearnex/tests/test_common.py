@@ -30,7 +30,6 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
 from onedal.tests.utils._dataframes_support import test_frameworks
 from sklearnex.base import oneDALEstimator
@@ -466,11 +465,10 @@ def call_validate_data(text, estimator, method):
         "sklearnex.utils.validation",
         "validate_data",
     }, "sklearnex's validate_data should be called first"
-    assert (
-        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
-        if sklearn_check_version("1.6")
-        else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
-    ), "sklearn's validate_data should be called second"
+    assert validate_data_calls[1] == {
+        "sklearn.utils.validation",
+        "validate_data",
+    }, "sklearn's validate_data should be called second"
     assert (
         valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"

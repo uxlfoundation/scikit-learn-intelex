@@ -38,12 +38,8 @@ from .._utils import (
     PatchingConditionsChain,
     get_patch_message,
     getFPType,
-    sklearn_check_version,
 )
 from ..utils.validation import check_feature_names, check_n_features, get_requires_y_tag
-
-if not sklearn_check_version("1.2"):
-    from sklearn.neighbors._base import _check_weights
 
 
 def training_algorithm(method, fptype, params):
@@ -301,9 +297,6 @@ class NeighborsBase(BaseNeighborsBase):
                     SyntaxWarning,
                     stacklevel=2,
                 )
-
-        if hasattr(self, "weights") and not sklearn_check_version("1.2"):
-            self.weights = _check_weights(self.weights)
 
         check_feature_names(self, X, reset=True)
 

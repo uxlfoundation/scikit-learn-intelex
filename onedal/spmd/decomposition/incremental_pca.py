@@ -14,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.common._backend import bind_spmd_backend
-
+from ...common._backend import bind_spmd_backend
 from ...decomposition import IncrementalPCA as base_IncrementalPCA
 
 
