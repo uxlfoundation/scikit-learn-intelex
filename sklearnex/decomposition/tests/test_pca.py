@@ -224,9 +224,11 @@ def _convert(arr, xp, device):
 # build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
 # does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
 # dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
-# array_api_strict needs numpy >= 2.1: PCA rebuilds its model from the readonly
-# fitted ``components_``, and numpy < 2.1 cannot export a readonly array through
-# DLPack (``to_table`` raises BufferError).
+# TODO: remove this array_api_strict / numpy>=2.1 guard once oneDAL's data
+# conversion handles readonly arrays. PCA rebuilds its model from the readonly
+# fitted ``components_``; numpy < 2.1 cannot export a readonly array through DLPack,
+# so ``to_table`` raises BufferError. The proper fix belongs in the oneDAL data
+# conversion layer (tracked in a separate PR); drop this skip when it lands.
 _numpy_supports_readonly_dlpack = _package_check_version("2.1.0", np.__version__)
 _array_api_inputs = (
     [(np, None)]
