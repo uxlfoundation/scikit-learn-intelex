@@ -268,9 +268,6 @@ def _assert_transform_output_matches_default(pca, X, transform_output, method):
         pca._sklearn_output_config = original_config
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize("xp,device", _array_api_inputs)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
@@ -282,9 +279,6 @@ def test_transform_output_matches_default(
     _assert_transform_output_matches_default(pca, X, transform_output, method)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
-)
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
@@ -298,9 +292,6 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
-)
-@pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
 )
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
@@ -312,9 +303,6 @@ def test_transform_output_target_offload(transform_output, method):
         _assert_transform_output_matches_default(pca, X, transform_output, method)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize("target_offload", [False, True])
 @pytest.mark.parametrize("dataframe", [pd.DataFrame, pl.DataFrame])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
