@@ -58,6 +58,18 @@ This parameter is available in the following classes:
 - :obj:`sklearn.ensemble.ExtraTreesRegressor`
 - :obj:`sklearn.ensemble.ExtraTreesClassifier`
 
+IncrementalPCA
+==============
+
+:obj:`sklearn.decomposition.IncrementalPCA` accelerated with the |sklearnex| (currently under preview mode - see :doc:`preview` for more information) allows an additional argument ``svd_solver`` akin to the same argument that is accepted by :obj:`sklearn.decomposition.PCA`.
+
+It can take the following values:
+
+- ``"covariance_eigh"`` (default).
+- ``"full"``.
+
+Note that under the ``"full"`` solver, further calls to :~meth:`sklearn.decomposition.IncrementalPCA.partial_fit` will make the object's stored memory grow with the data.
+
 Train-test splitting
 ====================
 
