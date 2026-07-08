@@ -19,7 +19,6 @@ import logging
 
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
 
 
@@ -69,10 +68,7 @@ def with_sklearnex():
 
 @pytest.fixture
 def with_array_api():
-    if sklearn_check_version("1.2"):
-        with config_context(array_api_dispatch=True):
-            yield
-    else:
+    with config_context(array_api_dispatch=True):
         yield
 
 

@@ -15,6 +15,7 @@
 # ==============================================================================
 
 from sklearn.base import BaseEstimator
+from sklearn.utils._param_validation import StrOptions
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
@@ -26,9 +27,6 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import _check_sample_weight, validate_data
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import StrOptions
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (
@@ -101,27 +99,26 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
 
     _onedal_basic_statistics = staticmethod(onedal_BasicStatistics)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "result_options": [
-                StrOptions(
-                    {
-                        "all",
-                        "min",
-                        "max",
-                        "sum",
-                        "mean",
-                        "variance",
-                        "variation",
-                        "sum_squares",
-                        "standard_deviation",
-                        "sum_squares_centered",
-                        "second_order_raw_moment",
-                    }
-                ),
-                list,
-            ],
-        }
+    _parameter_constraints: dict = {
+        "result_options": [
+            StrOptions(
+                {
+                    "all",
+                    "min",
+                    "max",
+                    "sum",
+                    "mean",
+                    "variance",
+                    "variation",
+                    "sum_squares",
+                    "standard_deviation",
+                    "sum_squares_centered",
+                    "second_order_raw_moment",
+                }
+            ),
+            list,
+        ],
+    }
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
@@ -214,8 +211,7 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         self : object
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         dispatch(
             self,
             "fit",

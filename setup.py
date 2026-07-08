@@ -590,8 +590,8 @@ if build_distributed:
 
 setup(
     name="scikit-learn-intelex",
-    description="Extension for Scikit-learn is a "
-    "seamless way to speed up your Scikit-learn application.",
+    description="Extension for scikit-learn is a "
+    "seamless way to speed up your scikit-learn application.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache-2.0",
@@ -623,7 +623,7 @@ setup(
     ],
     python_requires=">=3.10",
     install_requires=[
-        "scikit-learn>=1.0",
+        "scikit-learn>=1.6",
         "numpy>=1.21.6 ; python_version <= '3.10'",
         "numpy>=1.23.5 ; python_version >= '3.11'",
         "packaging",

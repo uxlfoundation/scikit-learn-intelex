@@ -18,7 +18,6 @@ import numpy as np
 import numpy.random as rand
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -27,12 +26,7 @@ from sklearnex import config_context
 from sklearnex.tests.utils import DummyEstimator, gen_dataset
 from sklearnex.utils.validation import _check_sample_weight, validate_data
 
-# array_api support starts in sklearn 1.2, and array_api_strict conformance starts in sklearn 1.3
-_dataframes_supported = (
-    "numpy,pandas"
-    + (",dpnp" if sklearn_check_version("1.2") else "")
-    + (",array_api" if sklearn_check_version("1.3") else "")
-)
+_dataframes_supported = "numpy,pandas,dpnp,array_api"
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -90,7 +84,7 @@ def test_validate_data_random_location(
     )
 
     dispatch = {}
-    if sklearn_check_version("1.2") and dataframe != "pandas":
+    if dataframe != "pandas":
         dispatch["array_api_dispatch"] = True
 
     with config_context(**dispatch):
@@ -132,7 +126,7 @@ def test_validate_data_random_shape_and_location(
     )
 
     dispatch = {}
-    if sklearn_check_version("1.2") and dataframe != "pandas":
+    if dataframe != "pandas":
         dispatch["array_api_dispatch"] = True
 
     with config_context(**dispatch):
@@ -184,7 +178,7 @@ def test__check_sample_weight_random_shape_and_location(
     )
 
     dispatch = {}
-    if sklearn_check_version("1.2") and dataframe != "pandas":
+    if dataframe != "pandas":
         dispatch["array_api_dispatch"] = True
 
     with config_context(**dispatch):
@@ -215,7 +209,7 @@ def test_validate_data_output(dtype, dataframe, queue):
     X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
 
     dispatch = {}
-    if sklearn_check_version("1.2") and dataframe != "pandas":
+    if dataframe != "pandas":
         dispatch["array_api_dispatch"] = True
 
     with config_context(**dispatch):

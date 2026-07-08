@@ -78,10 +78,6 @@ def _compute_class_weight(
             (classes.shape[0],), dtype=xp.float64, device=getattr(classes, "device", None)
         )
     elif class_weight == "balanced":
-        if not sklearn_check_version("1.6"):
-            raise RuntimeError(
-                "array API support with 'balanced' keyword not supported for sklearn <1.6"
-            )
         # Find the weight of each class as present in y.
         if y_encoded is None:
             le = _sklearn_LabelEncoder()

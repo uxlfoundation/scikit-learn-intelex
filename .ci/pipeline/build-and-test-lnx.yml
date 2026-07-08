@@ -63,10 +63,10 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       bash .ci/scripts/setup_sklearn.sh $(SKLEARN_VERSION)
-      pip install --upgrade -r requirements-test.txt
-      pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.14 build.
-      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
+      # conda install runs before pip so that pip's pins (incl. the numpy 1.x runtime version) take final precedence.
+      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
+      pip install --upgrade -r requirements-test.txt
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
