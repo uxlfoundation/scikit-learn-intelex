@@ -17,9 +17,9 @@
 <div align="center">
 
 
-# Extension for Scikit-learn*
+# Extension for scikit-learn*
 
-<h3> Speed up your scikit-learn applications for CPUs and GPUs across single- and multi-node configurations
+<h3> Speed up your [scikit-learn](https://scikit-learn.org) applications for CPUs and GPUs across single- and multi-node configurations
 
 [Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples.html)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support](https://uxlfoundation.github.io/scikit-learn-intelex/latest/support.html)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
 
@@ -31,7 +31,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
 [![python version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.5%20%7C%201.6%20%7C%201.7%20%7C%201.8-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.5%20%7C%201.6%20%7C%201.7%20%7C%201.8-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)](https://img.shields.io/badge/sklearn-1.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)
 
 ---
 </h3>
@@ -40,16 +40,16 @@
 
 ## Overview
 
-Extension for Scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to your existing scikit-learn code.
-The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
+Extension for scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to existing workflows from [scikit-learn](https://scikit-learn.org), which is the most widely-used Python library for machine learning on tabular data.
+This software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
 
-With Extension for Scikit-learn, you can:
+With Extension for scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
 * Benefit from performance improvements across different hardware configurations, including [GPUs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html) and [multi-GPU](https://uxlfoundation.github.io/scikit-learn-intelex/latest/distributed-mode.html) configurations
-* Integrate the extension into your existing Scikit-learn applications without code modifications
-* Continue to use the open-source scikit-learn API
+* Integrate the extension into your existing [scikit-learn](https://scikit-learn.org) applications without code modifications
+* Continue to use the open-source [scikit-learn](https://scikit-learn.org) API
 * Enable and disable the extension with a couple of lines of code or at the command line
 
 ## Acceleration
@@ -60,7 +60,7 @@ With Extension for Scikit-learn, you can:
 
 ## Optimizations
 
-Easiest way to benefit from accelerations from the extension is by patching scikit-learn with it:
+Easiest way to benefit from accelerations from the extension is by patching [scikit-learn](https://scikit-learn.org) with it:
 
 - **Enable CPU optimizations**
 
@@ -127,7 +127,7 @@ Alternatively, all functionalities are also available under a separate module wh
 
 ## Installation
 
-To install Extension for Scikit-learn, run:
+To install Extension for scikit-learn, run:
 
 ```shell
 pip install scikit-learn-intelex
@@ -145,7 +145,7 @@ Package is also offered through other channels such as conda-forge. See all inst
 
 ### Extension and oneDAL
 
-Acceleration in patched scikit-learn classes is achieved by replacing calls to scikit-learn with calls to oneDAL (oneAPI Data Analytics Library) behind the scenes:
+Acceleration in patched scikit-learn classes is achieved by replacing calls to [scikit-learn](https://scikit-learn.org) with calls to oneDAL (oneAPI Data Analytics Library) behind the scenes:
 - [oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## Samples & Examples

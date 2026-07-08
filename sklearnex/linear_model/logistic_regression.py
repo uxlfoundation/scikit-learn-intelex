@@ -51,7 +51,7 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+    @enable_array_api
     @control_n_jobs(
         decorated_methods=[
             "fit",
@@ -64,10 +64,9 @@ if daal_check_version((2024, "P", 1)):
     class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
-        if sklearn_check_version("1.2"):
-            _parameter_constraints: dict = {
-                **_sklearn_LogisticRegression._parameter_constraints
-            }
+        _parameter_constraints: dict = {
+            **_sklearn_LogisticRegression._parameter_constraints
+        }
 
         if sklearn_check_version("1.8"):
 
@@ -121,7 +120,7 @@ if daal_check_version((2024, "P", 1)):
                 random_state=None,
                 solver="lbfgs",
                 max_iter=100,
-                multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
+                multi_class="deprecated",
                 verbose=0,
                 warm_start=False,
                 n_jobs=None,
@@ -169,8 +168,7 @@ if daal_check_version((2024, "P", 1)):
                 )
 
         def fit(self, X, y, sample_weight=None):
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+            self._validate_params()
 
             if hasattr(self, "_onedal_estimator"):
                 del self._onedal_estimator
@@ -255,10 +253,6 @@ if daal_check_version((2024, "P", 1)):
             )
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "score method is not supported for LogisticRegression SPMD estimator."
-                )
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )
@@ -273,11 +267,7 @@ if daal_check_version((2024, "P", 1)):
                 f"sklearn.linear_model.{class_name}.fit"
             )
 
-            target_type = (
-                type_of_target(y, input_name="y")
-                if sklearn_check_version("1.1")
-                else type_of_target(y)
-            )
+            target_type = type_of_target(y, input_name="y")
             patching_status.and_conditions(
                 [
                     (
@@ -414,12 +404,6 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additional check here
-                if "spmd" in self._onedal_LogisticRegression.__module__:
-                    raise RuntimeError(
-                        "Executing functions from SPMD backend requires a queue"
-                    )
-
                 # TODO add array-api support for CPU
                 return self._onedal_cpu_fit(X, y, sample_weight)
             assert sample_weight is None
@@ -452,31 +436,11 @@ if daal_check_version((2024, "P", 1)):
                 y_bin = xp.asarray(y == self.classes_[1], dtype=xp.int32)
 
             self._onedal_gpu_initialize_estimator()
-            try:
-                self._onedal_estimator.fit(X, y_bin, queue=queue)
-                self._onedal_gpu_save_attributes()
-            except RuntimeError as err:
-                if get_config()["allow_sklearn_after_onedal"]:
-
-                    logging.getLogger("sklearnex").info(
-                        f"{self.__class__.__name__}.fit "
-                        + get_patch_message("sklearn_after_onedal")
-                    )
-                    msg = f"Sklearnex LogisticRegression estimator failed with error: {err}, falling back to sklearn implementation."
-                    logging.warning(msg)
-                    del self._onedal_estimator
-                    super().fit(X, y)
-                else:
-                    raise err
+            self._onedal_estimator.fit(X, y_bin, queue=queue)
+            self._onedal_gpu_save_attributes()
 
         # This should only be called when 'X' is on CPU
         def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
-            # We don't use onedal backend for CPU, so we need an additional check here
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "Executing functions from SPMD backend requires a queue"
-                )
-
             # This can happen when fitting on GPU and then passing a CPU array to predict
             if not isinstance(self.coef_, np.ndarray) and not issparse(self.coef_):
                 if sklearn_check_version("1.9"):

@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from ..._device_offload import support_input_format
 from ...common._backend import bind_spmd_backend
 from ...linear_model import LogisticRegression as LogisticRegression_Batch
 
@@ -26,15 +25,3 @@ class LogisticRegression(LogisticRegression_Batch):
 
     @bind_spmd_backend("logistic_regression.classification")
     def infer(self, params, X, model): ...
-
-    @support_input_format
-    def fit(self, X, y, queue=None):
-        return super().fit(X, y, queue=queue)
-
-    @support_input_format
-    def predict(self, X, queue=None, classes=None):
-        return super().predict(X, queue=queue, classes=classes)
-
-    @support_input_format
-    def predict_proba(self, X, queue=None):
-        return super().predict_proba(X, queue=queue)

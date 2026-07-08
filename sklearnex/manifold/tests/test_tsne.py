@@ -19,8 +19,6 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.metrics.pairwise import pairwise_distances
 
-from daal4py.sklearn._utils import sklearn_check_version
-
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -172,9 +170,7 @@ def test_tsne_functionality_and_edge_cases(
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
-@pytest.mark.parametrize(
-    "init", ["random"] + (["pca"] if not sklearn_check_version("1.2") else [])
-)
+@pytest.mark.parametrize("init", ["random"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_constant_data(init, dataframe, queue, dtype):
     from sklearnex.manifold import TSNE

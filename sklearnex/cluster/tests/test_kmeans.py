@@ -30,7 +30,11 @@ if hasattr(sp, "csr_array"):
 else:
     CSR_CTOR = sp.csr_matrix
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -67,9 +71,7 @@ def generate_dense_dataset(n_samples, n_features, density, n_clusters):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -92,9 +94,7 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     reason="Sparse data requires oneDAL>=2024.7.0",
 )
 @pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -110,9 +110,7 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 def test_results_on_dense_gold_data(dataframe, queue, algorithm):
     from sklearnex.cluster import KMeans
 
@@ -144,9 +142,7 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
 )
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("init", ["k-means++", "random", "arraylike"])
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize(
     "dims", [(1000, 10, 0.95, 3), (50000, 100, 0.75, 10), (10000, 10, 0.8, 5)]
 )
@@ -178,6 +174,122 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     )
 
 
+@pytest.mark.parametrize("output_format", ["set_output", "config_context"])
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_torch(output_format, transform_output):
+    torch = pytest.importorskip("torch")
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X_torch = torch.tensor(X_np, device="cpu")
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        if output_format == "set_output":
+            km.set_output(transform=transform_output)
+            km.fit(X_torch)
+            result = km.transform(X_torch)
+        else:
+            with config_context(transform_output=transform_output):
+                km.fit(X_torch)
+                result = km.transform(X_torch)
+
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)
+
+
+# Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_gpu(dataframe, queue, transform_output):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True, transform_output=transform_output):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        result = km.transform(X)
+
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)
+
+
+# Excludes pandas (converted to numpy by validate_data, output type won't match).
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+)
+def test_array_api_dispatch_output_type(dataframe, queue):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        pred = km.predict(X)
+        trans = km.transform(X)
+        sc = km.score(X)
+
+        assert type(pred) == type(X)
+        assert type(trans) == type(X)
+        assert type(km.cluster_centers_) == type(X)
+        assert isinstance(sc, float)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Relies on functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+def test_cov_error_on_incompatible_devices(with_array_api):
+    import dpnp
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(50, 3), dtype=np.float32)
+    X_cpu = dpnp.array(X, device="cpu")
+    X_gpu = dpnp.array(X, device="gpu")
+
+    err_match = "device|queue"
+
+    model = KMeans(algorithm="lloyd").fit(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.predict(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.transform(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.score(X_cpu)
+
+    model.fit(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.predict(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.transform(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.score(X_gpu)
+
+
+@pytest.mark.parametrize("array_api", [False, True])
+def test_sparse_predict_on_dense_fit(array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(50, 3), dtype=np.float32)
+    X_sp = CSR_CTOR(X)
+
+    with config_context(array_api_dispatch=array_api):
+        model = KMeans().fit(X)
+        sp_pred = model.predict(X_sp)
+        sp_transf = model.transform(X_sp)
+        sp_score = model.score(X_sp)
+
+        dense_pred = model.predict(X)
+        dense_transf = model.transform(X)
+        dense_score = model.score(X)
+
+        np.testing.assert_allclose(sp_pred, dense_pred)
+        np.testing.assert_allclose(sp_transf, dense_transf, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(sp_score, dense_score, rtol=1e-6, atol=1e-6)
+
+
 def _convert(arr, xp, device):
     """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
     if xp is np:
@@ -185,15 +297,23 @@ def _convert(arr, xp, device):
     return xp.asarray(arr, device=device)
 
 
-# (xp, device) array-API input combinations, mirroring
-# sklearnex/linear_model/tests/test_mixed_inputs.py. Device-specific entries are
-# filtered out at collection time when the hardware/library is unavailable.
+# (xp, device) array-API input combinations, CPU and GPU; device-specific entries
+# are dropped at collection time when the hardware/library is unavailable.
 # dpnp arrays are SYCL arrays even on "cpu", so they need a SYCL-enabled sklearnex
 # build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
 # does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
 # dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
+# TODO: array_api_strict is gated on numpy >= 2.1 only because numpy < 2.1 cannot
+# export a readonly array through DLPack, so converting the readonly fitted
+# ``components_`` raises BufferError. Remove this guard once the oneDAL data
+# conversion handles readonly arrays (tracked separately).
 _array_api_inputs = (
-    [(np, None), (array_api_strict, None)]
+    [(np, None)]
+    + (
+        [(array_api_strict, None)]
+        if _package_check_version("2.1.0", np.__version__)
+        else []
+    )
     + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
     + (
         [(dpnp, "gpu")]
@@ -232,9 +352,6 @@ def _assert_transform_output_matches_default(km, X, transform_output, method):
         km._sklearn_output_config = original_config
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize("xp,device", _array_api_inputs)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
@@ -248,9 +365,6 @@ def test_transform_output_matches_default(
     _assert_transform_output_matches_default(km, X, transform_output, method)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
-)
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
@@ -263,9 +377,6 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
     _assert_transform_output_matches_default(km, X, transform_output, method)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
-)
 @pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
 )
@@ -295,16 +406,7 @@ def _check_kmeans_results(km, X, X_np):
     assert_allclose(pred, trans.argmin(axis=1))
     assert_allclose(sc, -np.square(trans.min(axis=1)).sum(), rtol=1e-5)
 
-    # transform_output=polars/pandas must wrap into a DataFrame whose values
-    # still match the default (un-wrapped) transform output.
-    for transform_output in ("polars", "pandas"):
-        for method in ("transform", "fit_transform"):
-            _assert_transform_output_matches_default(km, X, transform_output, method)
 
-
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize("xp,device", _array_api_inputs)
 def test_array_api_dispatch_results(xp, device, with_array_api):
     X_np = generate_dense_dataset(50, 5, 0.5, 3)
@@ -316,86 +418,3 @@ def test_array_api_dispatch_results(xp, device, with_array_api):
     assert type(km.transform(X)) == type(X)
     assert type(km.cluster_centers_) == type(X)
     _check_kmeans_results(km, X, X_np)
-
-
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
-@pytest.mark.parametrize("target_offload", [False, True])
-@pytest.mark.parametrize("dataframe", [pd.DataFrame, pl.DataFrame])
-def test_dispatch_results_pandas_polars(dataframe, target_offload):
-    if target_offload and not is_sycl_device_available("gpu"):
-        pytest.skip("Test for GPU-specific functionality.")
-    X_np = generate_dense_dataset(50, 5, 0.5, 3)
-    X = dataframe(X_np)
-
-    ctx = config_context(target_offload="gpu") if target_offload else nullcontext()
-    with ctx:
-        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
-        # pandas/polars inputs are converted to numpy by validate_data.
-        assert isinstance(km.predict(X), np.ndarray)
-        assert isinstance(km.transform(X), np.ndarray)
-        _check_kmeans_results(km, X, X_np)
-
-
-@pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Relies on functionality introduced in later scikit-learn versions.",
-)
-@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
-@pytest.mark.skipif(
-    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
-)
-def test_cov_error_on_incompatible_devices(with_array_api):
-    import dpnp
-
-    rng = np.random.default_rng(seed=123)
-    X = rng.random(size=(50, 3), dtype=np.float32)
-    X_cpu = dpnp.array(X, device="cpu")
-    X_gpu = dpnp.array(X, device="gpu")
-
-    err_match = "device|queue"
-
-    model = KMeans(algorithm="lloyd").fit(X_gpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.predict(X_cpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.transform(X_cpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.score(X_cpu)
-
-    model.fit(X_cpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.predict(X_gpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.transform(X_gpu)
-    with pytest.raises(ValueError, match=err_match):
-        _ = model.score(X_gpu)
-
-
-@pytest.mark.parametrize(
-    "array_api", [False] + ([True] if sklearn_check_version("1.5") else [])
-)
-def test_sparse_predict_on_dense_fit(array_api):
-    rng = np.random.default_rng(seed=123)
-    X = rng.random(size=(50, 3), dtype=np.float32)
-    X_sp = CSR_CTOR(X)
-
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
-        model = KMeans().fit(X)
-        sp_pred = model.predict(X_sp)
-        sp_transf = model.transform(X_sp)
-        sp_score = model.score(X_sp)
-
-        dense_pred = model.predict(X)
-        dense_transf = model.transform(X)
-        dense_score = model.score(X)
-
-        np.testing.assert_allclose(sp_pred, dense_pred)
-        np.testing.assert_allclose(sp_transf, dense_transf, rtol=1e-4, atol=1e-4)
-        np.testing.assert_allclose(sp_score, dense_score, rtol=1e-6, atol=1e-6)

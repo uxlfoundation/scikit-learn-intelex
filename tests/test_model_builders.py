@@ -48,7 +48,11 @@ from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 
 try:
     import catboost as cb
@@ -592,31 +596,34 @@ def test_xgb_unsupported(from_treelite):
     with pytest.raises(TypeError):
         d4p.mb.convert_model(xgb_model)
 
-    xgb_model = xgb.train(
-        dtrain=xgb.DMatrix(X, y),
-        num_boost_round=5,
-        params={
-            "objective": "reg:squarederror",
-            "booster": "dart",
-            "max_depth": 3,
-            "seed": 123,
-            "nthread": 1,
-        },
-    )
-    if not from_treelite:
-        with pytest.raises(TypeError):
-            d4p.mb.convert_model(xgb_model)
-    else:
-        # In this case, TreeLite handles the drop logic on their end in a
-        # format that is consumable by daal4py.
-        tl_model = treelite.frontend.from_xgboost(xgb_model)
-        d4p_model = d4p.mb.convert_model(tl_model)
-        np.testing.assert_allclose(
-            d4p_model.predict(X),
-            treelite.gtil.predict(tl_model, X, pred_margin=True).reshape(-1),
-            atol=1e-5,
-            rtol=1e-5,
+    # Note: dart booster in previous versions had a different
+    # structure than regular tree booster.
+    if not _package_check_version(xgb.__version__, "3.3.0"):
+        xgb_model = xgb.train(
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=5,
+            params={
+                "objective": "reg:squarederror",
+                "booster": "dart",
+                "max_depth": 3,
+                "seed": 123,
+                "nthread": 1,
+            },
         )
+        if not from_treelite:
+            with pytest.raises(TypeError):
+                d4p.mb.convert_model(xgb_model)
+        else:
+            # In this case, TreeLite handles the drop logic on their end in a
+            # format that is consumable by daal4py.
+            tl_model = treelite.frontend.from_xgboost(xgb_model)
+            d4p_model = d4p.mb.convert_model(tl_model)
+            np.testing.assert_allclose(
+                d4p_model.predict(X),
+                treelite.gtil.predict(tl_model, X, pred_margin=True).reshape(-1),
+                atol=1e-5,
+                rtol=1e-5,
+            )
 
     xgb_model = xgb.train(
         dtrain=xgb.DMatrix(X, y),
@@ -1759,30 +1766,29 @@ def test_sklearn_through_treelite(
 
 
 def test_treelite_unsupported():
-    if sklearn_check_version("1.4"):
-        X, y = make_classification(
-            n_samples=10,
-            n_classes=3,
-            n_informative=3,
-            n_redundant=0,
-            random_state=123,
-        )
-        tl_model = treelite.sklearn.import_model(
-            RandomForestClassifier(n_estimators=3).fit(X, y)
-        )
-        with pytest.raises(TypeError):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                d4p_model = d4p.mb.convert_model(tl_model)
+    X, y = make_classification(
+        n_samples=10,
+        n_classes=3,
+        n_informative=3,
+        n_redundant=0,
+        random_state=123,
+    )
+    tl_model = treelite.sklearn.import_model(
+        RandomForestClassifier(n_estimators=3).fit(X, y)
+    )
+    with pytest.raises(TypeError):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            d4p_model = d4p.mb.convert_model(tl_model)
 
-        y_multi = np.c_[(y == 0).reshape((-1, 1)), (y == 1)[::-1].reshape((-1, 1))]
-        tl_model = treelite.sklearn.import_model(
-            RandomForestClassifier(n_estimators=3).fit(X, y_multi)
-        )
-        with pytest.raises(TypeError):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                d4p_model = d4p.mb.convert_model(tl_model)
+    y_multi = np.c_[(y == 0).reshape((-1, 1)), (y == 1)[::-1].reshape((-1, 1))]
+    tl_model = treelite.sklearn.import_model(
+        RandomForestClassifier(n_estimators=3).fit(X, y_multi)
+    )
+    with pytest.raises(TypeError):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            d4p_model = d4p.mb.convert_model(tl_model)
 
     X, y = make_regression(n_samples=10, n_features=4, random_state=123, n_targets=2)
     tl_model = treelite.sklearn.import_model(
@@ -2051,8 +2057,6 @@ def test_gbt_serialization():
 @pytest.mark.parametrize("n_classes", [2, 3])
 def test_logreg_builder(fit_intercept, stochastic, n_classes):
     if stochastic:
-        if not sklearn_check_version("1.1"):
-            pytest.skip("Functionality introduced in a later sklearn version.")
         if n_classes != 2:
             pytest.skip("Functionality not yet implemented in sklearn.")
     if stochastic:
@@ -2188,13 +2192,9 @@ def test_logreg_builder_sequential_calls():
     )
     + [
         # case below might change in the future if sklearn improves their modules
-        pytest.param(
+        (
             SGDClassifier(loss="log_loss"),
             3,
-            marks=pytest.mark.skipif(
-                not sklearn_check_version("1.1"),
-                reason="Requires higher sklearn version.",
-            ),
         ),
         (
             SGDClassifier(loss="hinge"),
