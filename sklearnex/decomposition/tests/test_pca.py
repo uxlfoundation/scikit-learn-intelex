@@ -26,7 +26,11 @@ from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -227,7 +231,7 @@ def _convert(arr, xp, device):
 # array_api_strict needs numpy >= 2.1: PCA rebuilds its model from the readonly
 # fitted ``components_``, and numpy < 2.1 cannot export a readonly array through
 # DLPack (``to_table`` raises BufferError).
-_numpy_supports_readonly_dlpack = np.lib.NumpyVersion(np.__version__) >= "2.1.0"
+_numpy_supports_readonly_dlpack = _package_check_version("2.1.0", np.__version__)
 _array_api_inputs = (
     [(np, None)]
     + ([(array_api_strict, None)] if _numpy_supports_readonly_dlpack else [])
