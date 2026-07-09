@@ -94,9 +94,7 @@ def test_sklearnex_import_ridge(dataframe, queue):
     y_c = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     ridge_reg = Ridge(alpha=0.5).fit(X_c, y_c)
 
-    assert (
-        "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
-    )
+    assert "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
 
     assert_allclose(ridge_reg.intercept_, 3.86, rtol=1e-2)
     assert_allclose(ridge_reg.coef_, [0.91, 1.64], rtol=1e-2)
