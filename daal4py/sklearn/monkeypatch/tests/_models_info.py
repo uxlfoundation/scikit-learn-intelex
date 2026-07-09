@@ -15,20 +15,14 @@
 # ==============================================================================
 
 import numpy as np
-from sklearn.cluster import DBSCAN, KMeans
-from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import (
     ElasticNet,
     Lasso,
-    LinearRegression,
     LogisticRegression,
     LogisticRegressionCV,
-    Ridge,
 )
 from sklearn.manifold import TSNE
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors
-from sklearn.svm import SVC
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
@@ -49,21 +43,6 @@ MODELS_INFO = [
         "dataset": "blobs",
     },
     {
-        "model": DBSCAN(),
-        "methods": ["fit_predict"],
-        "dataset": "blobs",
-    },
-    {
-        "model": SVC(probability=True),
-        "methods": ["decision_function", "predict", "predict_proba", "score"],
-        "dataset": "classifier",
-    },
-    {
-        "model": KMeans(),
-        "methods": ["fit_predict", "fit_transform", "transform", "predict", "score"],
-        "dataset": "blobs",
-    },
-    {
         "model": ElasticNet(),
         "methods": ["predict", "score"],
         "dataset": "regression",
@@ -72,16 +51,6 @@ MODELS_INFO = [
         "model": Lasso(),
         "methods": ["predict", "score"],
         "dataset": "regression",
-    },
-    {
-        "model": PCA(),
-        "methods": ["fit_transform", "transform", "score"],
-        "dataset": "classifier",
-    },
-    {
-        "model": RandomForestClassifier(n_estimators=10),
-        "methods": ["predict", "predict_proba", "predict_log_proba", "score"],
-        "dataset": "classifier",
     },
     {
         "model": LogisticRegression(
@@ -111,21 +80,6 @@ MODELS_INFO = [
         ],
         "dataset": "classifier",
     },
-    {
-        "model": RandomForestRegressor(n_estimators=10),
-        "methods": ["predict", "score"],
-        "dataset": "regression",
-    },
-    {
-        "model": LinearRegression(),
-        "methods": ["predict", "score"],
-        "dataset": "regression",
-    },
-    {
-        "model": Ridge(),
-        "methods": ["predict", "score"],
-        "dataset": "regression",
-    },
 ]
 
 TYPES = [
@@ -144,18 +98,11 @@ TYPES = [
 
 TO_SKIP = [
     # --------------- NO INFO ---------------
-    r"KMeans .*transform",
-    r"KMeans .*score",
-    r"PCA .*score",
     r"LogisticRegression .*decision_function",
     r"LogisticRegressionCV .*score",
     r"LogisticRegressionCV .*decision_function",
     r"LogisticRegressionCV .*score",
     # --------------- Scikit ---------------
-    r"Ridge float16 predict",
-    r"Ridge float16 score",
-    r"RandomForestClassifier .*predict_proba",
-    r"RandomForestClassifier .*predict_log_proba",
     r"pairwise_distances .*pairwise_distances",  # except float64
     (
         r"roc_auc_score .*roc_auc_score"

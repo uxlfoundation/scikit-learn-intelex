@@ -494,8 +494,6 @@ if daal_check_version((2023, "P", 200)):
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:
-    from daal4py.sklearn.cluster import KMeans
-
-    logging.warning(
-        "Sklearnex KMeans requires oneDAL version >= 2023.2, falling back to daal4py."
+    raise ImportError(
+        "Sklearnex KMeans requires oneDAL version >= 2023.2."
     )
