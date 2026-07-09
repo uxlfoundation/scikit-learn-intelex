@@ -21,6 +21,4 @@ if daal_check_version((2021, "P", 300)):
 
     __all__ = ["SVR", "SVC", "NuSVC", "NuSVR"]
 else:
-    raise ImportError(
-        "Sklearnex SVM classes require oneDAL version >= 2021.3."
-    )
+    raise ImportError("Sklearnex SVM classes require oneDAL version >= 2021.3.")
