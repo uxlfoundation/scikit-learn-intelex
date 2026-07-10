@@ -14,8 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
-from . import covariance, ensemble
 from .. import onedal_check_version
+from . import covariance, ensemble
 
 
 __all__ = ["covariance", "ensemble"]
