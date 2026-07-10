@@ -19,6 +19,7 @@ import importlib.util
 import os
 import shutil
 import subprocess
+import sys
 from glob import glob
 
 from onedal.tests.utils._dataframes_support import test_frameworks
@@ -74,24 +75,24 @@ def test_frameworks_intentionality():
             pass
 
 
-def test_relative_importing(tmp_path, monkeypatch):
-    monkeypatch.syspath_prepend(str(tmp_path))
-
+def test_relative_importing(tmp_path):
     spec = importlib.util.find_spec("onedal")
     folder = spec.submodule_search_locations[0]
 
-    shutil.copytree(folder, tmp_path / "onedal_test")
-
+    shutil.copytree(
+        spec.submodule_search_locations[0],
+        tmp_path / "onedal_test",
+        ignore=shutil.ignore_patterns("__pycache__", "*.so", "*.pyd", "tests"),
+    )
     subprocess.run(
         [
             sys.executable,
             "-c",
-            """
-  import pkgutil, importlib, onedal_test
-  for m in pkgutil.walk_packages(onedal_test.__path__, onedal_test.__name__ + "."):
-      importlib.import_module(m.name)
-  """,
+            "import pkgutil, importlib, onedal_test\n"
+            "for m in pkgutil.walk_packages(onedal_test.__path__, onedal_test.__name__ + '.'):\n"
+            "    importlib.import_module(m.name)\n",
         ],
         cwd=str(tmp_path),
+        capture_output=True,
         check=True,
     )
