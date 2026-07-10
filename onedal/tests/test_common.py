@@ -85,12 +85,12 @@ def test_relative_importing(tmp_path):
     )
 
     (tmp_path / "onedal.py").write_text(
-      "import traceback\n"
-      "raise ImportError(\n"
-      "    'absolute intra-onedal import detected:\\n'\n"
-      "    + ''.join(traceback.format_stack())\n"
-      ")\n"
-      )
+        "import traceback\n"
+        "raise ImportError(\n"
+        "    'absolute intra-onedal import detected:\\n'\n"
+        "    + ''.join(traceback.format_stack())\n"
+        ")\n"
+    )
 
     subprocess.run(
         [
@@ -104,5 +104,4 @@ def test_relative_importing(tmp_path):
         check=True,
         capture_output=True,
         text=True,
-
     )
