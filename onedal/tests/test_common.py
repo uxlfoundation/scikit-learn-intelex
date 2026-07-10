@@ -18,6 +18,7 @@ import importlib
 import importlib.util
 import os
 import shutil
+import subprocess
 from glob import glob
 
 from onedal.tests.utils._dataframes_support import test_frameworks
@@ -72,20 +73,25 @@ def test_frameworks_intentionality():
         except ModuleNotFoundError:
             pass
 
+
 def test_relative_importing(tmp_path, monkeypatch):
-  monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.syspath_prepend(str(tmp_path))
 
-  spec = importlib.util.find_spec("onedal")
-  folder = spec.submodule_search_locations[0]
+    spec = importlib.util.find_spec("onedal")
+    folder = spec.submodule_search_locations[0]
 
-  shutil.copytree(folder, tmp_path / "onedal_test")
+    shutil.copytree(folder, tmp_path / "onedal_test")
 
-  subprocess.run(
-      [sys.executable, '-c', '''
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
   import pkgutil, importlib, onedal_test
   for m in pkgutil.walk_packages(onedal_test.__path__, onedal_test.__name__ + "."):
       importlib.import_module(m.name)
-  '''],
-      cwd=str(tmp_path),
-      check=True,
-  )
+  """,
+        ],
+        cwd=str(tmp_path),
+        check=True,
+    )
