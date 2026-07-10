@@ -17,7 +17,6 @@
 from .. import onedal_check_version
 from . import covariance, ensemble
 
-
 __all__ = ["covariance", "ensemble"]
 
 if onedal_check_version(2023, 1, 0):
