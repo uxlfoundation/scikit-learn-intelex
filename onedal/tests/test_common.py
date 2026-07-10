@@ -77,7 +77,6 @@ def test_frameworks_intentionality():
 
 def test_relative_importing(tmp_path):
     spec = importlib.util.find_spec("onedal")
-    folder = spec.submodule_search_locations[0]
 
     shutil.copytree(
         spec.submodule_search_locations[0],
