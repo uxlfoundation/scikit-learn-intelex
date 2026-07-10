@@ -21,12 +21,8 @@ from .. import onedal_check_version
 __all__ = ["covariance", "ensemble"]
 
 if onedal_check_version(2023, 1, 0):
-    from . import (
-        basic_statistics,
-        decomposition,
-        linear_model,
-        neighbors
-    )
+    from . import basic_statistics, decomposition, linear_model, neighbors
+ 
     __all__ += [
         "basic_statistics",
         "decomposition",
@@ -35,4 +31,5 @@ if onedal_check_version(2023, 1, 0):
     ]
 if onedal_check_version(2023, 2, 0):
     from . import cluster
+
     __all__ += ["cluster"]
