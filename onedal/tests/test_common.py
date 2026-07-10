@@ -93,6 +93,5 @@ def test_relative_importing(tmp_path):
             "    importlib.import_module(m.name)\n",
         ],
         cwd=str(tmp_path),
-        capture_output=True,
         check=True,
     )
