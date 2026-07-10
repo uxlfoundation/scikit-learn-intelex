@@ -22,7 +22,7 @@ __all__ = ["covariance", "ensemble"]
 
 if onedal_check_version(2023, 1, 0):
     from . import basic_statistics, decomposition, linear_model, neighbors
- 
+
     __all__ += [
         "basic_statistics",
         "decomposition",
