@@ -84,6 +84,9 @@ def test_relative_importing(tmp_path):
         tmp_path / "onedal_test",
         ignore=shutil.ignore_patterns("__pycache__", "*.pyd", "tests"),
     )
+
+    (tmp_path / "onedal.py").write_text("raise ImportError('absolute intra-onedal import detected')")
+
     subprocess.run(
         [
             sys.executable,
