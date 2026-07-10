@@ -102,6 +102,4 @@ def test_relative_importing(tmp_path):
         ],
         cwd=str(tmp_path),
         check=True,
-        capture_output=True,
-        text=True,
     )
