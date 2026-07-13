@@ -600,14 +600,12 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         ]:
 
             pickle.loads(pickle.dumps(est))
-        # Without array_api_dispatch, dpnp inputs go through
-        # support_input_format (converts to numpy and back) for fit and
-        # support_sycl_format (converts to numpy but NOT back) for some
-        # methods like score_samples/mahalanobis. This creates a type
-        # mismatch: fitted attrs may be numpy while method outputs are
-        # dpnp or vice versa. With array_api_dispatch enabled, all paths
-        # use array API consistently, so we re-fit and re-call with
-        # dispatch on to verify output types correctly.
+        # Without array_api_dispatch, dpnp inputs are converted to host numpy
+        # for computation, and outputs may be numpy or dpnp depending on the
+        # wrapper. This can create a type mismatch: fitted attrs may be numpy
+        # while method outputs are dpnp or vice versa. With array_api_dispatch
+        # enabled, all paths use array API consistently, so we re-fit and
+        # re-call with dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
             # Skip second pass if estimator doesn't support GPU for this data
             if queue is not None and getattr(queue.sycl_device, "is_gpu", False):

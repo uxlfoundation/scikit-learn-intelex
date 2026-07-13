@@ -45,7 +45,6 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues
-from onedal.utils._array_api import _get_sycl_namespace
 
 data_shapes = [
     pytest.param((1000, 100), id="(1000, 100)"),  # 2-D array
@@ -70,7 +69,7 @@ class DummyEstimatorWithTableConversions:
         if not backend.is_dpc:
             raise RuntimeError("Table conversions should be done with DPC backend.")
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        xp = X.__array_namespace__()
         dbscan = DBSCAN()
         types = [xp.float32, xp.float64]
         if get_dtype(X) not in types:
@@ -218,8 +217,6 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
 
     X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    sua_iface, X_dp_namespace, _ = _get_sycl_namespace(X_dp)
-
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
@@ -356,7 +353,6 @@ def test_to_table_non_contiguous_input(dataframe, queue):
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
 
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):

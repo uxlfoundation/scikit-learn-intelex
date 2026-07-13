@@ -23,10 +23,8 @@ from sklearn.utils import get_tags
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _get_host_inputs, _transfer_to_host
-from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
-from onedal.utils._third_party import is_dpnp_ndarray
+from onedal.utils._array_api import _asarray, _is_numpy_namespace
 
 from ._config import get_config
 from ._utils import PatchingConditionsChain
@@ -225,10 +223,6 @@ def wrap_output_data(func: Callable) -> Callable:
                 _, (result,) = _transfer_to_host(result)
                 return result
 
-            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
-                queue = usm_iface["syclobj"]
-                return copy_to_dpnp(queue, result)
-
             if get_config().get("transform_output") in ("default", None):
                 if hasattr(data, "dtype"):
                     xp, is_array_api = get_namespace(data)
@@ -288,11 +282,9 @@ def support_input_format(func):
             if len(args) == 0 and len(kwargs) == 0:
                 return invoke_func(self, *args, **kwargs)
 
-            with QM.manage_global_queue(None, *args) as queue:
+            with QM.manage_global_queue(None, *args):
                 hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
                 result = invoke_func(self, *hostargs, **hostkwargs)
-                if queue and hasattr(args[0], "__sycl_usm_array_interface__"):
-                    return copy_to_dpnp(queue, result)
 
         data = (*args, *kwargs.values())[0]
         if get_config().get("transform_output") in ("default", None):
@@ -303,27 +295,3 @@ def support_input_format(func):
         return result
 
     return wrapper_impl
-
-
-def support_sycl_format(func):
-    # This wrapper enables scikit-learn functions and methods to work with
-    # all sycl data frameworks as they no longer support numpy implicit
-    # conversion and must be manually converted. This is only necessary
-    # when array API is supported but not active.
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if (
-            not get_config().get("array_api_dispatch", False)
-            and _get_sycl_namespace(*args)[2]
-        ):
-            with QM.manage_global_queue(kwargs.get("queue"), *args):
-                if inspect.isfunction(func) and "." in func.__qualname__:
-                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
-                    return func(self, *args, **kwargs)
-                else:
-                    args, kwargs = _get_host_inputs(*args, **kwargs)
-                    return func(*args, **kwargs)
-        return func(*args, **kwargs)
-
-    return wrapper

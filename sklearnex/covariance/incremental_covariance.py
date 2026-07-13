@@ -18,7 +18,6 @@ import numbers
 import warnings
 from functools import partial
 
-import numpy as np
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import gen_batches
@@ -34,12 +33,7 @@ from onedal.covariance import (
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context
-from .._device_offload import (
-    dispatch,
-    support_input_format,
-    support_sycl_format,
-    wrap_output_data,
-)
+from .._device_offload import dispatch, support_input_format, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
@@ -323,12 +317,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return self
 
     @wrap_output_data
-    @support_sycl_format
     def score(self, X_test, y=None):
 
         check_is_fitted(self)
-        # Only covariance evaluated for get_namespace due to dpnp
-        # support without array_api_dispatch
         if sklearn_check_version("1.9"):
             check_same_namespace(X_test, self, attribute="covariance_", method="score")
         xp, _ = get_namespace(X_test, self.covariance_)
@@ -355,16 +346,11 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return res
 
     @wrap_output_data
-    @support_sycl_format
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
         # equivalent to the sklearn implementation but written for array API
         # in the case of numpy-like inputs it will use sklearn's version instead.
         # This can be deprecated if/when sklearn makes the equivalent array API enabled.
-        # This includes a validate_data call and an unusual call to get_namespace in
-        # order to also support dpnp without array_api_dispatch.
         check_is_fitted(self)
-        # Only covariance evaluated for get_namespace due to dpnp
-        # support without array_api_dispatch
         if sklearn_check_version("1.9"):
             check_same_namespace(
                 comp_cov, self, attribute="covariance_", method="error_norm"
@@ -406,7 +392,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return result
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
-    @support_sycl_format
     def mahalanobis(self, X):
         # This must be done as ```support_input_format``` is insufficient for array API
         # support when attributes are non-numpy.
@@ -418,12 +403,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         xp, _ = get_namespace(X, precision, loc)
         # do not check dtype, done in pairwise_distances
         X_in = validate_data(self, X, reset=False)
-
-        if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
-            # corrects issues with respect to dpnp support without array_api_dispatch
-            X_in = X
-            loc = xp.asarray(loc, device=X.device)
-            precision = xp.asarray(precision, device=X.device)
 
         with config_context(assume_finite=True):
             try:

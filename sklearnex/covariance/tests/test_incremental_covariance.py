@@ -296,7 +296,8 @@ def test_score_verify_namespace(dispatch, dataframe, queue):
         cfg_context = config_context(array_api_dispatch=True)
         err = pytest.raises((TypeError, ValueError))
     else:
-        # support_sycl_format will cause it to function
+        # without array_api_dispatch, fitted attributes are host numpy, so a
+        # numpy score input shares their namespace and the call succeeds
         cfg_context = nullcontext()
         err = nullcontext()
 

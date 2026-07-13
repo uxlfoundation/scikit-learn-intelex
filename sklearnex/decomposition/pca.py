@@ -36,7 +36,7 @@ if daal_check_version((2024, "P", 100)):
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
 
-    from .._device_offload import dispatch, support_sycl_format, wrap_output_data
+    from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
@@ -83,9 +83,6 @@ if daal_check_version((2024, "P", 100)):
             self.random_state = random_state
 
         _onedal_PCA = staticmethod(onedal_PCA)
-        # guarantee operability with dpnp, runs on CPU unless
-        # array_api_dispatch is enabled.
-        score_samples = support_sycl_format(_sklearn_PCA.score_samples)
 
         def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
