@@ -201,6 +201,8 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
 
     inverse_transform = support_input_format(_sklearn_MaxAbsScaler.inverse_transform)
 
+    fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
+    partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
     transform.__doc__ = _sklearn_MaxAbsScaler.transform.__doc__
     inverse_transform.__doc__ = _sklearn_MaxAbsScaler.inverse_transform.__doc__
 
