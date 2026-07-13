@@ -55,10 +55,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
         import sklearn.linear_model as linear_model_module
+        import sklearn.preprocessing as preprocessing_module
         from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
         from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
         from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
         from sklearn.linear_model import Lasso as Lasso_sklearn
+        from sklearn.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearn
 
         # Preview classes for patching
         from .preview.covariance import (
@@ -67,6 +69,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
         from .preview.linear_model import ElasticNet as ElasticNet_sklearnex
         from .preview.linear_model import Lasso as Lasso_sklearnex
+        from .preview.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearnex
 
         # Since the state of the lru_cache without preview cannot be
         # guaranteed to not have already enabled sklearnex algorithms
@@ -98,6 +101,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 "Lasso",
                 Lasso_sklearnex,
                 Lasso_sklearn,
+            ),
+            "sklearn.preprocessing.MaxAbsScaler": (
+                preprocessing_module,
+                "MaxAbsScaler",
+                MaxAbsScaler_sklearnex,
+                MaxAbsScaler_sklearn,
             ),
         }
         if daal_check_version((2024, "P", 1)):
