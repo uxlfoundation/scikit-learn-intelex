@@ -285,7 +285,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
             if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="_fit_X", method="kenighbors")
+                check_same_namespace(X, self, attribute="_fit_X", method="kneighbors")
         else:
             query_is_train = True
             X = self._fit_X
