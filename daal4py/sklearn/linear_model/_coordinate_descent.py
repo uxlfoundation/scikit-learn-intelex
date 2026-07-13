@@ -132,15 +132,8 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     penalty_L1 = penalty_L1.reshape((1, -1))
     penalty_L2 = penalty_L2.reshape((1, -1))
 
-    # normalizing and centering
+    # centering
     X_offset = np.zeros(X.shape[1], dtype=X.dtype)
-    X_scale = np.ones(X.shape[1], dtype=X.dtype)
-    if y.ndim == 1:
-        y_offset = X.dtype.type(0)
-    else:
-        y_offset = np.zeros(y.shape[1], dtype=X.dtype)
-
-    _normalize = False
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
 
@@ -148,11 +141,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     if (
         isinstance(self.precompute, np.ndarray)
         and self.fit_intercept
-        and (
-            not np.allclose(X_offset, np.zeros(X.shape[1]))
-            or _normalize
-            and not np.allclose(X_scale, np.ones(X.shape[1]))
-        )
+        and not np.allclose(X_offset, np.zeros(X.shape[1]))
     ):
         warnings.warn(
             "Gram matrix was provided but X was centered"
@@ -185,9 +174,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
             inputArgument[i][0] = self.intercept_ if (n_rows == 1) else self.intercept_[i]
             inputArgument[i][1:] = self.coef_[:] if (n_rows == 1) else self.coef_[i, :]
         cd_solver.setup(inputArgument)
-    doUse_condition = self.copy_X is False or (
-        self.fit_intercept and _normalize and self.copy_X
-    )
+    doUse_condition = self.copy_X is False
     elastic_net_alg = daal4py.elastic_net_training(
         fptype=_fptype,
         method="defaultDense",
@@ -210,13 +197,6 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     # set coef_ and intersept_ results
     elastic_net_model = elastic_net_res.model
     self.daal_model_ = elastic_net_model
-
-    # update coefficients if normalizing and centering
-    if self.fit_intercept and _normalize:
-        elastic_net_model.Beta[:, 1:] = elastic_net_model.Beta[:, 1:] / X_scale
-        elastic_net_model.Beta[:, 0] = (
-            y_offset - np.dot(X_offset, elastic_net_model.Beta[:, 1:].T)
-        ).T
 
     coefs = elastic_net_model.Beta
 
@@ -283,15 +263,8 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     self.n_features_in_ = X.shape[1]
     self._y = y
 
-    # normalizing and centering
+    # centering
     X_offset = np.zeros(X.shape[1], dtype=X.dtype)
-    X_scale = np.ones(X.shape[1], dtype=X.dtype)
-    if y.ndim == 1:
-        y_offset = X.dtype.type(0)
-    else:
-        y_offset = np.zeros(y.shape[1], dtype=X.dtype)
-
-    _normalize = False
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
 
@@ -299,16 +272,11 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     if (
         isinstance(self.precompute, np.ndarray)
         and self.fit_intercept
-        and (
-            not np.allclose(X_offset, np.zeros(X.shape[1]))
-            or _normalize
-            and not np.allclose(X_scale, np.ones(X.shape[1]))
-        )
+        and not np.allclose(X_offset, np.zeros(X.shape[1]))
     ):
         warnings.warn(
             "Gram matrix was provided but X was centered"
-            " to fit intercept, "
-            "or X was normalized : recomputing Gram matrix.",
+            " to fit intercept: recomputing Gram matrix.",
             UserWarning,
         )
 
@@ -341,9 +309,7 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
                 else self.coef_[i, :].copy(order="C")
             )
         cd_solver.setup(inputArgument)
-    doUse_condition = self.copy_X is False or (
-        self.fit_intercept and _normalize and self.copy_X
-    )
+    doUse_condition = self.copy_X is False
     lasso_alg = daal4py.lasso_regression_training(
         fptype=_fptype,
         method="defaultDense",
@@ -365,13 +331,6 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     # set coef_ and intersept_ results
     lasso_model = lasso_res.model
     self.daal_model_ = lasso_model
-
-    # update coefficients if normalizing and centering
-    if self.fit_intercept and _normalize:
-        lasso_model.Beta[:, 1:] = lasso_model.Beta[:, 1:] / X_scale
-        lasso_model.Beta[:, 0] = (
-            y_offset - np.dot(X_offset, lasso_model.Beta[:, 1:].T)
-        ).T
 
     coefs = lasso_model.Beta
 
