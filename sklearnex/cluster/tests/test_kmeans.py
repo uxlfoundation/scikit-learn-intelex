@@ -290,12 +290,25 @@ def test_sparse_predict_on_dense_fit(array_api):
         np.testing.assert_allclose(sp_score, dense_score, rtol=1e-6, atol=1e-6)
 
 
-def _convert(arr, xp, device):
+def _kmeans_convert(arr, xp, device):
     """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
     if xp is np:
         return arr
     return xp.asarray(arr, device=device)
 
+
+# array_api_strict output conversion fails on numpy >= 2.5: KMeans converts a
+# read-only fitted array back through DLPack, which sklearnex does not yet handle.
+# TODO: remove this skip once sklearnex handles read-only arrays in the oneDAL data
+# conversion. (numpy < 2.1 has separate, upstream DLPack read-only limitations.)
+_KMEANS_ARRAY_API_STRICT = pytest.param(
+    array_api_strict,
+    None,
+    marks=pytest.mark.skipif(
+        _package_check_version("2.5.0", np.__version__),
+        reason="TODO: sklearnex read-only DLPack conversion fails on numpy>=2.5",
+    ),
+)
 
 # (xp, device) array-API input combinations, CPU and GPU; device-specific entries
 # are dropped at collection time when the hardware/library is unavailable.
@@ -303,17 +316,8 @@ def _convert(arr, xp, device):
 # build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
 # does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
 # dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
-# TODO: array_api_strict is gated on numpy >= 2.1 only because numpy < 2.1 cannot
-# export a readonly array through DLPack, so converting the readonly fitted
-# ``components_`` raises BufferError. Remove this guard once the oneDAL data
-# conversion handles readonly arrays (tracked separately).
-_array_api_inputs = (
-    [(np, None)]
-    + (
-        [(array_api_strict, None)]
-        if _package_check_version("2.1.0", np.__version__)
-        else []
-    )
+_KMEANS_ARRAY_API_INPUTS = (
+    [(np, None), _KMEANS_ARRAY_API_STRICT]
     + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
     + (
         [(dpnp, "gpu")]
@@ -352,14 +356,14 @@ def _assert_transform_output_matches_default(km, X, transform_output, method):
         km._sklearn_output_config = original_config
 
 
-@pytest.mark.parametrize("xp,device", _array_api_inputs)
+@pytest.mark.parametrize("xp,device", _KMEANS_ARRAY_API_INPUTS)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_matches_default(
     xp, device, transform_output, method, with_array_api
 ):
     X_np = generate_dense_dataset(50, 5, 0.5, 3)
-    X = _convert(X_np, xp, device)
+    X = _kmeans_convert(X_np, xp, device)
 
     km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
     _assert_transform_output_matches_default(km, X, transform_output, method)
@@ -407,10 +411,10 @@ def _check_kmeans_results(km, X, X_np):
     assert_allclose(sc, -np.square(trans.min(axis=1)).sum(), rtol=1e-5)
 
 
-@pytest.mark.parametrize("xp,device", _array_api_inputs)
+@pytest.mark.parametrize("xp,device", _KMEANS_ARRAY_API_INPUTS)
 def test_array_api_dispatch_results(xp, device, with_array_api):
     X_np = generate_dense_dataset(50, 5, 0.5, 3)
-    X = _convert(X_np, xp, device)
+    X = _kmeans_convert(X_np, xp, device)
 
     km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
     # predict/transform/cluster_centers_ follow the input type.

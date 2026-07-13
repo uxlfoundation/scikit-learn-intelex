@@ -211,12 +211,26 @@ def test_pca_error_on_incompatible_devices(with_array_api):
         _ = model.inverse_transform(X_gpu)
 
 
-def _convert(arr, xp, device):
+def _pca_convert(arr, xp, device):
     """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
     if xp is np:
         return arr
     return xp.asarray(arr, device=device)
 
+
+# array_api_strict output conversion fails on numpy >= 2.5: PCA rebuilds its model
+# from the read-only fitted ``components_`` and converts it back through DLPack,
+# which sklearnex does not yet handle.
+# TODO: remove this skip once sklearnex handles read-only arrays in the oneDAL data
+# conversion. (numpy < 2.1 has separate, upstream DLPack read-only limitations.)
+_PCA_ARRAY_API_STRICT = pytest.param(
+    array_api_strict,
+    None,
+    marks=pytest.mark.skipif(
+        _package_check_version("2.5.0", np.__version__),
+        reason="TODO: sklearnex read-only DLPack conversion fails on numpy>=2.5",
+    ),
+)
 
 # (xp, device) array-API input combinations, CPU and GPU; device-specific entries
 # are dropped at collection time when the hardware/library is unavailable.
@@ -224,15 +238,8 @@ def _convert(arr, xp, device):
 # build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
 # does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
 # dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
-# TODO: remove this array_api_strict / numpy>=2.1 guard once oneDAL's data
-# conversion handles readonly arrays. PCA rebuilds its model from the readonly
-# fitted ``components_``; numpy < 2.1 cannot export a readonly array through DLPack,
-# so ``to_table`` raises BufferError. The proper fix belongs in the oneDAL data
-# conversion layer (tracked in a separate PR); drop this skip when it lands.
-_numpy_supports_readonly_dlpack = _package_check_version("2.1.0", np.__version__)
-_array_api_inputs = (
-    [(np, None)]
-    + ([(array_api_strict, None)] if _numpy_supports_readonly_dlpack else [])
+_PCA_ARRAY_API_INPUTS = (
+    [(np, None), _PCA_ARRAY_API_STRICT]
     + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
     + (
         [(dpnp, "gpu")]
@@ -270,13 +277,13 @@ def _assert_transform_output_matches_default(pca, X, transform_output, method):
         pca._sklearn_output_config = original_config
 
 
-@pytest.mark.parametrize("xp,device", _array_api_inputs)
+@pytest.mark.parametrize("xp,device", _PCA_ARRAY_API_INPUTS)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_matches_default(
     xp, device, transform_output, method, with_array_api
 ):
-    X = _convert(load_iris(return_X_y=True)[0], xp, device)
+    X = _pca_convert(load_iris(return_X_y=True)[0], xp, device)
     pca = PCA(n_components=3).fit(X)
     _assert_transform_output_matches_default(pca, X, transform_output, method)
 
