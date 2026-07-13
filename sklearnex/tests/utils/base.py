@@ -281,7 +281,7 @@ def call_method(estimator, method, X, y, **kwargs):
         ]
     )
 
-    if method == "inverse_transform":
+    if method == "inverse_transform" and hasattr(estimator, "n_components_"):
         # PCA's inverse_transform takes (n_samples, n_components)
         data = (
             (X[:, : estimator.n_components_],)
