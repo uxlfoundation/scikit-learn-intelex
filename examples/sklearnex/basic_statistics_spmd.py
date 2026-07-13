@@ -19,6 +19,7 @@ import numpy as np
 from dpctl import SyclQueue
 from mpi4py import MPI
 
+from sklearnex import config_context
 from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatisticsSpmd
 
 
@@ -57,8 +58,10 @@ dpnp_weights = dpnp.asarray(weights, usm_type="device", sycl_queue=q)
 gtr_mean = np.mean(weighted_data, axis=0)
 gtr_std = np.std(weighted_data, axis=0)
 
-bss = BasicStatisticsSpmd(["mean", "standard_deviation"])
-bss.fit(dpnp_data, dpnp_weights)
+# Array API dispatch keeps dpnp data on device throughout the computation.
+with config_context(array_api_dispatch=True):
+    bss = BasicStatisticsSpmd(["mean", "standard_deviation"])
+    bss.fit(dpnp_data, dpnp_weights)
 
-print(f"Computed mean on rank {rank}:\n", bss.mean_)
-print(f"Computed std on rank {rank}:\n", bss.standard_deviation_)
+    print(f"Computed mean on rank {rank}:\n", bss.mean_)
+    print(f"Computed std on rank {rank}:\n", bss.standard_deviation_)

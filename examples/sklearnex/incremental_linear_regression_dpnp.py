@@ -16,8 +16,8 @@
 
 import dpctl
 import dpnp
-from sklearn import config_context
 
+from sklearnex import config_context
 from sklearnex.linear_model import IncrementalLinearRegression
 
 # We create GPU SyclQueue and then put data to dpnp arrays using

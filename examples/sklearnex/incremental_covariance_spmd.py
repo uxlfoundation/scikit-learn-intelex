@@ -19,6 +19,7 @@ import dpnp
 import numpy as np
 from mpi4py import MPI
 
+from sklearnex import config_context
 from sklearnex.spmd.covariance import IncrementalEmpiricalCovariance
 
 
@@ -45,14 +46,16 @@ X = drng.random(size=(num_samples, num_features))
 X_local = get_local_data(X, comm)
 X_split = np.array_split(X_local, num_batches)
 
-cov = IncrementalEmpiricalCovariance()
+# Array API dispatch keeps dpnp data on device throughout the computation.
+with config_context(array_api_dispatch=True):
+    cov = IncrementalEmpiricalCovariance()
 
-# Partial fit is called for each batch on each GPU
+    # Partial fit is called for each batch on each GPU
 
-for i in range(num_batches):
-    dpnp_X = dpnp.asarray(X_split[i], usm_type="device", sycl_queue=q)
-    cov.partial_fit(dpnp_X)
+    for i in range(num_batches):
+        dpnp_X = dpnp.asarray(X_split[i], usm_type="device", sycl_queue=q)
+        cov.partial_fit(dpnp_X)
 
-# Finalization of results is performed in a lazy way after requesting results like in non-SPMD incremental estimators.
+    # Finalization of results is performed in a lazy way after requesting results like in non-SPMD incremental estimators.
 
-print(f"Computed covariance values on rank {comm.Get_rank()}:\n", cov.covariance_)
+    print(f"Computed covariance values on rank {comm.Get_rank()}:\n", cov.covariance_)

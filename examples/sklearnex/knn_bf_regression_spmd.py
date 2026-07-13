@@ -23,6 +23,7 @@ from mpi4py import MPI
 from numpy.testing import assert_allclose
 from sklearn.metrics import mean_squared_error
 
+from sklearnex import config_context
 from sklearnex.spmd.neighbors import KNeighborsRegressor
 
 
@@ -63,23 +64,25 @@ dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
 assert_allclose(coef_train, coef_test)
 
-model_spmd = KNeighborsRegressor(
-    algorithm="brute", n_neighbors=5, weights="uniform", p=2, metric="minkowski"
-)
-model_spmd.fit(dpnp_X_train, dpnp_y_train)
-
-y_predict = model_spmd.predict(dpnp_X_test)
-
-print("Brute Force Distributed kNN regression results:")
-print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
-print(
-    "Regression results (first 5 observations on rank {}):\n{}".format(
-        rank, y_predict[:5]
+# Array API dispatch keeps dpnp data on device throughout the computation.
+with config_context(array_api_dispatch=True):
+    model_spmd = KNeighborsRegressor(
+        algorithm="brute", n_neighbors=5, weights="uniform", p=2, metric="minkowski"
     )
-)
-print(
-    "MSE for entire rank {}: {}\n".format(
-        rank,
-        mean_squared_error(y_test, dpnp.asnumpy(y_predict)),
+    model_spmd.fit(dpnp_X_train, dpnp_y_train)
+
+    y_predict = model_spmd.predict(dpnp_X_test)
+
+    print("Brute Force Distributed kNN regression results:")
+    print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
+    print(
+        "Regression results (first 5 observations on rank {}):\n{}".format(
+            rank, y_predict[:5]
+        )
     )
-)
+    print(
+        "MSE for entire rank {}: {}\n".format(
+            rank,
+            mean_squared_error(y_test, dpnp.asnumpy(y_predict)),
+        )
+    )

@@ -16,8 +16,8 @@
 
 import dpctl
 import dpnp
-from sklearn import config_context
 
+from sklearnex import config_context
 from sklearnex.basic_statistics import IncrementalBasicStatistics
 
 # We create GPU SyclQueue and then put data to dpnp arrays using

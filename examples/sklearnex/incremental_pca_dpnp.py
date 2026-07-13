@@ -19,10 +19,9 @@
 
 import dpctl
 import dpnp
-from sklearn import config_context
 
 # Import estimator via sklearnex's patch mechanism from sklearn
-from sklearnex import patch_sklearn, sklearn_is_patched
+from sklearnex import config_context, patch_sklearn, sklearn_is_patched
 
 # IncrementalPCA is currently in preview module, so extra flag is required
 patch_sklearn(preview=True)
