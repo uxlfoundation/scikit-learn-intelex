@@ -21,3 +21,4 @@ array-api-compat==1.15.0
 array-api-strict==2.5
 polars==1.42.1
 packaging==26.2
+pyyaml==6.0.3
