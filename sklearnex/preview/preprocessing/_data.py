@@ -26,7 +26,12 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
-from ..._device_offload import dispatch, support_sycl_format, wrap_output_data
+from ..._device_offload import (
+    dispatch,
+    support_input_format,
+    support_sycl_format,
+    wrap_output_data,
+)
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
@@ -193,6 +198,11 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     # Transform relies completely on standard scikit-learn functionality and does not need to
     # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
     transform = support_sycl_format(_sklearn_MaxAbsScaler.transform)
+
+    inverse_transform = support_input_format(_sklearn_MaxAbsScaler.inverse_transform)
+
+    transform.__doc__ = _sklearn_MaxAbsScaler.transform.__doc__
+    inverse_transform.__doc__ = _sklearn_MaxAbsScaler.inverse_transform.__doc__
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
     # explicitly from the user. We wrap properties that require a finalized state.
