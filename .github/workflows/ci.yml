@@ -139,8 +139,6 @@ jobs:
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
-          # pyyaml is needed for .circleci/deselect_tests.py, which is used in run_sklearn_tests.sh
-          pip install pyyaml
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
       - name: Sklearnex testing
@@ -253,7 +251,7 @@ jobs:
           python -m venv venv
           call .\venv\Scripts\activate.bat
           pip install --upgrade setuptools
-          pip install cpufeature pyyaml
+          pip install cpufeature
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
@@ -453,7 +451,6 @@ jobs:
         run: |
           bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
           pip install --upgrade -r requirements-test.txt
-          pip install pyyaml
           pip list
       - name: Download sklearnex wheel
         uses: actions/download-artifact@v8
