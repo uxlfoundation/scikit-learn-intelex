@@ -464,6 +464,13 @@ deselected_tests:
   # splitter update in oneDAL forest (#3649)
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float32]
 
+  # Requires newer numpy version for array API support. Skip logic might need to be changed
+  # according to numpy version used by CI jobs that run these tests - at the moment, only
+  # sklearn versions are accepted, but this should be a condition like 'skip if numpy<2.2'
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-array_api_strict-None-None] <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] <1.8
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
