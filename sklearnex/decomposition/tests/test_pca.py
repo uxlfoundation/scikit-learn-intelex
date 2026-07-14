@@ -21,7 +21,11 @@ from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -162,6 +166,10 @@ def test_create_model_behavior():
     assert_allclose(X_trans, X_trans_sparse)
 
 
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Array API requires more recent NumPy version",
+)
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
