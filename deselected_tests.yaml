@@ -464,6 +464,11 @@ deselected_tests:
   # splitter update in oneDAL forest (#3649)
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float32]
 
+  # These fail due to trying to convert array-api-strict 'device1' to NumPy.
+  # TODO: remove these after issue is fixed on sklearnex side.
+  - preprocessing/tests/test_data.py::test_preprocessing_array_api_compliance[MaxAbsScaler()-check_array_api_input_and_values-array_api_strict-device1-float32]
+  - preprocessing/tests/test_data.py::test_preprocessing_array_api_compliance[MaxAbsScaler(clip=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
