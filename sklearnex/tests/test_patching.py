@@ -580,6 +580,11 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 _check_set_output_transform(est, method, X, estimator)
 
     else:
+        # For dpnp, the method is only exercised under array_api_dispatch in the
+        # second pass below; without dispatch dpnp is no longer a supported input
+        # for sklearn-fallback methods. The first pass still runs fit (which host-
+        # transfers to numpy) to verify patching and picklability.
+        first_pass_method = method
         if dataframe == "dpnp":
             # Note: this tries to check for GPU support by checking for array API
             # support. If some class can run on GPU but doesn't support array API,
@@ -587,8 +592,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             tags = get_tags(est)
             if not (hasattr(tags, "onedal_array_api") and tags.onedal_array_api):
                 pytest.skip("No GPU support for estimator")
+            first_pass_method = None
         result, X, y = _check_estimator_patching(
-            caplog, dataframe, queue, dtype, est, method
+            caplog, dataframe, queue, dtype, est, first_pass_method
         )
         # KNN/LOF store _fit_X as dpnp even without dispatch, so pickle
         # fails (dpnp SYCL queues are not serializable)
@@ -600,12 +606,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         ]:
 
             pickle.loads(pickle.dumps(est))
-        # Without array_api_dispatch, dpnp inputs are converted to host numpy
-        # for computation, and outputs may be numpy or dpnp depending on the
-        # wrapper. This can create a type mismatch: fitted attrs may be numpy
-        # while method outputs are dpnp or vice versa. With array_api_dispatch
-        # enabled, all paths use array API consistently, so we re-fit and
-        # re-call with dispatch on to verify output types correctly.
+        # With array_api_dispatch enabled, all paths use array API consistently,
+        # so we re-fit and re-call with dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
             # Skip second pass if estimator doesn't support GPU for this data
             if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
