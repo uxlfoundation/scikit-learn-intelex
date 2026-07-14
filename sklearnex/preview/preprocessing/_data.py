@@ -18,7 +18,7 @@ from functools import partial
 
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.preprocessing._data import _handle_zeros_in_scale
-from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.utils.validation import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse
@@ -28,9 +28,7 @@ from onedal.basic_statistics import (
 
 from ..._device_offload import (
     dispatch,
-    support_input_format,
     support_sycl_format,
-    wrap_output_data,
 )
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
@@ -199,7 +197,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
     transform = support_sycl_format(_sklearn_MaxAbsScaler.transform)
 
-    inverse_transform = support_input_format(_sklearn_MaxAbsScaler.inverse_transform)
+    inverse_transform = support_sycl_format(_sklearn_MaxAbsScaler.inverse_transform)
 
     fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
     partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
