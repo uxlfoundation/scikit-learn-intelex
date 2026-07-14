@@ -611,6 +611,13 @@ def test_standard_estimator_patching_array_api(
         ) != getattr(UNPATCHED_MODELS[estimator], method, None):
             raise e
     else:
+        # Estimators without GPU fit support (e.g. SVM, neighbors) host-transfer and
+        # return numpy on GPU inputs, so output-type conformance does not apply.
+        if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
+            X_np, y_np = _as_numpy(X), _as_numpy(y)
+            if not est._onedal_gpu_supported("fit", X_np, y_np, None).get_status():
+                _check_set_output_transform(est, method, X, estimator)
+                return
         # Check return type conformance when no exception occurred. Output arrays
         # should match the input array type.
         _check_output_type(result, y, method, estimator, caplog, X=X, est=est)
