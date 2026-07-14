@@ -19,6 +19,7 @@ from functools import partial
 
 from sklearn.base import clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -32,7 +33,7 @@ from sklearnex import config_context
 from ..._device_offload import dispatch, support_input_format, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
+from ...utils._array_api import _pinvh, enable_array_api, log_likelihood
 from ...utils.validation import assert_all_finite, validate_data
 
 if sklearn_check_version("1.9"):
@@ -156,7 +157,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         est = clone(self)
         est.set_params(assume_centered=True)
 
-        # test_cov is a numpy array, but calculated on device
+        # ensure test_cov shares X's namespace and device before log_likelihood
         test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
             test_cov = xp.asarray(test_cov, device=X.device)

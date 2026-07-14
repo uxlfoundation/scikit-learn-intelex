@@ -18,6 +18,7 @@ from functools import partial
 
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.preprocessing._data import _handle_zeros_in_scale
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -29,7 +30,7 @@ from onedal.basic_statistics import (
 from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace
+from ...utils._array_api import enable_array_api
 from ...utils.validation import assert_all_finite, validate_data
 
 __check_kwargs = {

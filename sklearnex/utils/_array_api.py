@@ -22,58 +22,12 @@ from typing import Union
 
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
-from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _is_numpy_namespace
 
 from ..base import Tags, oneDALEstimator
-
-
-def get_namespace(*arrays):
-    """Get namespace of arrays.
-
-    Introspect `arrays` arguments and return their common Array API
-    compatible namespace object, if any. NumPy 1.22 and later can
-    construct such containers using the `numpy.array_api` namespace
-    for instance.
-
-    See: https://numpy.org/neps/nep-0047-array-api-standard.html
-
-    If `arrays` are regular numpy arrays, an instance of the
-    `_NumPyApiWrapper` compatibility wrapper is returned instead.
-
-    Namespace support is not enabled by default. To enabled it
-    call:
-
-      sklearn.set_config(array_api_dispatch=True)
-
-    or:
-
-      with sklearn.config_context(array_api_dispatch=True):
-          # your code here
-
-    Otherwise an instance of the `_NumPyApiWrapper`
-    compatibility wrapper is always returned irrespective of
-    the fact that arrays implement the `__array_namespace__`
-    protocol or not.
-
-    Parameters
-    ----------
-    *arrays : array objects
-        Array objects.
-
-    Returns
-    -------
-    namespace : module
-        Namespace shared by array objects.
-
-    is_array_api : bool
-        True of the arrays are containers that implement the Array API spec.
-    """
-    # sklearn contains a specially patched numpy wrapper that should be
-    # reused which is yielded from sklearn's get_namespace.
-    return sklearn_get_namespace(*arrays)
 
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:

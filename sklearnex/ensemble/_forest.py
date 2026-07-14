@@ -40,6 +40,7 @@ from sklearn.tree import (
 )
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._param_validation import Interval
 from sklearn.utils.multiclass import check_classification_targets, type_of_target
 from sklearn.utils.validation import check_array, check_is_fitted
@@ -60,7 +61,7 @@ from onedal.utils.validation import _num_features
 from .._device_offload import dispatch, support_input_format, wrap_output_data
 from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
 

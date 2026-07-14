@@ -15,10 +15,10 @@
 # ==============================================================================
 
 from sklearn.preprocessing import LabelEncoder as _sklearn_LabelEncoder
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from ._array_api import get_namespace
 from .validation import _check_sample_weight
 
 if sklearn_check_version("1.9"):

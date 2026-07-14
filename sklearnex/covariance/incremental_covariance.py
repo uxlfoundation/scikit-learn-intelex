@@ -21,6 +21,7 @@ from functools import partial
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import gen_batches
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import _num_features, check_is_fitted
 
@@ -36,7 +37,7 @@ from .._config import config_context
 from .._device_offload import dispatch, support_input_format, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
+from ..utils._array_api import _pinvh, enable_array_api, log_likelihood
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
@@ -337,7 +338,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         est = clone(self)
         est.set_params(assume_centered=True)
 
-        # test_cov is a numpy array, but calculated on device
+        # ensure test_cov shares X's namespace and device before log_likelihood
         test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
             test_cov = xp.asarray(test_cov, device=X_test.device)

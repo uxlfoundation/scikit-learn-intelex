@@ -25,6 +25,7 @@ if daal_check_version((2024, "P", 100)):
     import numpy as np
     from sklearn.decomposition import PCA as _sklearn_PCA
     from sklearn.decomposition._pca import _infer_dimension
+    from sklearn.utils._array_api import get_namespace
     from sklearn.utils._param_validation import StrOptions
     from sklearn.utils.extmath import stable_cumsum
     from sklearn.utils.validation import check_is_fitted
@@ -39,7 +40,7 @@ if daal_check_version((2024, "P", 100)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
-    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.9"):

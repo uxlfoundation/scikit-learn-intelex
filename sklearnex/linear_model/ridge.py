@@ -24,6 +24,7 @@ if daal_check_version((2024, "P", 600)):
     import numpy as np
     from sklearn.linear_model import Ridge as _sklearn_Ridge
     from sklearn.metrics import r2_score
+    from sklearn.utils._array_api import get_namespace
     from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -34,7 +35,7 @@ if daal_check_version((2024, "P", 600)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
-    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
     from ._base_linear_model import _BaseLinearModel
 

@@ -258,13 +258,16 @@ def test_incremental_pca_partial_fit_spmd_random(
             incpca_spmd.partial_fit(local_dpt_X)
         incpca.partial_fit(dpt_X)
 
-    for attribute in attributes_to_compare:
-        assert_allclose(
-            _as_numpy(getattr(incpca, attribute)),
-            _as_numpy(getattr(incpca_spmd, attribute)),
-            atol=tol,
-            err_msg=f"{attribute} is incorrect",
-        )
+    # Accessing an spmd attribute triggers the deferred finalize, which uses the
+    # array namespace of the stored (dpnp) data and must run under dispatch.
+    with config_context(array_api_dispatch=True):
+        for attribute in attributes_to_compare:
+            assert_allclose(
+                _as_numpy(getattr(incpca, attribute)),
+                _as_numpy(getattr(incpca_spmd, attribute)),
+                atol=tol,
+                err_msg=f"{attribute} is incorrect",
+            )
 
     # Configure array API dispatch status for spmd estimator
     with config_context(array_api_dispatch=True):
