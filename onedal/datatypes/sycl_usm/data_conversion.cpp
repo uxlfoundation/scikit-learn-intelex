@@ -86,8 +86,11 @@ dal::table convert_to_homogen_impl(py::object obj) {
     }
 
     // Get `__sycl_usm_array_interface__['data'][0]`, the first element of data entry,
-    // which is a Python integer encoding USM pointer value.
-    const auto* const ptr = reinterpret_cast<const Type*>(get_sua_ptr(sua_iface_dict));
+    // which is a Python integer encoding USM pointer value. The `offset` field (in
+    // elements) is applied because sliced views keep the base allocation pointer in
+    // `data[0]` and encode their start position via the offset instead.
+    const auto offset = get_sua_offset(sua_iface_dict);
+    const auto* const ptr = reinterpret_cast<const Type*>(get_sua_ptr(sua_iface_dict)) + offset;
 
     // Get SYCL object from `__sycl_usm_array_interface__["syclobj"]`.
     // syclobj: Python object from which SYCL context to which represented USM

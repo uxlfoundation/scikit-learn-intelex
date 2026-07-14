@@ -69,8 +69,9 @@ def test_max_abs_scaler_dense_fit_transform(dataframe, queue):
         X_trans_ex = scaler_ex.fit_transform(X_df)
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
-    assert_allclose(scaler_ex.scale_, scaler_sk.scale_)
-    assert_allclose(scaler_ex.max_abs_, scaler_sk.max_abs_)
+    # under array_api_dispatch, fitted attributes match the input namespace (e.g. dpnp)
+    assert_allclose(_as_numpy(scaler_ex.scale_), scaler_sk.scale_)
+    assert_allclose(_as_numpy(scaler_ex.max_abs_), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
@@ -105,8 +106,9 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
     assert scaler_ex.n_samples_seen_ == scaler_sk.n_samples_seen_
-    assert_allclose(scaler_ex.scale_, scaler_sk.scale_)
-    assert_allclose(scaler_ex.max_abs_, scaler_sk.max_abs_)
+    # under array_api_dispatch, fitted attributes match the input namespace (e.g. dpnp)
+    assert_allclose(_as_numpy(scaler_ex.scale_), scaler_sk.scale_)
+    assert_allclose(_as_numpy(scaler_ex.max_abs_), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
@@ -128,7 +130,10 @@ def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     assert hasattr(est, "scale_")
     assert hasattr(est, "max_abs_")
 
-    est.scale_ = np.ones(est.scale_.shape)
+    # scale_ must share the input namespace/device (dpnp) so transform's
+    # in-place division does not mix numpy and dpnp arrays under dispatch
+    xp = X_df.__array_namespace__()
+    est.scale_ = xp.ones(est.scale_.shape, device=X_df.device)
     with config_context(array_api_dispatch=True):
         X_trans_modified = est.transform(X_df)
 
