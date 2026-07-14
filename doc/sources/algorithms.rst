@@ -243,9 +243,7 @@ Dimensionality Reduction
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - All parameters are supported except:
-
-       - ``svd_solver`` not in [``'covariance_eigh'``, ``'full'``]
+     - 
      - Sparse data is not supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.manifold.TSNE`
