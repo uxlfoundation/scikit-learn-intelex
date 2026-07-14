@@ -89,6 +89,11 @@ from ..utils.validation import validate_data
 # parameters must extend the dictionary for checking.  This validation
 # normally occurs in the ``fit`` method.
 #
+# 11) All methods that are overridden from scikit-learn's base (e.g. 'fit')
+# or otherwise passed through some decorator must take the method docstrings
+# from scikit-learn's class, adding documentation for additional arguments
+# where appropriate, which might be accomplishable through programmatic
+# string replacements.
 
 ##########################
 # METHOD HIERARCHY NOTES #
