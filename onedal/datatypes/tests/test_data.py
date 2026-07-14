@@ -25,7 +25,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from daal4py.sklearn._utils import _package_check_version
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
-from onedal.datatypes import from_table, to_table
+from onedal.datatypes import from_table, return_type_constructor, to_table
 from onedal.utils._third_party import dpctl_available
 
 backend = _dpc_backend or _default_backend
@@ -600,6 +600,32 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
 
     # verify that table immutability is gone and copy behavior has been followed
     assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues("gpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_return_type_constructor_array_api_host_from_gpu_table(queue, dtype):
+    """array_api_strict devices are host-only, but a global GPU queue can still
+    cause oneDAL to produce a SYCL-device table for such inputs. Converting that
+    table back via ``return_type_constructor`` must transfer it to host rather
+    than raising (array_api_strict's ``from_dlpack`` does not forward the
+    'device' argument to the exporter to request that transfer itself).
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(rng.random_sample((5, 3)), dtype=dtype)
+
+    # table produced on a real SYCL/GPU queue
+    X_table = to_table(X, queue=queue)
+
+    # host-only array_api_strict "like" array, mirroring what sklearnex passes
+    # when the estimator's input was array API but not on a SYCL device
+    like = array_api_modules["array_api"].asarray(X)
+
+    func = return_type_constructor(like)
+    X_out = func(X_table)
+
+    assert X_out.__dlpack_device__() == like.__dlpack_device__()
+    assert_allclose(np.asarray(X_out), X)
 
 
 @pytest.mark.skipif(_dpc_backend is None, reason="Functionality requires DPC module")

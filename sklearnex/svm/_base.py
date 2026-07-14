@@ -822,11 +822,12 @@ class BaseSVC(BaseSVM):
         # This function is legacy from the original implementation and needs
         # to be refactored.
 
+        if xp is None:
+            xp, _ = get_namespace(decision_function)
+
         predictions = xp.asarray(decision_function < 0, dtype=decision_function.dtype)
         confidences = -decision_function
 
-        if xp is None:
-            xp, _ = get_namespace(decision_function)
         # use `zeros_like` to support correct device allocation while still
         # supporting numpy < 1.26
         votes = xp.full_like(decision_function[:, :n_classes], n_classes)
