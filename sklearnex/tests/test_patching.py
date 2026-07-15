@@ -28,7 +28,6 @@ import numpy as np
 import numpy.random as nprnd
 import pytest
 from scipy import sparse as sp
-from sklearn import config_context as sklearn_get_config_context
 from sklearn import get_config as sklearn_get_config
 from sklearn.base import BaseEstimator, is_clusterer, is_regressor
 from sklearn.svm._base import BaseLibSVM
@@ -128,30 +127,17 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
     ), f"sklearnex patching issue in roc_auc_score with log: \n{caplog.text}"
 
 
-def _sklearn_also_fails(est, method, dataframe, queue, dtype):
-    """Whether the equivalent stock sklearn estimator also fails under dispatch.
-
-    Some special-instance configurations are not array API viable in sklearn
-    itself. Such a failure is a sklearn conformance gap rather than a sklearnex
-    regression, so it is tolerated only when stock sklearn reproduces it.
-    """
-    name = type(est).__name__
-    if name not in UNPATCHED_MODELS:
-        return False
-    # drop sklearnex-only constructor params (e.g. n_jobs) sklearn does not accept
-    sklearn_cls = UNPATCHED_MODELS[name]
-    accepted = set(signature(sklearn_cls.__init__).parameters)
-    params = {k: v for k, v in est.get_params().items() if k in accepted}
-    sklearn_est = sklearn_cls(**params)
-    try:
-        X, y = gen_dataset(sklearn_est, queue=queue, target_df=dataframe, dtype=dtype)[0]
-        with sklearn_get_config_context(array_api_dispatch=True):
-            sklearn_est.fit(X, y)
-            if method:
-                call_method(sklearn_est, method, X, y)
-    except Exception:
-        return True
-    return False
+# (estimator, method) pairs whose special-instance config is not array API viable in
+# stock sklearn itself: they raise a TypeError under array_api_dispatch, so the failure
+# is a sklearn conformance gap rather than a sklearnex regression and is tolerated in
+# test_special_estimator_patching_array_api. Any other failure there is treated as real.
+_SKLEARN_ARRAY_API_GAPS = {
+    ("SVC", "predict_log_proba"),
+    ("NuSVC", "predict_log_proba"),
+    ("DummyRegressor", "predict"),
+    ("DummyRegressor", "score"),
+    ("LocalOutlierFactor", "predict"),
+}
 
 
 def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
@@ -534,6 +520,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     _check_set_output_transform(est, method, X, estimator)
 
 
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues("dpnp,array_api"))
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
@@ -593,10 +583,6 @@ def test_standard_estimator_patching_array_api(
             "Array API support not implemented in either scikit-learn or scikit-learn-intelex"
         )
 
-    if dataframe == "array_api" and not _package_check_version("2.0", np.__version__):
-        # numpy < 2.0 does not support keyword arguments in from_dlpack()
-        pytest.skip("numpy < 2.0 does not fully support the array API dlpack protocol.")
-
     try:
         result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
@@ -611,7 +597,7 @@ def test_standard_estimator_patching_array_api(
         ) != getattr(UNPATCHED_MODELS[estimator], method, None):
             raise e
     else:
-        # Estimators without GPU fit support (e.g. SVM, neighbors) host-transfer and
+        # Estimators without GPU fit support (e.g. neighbors) host-transfer and
         # return numpy on GPU inputs, so output-type conformance does not apply.
         if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
             X_np, y_np = _as_numpy(X), _as_numpy(y)
@@ -641,6 +627,10 @@ def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, 
     _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
 
 
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues("dpnp,array_api"))
 @pytest.mark.parametrize("estimator, method", gen_models_info(SPECIAL_INSTANCES))
@@ -664,11 +654,11 @@ def test_special_estimator_patching_array_api(
     try:
         _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
     except Exception as e:
-        # some special-instance configs (e.g. DummyRegressor(constant=1.0),
-        # SVC.predict_log_proba) are not array API viable in sklearn itself. When the
-        # equivalent stock sklearn estimator fails the same way under dispatch this is
-        # a sklearn conformance gap and is allowed; otherwise the failure is real.
-        if not _sklearn_also_fails(est, method, dataframe, queue, dtype):
+        # These special-instance methods are not array API viable in stock sklearn
+        # itself (they raise a TypeError under array_api_dispatch), so the failure is
+        # a sklearn conformance gap rather than a sklearnex regression. Any other
+        # failure is real and re-raised.
+        if (type(est).__name__, method) not in _SKLEARN_ARRAY_API_GAPS:
             raise e
 
 
