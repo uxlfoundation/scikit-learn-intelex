@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from contextlib import nullcontext
-
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -58,9 +56,7 @@ def generate_dense_dataset(n_samples, n_features, density, n_clusters):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -72,10 +68,7 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
         n_clusters=3, random_state=0, algorithm=algorithm, init=init
     ).fit(X_dense_df)
 
-    if daal_check_version((2023, "P", 200)):
-        assert "sklearnex" in kmeans_dense.__module__
-    else:
-        assert "daal4py" in kmeans_dense.__module__
+    assert "sklearnex" in kmeans_dense.__module__
 
 
 @pytest.mark.skipif(
@@ -83,9 +76,7 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     reason="Sparse data requires oneDAL>=2024.7.0",
 )
 @pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -101,9 +92,7 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 def test_results_on_dense_gold_data(dataframe, queue, algorithm):
     from sklearnex.cluster import KMeans
 
@@ -135,9 +124,7 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
 )
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("init", ["k-means++", "random", "arraylike"])
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize(
     "dims", [(1000, 10, 0.95, 3), (50000, 100, 0.75, 10), (10000, 10, 0.8, 5)]
 )
@@ -169,10 +156,6 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     )
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.5"),
-    reason="Functionality introduced in later sklearn versions.",
-)
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
@@ -197,9 +180,6 @@ def test_transform_output_torch(output_format, transform_output):
 
 
 # Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_gpu(dataframe, queue, transform_output):
@@ -216,9 +196,6 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
 
 
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
-@pytest.mark.skipif(
-    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
-)
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
 )
@@ -274,20 +251,13 @@ def test_cov_error_on_incompatible_devices(with_array_api):
         _ = model.score(X_gpu)
 
 
-@pytest.mark.parametrize(
-    "array_api", [False] + ([True] if sklearn_check_version("1.5") else [])
-)
+@pytest.mark.parametrize("array_api", [False, True])
 def test_sparse_predict_on_dense_fit(array_api):
     rng = np.random.default_rng(seed=123)
     X = rng.random(size=(50, 3), dtype=np.float32)
     X_sp = CSR_CTOR(X)
 
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
+    with config_context(array_api_dispatch=array_api):
         model = KMeans().fit(X)
         sp_pred = model.predict(X_sp)
         sp_transf = model.transform(X_sp)

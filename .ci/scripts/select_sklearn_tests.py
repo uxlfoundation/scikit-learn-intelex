@@ -17,8 +17,6 @@
 import argparse
 import sys
 
-from daal4py.sklearn._utils import sklearn_check_version
-
 
 def parse_tests_tree(entry, prefix=""):
     global tests_list
@@ -51,11 +49,10 @@ tests_map = {
     "metrics/tests": ["test_pairwise.py", "test_ranking.py"],
     "model_selection/tests": ["test_split.py", "test_validation.py"],
     "neighbors/tests": ["test_lof.py", "test_neighbors.py", "test_neighbors_pipeline.py"],
+    "preprocessing/tests": ["test_common.py", "test_data.py"],
     "svm/tests": ["test_sparse.py", "test_svm.py"],
-    "tests": "test_dummy.py",
+    "tests": ["test_public_functions.py"],
 }
-if sklearn_check_version("1.2"):
-    tests_map["tests"] = ["test_public_functions.py"]
 
 
 if __name__ == "__main__":

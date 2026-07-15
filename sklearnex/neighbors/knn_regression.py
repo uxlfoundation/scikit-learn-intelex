@@ -39,17 +39,14 @@ if sklearn_check_version("1.9"):
     )
 
 
-@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
     # Default onedal estimator class - SPMD subclasses can override this
     _onedal_estimator = onedal_KNeighborsRegressor
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_KNeighborsRegressor._parameter_constraints
-        }
+    _parameter_constraints: dict = {**_sklearn_KNeighborsRegressor._parameter_constraints}
 
     def __init__(
         self,
@@ -288,7 +285,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
             if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="_fit_X", method="kenighbors")
+                check_same_namespace(X, self, attribute="_fit_X", method="kneighbors")
         else:
             query_is_train = True
             X = self._fit_X

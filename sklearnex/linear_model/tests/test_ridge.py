@@ -20,10 +20,6 @@ from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 
 from daal4py.sklearn._utils import daal_check_version
-from daal4py.sklearn.linear_model.tests.test_ridge import (
-    _test_multivariate_ridge_alpha_shape,
-    _test_multivariate_ridge_coefficients,
-)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -98,12 +94,7 @@ def test_sklearnex_import_ridge(dataframe, queue):
     y_c = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     ridge_reg = Ridge(alpha=0.5).fit(X_c, y_c)
 
-    if daal_check_version((2024, "P", 600)):
-        assert (
-            "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
-        )
-    else:
-        assert "daal4py" in ridge_reg.__module__
+    assert "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
 
     assert_allclose(ridge_reg.intercept_, 3.86, rtol=1e-2)
     assert_allclose(ridge_reg.coef_, [0.91, 1.64], rtol=1e-2)
@@ -168,20 +159,6 @@ def test_ridge_predict_before_fit(dataframe, queue):
 
     with pytest.raises(NotFittedError):
         model.predict(X_c)
-
-
-@pytest.mark.skip(reason="Forced to use original sklearn for now.")
-def test_sklearnex_multivariate_ridge_coefs():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_coefficients(Ridge, random_state=0)
-
-
-@pytest.mark.skip(reason="Forced to use original sklearn for now.")
-def test_sklearnex_multivariate_ridge_alpha_shape():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_alpha_shape(Ridge, random_state=0)
 
 
 @pytest.mark.skipif(
