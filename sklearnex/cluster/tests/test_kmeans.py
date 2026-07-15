@@ -297,17 +297,17 @@ def _kmeans_convert(arr, xp, device):
     return xp.asarray(arr, device=device)
 
 
-# array_api_strict output conversion fails on numpy < 2.2: numpy < 2.2 returns a
+# array_api_strict output conversion fails on numpy < 2.2.5: numpy < 2.2.5 returns a
 # read-only fitted array that ``to_table`` cannot export through DLPack
-# (BufferError); numpy >= 2.2 returns a writeable array, so it works there.
+# (BufferError); numpy >= 2.2.5 returns a writeable array, so it works there.
 # TODO: remove this skip once sklearnex handles read-only arrays in the oneDAL data
-# conversion so array_api_strict works on numpy < 2.2 as well.
+# conversion so array_api_strict works on numpy < 2.2.5 as well.
 _KMEANS_ARRAY_API_STRICT = pytest.param(
     array_api_strict,
     None,
     marks=pytest.mark.skipif(
-        not _package_check_version("2.2.0", np.__version__),
-        reason="TODO: sklearnex read-only DLPack conversion fails on numpy<2.2",
+        not _package_check_version("2.2.5", np.__version__),
+        reason="TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5",
     ),
 )
 
