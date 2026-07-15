@@ -107,7 +107,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             f"sklearn.covariance.{class_name}.{method_name}"
         )
         if method_name in ["fit", "mahalanobis"]:
-            (X,) = data
+            X = data[0]
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
