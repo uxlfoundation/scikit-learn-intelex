@@ -73,7 +73,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             f"sklearn.preprocessing.{self.__class__.__name__}.{method_name}"
         )
         if method_name in ["fit", "partial_fit"]:
-            (X,) = data
+            X = data[0]
             try:
                 X_test = _check_array(X)
                 assert_all_finite(X_test)  # minimally verify the data
