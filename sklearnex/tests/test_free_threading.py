@@ -84,8 +84,9 @@ def test_independent_linear_regressions_run_concurrently_without_gil():
 
 
 def test_shared_daal4py_algorithm_is_serialized():
-    import daal4py
     import numpy as np
+
+    import daal4py
 
     x = np.arange(400, dtype=np.float64).reshape(200, 2)
     y = (3.0 * x[:, 0] - 2.0 * x[:, 1] + 5.0).reshape(-1, 1)
@@ -93,9 +94,11 @@ def test_shared_daal4py_algorithm_is_serialized():
 
     def train_and_predict(_):
         model = training.compute(x.copy(), y.copy()).model
-        prediction = daal4py.linear_regression_prediction().compute(
-            x[:10].copy(), model
-        ).prediction
+        prediction = (
+            daal4py.linear_regression_prediction()
+            .compute(x[:10].copy(), model)
+            .prediction
+        )
         np.testing.assert_allclose(prediction[:, 0], y[:10, 0], rtol=1e-7, atol=1e-7)
         return prediction
 
@@ -108,8 +111,9 @@ def test_shared_daal4py_algorithm_is_serialized():
 
 
 def test_daal4py_numeric_table_protocol_is_thread_local():
-    import daal4py._daal4py as backend
     import numpy as np
+
+    import daal4py._daal4py as backend
 
     arrays = (
         np.full((32, 4), 11.0, dtype=np.float64),
@@ -160,5 +164,9 @@ def test_onedal_table_keeps_numpy_and_csr_owners_alive():
     del csr
     gc.collect()
     _ = [np.empty(expected_dense.size, dtype=np.float64) for _ in range(128)]
-    np.testing.assert_array_equal(from_table(csr_table).toarray(), expected_csr)
+    csr_data, csr_indices, csr_indptr = from_table(csr_table)
+    actual_csr = sparse.csr_matrix(
+        (csr_data, csr_indices, csr_indptr), shape=expected_csr.shape
+    )
+    np.testing.assert_array_equal(actual_csr.toarray(), expected_csr)
     assert not sys._is_gil_enabled()

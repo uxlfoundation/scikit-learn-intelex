@@ -17,7 +17,6 @@
 
 [tool.black]
 line-length = 90
-extend-ignore = 'E203'
 
 [tool.isort]
 profile = "black"

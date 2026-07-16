@@ -132,7 +132,7 @@ if(DEFINED PYTHON_EXECUTABLE)
         )
     endif()
 endif()
-if(DEFINED EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
+if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
     message(FATAL_ERROR
         "CMake selected Python SOABI ${Python_SOABI}, expected ${EXPECTED_PYTHON_SOABI}"
     )
@@ -204,46 +204,34 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_CXX_FLAGS "-fsycl ${CMAKE_CXX_FLAGS}")
-        
+
     endif()
 
     if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_C_FLAGS "-fsycl ${CMAKE_C_FLAGS}")
     endif()
 
-    # oneDAL ABI 4 unified host and SYCL entry points in the regular
-    # libonedal/libonedal_parameters pair. ABI 3 and older used *_dpc libs.
-    if(ONEDAL_MAJOR_BINARY GREATER_EQUAL 4)
-        set(ONEDAL_DPC_BASENAME "onedal")
-        set(ONEDAL_DPC_PARAMETERS_BASENAME "onedal_parameters")
-        set(ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME "onedal_core_parameters_dll")
-    else()
-        set(ONEDAL_DPC_BASENAME "onedal_dpc")
-        set(ONEDAL_DPC_PARAMETERS_BASENAME "onedal_parameters_dpc")
-        set(ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME "onedal_core_parameters_dpc_dll")
-    endif()
-
     set(ONEDAL_LIBRARIES "")
     if(WIN32)
-        list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_BASENAME}_dll.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "onedal_dpc_dll.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_core_dll.${ONEDAL_MAJOR_BINARY}")
     elseif(APPLE)
-        list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_BASENAME}.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "onedal_dpc.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_core.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_thread.${ONEDAL_MAJOR_BINARY}")
     else()
-        list(APPEND ONEDAL_LIBRARIES "-l:lib${ONEDAL_DPC_BASENAME}.so.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "-l:libonedal_dpc.so.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "-l:libonedal_core.so.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "-l:libonedal_thread.so.${ONEDAL_MAJOR_BINARY}")
     endif()
 
     if(oneDAL_USE_PARAMETERS_LIB)
         if(WIN32)
-            list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME}.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "onedal_core_parameters_dpc_dll.${ONEDAL_MAJOR_BINARY}")
         elseif(APPLE)
-            list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_PARAMETERS_BASENAME}.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "onedal_parameters_dpc.${ONEDAL_MAJOR_BINARY}")
         else()
-            list(APPEND ONEDAL_LIBRARIES "-l:lib${ONEDAL_DPC_PARAMETERS_BASENAME}.so.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "-l:libonedal_parameters_dpc.so.${ONEDAL_MAJOR_BINARY}")
         endif()
     endif()
 

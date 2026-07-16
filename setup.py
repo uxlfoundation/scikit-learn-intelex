@@ -104,9 +104,7 @@ if (not no_dist) and (mpi_root is None):
         " Use 'NO_DIST=1' to build without distributed mode."
     )
 onedal_shared_libs = get_onedal_shared_libs(dal_root, IS_WIN)
-dpc_backend_library = (
-    "onedal" if ONEDAL_MAJOR_BINARY_VERSION >= 4 else "onedal_dpc"
-)
+dpc_backend_library = "onedal_dpc"
 dpcpp = (
     shutil.which("icpx" if not IS_WIN else "icx") is not None
     and dpc_backend_library in onedal_shared_libs

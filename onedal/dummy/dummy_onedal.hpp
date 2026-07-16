@@ -270,7 +270,7 @@ struct infer_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
         auto col_c = input.constant.get_column_count();
-        assert(input.get_kind() == dal::homogen_table::kind());
+        assert(input.constant.get_kind() == dal::homogen_table::kind());
         result_t result;
         const byte_t* ptr =
             dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))

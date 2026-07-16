@@ -37,10 +37,7 @@ def _get_required_onedal_libraries(
         raise ValueError(f"Unsupported oneDAL backend: {iface}")
 
     is_dpc = iface in ("dpc", "spmd_dpc")
-    # oneDAL ABI 4 unified host and SYCL entry points in libonedal. Older
-    # releases expose a separate libonedal_dpc and parameters_dpc pair.
-    uses_split_dpc_libraries = is_dpc and major_version < 4
-    backend_name = "onedal_dpc" if uses_split_dpc_libraries else "onedal"
+    backend_name = "onedal_dpc" if is_dpc else "onedal"
     library_names = [backend_name, "onedal_core"]
     if not is_win:
         library_names.append("onedal_thread")
@@ -48,15 +45,11 @@ def _get_required_onedal_libraries(
         if is_win:
             parameter_name = (
                 "onedal_core_parameters_dpc_dll"
-                if uses_split_dpc_libraries
+                if is_dpc
                 else "onedal_core_parameters_dll"
             )
         else:
-            parameter_name = (
-                "onedal_parameters_dpc"
-                if uses_split_dpc_libraries
-                else "onedal_parameters"
-            )
+            parameter_name = "onedal_parameters_dpc" if is_dpc else "onedal_parameters"
         library_names.append(parameter_name)
 
     if is_win:
@@ -198,7 +191,6 @@ def custom_build_cmake_clib(
         "-DONEDAL_MAJOR_BINARY=" + str(onedal_major_binary_version),
         "-DPYTHON_EXECUTABLE=" + sys.executable,
         "-DPython_EXECUTABLE=" + sys.executable,
-        "-DEXPECTED_PYTHON_SOABI=" + get_config_var("SOABI"),
         "-DPYTHON_INCLUDE_DIR=" + python_include,
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
         "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
@@ -208,6 +200,10 @@ def custom_build_cmake_clib(
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
     ]
+
+    python_soabi = get_config_var("SOABI")
+    if python_soabi:
+        cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
 
     if debug_build:
         cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]

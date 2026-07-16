@@ -36,8 +36,7 @@ void mpi_check(int code, const char * operation)
 
 int mpi_count(size_t value, const char * name)
 {
-    if (value > static_cast<size_t>(std::numeric_limits<int>::max()))
-        throw std::overflow_error(std::string(name) + " exceeds MPI int count range");
+    if (value > static_cast<size_t>(std::numeric_limits<int>::max())) throw std::overflow_error(std::string(name) + " exceeds MPI int count range");
     return static_cast<int>(value);
 }
 } // namespace
@@ -55,8 +54,7 @@ void mpi_transceiver::init()
     int provided = MPI_THREAD_SINGLE;
     if (!initialized)
     {
-        mpi_check(MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided),
-                  "MPI_Init_thread");
+        mpi_check(MPI_Init_thread(nullptr, nullptr, MPI_THREAD_MULTIPLE, &provided), "MPI_Init_thread");
         m_owns_mpi = true;
     }
     else
@@ -71,8 +69,7 @@ void mpi_transceiver::init()
             MPI_Finalize();
             m_owns_mpi = false;
         }
-        throw std::runtime_error(
-            "daal4py distributed free-threaded execution requires MPI_THREAD_MULTIPLE");
+        throw std::runtime_error("daal4py distributed free-threaded execution requires MPI_THREAD_MULTIPLE");
     }
 
     transceiver_impl::init();
@@ -87,7 +84,7 @@ void mpi_transceiver::fini()
         mpi_check(MPI_Finalized(&finalized), "MPI_Finalized");
         if (!finalized) mpi_check(MPI_Finalize(), "MPI_Finalize");
     }
-    m_owns_mpi  = false;
+    m_owns_mpi    = false;
     m_initialized = false;
 }
 
@@ -107,39 +104,22 @@ size_t mpi_transceiver::me()
 
 void mpi_transceiver::send(const void * buff, size_t N, size_t recpnt, size_t tag)
 {
-    mpi_check(MPI_Send(buff,
-                       mpi_count(N, "send size"),
-                       MPI_CHAR,
-                       mpi_count(recpnt, "recipient"),
-                       mpi_count(tag, "tag"),
-                       MPI_COMM_WORLD),
-              "MPI_Send");
+    mpi_check(MPI_Send(buff, mpi_count(N, "send size"), MPI_CHAR, mpi_count(recpnt, "recipient"), mpi_count(tag, "tag"), MPI_COMM_WORLD), "MPI_Send");
 }
 
 size_t mpi_transceiver::recv(void * buff, size_t N, int sender, int tag)
 {
     MPI_Status status;
-    mpi_check(MPI_Recv(buff,
-                       mpi_count(N, "receive size"),
-                       MPI_CHAR,
-                       sender,
-                       tag,
-                       MPI_COMM_WORLD,
-                       &status),
-              "MPI_Recv");
+    mpi_check(MPI_Recv(buff, mpi_count(N, "receive size"), MPI_CHAR, sender, tag, MPI_COMM_WORLD, &status), "MPI_Recv");
     int count = 0;
     mpi_check(MPI_Get_count(&status, MPI_CHAR, &count), "MPI_Get_count");
     return static_cast<size_t>(count);
 }
 
-void * mpi_transceiver::gather(const void * ptr,
-                               size_t N,
-                               size_t root,
-                               const size_t * sizes,
-                               bool varying)
+void * mpi_transceiver::gather(const void * ptr, size_t N, size_t root, const size_t * sizes, bool varying)
 {
-    char * buff = nullptr;
-    const int count = mpi_count(N, "gather size");
+    char * buff         = nullptr;
+    const int count     = mpi_count(N, "gather size");
     const int root_rank = mpi_count(root, "root rank");
     if (varying)
     {
@@ -151,25 +131,15 @@ void * mpi_transceiver::gather(const void * ptr,
             for (size_t i = 0; i < m_nMembers; ++i)
             {
                 offsets[i] = mpi_count(total, "gather offset");
-                counts[i] = mpi_count(sizes[i], "gather member size");
-                if (sizes[i] > std::numeric_limits<size_t>::max() - total)
-                    throw std::overflow_error("gather total size overflow");
+                counts[i]  = mpi_count(sizes[i], "gather member size");
+                if (sizes[i] > std::numeric_limits<size_t>::max() - total) throw std::overflow_error("gather total size overflow");
                 total += sizes[i];
             }
             buff = static_cast<char *>(daal::services::daal_malloc(total));
             DAAL4PY_CHECK_MALLOC(buff);
             try
             {
-                mpi_check(MPI_Gatherv(ptr,
-                                      count,
-                                      MPI_CHAR,
-                                      buff,
-                                      counts.data(),
-                                      offsets.data(),
-                                      MPI_CHAR,
-                                      root_rank,
-                                      MPI_COMM_WORLD),
-                          "MPI_Gatherv");
+                mpi_check(MPI_Gatherv(ptr, count, MPI_CHAR, buff, counts.data(), offsets.data(), MPI_CHAR, root_rank, MPI_COMM_WORLD), "MPI_Gatherv");
             }
             catch (...)
             {
@@ -179,38 +149,20 @@ void * mpi_transceiver::gather(const void * ptr,
         }
         else
         {
-            mpi_check(MPI_Gatherv(ptr,
-                                  count,
-                                  MPI_CHAR,
-                                  nullptr,
-                                  nullptr,
-                                  nullptr,
-                                  MPI_CHAR,
-                                  root_rank,
-                                  MPI_COMM_WORLD),
-                      "MPI_Gatherv");
+            mpi_check(MPI_Gatherv(ptr, count, MPI_CHAR, nullptr, nullptr, nullptr, MPI_CHAR, root_rank, MPI_COMM_WORLD), "MPI_Gatherv");
         }
     }
     else
     {
         if (m_me == root)
         {
-            if (N && m_nMembers > std::numeric_limits<size_t>::max() / N)
-                throw std::overflow_error("gather allocation size overflow");
+            if (N && m_nMembers > std::numeric_limits<size_t>::max() / N) throw std::overflow_error("gather allocation size overflow");
             buff = static_cast<char *>(daal::services::daal_malloc(m_nMembers * N));
             DAAL4PY_CHECK_MALLOC(buff);
         }
         try
         {
-            mpi_check(MPI_Gather(ptr,
-                                 count,
-                                 MPI_CHAR,
-                                 buff,
-                                 count,
-                                 MPI_CHAR,
-                                 root_rank,
-                                 MPI_COMM_WORLD),
-                      "MPI_Gather");
+            mpi_check(MPI_Gather(ptr, count, MPI_CHAR, buff, count, MPI_CHAR, root_rank, MPI_COMM_WORLD), "MPI_Gather");
         }
         catch (...)
         {
@@ -258,40 +210,17 @@ static MPI_Op to_mpi(transceiver_iface::operation_type operation)
 
 void mpi_transceiver::bcast(void * ptr, size_t N, size_t root)
 {
-    mpi_check(MPI_Bcast(ptr,
-                        mpi_count(N, "broadcast size"),
-                        MPI_CHAR,
-                        mpi_count(root, "root rank"),
-                        MPI_COMM_WORLD),
-              "MPI_Bcast");
+    mpi_check(MPI_Bcast(ptr, mpi_count(N, "broadcast size"), MPI_CHAR, mpi_count(root, "root rank"), MPI_COMM_WORLD), "MPI_Bcast");
 }
 
-void mpi_transceiver::reduce_all(void * inout,
-                                 transceiver_iface::type_type T,
-                                 size_t N,
-                                 transceiver_iface::operation_type operation)
+void mpi_transceiver::reduce_all(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type operation)
 {
-    mpi_check(MPI_Allreduce(MPI_IN_PLACE,
-                            inout,
-                            mpi_count(N, "allreduce count"),
-                            to_mpi(T),
-                            to_mpi(operation),
-                            MPI_COMM_WORLD),
-              "MPI_Allreduce");
+    mpi_check(MPI_Allreduce(MPI_IN_PLACE, inout, mpi_count(N, "allreduce count"), to_mpi(T), to_mpi(operation), MPI_COMM_WORLD), "MPI_Allreduce");
 }
 
-void mpi_transceiver::reduce_exscan(void * inout,
-                                    transceiver_iface::type_type T,
-                                    size_t N,
-                                    transceiver_iface::operation_type operation)
+void mpi_transceiver::reduce_exscan(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type operation)
 {
-    mpi_check(MPI_Exscan(MPI_IN_PLACE,
-                         inout,
-                         mpi_count(N, "exscan count"),
-                         to_mpi(T),
-                         to_mpi(operation),
-                         MPI_COMM_WORLD),
-              "MPI_Exscan");
+    mpi_check(MPI_Exscan(MPI_IN_PLACE, inout, mpi_count(N, "exscan count"), to_mpi(T), to_mpi(operation), MPI_COMM_WORLD), "MPI_Exscan");
 }
 
 extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
@@ -302,7 +231,7 @@ extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
     };
     PyObject * module = PyModule_Create(&moduledef);
     if (!module) return nullptr;
-#if PY_VERSION_HEX >= 0x030D0000
+#if PY_VERSION_HEX >= 0x030D0000 && defined(Py_GIL_DISABLED)
     if (PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED) < 0)
     {
         Py_DECREF(module);
@@ -311,7 +240,7 @@ extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
 #endif
 
     transceiver_instance = std::make_shared<mpi_transceiver>();
-    PyObject * pointer = PyLong_FromVoidPtr(static_cast<void *>(&transceiver_instance));
+    PyObject * pointer   = PyLong_FromVoidPtr(static_cast<void *>(&transceiver_instance));
     if (!pointer || PyModule_AddObject(module, "transceiver", pointer) < 0)
     {
         Py_XDECREF(pointer);

@@ -116,9 +116,7 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
 
     auto owner = make_python_owner(reinterpret_cast<PyObject *>(np_data));
     return csr_table_t(
-        dal::array<T>(data_pointer,
-                      data_count,
-                      [owner = std::move(owner)](const T *) {}),
+        dal::array<T>(data_pointer, data_count, [owner = std::move(owner)](const T *) {}),
         column_indices_one_based,
         row_indices_one_based,
 #if ONEDAL_VERSION <= 20230100
@@ -196,8 +194,7 @@ dal::table convert_to_table(py::object inp_obj,
                 py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
             }
         }
-        py::object py_data =
-            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "data"));
+        py::object py_data = py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "data"));
         py::object py_column_indices =
             py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "indices"));
         py::object py_row_indices =
@@ -241,7 +238,7 @@ dal::table convert_to_table(py::object inp_obj,
     res = convert_to_csr_impl<CType>(np_data.ptr(),           \
                                      np_column_indices.ptr(), \
                                      np_row_indices.ptr(),    \
-                                     row_count,         \
+                                     row_count,               \
                                      column_count);
         SET_NPY_FEATURE(array_type(np_data.ptr()),
                         array_type_sizeof(np_data.ptr()),

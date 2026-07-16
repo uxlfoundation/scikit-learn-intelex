@@ -34,7 +34,7 @@ class gil_state_guard
 public:
     gil_state_guard() : state(PyGILState_Ensure()) {}
     ~gil_state_guard() { PyGILState_Release(state); }
-    gil_state_guard(const gil_state_guard &)            = delete;
+    gil_state_guard(const gil_state_guard &)             = delete;
     gil_state_guard & operator=(const gil_state_guard &) = delete;
 
 private:
@@ -66,8 +66,7 @@ std::shared_ptr<transceiver> create_transceiver()
     if (!ptr) throw_python_error("Transceiver module has no 'transceiver' attribute");
 
     void * raw = PyLong_AsVoidPtr(ptr.get());
-    if (PyErr_Occurred() || !raw)
-        throw_python_error("Invalid transceiver pointer exported by Python module");
+    if (PyErr_Occurred() || !raw) throw_python_error("Invalid transceiver pointer exported by Python module");
 
     auto iface = reinterpret_cast<std::shared_ptr<transceiver_iface> *>(raw);
     return std::make_shared<transceiver>(*iface);

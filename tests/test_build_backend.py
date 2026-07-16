@@ -96,10 +96,10 @@ def test_get_onedal_library_dir_accepts_windows_conda_layout(tmp_path):
             False,
             False,
             [
-                "libonedal.so.4",
+                "libonedal_dpc.so.4",
                 "libonedal_core.so.4",
                 "libonedal_thread.so.4",
-                "libonedal_parameters.so.4",
+                "libonedal_parameters_dpc.so.4",
             ],
         ),
         (
@@ -131,9 +131,7 @@ def test_required_onedal_libraries_are_platform_specific(
     iface, major_version, is_win, is_mac, expected
 ):
     assert (
-        _get_required_onedal_libraries(
-            iface, major_version, is_win=is_win, is_mac=is_mac
-        )
+        _get_required_onedal_libraries(iface, major_version, is_win=is_win, is_mac=is_mac)
         == expected
     )
 
