@@ -23,7 +23,7 @@
 class mpi_transceiver : public transceiver_impl
 {
 public:
-    mpi_transceiver() : transceiver_impl() {}
+    mpi_transceiver() : transceiver_impl(), m_owns_mpi(false) {}
 
     virtual void init();
 
@@ -44,6 +44,9 @@ public:
     virtual void reduce_all(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type op);
 
     virtual void reduce_exscan(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type op);
+
+private:
+    bool m_owns_mpi;
 };
 
 #endif // _MPI_TRANSCEIVER_INCLUDED_

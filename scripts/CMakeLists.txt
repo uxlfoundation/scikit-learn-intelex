@@ -14,14 +14,16 @@
 # limitations under the License.
 #===============================================================================
 
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project("oneDAL python interface"
     LANGUAGES CXX
     HOMEPAGE_URL https://github.com/uxlfoundation/oneDAL
 )
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -36,11 +38,23 @@ message(STATUS "SKLEARNEX_GCOV:" ${SKLEARNEX_GCOV})
 option(USING_LLD "Using LLD as linker" OFF)
 message(STATUS "USING_LLD:" ${USING_LLD})
 
-if(WIN32)
-    # hint CMake to get python from PYTHON env. variable if defined
-    if(DEFINED ENV{PYTHON})
-        set(PYTHON_EXECUTABLE $ENV{PYTHON})
+set(SKLEARNEX_SANITIZER "" CACHE STRING "Sanitizer: address, undefined, or thread")
+set_property(CACHE SKLEARNEX_SANITIZER PROPERTY STRINGS "" address undefined thread)
+if(SKLEARNEX_SANITIZER)
+    if(NOT UNIX OR APPLE)
+        message(FATAL_ERROR "SKLEARNEX_SANITIZER is currently supported only on Linux")
     endif()
+    if(NOT SKLEARNEX_SANITIZER MATCHES "^(address|undefined|thread)$")
+        message(FATAL_ERROR "Unsupported sanitizer: ${SKLEARNEX_SANITIZER}")
+    endif()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+    add_compile_options(-fno-omit-frame-pointer -fno-sanitize-recover=all
+                        "-fsanitize=${SKLEARNEX_SANITIZER}")
+    add_link_options("-fsanitize=${SKLEARNEX_SANITIZER}")
+endif()
+message(STATUS "SKLEARNEX_SANITIZER:" ${SKLEARNEX_SANITIZER})
+
+if(WIN32)
     set(SDL_FLAGS "-GS -DynamicBase")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MD")
 elseif(UNIX)
@@ -107,6 +121,24 @@ endif()
 
 message(STATUS "oneDAL_USE_PARAMETERS_LIB:" ${oneDAL_USE_PARAMETERS_LIB})
 
+set(PYBIND11_FINDPYTHON ON)
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+if(DEFINED PYTHON_EXECUTABLE)
+    get_filename_component(EXPECTED_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}" REALPATH)
+    get_filename_component(FOUND_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" REALPATH)
+    if(NOT FOUND_PYTHON_EXECUTABLE STREQUAL EXPECTED_PYTHON_EXECUTABLE)
+        message(FATAL_ERROR
+            "CMake selected Python ${Python_EXECUTABLE}, but the build was invoked with ${PYTHON_EXECUTABLE}"
+        )
+    endif()
+endif()
+if(DEFINED EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
+    message(FATAL_ERROR
+        "CMake selected Python SOABI ${Python_SOABI}, expected ${EXPECTED_PYTHON_SOABI}"
+    )
+endif()
+message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
+message(STATUS "Python_SOABI:" ${Python_SOABI})
 find_package(pybind11 REQUIRED)
 
 if(IFACE STREQUAL "host")
@@ -179,27 +211,39 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
         set(CMAKE_C_FLAGS "-fsycl ${CMAKE_C_FLAGS}")
     endif()
 
+    # oneDAL ABI 4 unified host and SYCL entry points in the regular
+    # libonedal/libonedal_parameters pair. ABI 3 and older used *_dpc libs.
+    if(ONEDAL_MAJOR_BINARY GREATER_EQUAL 4)
+        set(ONEDAL_DPC_BASENAME "onedal")
+        set(ONEDAL_DPC_PARAMETERS_BASENAME "onedal_parameters")
+        set(ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME "onedal_core_parameters_dll")
+    else()
+        set(ONEDAL_DPC_BASENAME "onedal_dpc")
+        set(ONEDAL_DPC_PARAMETERS_BASENAME "onedal_parameters_dpc")
+        set(ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME "onedal_core_parameters_dpc_dll")
+    endif()
+
     set(ONEDAL_LIBRARIES "")
     if(WIN32)
-        list(APPEND ONEDAL_LIBRARIES "onedal_dpc_dll.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_BASENAME}_dll.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_core_dll.${ONEDAL_MAJOR_BINARY}")
     elseif(APPLE)
-        list(APPEND ONEDAL_LIBRARIES "onedal_dpc.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_BASENAME}.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_core.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "onedal_thread.${ONEDAL_MAJOR_BINARY}")
     else()
-        list(APPEND ONEDAL_LIBRARIES "-l:libonedal_dpc.so.${ONEDAL_MAJOR_BINARY}")
+        list(APPEND ONEDAL_LIBRARIES "-l:lib${ONEDAL_DPC_BASENAME}.so.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "-l:libonedal_core.so.${ONEDAL_MAJOR_BINARY}")
         list(APPEND ONEDAL_LIBRARIES "-l:libonedal_thread.so.${ONEDAL_MAJOR_BINARY}")
     endif()
 
     if(oneDAL_USE_PARAMETERS_LIB)
         if(WIN32)
-            list(APPEND ONEDAL_LIBRARIES "onedal_core_parameters_dpc_dll.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_PARAMETERS_WINDOWS_BASENAME}.${ONEDAL_MAJOR_BINARY}")
         elseif(APPLE)
-            list(APPEND ONEDAL_LIBRARIES "onedal_parameters_dpc.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "${ONEDAL_DPC_PARAMETERS_BASENAME}.${ONEDAL_MAJOR_BINARY}")
         else()
-            list(APPEND ONEDAL_LIBRARIES "-l:libonedal_parameters_dpc.so.${ONEDAL_MAJOR_BINARY}")
+            list(APPEND ONEDAL_LIBRARIES "-l:lib${ONEDAL_DPC_PARAMETERS_BASENAME}.so.${ONEDAL_MAJOR_BINARY}")
         endif()
     endif()
 

@@ -60,11 +60,16 @@ from .wrappers import hpat_types
 cython_header = """
 # distutils: language = c++
 #cython: language_level=2
+#cython: freethreading_compatible=True
 
 # Import the Python-level symbols of numpy
 import numpy as np
 
+import cython
 import sys
+from threading import RLock
+
+_daal_global_lock = RLock()
 
 # Import the C-level symbols of numpy
 cimport numpy as npc
@@ -136,6 +141,8 @@ cdef extern from "daal4py.h":
     cdef object make_nda(list_NumericTablePtr * nt_ptr) except +
     cdef object make_nda(dict_NumericTablePtr * nt_ptr, void *) except +
     cdef NumericTablePtr make_nt(PyObject * nda) except +
+    cdef object make_nt_capsule_for_testing(PyObject * nda) except +
+    cdef object roundtrip_nt_for_testing(PyObject * nda) except +
     cdef list_NumericTablePtr make_datacoll(PyObject * nda) except +
     cdef dict_NumericTablePtr make_dnt(PyObject * nda, void *) except +
 
@@ -179,7 +186,8 @@ def daalinit(nthreads: int = -1) -> None:
 
     :rtype: None
     '''
-    c_daalinit(nthreads)
+    with _daal_global_lock:
+        c_daalinit(nthreads)
 
 def daalfini() -> None:
     '''
@@ -199,7 +207,8 @@ def daalfini() -> None:
 
     :rtype: None
     '''
-    c_daalfini()
+    with _daal_global_lock:
+        c_daalfini()
 
 def num_threads() -> int:
     '''
@@ -209,7 +218,8 @@ def num_threads() -> int:
 
     :rtype: int
     '''
-    return c_num_threads()
+    with _daal_global_lock:
+        return c_num_threads()
 
 def num_procs() -> int:
     '''
@@ -222,7 +232,8 @@ def num_procs() -> int:
 
     :rtype: int
     '''
-    return c_num_procs()
+    with _daal_global_lock:
+        return c_num_procs()
 
 def my_procid() -> int:
     '''
@@ -236,7 +247,8 @@ def my_procid() -> int:
 
     :rtype: int
     '''
-    return c_my_procid()
+    with _daal_global_lock:
+        return c_my_procid()
 
 def enable_thread_pinning(enabled: bool = True) -> None:
     '''
@@ -255,7 +267,16 @@ def enable_thread_pinning(enabled: bool = True) -> None:
 
     :rtype: None
     '''
-    c_enable_thread_pinning(enabled)
+    with _daal_global_lock:
+        c_enable_thread_pinning(enabled)
+
+def _make_nt_capsule_for_testing(obj):
+    return make_nt_capsule_for_testing(<PyObject*>obj)
+
+
+def _roundtrip_nt_for_testing(obj):
+    return roundtrip_nt_for_testing(<PyObject*>obj)
+
 
 def get_data(x):
     if isinstance(x, pdDataFrame):
@@ -449,12 +470,14 @@ cdef class {{flatname}}:
     def __init__(self, int64_t ptr=0):
         self.c_ptr = <{{class_type|flat}}>ptr
 
+    @cython.critical_section
     def __repr__(self):
         return _str(self, [{% for m in enum_gets+named_gets %}'{{m[1]}}',{% endfor %}])
 {% for m in enum_gets+named_gets %}
 {% set rtype = m[2]|d2cy(False) if m in enum_gets else m[0]|d2cy(False) %}
 
     @property
+    @cython.critical_section
     def {{m[1]}}(self):
 {% if ('Ptr' in rtype and 'NumericTablePtr' not in rtype) or '__iface__' in rtype %}
 {% set frtype=(rtype.strip(' *&')|flat(False)|strip(' *')).replace('Ptr', '')|lower %}
@@ -490,6 +513,7 @@ cdef class {{flatname}}:
 {% if (flatname.startswith('gbt_') or flatname.startswith('decision_forest')) \
     and flatname.endswith('model') %}
     @property
+    @cython.critical_section
     def NumberOfTrees(self):
         '''
         NumberOfTrees
@@ -518,6 +542,7 @@ cdef class {{flatname}}:
 
 {% for m in get_methods %}
 {% set frtype = m[0].replace('Ptr', '')|d2cy(False)|lower %}
+    @cython.critical_section
     def {{m[1]|d2cy(False)}}(self, {{m[2]|d2cy(False)}} {{m[3]}}):
         ':type: {{frtype}} (or derived)'
         if not is_valid_ptrptr(self.c_ptr):
@@ -535,12 +560,17 @@ cdef class {{flatname}}:
 {% endif %}
 {% endfor %}
 
+    @cython.critical_section
     def __setstate__(self, state):
+        cdef {{class_type|flat}} old_ptr
         if isinstance(state, bytes):
+           old_ptr = self.c_ptr
            self.c_ptr = deserialize_si[{{class_type|flat|strip(' *')}}](state)
+           del old_ptr
         else:
            raise ValueError("Invalid state .....")
 
+    @cython.critical_section
     def __getstate__(self):
         if self.c_ptr == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -553,7 +583,8 @@ cdef class {{flatname}}:
 
 
 cdef api void * unbox_{{flatname}}(a):
-    return (<{{flatname}}>a).c_ptr
+    with cython.critical_section(a):
+        return (<{{flatname}}>a).c_ptr
 
 
 hpat_spec.append({
@@ -873,6 +904,7 @@ struct {{algo}}_manager{% if template_decl|length != template_args|length %}\
 {{gen_typedefs(ns, template_decl, template_args, mode="Batch")}}
     {{args_all|fmt('{}', 'decl_member', sep=';\n')|indent(4)}};
     daal::services::SharedPtr< algob_type > _algob;
+    std::recursive_mutex _mutex;
 
 {% if streaming.name %}
 {{gen_typedefs(ns, template_decl, template_args, mode="Online", suffix="stream")}}
@@ -948,6 +980,7 @@ private:
 
     typename iomb_type::result_type * finalize()
     {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
 {% if distributed.name %}
         if({{distributed.arg_member}}) throw std::invalid_argument(
             "finalize() not supported in distributed mode"
@@ -1012,6 +1045,7 @@ public:
         {{input_args|fmt('{}', 'decl_cpp', sep=',\n')|indent(46)}},
         bool setup_only = false)
     {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         {{input_args|fmt('{}', 'assign_member', sep=';\n')|indent(8)}};
 
 {% set batchcall = '('+streaming.arg_member+' ? stream() : batch(setup_only))' \
@@ -1028,6 +1062,7 @@ public:
 {% if add_get_result %}
     typename iomb_type::result_type * get_result()
     {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         return new typename iomb_type::result_type(iomb_type::getResult(*_algob));
     }
 {% endif %}
@@ -1106,7 +1141,10 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% set cytype = result_map.class_type.replace('Ptr', '')|d2cy(False)|lower %}
-    # compute simply forwards to the C++ de-templatized manager__iface__::compute
+    # The native per-manager mutex protects state across the full oneDAL call.
+    # Do not hold a suspendable Python critical section across ThreadAllow:
+    # another thread could acquire it while blocked on the native mutex and
+    # prevent the first thread from reattaching.
     def _compute(self,
                  {{input_args|fmt('{}', 'decl_dflt_cy', sep=',\n')|indent(17)}},
                  setup=False):
@@ -1149,7 +1187,7 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% if streaming.name %}
-    # finalize simply forwards to the C++ de-templatized manager__iface__::finalize
+    # finalize is serialized by the native per-manager mutex.
     def finalize(self):
         if self.c_ptr.get() == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -1188,7 +1226,7 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% if streaming.name %}
-    # finalize simply forwards to the C++ de-templatized manager__iface__::finalize
+    # finalize is serialized by the native per-manager mutex.
     def finalize(self):
         if self.c_ptr.get() == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -1202,8 +1240,9 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 cdef api void * unbox_{{algo}}(object a):
-    algo = <{{algo}}>a
-    return _daal_clone(algo.c_ptr)
+    with cython.critical_section(a):
+        algo = <{{algo}}>a
+        return _daal_clone(algo.c_ptr)
 """
 
 # generates the C++ algorithm construction function
@@ -1452,7 +1491,7 @@ class wrapper_gen(object):
         """
         cpp = (
             "#ifndef DAAL4PY_CPP_INC_\n"
-            + "#define DAAL4PY_CPP_INC_\n#include <daal4py_dist.h>\n\n"
+            + "#define DAAL4PY_CPP_INC_\n#include <daal4py_dist.h>\n#include <mutex>\n\n"
         )
         pyx = ""
         for i in self.ifaces:

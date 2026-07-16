@@ -45,6 +45,7 @@ cdef class logistic_regression_model_builder:
     def __dealloc__(self):
         del self.c_ptr
 
+    @cython.critical_section
     def set_beta(self, beta, intercept):
         '''
         Concatenate beta and intercept, convert to daal4py model
@@ -61,6 +62,7 @@ cdef class logistic_regression_model_builder:
         return self.c_ptr.setBeta(numTableBeta)
 
     @property
+    @cython.critical_section
     def model(self):
         '''
         Get built model

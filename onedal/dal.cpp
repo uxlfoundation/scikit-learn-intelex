@@ -106,7 +106,7 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
 #ifdef ONEDAL_DATA_PARALLEL
 PYBIND11_MODULE(_onedal_py_dpc, m) {
 #else
-PYBIND11_MODULE(_onedal_py_host, m) {
+PYBIND11_MODULE(_onedal_py_host, m, py::mod_gil_not_used()) {
 #endif
     init_sycl(m);
     init_policy(m);

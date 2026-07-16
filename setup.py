@@ -103,9 +103,13 @@ if (not no_dist) and (mpi_root is None):
         "'MPIROOT' is not set, cannot build with distributed mode."
         " Use 'NO_DIST=1' to build without distributed mode."
     )
+onedal_shared_libs = get_onedal_shared_libs(dal_root, IS_WIN)
+dpc_backend_library = (
+    "onedal" if ONEDAL_MAJOR_BINARY_VERSION >= 4 else "onedal_dpc"
+)
 dpcpp = (
     shutil.which("icpx" if not IS_WIN else "icx") is not None
-    and "onedal_dpc" in get_onedal_shared_libs(dal_root, IS_WIN)
+    and dpc_backend_library in onedal_shared_libs
     and not no_dpc
     and not (IS_WIN and debug_build)
 )
@@ -136,7 +140,7 @@ else:
     DIST_CPPS = ["src/transceiver.cpp"]
     MPI_INCDIRS = [jp(mpi_root, "include")]
     MPI_LIBDIRS = [jp(mpi_root, "lib")]
-    MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+    MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
     if MPI_LIBNAME:
         MPI_LIBS = [MPI_LIBNAME]
     elif IS_WIN:
@@ -309,6 +313,16 @@ def get_build_options():
     # Security flags
     eca += get_sdl_cflags()
     ela += get_sdl_ldflags()
+
+    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
+    if sanitizer:
+        if sanitizer not in ("address", "undefined", "thread"):
+            raise ValueError(f"Unsupported sanitizer: {sanitizer}")
+        if not IS_LIN:
+            raise ValueError("Sanitizers are currently supported only on Linux")
+        sanitizer_flag = f"-fsanitize={sanitizer}"
+        eca += ["-fno-omit-frame-pointer", "-fno-sanitize-recover=all", sanitizer_flag]
+        ela += [sanitizer_flag]
 
     if DEBUG_BUILD and not IS_WIN:
         eca += ["-g"]

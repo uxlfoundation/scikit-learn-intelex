@@ -20,12 +20,87 @@ import logging
 import os
 import platform as plt
 import subprocess
+import sys
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
 import numpy as np
 
 logger = logging.getLogger("sklearnex")
+
+
+def _get_required_onedal_libraries(
+    iface, major_version, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return the exact oneDAL libraries required by the selected backend."""
+    if iface not in ("host", "dpc", "spmd_dpc"):
+        raise ValueError(f"Unsupported oneDAL backend: {iface}")
+
+    is_dpc = iface in ("dpc", "spmd_dpc")
+    # oneDAL ABI 4 unified host and SYCL entry points in libonedal. Older
+    # releases expose a separate libonedal_dpc and parameters_dpc pair.
+    uses_split_dpc_libraries = is_dpc and major_version < 4
+    backend_name = "onedal_dpc" if uses_split_dpc_libraries else "onedal"
+    library_names = [backend_name, "onedal_core"]
+    if not is_win:
+        library_names.append("onedal_thread")
+    if use_parameters_lib:
+        if is_win:
+            parameter_name = (
+                "onedal_core_parameters_dpc_dll"
+                if uses_split_dpc_libraries
+                else "onedal_core_parameters_dll"
+            )
+        else:
+            parameter_name = (
+                "onedal_parameters_dpc"
+                if uses_split_dpc_libraries
+                else "onedal_parameters"
+            )
+        library_names.append(parameter_name)
+
+    if is_win:
+        library_names = [
+            name if name.endswith("_dll") else f"{name}_dll" for name in library_names
+        ]
+        return [f"{name}.{major_version}.lib" for name in library_names]
+    if is_mac:
+        return [f"lib{name}.{major_version}.dylib" for name in library_names]
+    return [f"lib{name}.so.{major_version}" for name in library_names]
+
+
+def _get_onedal_library_dir(
+    dal_root,
+    arch_dir,
+    iface="host",
+    major_version=1,
+    use_parameters_lib=True,
+    is_win=False,
+    is_mac=False,
+):
+    """Find a complete oneDAL library directory in packaged and classic layouts."""
+    candidates = [jp(dal_root, "lib", arch_dir)]
+    if is_win:
+        candidates.append(jp(dal_root, "Library", "lib"))
+    candidates.append(jp(dal_root, "lib"))
+    required = _get_required_onedal_libraries(
+        iface,
+        major_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=is_mac,
+    )
+
+    checked = []
+    for candidate in candidates:
+        missing = [name for name in required if not os.path.isfile(jp(candidate, name))]
+        if not missing:
+            return candidate
+        checked.append(f"{candidate} (missing: {', '.join(missing)})")
+
+    raise FileNotFoundError(
+        "Could not find a complete oneDAL library set: " + "; ".join(checked)
+    )
 
 
 def custom_build_cmake_clib(
@@ -77,7 +152,7 @@ def custom_build_cmake_clib(
     if build_distribute:
         MPI_INCDIRS = jp(mpi_root, "include")
         MPI_LIBDIRS = jp(mpi_root, "lib")
-        MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+        MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
         if MPI_LIBNAME:
             MPI_LIBS = MPI_LIBNAME
         elif is_win:
@@ -92,6 +167,16 @@ def custom_build_cmake_clib(
     arch_dir = plt.machine()
     plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
     arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
+    onedal_library_dir = _get_onedal_library_dir(
+        os.environ["DALROOT"],
+        arch_dir,
+        iface=iface,
+        major_version=onedal_major_binary_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=plt.system() == "Darwin",
+    )
+    logger.info(f"oneDAL library directory: {onedal_library_dir}")
     use_parameters_arg = "yes" if use_parameters_lib else "no"
     logger.info(f"Build using parameters library: {use_parameters_arg}")
 
@@ -111,11 +196,14 @@ def custom_build_cmake_clib(
         "-DCMAKE_PREFIX_PATH=" + install_directory,
         "-DIFACE=" + iface,
         "-DONEDAL_MAJOR_BINARY=" + str(onedal_major_binary_version),
+        "-DPYTHON_EXECUTABLE=" + sys.executable,
+        "-DPython_EXECUTABLE=" + sys.executable,
+        "-DEXPECTED_PYTHON_SOABI=" + get_config_var("SOABI"),
         "-DPYTHON_INCLUDE_DIR=" + python_include,
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
         "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
         "-DoneDAL_INCLUDE_DIRS=" + jp(os.environ["DALROOT"], "include"),
-        "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
+        "-DoneDAL_LIBRARY_DIR=" + onedal_library_dir,
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
@@ -123,6 +211,12 @@ def custom_build_cmake_clib(
 
     if debug_build:
         cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]
+
+    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
+    if sanitizer:
+        if sanitizer not in ("address", "undefined", "thread"):
+            raise ValueError(f"Unsupported sanitizer: {sanitizer}")
+        cmake_args += [f"-DSKLEARNEX_SANITIZER={sanitizer}"]
 
     if build_distribute:
         cmake_args += [

@@ -16,6 +16,7 @@
 
 #define NO_IMPORT_ARRAY
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -41,6 +42,15 @@ typedef oneapi::dal::detail::csr_table csr_table_t;
 typedef oneapi::dal::csr_table csr_table_t;
 #endif
 
+static std::shared_ptr<PyObject> make_python_owner(PyObject *obj) {
+    Py_INCREF(obj);
+    return std::shared_ptr<PyObject>(obj, [](PyObject *owner) {
+        const PyGILState_STATE state = PyGILState_Ensure();
+        Py_DECREF(owner);
+        PyGILState_Release(state);
+    });
+}
+
 template <typename T>
 inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     std::int64_t column_count = 1;
@@ -61,18 +71,13 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     // which is default on oneDAL side.
     const auto layout =
         array_is_behaved_C(np_data) ? dal::data_layout::row_major : dal::data_layout::column_major;
-    auto res_table = dal::homogen_table(
+    auto owner = make_python_owner(reinterpret_cast<PyObject *>(np_data));
+    return dal::homogen_table(
         data_pointer,
         row_count,
         column_count,
-        [np_data](const T *data) {
-            Py_DECREF(np_data);
-        },
+        [owner = std::move(owner)](const T *) {},
         layout);
-
-    // we need to increment the ref-count as we use the input array in-place
-    Py_INCREF(np_data);
-    return res_table;
 }
 
 template <typename T>
@@ -109,12 +114,11 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     const T *data_pointer = static_cast<T *>(array_data(np_data));
     const std::int64_t data_count = static_cast<std::int64_t>(array_size(np_data, 0));
 
-    auto res_table = csr_table_t(
+    auto owner = make_python_owner(reinterpret_cast<PyObject *>(np_data));
+    return csr_table_t(
         dal::array<T>(data_pointer,
                       data_count,
-                      [np_data](const T *) {
-                          Py_DECREF(np_data);
-                      }),
+                      [owner = std::move(owner)](const T *) {}),
         column_indices_one_based,
         row_indices_one_based,
 #if ONEDAL_VERSION <= 20230100
@@ -122,10 +126,6 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
         row_count,
 #endif
         column_count);
-
-    // we need to increment the ref-count as we use the input array in-place
-    Py_INCREF(np_data);
-    return res_table;
 }
 
 dal::table convert_to_table(py::object inp_obj,
@@ -196,32 +196,38 @@ dal::table convert_to_table(py::object inp_obj,
                 py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
             }
         }
-        PyObject *py_data = PyObject_GetAttrString(obj, "data");
-        PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
-        PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");
-
-        PyObject *py_shape = PyObject_GetAttrString(obj, "shape");
-        if (!(is_array(py_data) && is_array(py_column_indices) && is_array(py_row_indices) &&
-              array_numdims(py_data) == 1 && array_numdims(py_column_indices) == 1 &&
-              array_numdims(py_row_indices) == 1)) {
+        py::object py_data =
+            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "data"));
+        py::object py_column_indices =
+            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "indices"));
+        py::object py_row_indices =
+            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "indptr"));
+        py::object py_shape =
+            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "shape"));
+        if (!(py_data && py_column_indices && py_row_indices && py_shape &&
+              is_array(py_data.ptr()) && is_array(py_column_indices.ptr()) &&
+              is_array(py_row_indices.ptr()) && array_numdims(py_data.ptr()) == 1 &&
+              array_numdims(py_column_indices.ptr()) == 1 &&
+              array_numdims(py_row_indices.ptr()) == 1)) {
             throw std::invalid_argument("[convert_to_table] Got invalid csr_matrix object.");
         }
-        PyObject *np_data = PyArray_FROMANY(py_data, array_type(py_data), 0, 0, NPY_ARRAY_CARRAY);
-        PyObject *np_column_indices =
-            PyArray_FROMANY(py_column_indices,
+        py::object np_data = py::reinterpret_steal<py::object>(
+            PyArray_FROMANY(py_data.ptr(), array_type(py_data.ptr()), 0, 0, NPY_ARRAY_CARRAY));
+        py::object np_column_indices = py::reinterpret_steal<py::object>(
+            PyArray_FROMANY(py_column_indices.ptr(),
                             NPY_UINT64,
                             0,
                             0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
-        PyObject *np_row_indices =
-            PyArray_FROMANY(py_row_indices,
+                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
+        py::object np_row_indices = py::reinterpret_steal<py::object>(
+            PyArray_FROMANY(py_row_indices.ptr(),
                             NPY_UINT64,
                             0,
                             0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
+                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
 
-        PyObject *np_row_count = PyTuple_GetItem(py_shape, 0);
-        PyObject *np_column_count = PyTuple_GetItem(py_shape, 1);
+        PyObject *np_row_count = PyTuple_GetItem(py_shape.ptr(), 0);
+        PyObject *np_column_count = PyTuple_GetItem(py_shape.ptr(), 1);
         if (!(np_data && np_column_indices && np_row_indices && np_row_count && np_column_count)) {
             throw std::invalid_argument(
                 "[convert_to_table] Failed accessing csr data when converting csr_matrix.\n");
@@ -231,19 +237,17 @@ dal::table convert_to_table(py::object inp_obj,
         const std::int64_t column_count =
             static_cast<std::int64_t>(PyLong_AsSsize_t(np_column_count));
 
-#define MAKE_CSR_TABLE(CType)                           \
-    res = convert_to_csr_impl<CType>(np_data,           \
-                                     np_column_indices, \
-                                     np_row_indices,    \
+#define MAKE_CSR_TABLE(CType)                                 \
+    res = convert_to_csr_impl<CType>(np_data.ptr(),           \
+                                     np_column_indices.ptr(), \
+                                     np_row_indices.ptr(),    \
                                      row_count,         \
                                      column_count);
-        SET_NPY_FEATURE(array_type(np_data),
-                        array_type_sizeof(np_data),
+        SET_NPY_FEATURE(array_type(np_data.ptr()),
+                        array_type_sizeof(np_data.ptr()),
                         MAKE_CSR_TABLE,
                         throw py::type_error("Found unsupported data type in csr_matrix"));
 #undef MAKE_CSR_TABLE
-        Py_DECREF(np_column_indices);
-        Py_DECREF(np_row_indices);
     }
     else {
         throw std::invalid_argument(
