@@ -15,7 +15,9 @@
 # ==============================================================================
 
 import importlib.util
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -144,3 +146,60 @@ def test_get_onedal_library_dir_reports_missing_sonames(tmp_path):
     assert str(tmp_path / "lib" / "intel64") in message
     assert "libonedal_thread.so.4" in message
     assert str(tmp_path / "lib") in message
+
+
+@pytest.mark.parametrize("is_win", [False, True])
+@pytest.mark.parametrize(
+    "debug_build,expected_build_type",
+    [(False, "Release"), (True, "Debug")],
+)
+def test_cmake_build_type_is_explicit(
+    monkeypatch, tmp_path, is_win, debug_build, expected_build_type
+):
+    dal_root = tmp_path / "dal"
+    if is_win:
+        library_dir = dal_root / "Library" / "lib"
+        libraries = (
+            "onedal_dll.4.lib",
+            "onedal_core_dll.4.lib",
+            "onedal_core_parameters_dll.4.lib",
+        )
+    else:
+        library_dir = dal_root / "lib" / "intel64"
+        libraries = LINUX_HOST_LIBRARIES
+    _create_libraries(library_dir, libraries)
+
+    monkeypatch.setenv("DALROOT", str(dal_root))
+    monkeypatch.delenv("SKLEARNEX_SANITIZER", raising=False)
+    monkeypatch.setitem(
+        sys.modules, "pybind11", SimpleNamespace(get_cmake_dir=lambda: "pybind11-cmake")
+    )
+    monkeypatch.setattr(build_backend.np, "get_include", lambda: "numpy-include")
+    monkeypatch.setattr(build_backend, "get_paths", lambda: {"include": "python-include"})
+    monkeypatch.setattr(
+        build_backend,
+        "get_config_var",
+        lambda name: {
+            "LIBDEST": str(tmp_path / "python" / "Lib"),
+            "LIBDIR": str(tmp_path / "python" / "lib"),
+            "SOABI": "cp312-win_amd64" if is_win else "cpython-312-x86_64-linux-gnu",
+        }.get(name),
+    )
+
+    calls = []
+    monkeypatch.setattr(
+        build_backend.subprocess,
+        "check_call",
+        lambda command, env: calls.append(command),
+    )
+
+    build_backend.custom_build_cmake_clib(
+        "host",
+        onedal_major_binary_version=4,
+        is_win=is_win,
+        is_lin=not is_win,
+        debug_build=debug_build,
+    )
+
+    build_type_args = [arg for arg in calls[0] if arg.startswith("-DCMAKE_BUILD_TYPE=")]
+    assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]

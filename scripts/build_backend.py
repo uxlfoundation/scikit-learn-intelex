@@ -199,14 +199,12 @@ def custom_build_cmake_clib(
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
+        f"-DCMAKE_BUILD_TYPE={'Debug' if debug_build else 'Release'}",
     ]
 
     python_soabi = get_config_var("SOABI")
     if python_soabi:
         cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
-
-    if debug_build:
-        cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]
 
     sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
     if sanitizer:
