@@ -148,13 +148,19 @@ def test_get_onedal_library_dir_reports_missing_sonames(tmp_path):
     assert str(tmp_path / "lib") in message
 
 
-@pytest.mark.parametrize("is_win", [False, True])
 @pytest.mark.parametrize(
-    "debug_build,expected_build_type",
-    [(False, "Release"), (True, "Debug")],
+    "is_win,debug_build,sanitizer,expected_build_type",
+    [
+        (False, False, None, "Release"),
+        (False, True, None, "Debug"),
+        (True, False, None, "Release"),
+        (True, True, None, "Debug"),
+        (False, False, "address", "RelWithDebInfo"),
+        (False, True, "address", "Debug"),
+    ],
 )
 def test_cmake_build_type_is_explicit(
-    monkeypatch, tmp_path, is_win, debug_build, expected_build_type
+    monkeypatch, tmp_path, is_win, debug_build, sanitizer, expected_build_type
 ):
     dal_root = tmp_path / "dal"
     if is_win:
@@ -170,7 +176,10 @@ def test_cmake_build_type_is_explicit(
     _create_libraries(library_dir, libraries)
 
     monkeypatch.setenv("DALROOT", str(dal_root))
-    monkeypatch.delenv("SKLEARNEX_SANITIZER", raising=False)
+    if sanitizer:
+        monkeypatch.setenv("SKLEARNEX_SANITIZER", sanitizer)
+    else:
+        monkeypatch.delenv("SKLEARNEX_SANITIZER", raising=False)
     monkeypatch.setitem(
         sys.modules, "pybind11", SimpleNamespace(get_cmake_dir=lambda: "pybind11-cmake")
     )
@@ -203,3 +212,5 @@ def test_cmake_build_type_is_explicit(
 
     build_type_args = [arg for arg in calls[0] if arg.startswith("-DCMAKE_BUILD_TYPE=")]
     assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
+    sanitizer_args = [arg for arg in calls[0] if arg.startswith("-DSKLEARNEX_SANITIZER=")]
+    assert sanitizer_args == ([f"-DSKLEARNEX_SANITIZER={sanitizer}"] if sanitizer else [])

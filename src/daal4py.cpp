@@ -378,7 +378,13 @@ static constexpr const char * numeric_table_capsule_name = "daal4py.NumericTable
 
 static void delete_numeric_table_capsule(PyObject * capsule)
 {
-    auto ptr = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule, numeric_table_capsule_name));
+    const char * name = PyCapsule_GetName(capsule);
+    if (PyErr_Occurred())
+    {
+        PyErr_Clear();
+        return;
+    }
+    auto ptr = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule, name));
     if (ptr)
         delete ptr;
     else
@@ -403,7 +409,13 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
             // consume and delete the transferred pointer exactly once.
             PyOwnedRef capsule(PyObject_CallMethod(obj, "__2daalnt__", NULL));
             py_err_check();
-            auto nt = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule.get(), numeric_table_capsule_name));
+            if (!PyCapsule_CheckExact(capsule.get())) throw std::invalid_argument("__2daalnt__ must return a capsule");
+            const char * capsule_name = PyCapsule_GetName(capsule.get());
+            py_err_check();
+            if (capsule_name && std::strcmp(capsule_name, numeric_table_capsule_name) != 0) throw std::invalid_argument("__2daalnt__ returned a capsule with an unsupported name");
+            // Keep accepting the legacy unnamed capsule while producers migrate
+            // to the typed protocol.
+            auto nt = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule.get(), capsule_name));
             py_err_check();
             auto ntptr = *nt;
             if (PyCapsule_SetDestructor(capsule.get(), nullptr) < 0) py_err_check();
@@ -581,10 +593,10 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
     return daal::data_management::NumericTablePtr();
 }
 
-PyObject * make_nt_capsule_for_testing(PyObject * obj)
+PyObject * make_nt_capsule_for_testing(PyObject * obj, bool legacy)
 {
     auto ptr           = std::make_unique<daal::data_management::NumericTablePtr>(make_nt(obj));
-    PyObject * capsule = PyCapsule_New(ptr.get(), numeric_table_capsule_name, delete_numeric_table_capsule);
+    PyObject * capsule = PyCapsule_New(ptr.get(), legacy ? nullptr : numeric_table_capsule_name, delete_numeric_table_capsule);
     if (!capsule) throw std::runtime_error("Creating NumericTablePtr capsule failed");
     ptr.release();
     return capsule;

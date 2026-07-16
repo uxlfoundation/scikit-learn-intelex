@@ -16,7 +16,6 @@
 
 #include "mpi/mpi_transceiver.h"
 #include <Python.h>
-#include <condition_variable>
 #include <cstdlib>
 #include <memory>
 #include <mutex>
@@ -24,8 +23,6 @@
 
 static std::shared_ptr<transceiver> s_trsc;
 static std::mutex s_mtx;
-static std::condition_variable s_cv;
-static bool s_initializing = false;
 
 namespace
 {
@@ -55,7 +52,6 @@ using pyobject_ptr = std::unique_ptr<PyObject, pyobject_deleter>;
 
 std::shared_ptr<transceiver> create_transceiver()
 {
-    gil_state_guard gil;
     const char * modname = std::getenv("D4P_TRANSCEIVER");
     if (!modname) modname = "daal4py.mpi_transceiver";
 
@@ -76,29 +72,17 @@ std::shared_ptr<transceiver> create_transceiver()
 std::shared_ptr<transceiver> get_transceiver()
 {
     {
-        std::unique_lock<std::mutex> lock(s_mtx);
-        s_cv.wait(lock, [] { return !s_initializing; });
-        if (s_trsc) return s_trsc;
-        s_initializing = true;
-    }
-
-    std::shared_ptr<transceiver> candidate;
-    try
-    {
-        candidate = create_transceiver();
-    }
-    catch (...)
-    {
         std::lock_guard<std::mutex> lock(s_mtx);
-        s_initializing = false;
-        s_cv.notify_all();
-        throw;
+        if (s_trsc) return s_trsc;
     }
 
+    // Acquire the Python runtime before publishing any native initialization
+    // state. On GIL builds this prevents a GIL-holding waiter from blocking an
+    // initializer that still needs the GIL; on free-threaded builds s_mtx keeps
+    // the import and MPI initialization single-shot.
+    gil_state_guard gil;
     std::lock_guard<std::mutex> lock(s_mtx);
-    s_trsc         = std::move(candidate);
-    s_initializing = false;
-    s_cv.notify_all();
+    if (!s_trsc) s_trsc = create_transceiver();
     return s_trsc;
 }
 
@@ -106,8 +90,7 @@ void del_transceiver()
 {
     std::shared_ptr<transceiver> old;
     {
-        std::unique_lock<std::mutex> lock(s_mtx);
-        s_cv.wait(lock, [] { return !s_initializing; });
+        std::lock_guard<std::mutex> lock(s_mtx);
         old.swap(s_trsc);
     }
     // Destruction can call into MPI and therefore must happen outside the

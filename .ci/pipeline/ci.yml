@@ -92,6 +92,7 @@ jobs:
       Python3.13_Sklearn1.9:
         PYTHON_VERSION: '3.13'
         SKLEARN_VERSION: '1.9'
+        RUN_MPI_TESTS: '1'
       Python3.14_Sklearn1.9:
         PYTHON_VERSION: '3.14'
         SKLEARN_VERSION: '1.9'

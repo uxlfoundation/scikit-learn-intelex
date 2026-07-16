@@ -45,6 +45,17 @@ typedef oneapi::dal::csr_table csr_table_t;
 static std::shared_ptr<PyObject> make_python_owner(PyObject *obj) {
     Py_INCREF(obj);
     return std::shared_ptr<PyObject>(obj, [](PyObject *owner) {
+        // Attaching a thread during interpreter shutdown can hang indefinitely.
+        // Leaking this final reference is preferable to entering the runtime after
+        // finalization has started; the process is already tearing down.
+        if (!Py_IsInitialized()) {
+            return;
+        }
+#if PY_VERSION_HEX >= 0x030D0000
+        if (Py_IsFinalizing()) {
+            return;
+        }
+#endif
         const PyGILState_STATE state = PyGILState_Ensure();
         Py_DECREF(owner);
         PyGILState_Release(state);

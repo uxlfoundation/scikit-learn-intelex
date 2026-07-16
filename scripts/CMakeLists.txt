@@ -139,7 +139,7 @@ if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI 
 endif()
 message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
 message(STATUS "Python_SOABI:" ${Python_SOABI})
-find_package(pybind11 REQUIRED)
+find_package(pybind11 2.13 REQUIRED)
 
 if(IFACE STREQUAL "host")
     set(TARGET "_onedal_py_host")
@@ -266,7 +266,11 @@ else()
     message(FATAL_ERROR "Invalid IFACE value: " ${IFACE})
 endif()
 
-pybind11_add_module(${TARGET} ${sources})
+if(SKLEARNEX_SANITIZER)
+    pybind11_add_module(${TARGET} NO_EXTRAS ${sources})
+else()
+    pybind11_add_module(${TARGET} ${sources})
+endif()
 
 set(EXTERNAL_INCLUDE_DIRECTORIES
     ${PYTHON_ONEDAL}../

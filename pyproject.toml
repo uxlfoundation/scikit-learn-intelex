@@ -14,6 +14,17 @@
 # limitations under the License.
 #===============================================================================
 
+[build-system]
+requires = [
+    "setuptools>=64",
+    "wheel",
+    "Cython>=3.1",
+    "Jinja2",
+    "numpy>=2,<3",
+    "pybind11>=2.13",
+    "cmake>=3.18",
+]
+build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 90

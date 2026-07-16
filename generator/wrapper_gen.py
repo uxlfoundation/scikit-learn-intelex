@@ -141,7 +141,7 @@ cdef extern from "daal4py.h":
     cdef object make_nda(list_NumericTablePtr * nt_ptr) except +
     cdef object make_nda(dict_NumericTablePtr * nt_ptr, void *) except +
     cdef NumericTablePtr make_nt(PyObject * nda) except +
-    cdef object make_nt_capsule_for_testing(PyObject * nda) except +
+    cdef object make_nt_capsule_for_testing(PyObject * nda, bool legacy) except +
     cdef object roundtrip_nt_for_testing(PyObject * nda) except +
     cdef list_NumericTablePtr make_datacoll(PyObject * nda) except +
     cdef dict_NumericTablePtr make_dnt(PyObject * nda, void *) except +
@@ -270,8 +270,8 @@ def enable_thread_pinning(enabled: bool = True) -> None:
     with _daal_global_lock:
         c_enable_thread_pinning(enabled)
 
-def _make_nt_capsule_for_testing(obj):
-    return make_nt_capsule_for_testing(<PyObject*>obj)
+def _make_nt_capsule_for_testing(obj, legacy=False):
+    return make_nt_capsule_for_testing(<PyObject*>obj, legacy)
 
 
 def _roundtrip_nt_for_testing(obj):
@@ -584,7 +584,7 @@ cdef class {{flatname}}:
 
 cdef api void * unbox_{{flatname}}(a):
     with cython.critical_section(a):
-        return (<{{flatname}}>a).c_ptr
+        return _daal_clone((<{{flatname}}>a).c_ptr)
 
 
 hpat_spec.append({
@@ -814,7 +814,6 @@ gen_compute_macro = gen_inst_algo + """
 ()
 {% endif %}
     {
-        ThreadAllow _allow_;
         auto algo{{suffix}} = _algo{{suffix}};
 
 {% for ia in input_args %}
@@ -980,6 +979,9 @@ private:
 
     typename iomb_type::result_type * finalize()
     {
+        // Detach before waiting for the native mutex. The mutex is destroyed
+        // first, so ThreadAllow reattaches only after the protected state is free.
+        ThreadAllow allow_threads;
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 {% if distributed.name %}
         if({{distributed.arg_member}}) throw std::invalid_argument(
@@ -1045,6 +1047,9 @@ public:
         {{input_args|fmt('{}', 'decl_cpp', sep=',\n')|indent(46)}},
         bool setup_only = false)
     {
+        // Detach before waiting for the native mutex to avoid a GIL/mutex
+        // inversion with a thread already computing on this manager.
+        ThreadAllow allow_threads;
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         {{input_args|fmt('{}', 'assign_member', sep=';\n')|indent(8)}};
 
@@ -1062,6 +1067,7 @@ public:
 {% if add_get_result %}
     typename iomb_type::result_type * get_result()
     {
+        ThreadAllow allow_threads;
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         return new typename iomb_type::result_type(iomb_type::getResult(*_algob));
     }

@@ -82,7 +82,7 @@ ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
-PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
+PYBIND11_MODULE(_onedal_py_spmd_dpc, m, py::mod_gil_not_used()) {
     init_policy(m);
     init_covariance(m);
     init_dbscan(m);
@@ -104,7 +104,7 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
 }
 #else
 #ifdef ONEDAL_DATA_PARALLEL
-PYBIND11_MODULE(_onedal_py_dpc, m) {
+PYBIND11_MODULE(_onedal_py_dpc, m, py::mod_gil_not_used()) {
 #else
 PYBIND11_MODULE(_onedal_py_host, m, py::mod_gil_not_used()) {
 #endif

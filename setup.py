@@ -319,7 +319,12 @@ def get_build_options():
         if not IS_LIN:
             raise ValueError("Sanitizers are currently supported only on Linux")
         sanitizer_flag = f"-fsanitize={sanitizer}"
-        eca += ["-fno-omit-frame-pointer", "-fno-sanitize-recover=all", sanitizer_flag]
+        eca += [
+            "-g",
+            "-fno-omit-frame-pointer",
+            "-fno-sanitize-recover=all",
+            sanitizer_flag,
+        ]
         ela += [sanitizer_flag]
 
     if DEBUG_BUILD and not IS_WIN:
@@ -344,6 +349,7 @@ def get_build_options():
             )
             and not USE_ABS_RPATH
             and not DEBUG_BUILD
+            and not sanitizer
         ):
             ela.append("-s")
     return eca, ela, include_dir_plat

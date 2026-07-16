@@ -18,16 +18,18 @@
 #define _MPI_TRANSCEIVER_INCLUDED_
 
 #include "transceiver.h"
+#include <cstddef>
+#include <mutex>
 
 // implementation of transceiver_iface using MPI
 class mpi_transceiver : public transceiver_impl
 {
 public:
-    mpi_transceiver() : transceiver_impl(), m_owns_mpi(false) {}
+    mpi_transceiver() : transceiver_impl(), m_owns_mpi(false), m_users(0) {}
 
     virtual void init();
 
-    virtual void fini();
+    void fini() noexcept override;
 
     virtual size_t nMembers();
 
@@ -47,6 +49,8 @@ public:
 
 private:
     bool m_owns_mpi;
+    size_t m_users;
+    std::mutex m_lifecycle_mutex;
 };
 
 #endif // _MPI_TRANSCEIVER_INCLUDED_

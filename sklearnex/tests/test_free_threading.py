@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import importlib.util
 import os
 import subprocess
 import sys
@@ -42,13 +43,18 @@ assert not sys._is_gil_enabled()
     env = os.environ.copy()
     env["PYTHON_GIL"] = "0"
 
-    for module in (
+    modules = [
         "daal4py._daal4py",
         "onedal._onedal_py_host",
         "daal4py",
         "onedal",
         "sklearnex",
-    ):
+    ]
+    for optional_module in ("onedal._onedal_py_dpc", "onedal._onedal_py_spmd_dpc"):
+        if importlib.util.find_spec(optional_module) is not None:
+            modules.append(optional_module)
+
+    for module in modules:
         subprocess.run(
             [sys.executable, "-W", "error", "-c", code.format(module=module)],
             check=True,
@@ -110,7 +116,8 @@ def test_shared_daal4py_algorithm_is_serialized():
     assert not sys._is_gil_enabled()
 
 
-def test_daal4py_numeric_table_protocol_is_thread_local():
+@pytest.mark.parametrize("legacy_capsule", [False, True])
+def test_daal4py_numeric_table_protocol_is_thread_local(legacy_capsule):
     import numpy as np
 
     import daal4py._daal4py as backend
@@ -125,7 +132,7 @@ def test_daal4py_numeric_table_protocol_is_thread_local():
             self.array = array
 
         def __2daalnt__(self):
-            return backend._make_nt_capsule_for_testing(self.array)
+            return backend._make_nt_capsule_for_testing(self.array, legacy=legacy_capsule)
 
     objects = tuple(NumericTableProtocol(array) for array in arrays)
 

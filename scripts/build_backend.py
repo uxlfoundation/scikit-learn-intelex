@@ -180,6 +180,11 @@ def custom_build_cmake_clib(
     env_build = dict(os.environ)
     if cxx:
         env_build["CXX"] = cxx
+    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
+    if sanitizer and sanitizer not in ("address", "undefined", "thread"):
+        raise ValueError(f"Unsupported sanitizer: {sanitizer}")
+    build_type = "Debug" if debug_build else "RelWithDebInfo" if sanitizer else "Release"
+
     cmake_args = [
         "cmake",
         cmake_generator,
@@ -199,17 +204,14 @@ def custom_build_cmake_clib(
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
-        f"-DCMAKE_BUILD_TYPE={'Debug' if debug_build else 'Release'}",
+        f"-DCMAKE_BUILD_TYPE={build_type}",
     ]
 
     python_soabi = get_config_var("SOABI")
     if python_soabi:
         cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
 
-    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
     if sanitizer:
-        if sanitizer not in ("address", "undefined", "thread"):
-            raise ValueError(f"Unsupported sanitizer: {sanitizer}")
         cmake_args += [f"-DSKLEARNEX_SANITIZER={sanitizer}"]
 
     if build_distribute:
