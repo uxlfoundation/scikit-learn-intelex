@@ -70,6 +70,7 @@ dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
 with config_context(array_api_dispatch=True):
     model_spmd = LogisticRegression(solver="newton-cg")
     model_spmd.fit(dpnp_X_train, dpnp_y_train)

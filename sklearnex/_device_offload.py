@@ -240,9 +240,9 @@ def wrap_output_data(func: Callable) -> Callable:
 def support_input_format(func):
     """Transform input and output function arrays to/from host.
 
-    Converts and moves the output arrays of the decorated function
-    to match the input array type and device.
-    Puts SYCLQueue from data to decorated function arguments.
+    Wraps host-side scikit-learn / daal4py fallback functions (device offload to
+    oneDAL happens in ``dispatch``): inputs are transferred to host and the output
+    is converted back to the input's array API namespace and device.
 
     Parameters
     ----------
@@ -270,21 +270,12 @@ def support_input_format(func):
         else:
             self = None
 
-        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
-            if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
-                kwargs["queue"] = usm_iface["syclobj"]
+        if len(args) == 0 and len(kwargs) == 0:
+            return invoke_func(self, *args, **kwargs)
 
-        if kwargs.get("queue") is not None:
-            # Device path — function accepts queue, pass device data directly
-            result = invoke_func(self, *args, **kwargs)
-        else:
-            # Host path — sklearn function or host data, transfer to host
-            if len(args) == 0 and len(kwargs) == 0:
-                return invoke_func(self, *args, **kwargs)
-
-            with QM.manage_global_queue(None, *args):
-                hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-                result = invoke_func(self, *hostargs, **hostkwargs)
+        with QM.manage_global_queue(None, *args):
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+            result = invoke_func(self, *hostargs, **hostkwargs)
 
         data = (*args, *kwargs.values())[0]
         if get_config().get("transform_output") in ("default", None):

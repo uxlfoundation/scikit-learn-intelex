@@ -47,6 +47,7 @@ X_local = get_local_data(X, comm)
 X_split = np.array_split(X_local, num_batches)
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
 with config_context(array_api_dispatch=True):
     cov = IncrementalEmpiricalCovariance()
 

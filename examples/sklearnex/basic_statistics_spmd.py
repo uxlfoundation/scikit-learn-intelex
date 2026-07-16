@@ -59,6 +59,7 @@ gtr_mean = np.mean(weighted_data, axis=0)
 gtr_std = np.std(weighted_data, axis=0)
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
 with config_context(array_api_dispatch=True):
     bss = BasicStatisticsSpmd(["mean", "standard_deviation"])
     bss.fit(dpnp_data, dpnp_weights)

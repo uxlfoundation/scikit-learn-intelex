@@ -65,6 +65,7 @@ dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 assert_allclose(coef_train, coef_test)
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
 with config_context(array_api_dispatch=True):
     model_spmd = KNeighborsRegressor(
         algorithm="brute", n_neighbors=5, weights="uniform", p=2, metric="minkowski"

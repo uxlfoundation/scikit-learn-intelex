@@ -26,6 +26,7 @@ from sklearnex.basic_statistics import IncrementalBasicStatistics
 queue = dpctl.SyclQueue("gpu")
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
 with config_context(array_api_dispatch=True):
     incbs = IncrementalBasicStatistics(result_options=["mean", "max", "sum"])
 
