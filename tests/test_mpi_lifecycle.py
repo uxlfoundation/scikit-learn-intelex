@@ -18,14 +18,17 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import numpy as np
+import pytest
+
+MPI = pytest.importorskip("mpi4py.MPI", exc_type=ImportError)
 
 import daal4py
+
+pytest.importorskip("daal4py.mpi_transceiver", exc_type=ImportError)
 
 
 def test_external_mpi_survives_repeated_transceiver_lifecycle():
     """daalfini must release daal4py users, not MPI owned by mpi4py."""
-    from mpi4py import MPI
-
     comm = MPI.COMM_WORLD
 
     def cycle(_):
@@ -49,8 +52,6 @@ def test_external_mpi_survives_repeated_transceiver_lifecycle():
 
 def test_lazy_init_does_not_invert_gil_and_lifecycle_mutex():
     """A GIL-holding num_procs waiter must not block distributed lazy init."""
-    from mpi4py import MPI
-
     comm = MPI.COMM_WORLD
     data = np.arange(400, dtype=np.float64).reshape(200, 2) + comm.Get_rank()
 
