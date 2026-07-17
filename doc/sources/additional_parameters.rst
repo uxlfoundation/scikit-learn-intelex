@@ -68,7 +68,7 @@ It can take the following values:
 - ``"covariance_eigh"`` (default).
 - ``"full"``.
 
-Note that under the ``"full"`` solver, further calls to :~meth:`sklearn.decomposition.IncrementalPCA.partial_fit` will make the object's stored memory grow with the data.
+Note that under the ``"full"`` solver, further calls to :meth:`~sklearn.decomposition.IncrementalPCA.partial_fit` will make the object's stored memory grow with the data.
 
 Train-test splitting
 ====================
