@@ -140,7 +140,14 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
-          pip install --upgrade -r requirements-test.txt
+          if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
+            # CatBoost has no free-threaded wheel and its source release does not
+            # compile against CPython 3.14t. Its optional tests skip when absent.
+            grep -v '^catboost==' requirements-test.txt > requirements-test-free-threaded.txt
+            pip install --upgrade -r requirements-test-free-threaded.txt
+          else
+            pip install --upgrade -r requirements-test.txt
+          fi
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
       - name: Sklearnex testing
