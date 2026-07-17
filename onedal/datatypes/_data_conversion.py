@@ -19,6 +19,7 @@ import scipy.sparse as sp
 
 from .. import _default_backend as backend
 from ..utils._third_party import is_dpnp_ndarray, lazy_import
+from ._dlpack import cpu_dlpack_device
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -123,7 +124,21 @@ def return_type_constructor(array):
     elif hasattr(array, "__array_namespace__"):
         xp = array.__array_namespace__()
         device = array.device
-        func = lambda inp: xp.from_dlpack(inp, device=device)
+
+        def func(inp):
+            # Some array API libraries (e.g. array_api_strict) do not forward
+            # the 'device' argument of their 'from_dlpack' to the exporter's
+            # '__dlpack__', so a oneDAL table on a SYCL device never gets asked
+            # to transfer to host when the target namespace is host-only.
+            # NumPy's 'from_dlpack' does forward it, so route through NumPy
+            # first in that case, then hand the resulting host array to 'xp'.
+            if (
+                inp.__dlpack_device__() != cpu_dlpack_device
+                and array.__dlpack_device__() == cpu_dlpack_device
+            ):
+                return xp.asarray(np.from_dlpack(inp, device="cpu"), device=device)
+            return xp.from_dlpack(inp, device=device)
+
     else:
         try:
             func = _compat_convert(array)

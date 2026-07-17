@@ -446,8 +446,6 @@ if daal_check_version((2024, "P", 100)):
         score_samples.__doc__ = _sklearn_PCA.score_samples.__doc__
 
 else:
-    from daal4py.sklearn.decomposition import PCA
-
-    logging.warning(
+    raise ImportError(
         "Sklearnex PCA requires oneDAL version >= 2024.1.0 but it was not found"
     )

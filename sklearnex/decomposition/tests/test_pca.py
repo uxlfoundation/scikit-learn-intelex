@@ -76,11 +76,8 @@ def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_
     X_transformed = pca.transform(X)
     X_fit_transformed = PCA(n_components=2, svd_solver="covariance_eigh").fit_transform(X)
 
-    if daal_check_version((2024, "P", 100)):
-        assert "sklearnex" in pca.__module__
-        assert hasattr(pca, "_onedal_estimator")
-    else:
-        assert "daal4py" in pca.__module__
+    assert "sklearnex" in pca.__module__
+    assert hasattr(pca, "_onedal_estimator")
 
     tol = 1e-5 if _as_numpy(X_transformed).dtype == np.float32 else 1e-7
     assert_allclose([6.30061232, 0.54980396], _as_numpy(pca.singular_values_))
