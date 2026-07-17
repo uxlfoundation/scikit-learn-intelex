@@ -184,6 +184,7 @@ def custom_build_cmake_clib(
     if sanitizer and sanitizer not in ("address", "undefined", "thread"):
         raise ValueError(f"Unsupported sanitizer: {sanitizer}")
     build_type = "Debug" if debug_build else "RelWithDebInfo" if sanitizer else "Release"
+    free_threading = bool(get_config_var("Py_GIL_DISABLED"))
 
     cmake_args = [
         "cmake",
@@ -205,6 +206,7 @@ def custom_build_cmake_clib(
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
         f"-DCMAKE_BUILD_TYPE={build_type}",
+        f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}",
     ]
 
     # Guard against CMake selecting an ABI-incompatible interpreter (for example,
@@ -232,12 +234,18 @@ def custom_build_cmake_clib(
     # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
     # using make conventions (i.e. -j flag) but is set as a cmake argument to
     # support Windows and Linux simultaneously
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j" + str(n_threads)]
+    # Keep the job count as a separate argument: CMake 3.13 accepts ``-j 2``
+    # but not the concatenated ``-j2`` spelling.
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j", str(n_threads)]
 
+    # ``cmake --install`` was added in CMake 3.15. Use the generated install
+    # target so the legacy GIL-enabled path remains compatible with CMake 3.13.
     make_install_args = [
         "cmake",
-        "--install",
+        "--build",
         abs_build_temp_path,
+        "--target",
+        "install",
     ]
 
     subprocess.check_call(cmake_args, env=env_build)

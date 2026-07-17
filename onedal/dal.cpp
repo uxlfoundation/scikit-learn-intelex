@@ -19,6 +19,13 @@
 
 namespace py = pybind11;
 
+#ifdef Py_GIL_DISABLED
+#define SKLEARNEX_PYBIND11_MODULE(name, variable) \
+    PYBIND11_MODULE(name, variable, py::mod_gil_not_used())
+#else
+#define SKLEARNEX_PYBIND11_MODULE(name, variable) PYBIND11_MODULE(name, variable)
+#endif
+
 namespace oneapi::dal::python {
 
 /* common */
@@ -82,7 +89,7 @@ ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
-PYBIND11_MODULE(_onedal_py_spmd_dpc, m, py::mod_gil_not_used()) {
+SKLEARNEX_PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_policy(m);
     init_covariance(m);
     init_dbscan(m);
@@ -104,9 +111,9 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m, py::mod_gil_not_used()) {
 }
 #else
 #ifdef ONEDAL_DATA_PARALLEL
-PYBIND11_MODULE(_onedal_py_dpc, m, py::mod_gil_not_used()) {
+SKLEARNEX_PYBIND11_MODULE(_onedal_py_dpc, m) {
 #else
-PYBIND11_MODULE(_onedal_py_host, m, py::mod_gil_not_used()) {
+SKLEARNEX_PYBIND11_MODULE(_onedal_py_host, m) {
 #endif
     init_sycl(m);
     init_policy(m);
@@ -169,3 +176,5 @@ PYBIND11_MODULE(_onedal_py_host, m, py::mod_gil_not_used()) {
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 } // namespace oneapi::dal::python
+
+#undef SKLEARNEX_PYBIND11_MODULE

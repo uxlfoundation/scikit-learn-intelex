@@ -159,8 +159,15 @@ def test_get_onedal_library_dir_reports_missing_sonames(tmp_path):
         (False, True, "address", "Debug"),
     ],
 )
+@pytest.mark.parametrize("free_threading", [False, True])
 def test_cmake_build_type_is_explicit(
-    monkeypatch, tmp_path, is_win, debug_build, sanitizer, expected_build_type
+    monkeypatch,
+    tmp_path,
+    is_win,
+    debug_build,
+    sanitizer,
+    expected_build_type,
+    free_threading,
 ):
     dal_root = tmp_path / "dal"
     if is_win:
@@ -192,6 +199,7 @@ def test_cmake_build_type_is_explicit(
             "LIBDEST": str(tmp_path / "python" / "Lib"),
             "LIBDIR": str(tmp_path / "python" / "lib"),
             "SOABI": "cp312-win_amd64" if is_win else "cpython-312-x86_64-linux-gnu",
+            "Py_GIL_DISABLED": int(free_threading),
         }.get(name),
     )
 
@@ -212,5 +220,15 @@ def test_cmake_build_type_is_explicit(
 
     build_type_args = [arg for arg in calls[0] if arg.startswith("-DCMAKE_BUILD_TYPE=")]
     assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
+    assert (
+        f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}"
+        in calls[0]
+    )
     sanitizer_args = [arg for arg in calls[0] if arg.startswith("-DSKLEARNEX_SANITIZER=")]
     assert sanitizer_args == ([f"-DSKLEARNEX_SANITIZER={sanitizer}"] if sanitizer else [])
+    assert calls[1][:2] == ["cmake", "--build"]
+    assert Path(calls[1][2]).parts[-2:] == ("build", "backend_host")
+    assert calls[1][3:] == ["-j", "1"]
+    assert calls[2][:2] == ["cmake", "--build"]
+    assert Path(calls[2][2]).parts[-2:] == ("build", "backend_host")
+    assert calls[2][3:] == ["--target", "install"]

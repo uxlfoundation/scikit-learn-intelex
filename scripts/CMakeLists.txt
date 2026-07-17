@@ -14,7 +14,7 @@
 # limitations under the License.
 #===============================================================================
 
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 project("oneDAL python interface"
     LANGUAGES CXX
@@ -121,25 +121,36 @@ endif()
 
 message(STATUS "oneDAL_USE_PARAMETERS_LIB:" ${oneDAL_USE_PARAMETERS_LIB})
 
-set(PYBIND11_FINDPYTHON ON)
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-if(DEFINED PYTHON_EXECUTABLE)
-    get_filename_component(EXPECTED_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}" REALPATH)
-    get_filename_component(FOUND_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" REALPATH)
-    if(NOT FOUND_PYTHON_EXECUTABLE STREQUAL EXPECTED_PYTHON_EXECUTABLE)
+option(SKLEARNEX_FREE_THREADING "Build for a free-threaded Python ABI" OFF)
+message(STATUS "SKLEARNEX_FREE_THREADING:" ${SKLEARNEX_FREE_THREADING})
+if(SKLEARNEX_FREE_THREADING)
+    if(CMAKE_VERSION VERSION_LESS 3.18)
         message(FATAL_ERROR
-            "CMake selected Python ${Python_EXECUTABLE}, but the build was invoked with ${PYTHON_EXECUTABLE}"
+            "Free-threaded Python builds require CMake 3.18 or newer"
         )
     endif()
+    set(PYBIND11_FINDPYTHON ON)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    if(DEFINED PYTHON_EXECUTABLE)
+        get_filename_component(EXPECTED_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}" REALPATH)
+        get_filename_component(FOUND_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" REALPATH)
+        if(NOT FOUND_PYTHON_EXECUTABLE STREQUAL EXPECTED_PYTHON_EXECUTABLE)
+            message(FATAL_ERROR
+                "CMake selected Python ${Python_EXECUTABLE}, but the build was invoked with ${PYTHON_EXECUTABLE}"
+            )
+        endif()
+    endif()
+    if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
+        message(FATAL_ERROR
+            "CMake selected Python SOABI ${Python_SOABI}, expected ${EXPECTED_PYTHON_SOABI}"
+        )
+    endif()
+    message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
+    message(STATUS "Python_SOABI:" ${Python_SOABI})
+    find_package(pybind11 2.13 REQUIRED)
+else()
+    find_package(pybind11 REQUIRED)
 endif()
-if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
-    message(FATAL_ERROR
-        "CMake selected Python SOABI ${Python_SOABI}, expected ${EXPECTED_PYTHON_SOABI}"
-    )
-endif()
-message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
-message(STATUS "Python_SOABI:" ${Python_SOABI})
-find_package(pybind11 2.13 REQUIRED)
 
 if(IFACE STREQUAL "host")
     set(TARGET "_onedal_py_host")

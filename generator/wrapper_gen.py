@@ -60,7 +60,9 @@ from .wrappers import hpat_types
 cython_header = """
 # distutils: language = c++
 #cython: language_level=2
+{% if free_threading %}
 #cython: freethreading_compatible=True
+{% endif %}
 
 # Import the Python-level symbols of numpy
 import numpy as np
@@ -469,14 +471,18 @@ cdef class {{flatname}}:
     def __init__(self, int64_t ptr=0):
         self.c_ptr = <{{class_type|flat}}>ptr
 
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def __repr__(self):
         return _str(self, [{% for m in enum_gets+named_gets %}'{{m[1]}}',{% endfor %}])
 {% for m in enum_gets+named_gets %}
 {% set rtype = m[2]|d2cy(False) if m in enum_gets else m[0]|d2cy(False) %}
 
     @property
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def {{m[1]}}(self):
 {% if ('Ptr' in rtype and 'NumericTablePtr' not in rtype) or '__iface__' in rtype %}
 {% set frtype=(rtype.strip(' *&')|flat(False)|strip(' *')).replace('Ptr', '')|lower %}
@@ -512,7 +518,9 @@ cdef class {{flatname}}:
 {% if (flatname.startswith('gbt_') or flatname.startswith('decision_forest')) \
     and flatname.endswith('model') %}
     @property
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def NumberOfTrees(self):
         '''
         NumberOfTrees
@@ -541,7 +549,9 @@ cdef class {{flatname}}:
 
 {% for m in get_methods %}
 {% set frtype = m[0].replace('Ptr', '')|d2cy(False)|lower %}
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def {{m[1]|d2cy(False)}}(self, {{m[2]|d2cy(False)}} {{m[3]}}):
         ':type: {{frtype}} (or derived)'
         if not is_valid_ptrptr(self.c_ptr):
@@ -559,7 +569,9 @@ cdef class {{flatname}}:
 {% endif %}
 {% endfor %}
 
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def __setstate__(self, state):
         cdef {{class_type|flat}} old_ptr
         if isinstance(state, bytes):
@@ -569,7 +581,9 @@ cdef class {{flatname}}:
         else:
            raise ValueError("Invalid state .....")
 
+{% if free_threading %}
     @cython.critical_section
+{% endif %}
     def __getstate__(self):
         if self.c_ptr == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -582,8 +596,12 @@ cdef class {{flatname}}:
 
 
 cdef api void * unbox_{{flatname}}(a):
+{% if free_threading %}
     with cython.critical_section(a):
         return _daal_clone((<{{flatname}}>a).c_ptr)
+{% else %}
+    return _daal_clone((<{{flatname}}>a).c_ptr)
+{% endif %}
 
 
 hpat_spec.append({
@@ -1485,9 +1503,10 @@ jenv.filters["fmt"] = fmt
 
 
 class wrapper_gen(object):
-    def __init__(self, ac, ifaces):
+    def __init__(self, ac, ifaces, free_threading=False):
         self.algocfg = ac
         self.ifaces = ifaces
+        self.free_threading = free_threading
 
     def gen_headers(self):
         """
@@ -1520,7 +1539,10 @@ class wrapper_gen(object):
             t = jenv.from_string(tstr)
             cpp += t.render({"parent": self.ifaces[i][1]}) + "\n"
 
-        return (cpp, cython_header + pyx)
+        header = jenv.from_string(cython_header).render(
+            free_threading=self.free_threading
+        )
+        return (cpp, header + pyx)
 
     ##################################################################################
     def gen_modelmaps(self, ns, algo):
@@ -1532,6 +1554,7 @@ class wrapper_gen(object):
         if len(jparams) > 0:
             jparams["ns"] = ns
             jparams["algo"] = algo
+            jparams["free_threading"] = self.free_threading
             t = jenv.from_string(typemap_wrapper_template)
             return (t.render(**jparams) + "\n").split("%SNIP%")
         return "", "", ""
@@ -1551,6 +1574,7 @@ class wrapper_gen(object):
         if len(jparams) > 0:
             jparams["ns"] = ns
             jparams["algo"] = algo
+            jparams["free_threading"] = self.free_threading
             t = jenv.from_string(typemap_wrapper_template)
             return (t.render(**jparams) + "\n").split("%SNIP%")
         return "", "", ""

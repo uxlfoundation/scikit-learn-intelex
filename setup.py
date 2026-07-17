@@ -41,6 +41,9 @@ from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
 
+FREE_THREADING_BUILD = bool(get_config_vars().get("Py_GIL_DISABLED"))
+
+
 def check_for_build_arg(arg: str) -> bool:
     if arg in sys.argv:
         sys.argv = [elt for elt in sys.argv if elt != arg]
@@ -409,13 +412,23 @@ for key, value in get_config_vars().items():
 
 
 def gen_pyx(odir):
-    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + ["./setup.py"]
+    generation_mode = "free-threaded" if FREE_THREADING_BUILD else "gil-enabled"
+    generation_mode_file = pathlib.Path(odir) / ".daal4py-generation-mode"
+    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + [
+        "./setup.py",
+        "./src/gbt_model_builder.pyx",
+        "./src/log_reg_model_builder.pyx",
+    ]
     src_files = [
         os.path.abspath("build/daal4py_cpp.h"),
         os.path.abspath("build/daal4py_cpp.cpp"),
         os.path.abspath("build/daal4py_cy.pyx"),
     ]
-    if all(os.path.isfile(x) for x in src_files):
+    if (
+        all(os.path.isfile(x) for x in src_files)
+        and generation_mode_file.is_file()
+        and generation_mode_file.read_text() == generation_mode
+    ):
         src_files.sort(key=os.path.getmtime)
         gtr_files.sort(key=os.path.getmtime, reverse=True)
         if os.path.getmtime(src_files[0]) > os.path.getmtime(gtr_files[0]):
@@ -430,7 +443,15 @@ def gen_pyx(odir):
     odir = os.path.abspath(odir)
     if not os.path.isdir(odir):
         os.mkdir(odir)
-    gen_daal4py(dal_root, odir, sklearnex_version, no_dist=no_dist, no_stream=no_stream)
+    gen_daal4py(
+        dal_root,
+        odir,
+        sklearnex_version,
+        no_dist=no_dist,
+        no_stream=no_stream,
+        free_threading=FREE_THREADING_BUILD,
+    )
+    generation_mode_file.write_text(generation_mode)
 
 
 gen_pyx(os.path.abspath("./build"))
