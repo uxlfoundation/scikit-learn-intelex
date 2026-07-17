@@ -98,6 +98,7 @@ def test_relative_importing(tmp_path):
             "-c",
             "import pkgutil, importlib, onedal_test\n"
             "for m in pkgutil.walk_packages(onedal_test.__path__, onedal_test.__name__ + '.'):\n"
+            "    print(m.name)\n"
             "    importlib.import_module(m.name)\n",
         ],
         cwd=str(tmp_path),
