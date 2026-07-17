@@ -74,7 +74,7 @@ if onedal_check_version(2023, 2, 0):
 
         def _compute(self, X):
             X_table = to_table(X, queue=QM.get_global_queue())
-            centroids = self._compute_raw(X_table, X_table.dtype, queue)
+            centroids = self._compute_raw(X_table, X_table.dtype)
             return from_table(centroids)
 
         def compute_raw(self, X_table, dtype=np.float32, queue=None):
