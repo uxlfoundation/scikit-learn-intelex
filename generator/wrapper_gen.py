@@ -207,8 +207,7 @@ def daalfini() -> None:
 
     :rtype: None
     '''
-    with _daal_global_lock:
-        c_daalfini()
+    c_daalfini()
 
 def num_threads() -> int:
     '''
@@ -1246,9 +1245,8 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 cdef api void * unbox_{{algo}}(object a):
-    with cython.critical_section(a):
-        algo = <{{algo}}>a
-        return _daal_clone(algo.c_ptr)
+    algo = <{{algo}}>a
+    return _daal_clone(algo.c_ptr)
 """
 
 # generates the C++ algorithm construction function

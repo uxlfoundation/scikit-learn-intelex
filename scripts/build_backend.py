@@ -207,6 +207,8 @@ def custom_build_cmake_clib(
         f"-DCMAKE_BUILD_TYPE={build_type}",
     ]
 
+    # Guard against CMake selecting an ABI-incompatible interpreter (for example,
+    # cp314 instead of cp314t) even when both are installed on the build host.
     python_soabi = get_config_var("SOABI")
     if python_soabi:
         cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
