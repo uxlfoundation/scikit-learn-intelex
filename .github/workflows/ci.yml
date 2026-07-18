@@ -134,16 +134,45 @@ jobs:
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
-          python setup.py install --single-version-externally-managed --record=record.txt
+          if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
+            python setup.py bdist_wheel
+            pip install --force-reinstall --no-deps dist/*.whl
+          else
+            python setup.py install --single-version-externally-managed --record=record.txt
+          fi
+      - name: Verify free-threaded wheel ABI
+        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          cd /tmp
+          PYTHON_GIL=0 python - <<'PY'
+          import importlib
+          import sys
+          import sysconfig
+
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
+          assert not sys._is_gil_enabled()
+          for module in ("daal4py._daal4py", "onedal._onedal_py_host", "sklearnex"):
+              importlib.import_module(module)
+              assert not sys._is_gil_enabled()
+          PY
+      - name: Archive free-threaded wheel
+        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: sklearnex_free_threaded_${{ matrix.PYTHON_VERSION }}
+          path: dist/*.whl
       - name: Install testing requirements
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
-            # CatBoost has no free-threaded wheel and its source release does not
-            # compile against CPython 3.14t. Its optional tests skip when absent.
-            grep -v '^catboost==' requirements-test.txt > requirements-test-free-threaded.txt
+            # CatBoost and SHAP are optional integrations, not free-threaded
+            # support requirements. Their tests skip when the packages are absent.
+            grep -v -E '^(catboost|shap)==' requirements-test.txt > requirements-test-free-threaded.txt
             pip install --upgrade -r requirements-test-free-threaded.txt
           else
             pip install --upgrade -r requirements-test.txt

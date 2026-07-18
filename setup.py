@@ -40,7 +40,6 @@ import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
-
 FREE_THREADING_BUILD = bool(get_config_vars().get("Py_GIL_DISABLED"))
 
 

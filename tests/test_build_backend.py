@@ -220,10 +220,7 @@ def test_cmake_build_type_is_explicit(
 
     build_type_args = [arg for arg in calls[0] if arg.startswith("-DCMAKE_BUILD_TYPE=")]
     assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
-    assert (
-        f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}"
-        in calls[0]
-    )
+    assert f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}" in calls[0]
     sanitizer_args = [arg for arg in calls[0] if arg.startswith("-DSKLEARNEX_SANITIZER=")]
     assert sanitizer_args == ([f"-DSKLEARNEX_SANITIZER={sanitizer}"] if sanitizer else [])
     assert calls[1][:2] == ["cmake", "--build"]
