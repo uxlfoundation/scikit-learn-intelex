@@ -233,7 +233,7 @@ jobs:
       PYTHON_GIL: "0"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       SKLEARNEX_SANITIZER: thread
-      TSAN_OPTIONS: halt_on_error=1:exitcode=66
+      TSAN_OPTIONS: halt_on_error=1:exitcode=66:log_path=/tmp/tsan-report
 
     steps:
       - name: Checkout Scikit-learn-intelex
@@ -298,6 +298,14 @@ jobs:
           cp "$GITHUB_WORKSPACE/tests/test_native_threading.py" /tmp/sklearnex-tsan-tests/
           cp "$GITHUB_WORKSPACE/sklearnex/tests/test_free_threading.py" /tmp/sklearnex-tsan-tests/
           cd /tmp/sklearnex-tsan-tests
+          dump_tsan_reports() {
+            shopt -s nullglob
+            for report in /tmp/tsan-report.*; do
+              echo "=== $report ==="
+              cat "$report"
+            done
+          }
+          trap dump_tsan_reports EXIT
           python - <<'PY'
           import importlib
           import sys
@@ -310,7 +318,7 @@ jobs:
               importlib.import_module(module)
               assert not sys._is_gil_enabled()
           PY
-          pytest -q test_native_threading.py test_free_threading.py
+          pytest -s -vv test_native_threading.py test_free_threading.py
 
   mpi_lnx:
     needs: onedal_nightly
@@ -354,7 +362,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           source /opt/intel/oneapi/setvars.sh
-          pip install -r dependencies-dev wheel
+          pip install -r dependencies-dev wheel scikit-learn
           # The generic mpi4py wheel can select a different MPI ABI and make
           # each Intel MPI-launched rank appear as a singleton communicator.
           MPICC=mpicc pip install --no-cache-dir --no-binary=mpi4py mpi4py
