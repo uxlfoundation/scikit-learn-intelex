@@ -16,7 +16,6 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
-#include <regex>
 
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 
@@ -78,38 +77,25 @@ auto get_onedal_result_options(const py::dict& params) {
     auto result_option = params["result_option"].cast<std::string>();
     result_option_id onedal_options;
 
-    try {
-        std::regex re("\\w+");
-        const std::sregex_iterator last{};
-        const std::sregex_iterator first( //
-            result_option.begin(),
-            result_option.end(),
-            re);
-
-        for (std::sregex_iterator it = first; it != last; ++it) {
-            std::smatch match = *it;
-            if (match.str() == "intercept") {
-                onedal_options = onedal_options | result_options::intercept;
-            }
-            else if (match.str() == "coefficients") {
-                onedal_options = onedal_options | result_options::coefficients;
-            }
-            else if (match.str() == "iterations_count") {
-                onedal_options = onedal_options | result_options::iterations_count;
-            }
-#if ONEDAL_VERSION >= 20240300
-            else if (match.str() == "inner_iterations_count") {
-                onedal_options = onedal_options | result_options::inner_iterations_count;
-            }
-#endif
-            else {
-                ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-            }
+    detail::for_each_result_option(result_option, [&](std::string_view option) {
+        if (option == "intercept") {
+            onedal_options = onedal_options | result_options::intercept;
         }
-    }
-    catch (std::regex_error&) {
-        ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-    }
+        else if (option == "coefficients") {
+            onedal_options = onedal_options | result_options::coefficients;
+        }
+        else if (option == "iterations_count") {
+            onedal_options = onedal_options | result_options::iterations_count;
+        }
+#if ONEDAL_VERSION >= 20240300
+        else if (option == "inner_iterations_count") {
+            onedal_options = onedal_options | result_options::inner_iterations_count;
+        }
+#endif
+        else {
+            ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
+        }
+    });
 
     return onedal_options;
 }

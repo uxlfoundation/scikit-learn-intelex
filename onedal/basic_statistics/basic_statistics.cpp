@@ -22,9 +22,8 @@
 #define NO_IMPORT_ARRAY // import_array called in table.cpp
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 
-#include <string>
-#include <regex>
 #include <map>
+#include <string>
 
 namespace py = pybind11;
 
@@ -58,55 +57,41 @@ auto get_onedal_result_options(const py::dict& params) {
     auto result_option = params["result_option"].cast<std::string>();
     result_option_id onedal_options;
 
-    try {
-        std::regex re("\\w+");
-        const std::sregex_iterator last{};
-        const std::sregex_iterator first( //
-            result_option.begin(),
-            result_option.end(),
-            re);
-
-        for (std::sregex_iterator it = first; it != last; ++it) {
-            std::smatch match = *it;
-            if (match.str() == "max") {
-                onedal_options = onedal_options | result_options::max;
-            }
-            else if (match.str() == "min") {
-                onedal_options = onedal_options | result_options::min;
-            }
-            else if (match.str() == "sum") {
-                onedal_options = onedal_options | result_options::sum;
-            }
-            else if (match.str() == "mean") {
-                onedal_options = onedal_options | result_options::mean;
-            }
-            else if (match.str() == "variance") {
-                onedal_options = onedal_options | result_options::variance;
-            }
-            else if (match.str() == "variation") {
-                onedal_options = onedal_options | result_options::variation;
-            }
-            else if (match.str() == "sum_squares") {
-                onedal_options = onedal_options | result_options::sum_squares;
-            }
-            else if (match.str() == "standard_deviation") {
-                onedal_options = onedal_options | result_options::standard_deviation;
-            }
-            else if (match.str() == "sum_squares_centered") {
-                onedal_options = onedal_options | result_options::sum_squares_centered;
-            }
-            else if (match.str() == "second_order_raw_moment") {
-                onedal_options = onedal_options | result_options::second_order_raw_moment;
-            }
-            else {
-                ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-            }
+    detail::for_each_result_option(result_option, [&](std::string_view option) {
+        if (option == "max") {
+            onedal_options = onedal_options | result_options::max;
         }
-    }
-    catch (std::regex_error& e) {
-        (void)e;
-        ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-    }
+        else if (option == "min") {
+            onedal_options = onedal_options | result_options::min;
+        }
+        else if (option == "sum") {
+            onedal_options = onedal_options | result_options::sum;
+        }
+        else if (option == "mean") {
+            onedal_options = onedal_options | result_options::mean;
+        }
+        else if (option == "variance") {
+            onedal_options = onedal_options | result_options::variance;
+        }
+        else if (option == "variation") {
+            onedal_options = onedal_options | result_options::variation;
+        }
+        else if (option == "sum_squares") {
+            onedal_options = onedal_options | result_options::sum_squares;
+        }
+        else if (option == "standard_deviation") {
+            onedal_options = onedal_options | result_options::standard_deviation;
+        }
+        else if (option == "sum_squares_centered") {
+            onedal_options = onedal_options | result_options::sum_squares_centered;
+        }
+        else if (option == "second_order_raw_moment") {
+            onedal_options = onedal_options | result_options::second_order_raw_moment;
+        }
+        else {
+            ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
+        }
+    });
 
     return onedal_options;
 }

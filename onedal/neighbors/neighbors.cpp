@@ -19,7 +19,6 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 #include "onedal/primitives/pairwise_distances.hpp"
-#include <regex>
 
 namespace py = pybind11;
 
@@ -109,30 +108,20 @@ auto get_onedal_result_options(const py::dict& params) {
     auto result_option = params["result_option"].cast<std::string>();
     result_option_id onedal_options;
 
-    try {
-        std::regex re("\\w+");
-        std::sregex_iterator next(result_option.begin(), result_option.end(), re);
-        std::sregex_iterator end;
-        while (next != end) {
-            std::smatch match = *next;
-            if (match.str() == "responses") {
-                onedal_options = onedal_options | result_options::responses;
-            }
-            else if (match.str() == "indices") {
-                onedal_options = onedal_options | result_options::indices;
-            }
-            else if (match.str() == "distances") {
-                onedal_options = onedal_options | result_options::distances;
-            }
-            else
-                ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-            next++;
+    detail::for_each_result_option(result_option, [&](std::string_view option) {
+        if (option == "responses") {
+            onedal_options = onedal_options | result_options::responses;
         }
-    }
-    catch (std::regex_error& e) {
-        (void)e;
-        ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
-    }
+        else if (option == "indices") {
+            onedal_options = onedal_options | result_options::indices;
+        }
+        else if (option == "distances") {
+            onedal_options = onedal_options | result_options::distances;
+        }
+        else {
+            ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
+        }
+    });
 
     return onedal_options;
 }

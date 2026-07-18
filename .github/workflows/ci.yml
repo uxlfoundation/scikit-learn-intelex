@@ -315,6 +315,13 @@ jobs:
             done
           }
           trap dump_tsan_reports EXIT
+          env -u LD_PRELOAD clang++-18 \
+            -std=c++17 -O1 -g -pthread \
+            -fsanitize=thread -fno-sanitize-recover=all \
+            -I"$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/tests/result_options_threading.cpp" \
+            -o /tmp/result-options-threading
+          env -u LD_PRELOAD /tmp/result-options-threading
           python - <<'PY'
           import importlib
           import sys
