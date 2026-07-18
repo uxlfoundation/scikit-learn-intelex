@@ -55,9 +55,11 @@ if onedal_check_version(2023, 2, 0):
 
         # it checks for csr data and forces computation on host
         def backend_compute(self, params, X_table):
-            policy = _default_backend.get_policy(None if self.is_csr else QM.get_global_queue())
+            policy = _default_backend.get_policy(
+                None if self.is_csr else QM.get_global_queue()
+            )
             return self._backend_compute(policy, params, X_table)
-        
+
         def _get_onedal_params(self, dtype=np.float32):
             return {
                 "fptype": dtype,
