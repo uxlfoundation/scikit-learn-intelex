@@ -6,6 +6,8 @@
 # onedal frames remain fatal.
 race:_PyObjectStack_Pop
 race:ucs1lib_rfind_char
+race:_PyUnicode_FromASCII
+race:resize_ringbuf
 
 # oneDAL itself is supplied as an uninstrumented binary. Argument::set performs
 # one side of a correct atomic SharedPtr decrement inside libonedal_core, which

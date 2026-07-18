@@ -43,16 +43,21 @@ assert not sys._is_gil_enabled()
     env = os.environ.copy()
     env["PYTHON_GIL"] = "0"
 
+    dpc_backend = "onedal._onedal_py_dpc"
+    native_backend = (
+        dpc_backend
+        if importlib.util.find_spec(dpc_backend) is not None
+        else "onedal._onedal_py_host"
+    )
     modules = [
         "daal4py._daal4py",
-        "onedal._onedal_py_host",
+        native_backend,
         "daal4py",
         "onedal",
         "sklearnex",
     ]
-    for optional_module in ("onedal._onedal_py_dpc", "onedal._onedal_py_spmd_dpc"):
-        if importlib.util.find_spec(optional_module) is not None:
-            modules.append(optional_module)
+    if importlib.util.find_spec("onedal._onedal_py_spmd_dpc") is not None:
+        modules.append("onedal._onedal_py_spmd_dpc")
 
     for module in modules:
         subprocess.run(
