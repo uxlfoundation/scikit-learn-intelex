@@ -140,24 +140,6 @@ jobs:
           else
             python setup.py install --single-version-externally-managed --record=record.txt
           fi
-      - name: Verify free-threaded wheel ABI
-        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh
-          cd /tmp
-          PYTHON_GIL=0 python - <<'PY'
-          import importlib
-          import sys
-          import sysconfig
-
-          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
-          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
-          assert not sys._is_gil_enabled()
-          for module in ("daal4py._daal4py", "onedal._onedal_py_host", "sklearnex"):
-              importlib.import_module(module)
-              assert not sys._is_gil_enabled()
-          PY
       - name: Archive free-threaded wheel
         if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
         uses: actions/upload-artifact@v7
@@ -179,6 +161,24 @@ jobs:
           fi
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
+      - name: Verify free-threaded wheel ABI
+        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          cd /tmp
+          PYTHON_GIL=0 python - <<'PY'
+          import importlib
+          import sys
+          import sysconfig
+
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
+          assert not sys._is_gil_enabled()
+          for module in ("daal4py._daal4py", "onedal._onedal_py_host", "sklearnex"):
+              importlib.import_module(module)
+              assert not sys._is_gil_enabled()
+          PY
       - name: Sklearnex testing
         run: |
           source venv/bin/activate
