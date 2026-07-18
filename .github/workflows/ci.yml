@@ -133,11 +133,14 @@ jobs:
       - name: Build daal4py/sklearnex
         run: |
           source venv/bin/activate
-          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
+            # Build our DPC extension on free-threaded Python even though the
+            # optional dpctl/dpnp client wheels do not publish a cp314t ABI.
+            source .github/scripts/activate_components.sh
             python setup.py bdist_wheel
             pip install --force-reinstall --no-deps dist/*.whl
           else
+            source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
             python setup.py install --single-version-externally-managed --record=record.txt
           fi
       - name: Archive free-threaded wheel
@@ -175,7 +178,12 @@ jobs:
           assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
           assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
           assert not sys._is_gil_enabled()
-          for module in ("daal4py._daal4py", "onedal._onedal_py_host", "sklearnex"):
+          for module in (
+              "daal4py._daal4py",
+              "onedal._onedal_py_host",
+              "onedal._onedal_py_dpc",
+              "sklearnex",
+          ):
               importlib.import_module(module)
               assert not sys._is_gil_enabled()
           PY
@@ -285,7 +293,11 @@ jobs:
           source .github/scripts/activate_components.sh host-only
           export LD_PRELOAD=$(clang++-18 -print-file-name=libclang_rt.tsan-x86_64.so)
           test -f "$LD_PRELOAD"
-          cd /tmp
+          rm -rf /tmp/sklearnex-tsan-tests
+          mkdir /tmp/sklearnex-tsan-tests
+          cp "$GITHUB_WORKSPACE/tests/test_native_threading.py" /tmp/sklearnex-tsan-tests/
+          cp "$GITHUB_WORKSPACE/sklearnex/tests/test_free_threading.py" /tmp/sklearnex-tsan-tests/
+          cd /tmp/sklearnex-tsan-tests
           python - <<'PY'
           import importlib
           import sys
@@ -298,9 +310,67 @@ jobs:
               importlib.import_module(module)
               assert not sys._is_gil_enabled()
           PY
-          pytest -q \
-            "$GITHUB_WORKSPACE/tests/test_native_threading.py" \
-            "$GITHUB_WORKSPACE/sklearnex/tests/test_free_threading.py"
+          pytest -q test_native_threading.py test_free_threading.py
+
+  mpi_lnx:
+    needs: onedal_nightly
+    name: Linux CPython3.14t MPI two-rank
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      NO_DPC: "1"
+      PYTHON_GIL: "0"
+
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v7
+      - name: Install free-threaded Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14t"
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Install native runtime and MPI
+        run: |
+          sudo apt-get update
+          bash .ci/env/apt.sh tbb
+          sudo apt-get install -y intel-oneapi-mpi-devel
+      - name: Install build and test requirements
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          source /opt/intel/oneapi/setvars.sh
+          pip install -r dependencies-dev wheel
+          # The generic mpi4py wheel can select a different MPI ABI and make
+          # each Intel MPI-launched rank appear as a singleton communicator.
+          MPICC=mpicc pip install --no-cache-dir --no-binary=mpi4py mpi4py
+      - name: Build distributed host extensions
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          test -n "$I_MPI_ROOT"
+          python setup.py bdist_wheel
+          pip install --force-reinstall --no-deps dist/*.whl
+      - name: Run free-threaded MPI two-rank smoke
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          cd /tmp
+          mpiexec -n 2 python "$GITHUB_WORKSPACE/tests/mpi_lifecycle_smoke.py"
 
   sklearn_win:
     needs: onedal_nightly
