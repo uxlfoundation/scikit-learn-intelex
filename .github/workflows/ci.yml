@@ -212,6 +212,96 @@ jobs:
           export SKLEARNEX_PREVIEW='YES'
           bash .ci/scripts/run_sklearn_tests.sh $CPU
 
+  tsan_lnx:
+    needs: onedal_nightly
+    name: Linux CPython3.14t ThreadSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CC: clang-18
+      CXX: clang++-18
+      NO_DPC: "1"
+      NO_DIST: "1"
+      PYTHON_GIL: "0"
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+      SKLEARNEX_SANITIZER: thread
+      TSAN_OPTIONS: halt_on_error=1:exitcode=66
+
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v7
+      - name: Install free-threaded Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14t"
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Install native runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 libclang-rt-18-dev
+          bash .ci/env/apt.sh dpcpp
+      - name: Install build and focused test requirements
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r dependencies-dev wheel
+          pip install pytest scipy scikit-learn==1.9.0
+      - name: Build ThreadSanitizer-instrumented host extensions
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh host-only
+          python setup.py bdist_wheel
+          pip install --force-reinstall --no-deps dist/*.whl
+      - name: Verify ThreadSanitizer instrumentation
+        run: |
+          source venv/bin/activate
+          extension_dir=$(python -c 'import sysconfig; print(sysconfig.get_path("platlib"))')
+          mapfile -t daal4py_extensions < <(find "$extension_dir/daal4py" -maxdepth 1 -type f -name '_daal4py*.so')
+          mapfile -t onedal_extensions < <(find "$extension_dir/onedal" -maxdepth 1 -type f -name '_onedal_py_host*.so')
+          test "${#daal4py_extensions[@]}" -eq 1
+          test "${#onedal_extensions[@]}" -eq 1
+          for extension in "${daal4py_extensions[0]}" "${onedal_extensions[0]}"; do
+            readelf --symbols --wide "$extension" | grep -q '__tsan_init'
+            echo "TSan instrumented: $extension"
+          done
+      - name: Run focused free-threading tests under ThreadSanitizer
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh host-only
+          export LD_PRELOAD=$(clang++-18 -print-file-name=libclang_rt.tsan-x86_64.so)
+          test -f "$LD_PRELOAD"
+          cd /tmp
+          python - <<'PY'
+          import importlib
+          import sys
+          import sysconfig
+
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
+          assert not sys._is_gil_enabled()
+          for module in ("daal4py._daal4py", "onedal._onedal_py_host"):
+              importlib.import_module(module)
+              assert not sys._is_gil_enabled()
+          PY
+          pytest -q \
+            "$GITHUB_WORKSPACE/tests/test_native_threading.py" \
+            "$GITHUB_WORKSPACE/sklearnex/tests/test_free_threading.py"
+
   sklearn_win:
     needs: onedal_nightly
     strategy:
