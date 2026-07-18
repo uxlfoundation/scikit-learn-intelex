@@ -44,15 +44,23 @@ if is_free_threaded:
     assert not sys._is_gil_enabled()
 
 
-def cycle(_):
-    daal4py.daalinit()
+def query_topology(_):
     assert daal4py.num_procs() == 2
     assert daal4py.my_procid() == rank
-    daal4py.daalfini()
+    return daal4py.num_procs(), daal4py.my_procid()
 
 
+# Keep daal4py-owned MPI alive while native topology calls overlap. MPI cannot
+# be initialized again after MPI_Finalize, so teardown is tested only after all
+# users and both ranks have synchronized.
 with ThreadPoolExecutor(max_workers=4) as executor:
-    list(executor.map(cycle, range(8)))
-
+    topology = list(executor.map(query_topology, range(64)))
+assert topology == [(2, rank)] * 64
 assert not MPI.Is_finalized()
 MPI.COMM_WORLD.Barrier()
+
+# Concurrent teardown must be idempotent and result in exactly one process-wide
+# MPI_Finalize call. No MPI operation is valid after this point.
+with ThreadPoolExecutor(max_workers=4) as executor:
+    list(executor.map(lambda _: daal4py.daalfini(), range(8)))
+assert MPI.Is_finalized()

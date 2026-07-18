@@ -1,0 +1,7 @@
+# CPython 3.14t's biased-reference-counting object stack is part of the
+# uninstrumented setup-python runtime. An externally preloaded TSan runtime
+# cannot observe its internal atomic synchronization and reports allocator
+# reuse between _PyObjectStackChunk_New and _PyObjectStack_Pop as a race.
+# Keep this scoped to the exact CPython frame; reports in sklearnex/daal4py/
+# onedal frames remain fatal.
+race:_PyObjectStack_Pop

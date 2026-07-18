@@ -293,6 +293,7 @@ jobs:
           source .github/scripts/activate_components.sh host-only
           export LD_PRELOAD=$(clang++-18 -print-file-name=libclang_rt.tsan-x86_64.so)
           test -f "$LD_PRELOAD"
+          export TSAN_OPTIONS="${TSAN_OPTIONS}:suppressions=${GITHUB_WORKSPACE}/.github/tsan-suppressions.txt"
           rm -rf /tmp/sklearnex-tsan-tests
           mkdir /tmp/sklearnex-tsan-tests
           cp "$GITHUB_WORKSPACE/tests/test_native_threading.py" /tmp/sklearnex-tsan-tests/
