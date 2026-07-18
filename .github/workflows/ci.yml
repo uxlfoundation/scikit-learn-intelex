@@ -178,14 +178,22 @@ jobs:
           assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
           assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
           assert not sys._is_gil_enabled()
-          for module in (
-              "daal4py._daal4py",
-              "onedal._onedal_py_host",
-              "onedal._onedal_py_dpc",
-              "sklearnex",
-          ):
-              importlib.import_module(module)
-              assert not sys._is_gil_enabled()
+          importlib.import_module("daal4py._daal4py")
+          assert not sys._is_gil_enabled()
+
+          # A DPC build exposes host and DPC pybind modules with overlapping
+          # C++ type registrations. They are alternative backends and must not
+          # be imported sequentially in one process. Exercise the package's
+          # supported DPC selection path and verify the exact native module.
+          onedal = importlib.import_module("onedal")
+          dpc_backend = importlib.import_module("onedal._onedal_py_dpc")
+          assert onedal._dpc_backend is not None
+          assert onedal._dpc_backend.backend is dpc_backend
+          assert onedal._default_backend is onedal._dpc_backend
+          assert not sys._is_gil_enabled()
+
+          importlib.import_module("sklearnex")
+          assert not sys._is_gil_enabled()
           PY
       - name: Sklearnex testing
         run: |

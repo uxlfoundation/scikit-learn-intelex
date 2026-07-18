@@ -2,6 +2,14 @@
 # uninstrumented setup-python runtime. An externally preloaded TSan runtime
 # cannot observe its internal atomic synchronization and reports allocator
 # reuse between _PyObjectStackChunk_New and _PyObjectStack_Pop as a race.
-# Keep this scoped to the exact CPython frame; reports in sklearnex/daal4py/
+# Keep these scoped to exact CPython frames; reports in sklearnex/daal4py/
 # onedal frames remain fatal.
 race:_PyObjectStack_Pop
+race:ucs1lib_rfind_char
+
+# oneDAL itself is supplied as an uninstrumented binary. Argument::set performs
+# one side of a correct atomic SharedPtr decrement inside libonedal_core, which
+# TSan cannot observe, then dispatches its inline deleter in the instrumented
+# extension. Suppress only that exact HomogenNumericTable<double> control-block
+# destructor; other oneDAL/daal4py frames remain fatal.
+race:RefCounterImp<daal::services::interface1::ObjectDeleter<daal::data_management::interface1::HomogenNumericTable<double>>>::~RefCounterImp
