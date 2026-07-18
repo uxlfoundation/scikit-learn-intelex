@@ -81,7 +81,7 @@ def test_relative_importing(tmp_path):
     shutil.copytree(
         spec.submodule_search_locations[0],
         tmp_path / "onedal_test",
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyd", "tests"),
+        ignore=shutil.ignore_patterns("__pycache__", "tests"),
     )
 
     (tmp_path / "onedal.py").write_text(
