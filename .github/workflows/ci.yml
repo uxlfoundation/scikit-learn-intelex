@@ -40,11 +40,11 @@
 # The `DPCTL_PY_VERSIONS` env var below is what selects which Python matrix
 # entries take the full DPC++ path (see the DPCFLAG note in sklearn_lnx).
 #
-# This workflow follows the classic development path for oneDAL by manually
-# loading oneDAL dependencies via PATH related loading (setvars.sh, etc.). It
-# focusses on publically-available components in order to verify that public
-# oneAPI components can be used by general users in developing and testing
-# the repository.
+# This workflow follows the classic development path for oneDAL and oneAPI
+# components by manually loading oneDAL dependencies via PATH related activation
+# scripts (i.e. setvars.sh, vars.sh). It focuses on publicly-available
+# components in order to verify that public oneAPI components can be used by
+# general users in developing and testing the repository.
 # ------------------------------------------------------------------------------
 
 name: CI
