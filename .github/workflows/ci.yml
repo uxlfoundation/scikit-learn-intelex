@@ -18,9 +18,12 @@
 # CI workflow overview
 # ------------------------------------------------------------------------------
 # This workflow builds and tests scikit-learn-intelex against the *nightly*
-# oneDAL binaries produced by the uxlfoundation/oneDAL repository, rather than
-# building oneDAL from source in order to save time while enabling access to
-# recent oneDAL development. The high-level flow is:
+# oneDAL binaries produced by the uxlfoundation/oneDAL repository. Rather than
+# building oneDAL from source, it downloads binaries from the other repository
+# to save time while also enabling access to recent oneDAL development. This
+# specifically contrasts conda focused development of other CIs, heavily relying
+# on pip and venv instead.
+# The high-level flow is:
 #
 #   onedal_nightly - sklearn_lnx   (matrix over Python x sklearn on Linux)
 #                  - sklearn_win   (matrix over Python x sklearn on Windows)
