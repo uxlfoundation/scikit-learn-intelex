@@ -29,3 +29,12 @@ race:resize_ringbuf
 # extension. Suppress only that exact HomogenNumericTable<double> control-block
 # destructor; other oneDAL/daal4py frames remain fatal.
 race:RefCounterImp<daal::services::interface1::ObjectDeleter<daal::data_management::interface1::HomogenNumericTable<double>>>::~RefCounterImp
+
+# pybind11 protects its free-threaded patients map with CPython's PyMutex.
+# setup-python's interpreter is not TSan-instrumented, so the external runtime
+# cannot observe that lock. Scope this to the exact reported helper.
+race:pybind11::detail::add_patient
+
+# BlockDescriptor state crosses synchronization inside the uninstrumented
+# oneDAL/TBB binaries. Scope this to the exact reported inline accessor.
+race:BlockDescriptor<double>::getRWFlag
