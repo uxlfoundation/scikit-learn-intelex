@@ -19,32 +19,39 @@
 # ------------------------------------------------------------------------------
 # This workflow builds and tests scikit-learn-intelex against the *nightly*
 # oneDAL binaries produced by the uxlfoundation/oneDAL repository, rather than
-# building oneDAL from source here. The high-level flow is:
+# building oneDAL from source in order to save time while enabling access to
+# recent oneDAL development. The high-level flow is:
 #
-#   onedal_nightly ──▶ sklearn_lnx   (matrix over Python x sklearn on Linux)
-#                  ├─▶ sklearn_win   (matrix over Python x sklearn on Windows)
-#                  └─▶ build_uxl ──▶ test_uxl   (UXL Foundation dedicated flow)
+#   onedal_nightly - sklearn_lnx   (matrix over Python x sklearn on Linux)
+#                  - sklearn_win   (matrix over Python x sklearn on Windows)
+#                  - build_uxl - test_uxl   (UXL Foundation dedicated flow)
 #
 # onedal_nightly locates the most recent successful "Nightly-build" workflow
 # run in the oneDAL repo; every downstream job then downloads its build
 # artifacts (headers/libs, oneAPI env scripts, and on Windows also the Intel
-# BaseKit (always) and OpenCL runtime (DPC++ rows only)) via
+# BaseKit (always) and OpenCL runtime (DPC++ enabled sklearnex only)) via
 # `actions/download-artifact` with a cross-repo `run-id`.
 #
 # A recurring toggle throughout the workflow is `DPCFLAG` (see comments in
 # sklearn_lnx / sklearn_win): when empty, the job runs with the *full* Intel
 # DPC++/oneAPI stack activated and additionally installs dpctl+dpnp so the
-# GPU/SYCL code paths are exercised. When non-empty ("0"), the job runs a
-# CPU-only build with only TBB sourced from oneAPI and skips dpctl/dpnp.
+# SYCL-related python code paths are exercised. When non-empty ("0"), the job
+# runs a CPU-only build with only TBB sourced from oneAPI and skips dpctl/dpnp.
 # The `DPCTL_PY_VERSIONS` env var below is what selects which Python matrix
 # entries take the full DPC++ path (see the DPCFLAG note in sklearn_lnx).
+#
+# This workflow follows the classic development path for oneDAL by manually
+# loading oneDAL dependencies via PATH related loading (setvars.sh, etc.). It
+# focusses on publically-available components in order to verify that public
+# oneAPI components can be used by general users in developing and testing
+# the repository.
 # ------------------------------------------------------------------------------
 
 name: CI
 on:
   # Run on PRs targeting main and on pushes to main. `workflow_dispatch`
   # additionally lets maintainers trigger the workflow manually from the
-  # GitHub UI, which is useful when re-running against a newer oneDAL nightly.
+  # GitHub UI, which is useful when debugging changes or runs on forks.
   pull_request:
     branches: [ "main" ]
   push:
@@ -52,8 +59,9 @@ on:
       - main
   workflow_dispatch:
 
-# Read-only token scope — this workflow only downloads artifacts and reads
-# repo metadata; it never needs write access.
+# Read-only token scope - this workflow only downloads artifacts and reads
+# repo metadata; it never needs write access. This is for safety and follows
+# best practices.
 permissions: read-all
 
 # Cancel in-progress runs for the same PR / branch when a new commit is pushed
@@ -67,20 +75,14 @@ env:
   # Pinned versions of the DPC++ Python array packages. dpctl provides the
   # SYCL device/queue objects and dpnp provides the numpy-like array backed
   # by SYCL USM allocations. Together they let sklearnex tests exercise the
-  # GPU/SYCL code paths without needing a real GPU (via the OpenCL CPU RT).
+  # SYCL code paths by using the OpenCL CPU RT.
   DPCTL_VERSION: 0.22.1
   DPNP_VERSION: 0.20.0
   # Python versions (as a `grep` alternation regex) for which the CI installs
   # and tests dpctl+dpnp. Only Python entries matching this pattern receive
   # the full DPC++ activation and the dpctl/dpnp pip install below. The other
-  # matrix entries run a CPU-only build.
-  #
-  # Rationale for gating on Python version: restricting to the endpoints of
-  # the matrix (currently 3.10 and 3.14, the oldest and newest we support)
-  # keeps the full DPC++ path covered without paying its wall-clock cost on
-  # every Python version. The middle Python row (3.13) therefore runs the
-  # CPU-only branch, which gives us continuous coverage of the non-oneAPI
-  # build path.
+  # matrix entries run a CPU-only build. This is done for verifying a host-only
+  # build of the onedal interface which is otherwise not done in any CI system.
   DPCTL_PY_VERSIONS: '3.10\|3.14'
   # Python / sklearn combo used by the dedicated UXL Foundation build+test
   # flow (build_uxl / test_uxl below).
@@ -173,7 +175,9 @@ jobs:
           run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       # Pull the oneDAL CI env scripts (apt.sh etc.) so we install the same
-      # oneAPI apt packages that oneDAL itself was built against.
+      # oneAPI apt packages that oneDAL itself was built against. This is to
+      # limit maintenance and downtime caused by version mismatches between
+      # repos.
       - name: Download oneDAL environment artifact
         uses: actions/download-artifact@v8
         with:
@@ -184,15 +188,15 @@ jobs:
           path: .ci/env
       # Sets:
       #   - NO_DIST=1 (SPMD/distributed testing is disabled in this workflow;
-      #     it is covered by a separate MPI-enabled CI pipeline).
+      #     it is covered by a separate MPI-enabled CI pipeline on Azure).
       #   - DPCFLAG output (see below).
-      #   - COVERAGE_RCFILE — coverage report generation is always on.
-      #   - SKLEARNEX_GCOV — gcov (native C++ coverage) is only enabled on
+      #   - COVERAGE_RCFILE - coverage report generation is always on.
+      #   - SKLEARNEX_GCOV - gcov (native C++ coverage) is only enabled on
       #     DPC++ rows because generate_coverage_reports.sh drives gcov via
       #     `icx`'s bundled llvm-cov, and `icx` is only present on the runner
       #     when the full oneAPI env has been activated.
       #
-      # DPCFLAG selection — controls whether this matrix row builds/tests
+      # DPCFLAG selection - controls whether this matrix row builds/tests
       # with the DPC++ (SYCL/GPU) code path or CPU-only.
       #
       #   DPCFLAG="" (empty)  -> full DPC++: activate all of oneAPI in
@@ -204,7 +208,7 @@ jobs:
       #
       # The gating rule: DPCFLAG is empty iff the matrix Python version
       # matches DPCTL_PY_VERSIONS (currently 3.10 or 3.14). The middle
-      # Python row (3.13) intentionally runs CPU-only — see the rationale
+      # Python row (3.13) intentionally runs CPU-only - see the rationale
       # on DPCTL_PY_VERSIONS in the top-level env block.
       - name: Set Environment Variables
         id: set-env
@@ -219,7 +223,7 @@ jobs:
         run: sudo apt-get update
       # Install the DPC++ compiler + oneAPI runtimes. The apt.sh script comes
       # from the oneDAL_env artifact above so it installs the exact oneAPI
-      # version oneDAL was built against, avoiding ABI drift.
+      # version oneDAL was built against, avoiding version issues.
       - name: dpcpp installation
         run: bash .ci/env/apt.sh dpcpp
       - name: describe system
@@ -265,9 +269,9 @@ jobs:
           ../conda-recipe/run_test.sh
       # On DPC++ rows we pass CPU=cpu so run_sklearn_tests.sh runs the sklearn
       # conformance suite pinned to the CPU device (dpctl is installed and
-      # would otherwise let tests pick a GPU/OpenCL device and hit
-      # runner-dependent behavior). On CPU-only rows CPU is left unset and the
-      # script substitutes `-d none`.
+      # excercizes the `target_offload` functionality, enabling GPU conformance
+      # when available). On CPU-only rows CPU is left unset and the script
+      # substitutes `-d none`.
       - name: Sklearn testing
         run: |
           source venv/bin/activate
@@ -276,7 +280,7 @@ jobs:
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           bash .ci/scripts/run_sklearn_tests.sh $CPU
       # Pass DPCFLAG here as well so the coverage generation reactivates the
-      # same env (full oneAPI vs TBB-only) that was used at build time — gcov
+      # same env (full oneAPI vs TBB-only) that was used at build time - gcov
       # needs the matching compiler/runtime paths.
       - name: Create coverage report
         run: |
@@ -307,7 +311,10 @@ jobs:
   # The matrix, DPCFLAG logic, and step sequence intentionally mirror the
   # Linux job. Key Windows-specific differences:
   #   - Instead of `apt.sh dpcpp`, we download the Intel BaseKit as a tarball
-  #     artifact from oneDAL and unpack it locally into .\oneapi.
+  #     artifact from oneDAL and unpack it locally into .\oneapi. This is to
+  #     save time, as the install takes significant time. There are bugs with
+  #     this that the installer team refuses to fix (unnecessarily hardcoded
+  #     paths on windows) making it fragile.
   #   - On DPC++ rows we also install the Intel OpenCL CPU Runtime MSI so
   #     dpctl can enumerate a SYCL device without a physical GPU.
   #   - Environment variables are set with `%GITHUB_ENV%` / `%GITHUB_OUTPUT%`
@@ -429,7 +436,7 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
-      # Only DPC++ rows install dpctl/dpnp — same reasoning as sklearn_lnx.
+      # Only DPC++ rows install dpctl/dpnp - same reasoning as sklearn_lnx.
       - name: Install testing requirements
         shell: cmd
         run: |
@@ -449,7 +456,7 @@ jobs:
           cd ..
           call scikit-learn-intelex\conda-recipe\run_test.bat scikit-learn-intelex\
       # Pin sklearn tests to the CPU device only when dpctl is installed
-      # (DPC++ rows) — otherwise the default (no device flag) is fine.
+      # (DPC++ rows) - otherwise the default (no device flag) is fine.
       - name: Sklearn testing
         shell: cmd
         run: |
@@ -486,12 +493,14 @@ jobs:
   # These jobs:
   #   1. Only run in the UXL fork (`if: github.repository == ...`), so forks
   #      and PRs against non-UXL clones skip them entirely.
-  #   2. Split build from test — build_uxl produces a wheel artifact and
+  #   2. Split build from test - build_uxl produces a wheel artifact and
   #      test_uxl consumes it in a matrix of framework/device combinations.
   #      This is what enables running the same wheel against multiple
   #      frameworks (numpy + pytorch, and eventually GPU) without rebuilding.
+  #      This was originally built to use a publicly-available SYCL-GPU runner
+  #      which is now lost, is maintained for first pytorch testing. 
   #   3. Unlike sklearn_lnx / sklearn_win, they always run the DPC++ build
-  #      (no DPCFLAG gating) — the UXL flow is where SYCL/xpu/pytorch
+  #      (no DPCFLAG gating) - the UXL flow is where SYCL/xpu/pytorch
   #      coverage is expected.
   # ---------------------------------------------------------------------------
   build_uxl:
@@ -538,11 +547,8 @@ jobs:
         run: |
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"
-      # clang-format is a build-time dependency of the wheel (see
-      # conda-recipe/meta.yaml) — it is invoked by setup.py during code
-      # generation, not as a standalone format-check step.
       - name: apt-get
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+        run: sudo apt-get update
       # This CI system yields oneAPI dependencies from the oneDAL repository.
       - name: dpcpp installation
         run: bash .ci/env/apt.sh dpcpp
@@ -575,7 +581,7 @@ jobs:
 
     outputs:
       # Passed forward to test_uxl so its coverage step can reinstall the
-      # same numpy the wheel was built against — gcovr needs those headers
+      # same numpy the wheel was built against - gcovr needs those headers
       # available during report generation.
       numpy-version: ${{ steps.install-reqs.outputs.numpy-version }}
 
@@ -624,7 +630,7 @@ jobs:
       # Sets:
       #   - NO_DIST=1 (SPMD testing disabled).
       #   - COVERAGE_RCFILE (enable coverage report generation).
-      #   - ONEDAL_PYTEST_FRAMEWORKS — tells onedal's pytest layer which
+      #   - ONEDAL_PYTEST_FRAMEWORKS - tells onedal's pytest layer which
       #     array frameworks are available so it can parametrize
       #     framework-specific tests accordingly.
       #   - NEO (Intel compute runtime) tunables to reduce spurious GPU
@@ -632,7 +638,7 @@ jobs:
       #     on CPU-only rows but are set unconditionally to keep the matrix
       #     step simple; leaving them on for future GPU rows.
       #     TODO: drop these if a GPU row never lands in the test_uxl matrix.
-      #   - NUMPY_BUILD — pin numpy to the version the wheel was built
+      #   - NUMPY_BUILD - pin numpy to the version the wheel was built
       #     against (see build_uxl.outputs.numpy-version) so its headers are
       #     available to gcovr's source lookup during coverage regeneration.
       - name: Set Environment Variables
@@ -665,7 +671,7 @@ jobs:
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
       # PyTorch is installed only when the matrix row requests it, and always
-      # from the CPU wheel index — the runner has no GPU. We then print the
+      # from the CPU wheel index - the runner has no GPU. We then print the
       # torch.xpu device list so failures with xpu-backed tests can be
       # correlated with what the runtime actually detected at test time.
       - name: Install PyTorch
