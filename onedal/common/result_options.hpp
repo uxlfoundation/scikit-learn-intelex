@@ -19,7 +19,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace oneapi::dal::python::detail {
+namespace oneapi::dal::python::result_option_detail {
 
 inline constexpr bool is_ascii_word_character(char value) noexcept {
     return (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z') ||
@@ -47,4 +47,4 @@ void for_each_result_option(std::string_view value, Callback&& callback) {
     }
 }
 
-} // namespace oneapi::dal::python::detail
+} // namespace oneapi::dal::python::result_option_detail

@@ -23,11 +23,11 @@
 #include <thread>
 #include <vector>
 
-namespace detail = oneapi::dal::python::detail;
+namespace result_option_detail = oneapi::dal::python::result_option_detail;
 
 std::vector<std::string> tokenize(std::string_view value) {
     std::vector<std::string> tokens;
-    detail::for_each_result_option(value, [&](std::string_view token) {
+    result_option_detail::for_each_result_option(value, [&](std::string_view token) {
         tokens.emplace_back(token);
     });
     return tokens;
@@ -52,7 +52,7 @@ int main() {
 
     bool exception_propagated = false;
     try {
-        detail::for_each_result_option("max|unknown", [](std::string_view option) {
+        result_option_detail::for_each_result_option("max|unknown", [](std::string_view option) {
             if (option == "unknown") {
                 throw std::invalid_argument("unknown result option");
             }

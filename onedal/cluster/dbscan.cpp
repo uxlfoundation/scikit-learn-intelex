@@ -47,7 +47,7 @@ auto get_onedal_result_options(const py::dict& params) {
     auto result_options = params["result_options"].cast<std::string>();
     result_option_id onedal_options;
 
-    detail::for_each_result_option(result_options, [&](std::string_view option) {
+    result_option_detail::for_each_result_option(result_options, [&](std::string_view option) {
         if (option == "responses") {
             onedal_options = onedal_options | result_options::responses;
         }
