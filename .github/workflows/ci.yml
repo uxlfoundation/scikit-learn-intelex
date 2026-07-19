@@ -320,6 +320,8 @@ jobs:
             done
           }
           trap 'status=$?; dump_tsan_reports; exit "$status"' EXIT
+          # Avoid shadowing the installed wheel with the source-tree package.
+          cd /tmp
           python - <<'PY'
           import importlib
           import sys
