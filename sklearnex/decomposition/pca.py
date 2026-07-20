@@ -113,11 +113,7 @@ if daal_check_version((2024, "P", 100)):
                         ),
                         (
                             self._fit_svd_solver in ["covariance_eigh", "full"],
-                            (
-                                "Only 'covariance_eigh' and 'full' solvers are supported."
-                                if sklearn_check_version("1.5")
-                                else "Only 'full' and 'covariance_eigh' solvers are supported."
-                            ),
+                            "Only 'covariance_eigh' and 'full' solvers are supported.",
                         ),
                         (not is_sparse(X), "oneDAL PCA does not support sparse data"),
                     ]
