@@ -68,10 +68,7 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
         n_clusters=3, random_state=0, algorithm=algorithm, init=init
     ).fit(X_dense_df)
 
-    if daal_check_version((2023, "P", 200)):
-        assert "sklearnex" in kmeans_dense.__module__
-    else:
-        assert "daal4py" in kmeans_dense.__module__
+    assert "sklearnex" in kmeans_dense.__module__
 
 
 @pytest.mark.skipif(
