@@ -40,6 +40,7 @@ from daal4py.sklearn._utils import get_dtype
 from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     array_api_modules,
     get_dataframes_and_queues,
@@ -226,6 +227,32 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
+
+
+@pytest.mark.skipif(
+    not dpctl_available,
+    reason="dpctl is required for checks.",
+)
+@pytest.mark.skipif(
+    not backend.is_dpc,
+    reason="__sycl_usm_array_interface__ support requires DPC backend.",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize("start", [1, 3])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sliced_view_offset_sycl_usm(dataframe, queue, start, dtype):
+    """A sliced view (e.g. X[start:]) keeps the base allocation pointer in
+    `__sycl_usm_array_interface__['data'][0]` and encodes its start via the
+    `offset` field. The table conversion must apply that offset, otherwise the
+    view reads from row 0 (regression test for the SUA offset bug).
+    """
+    X_np = np.arange(50, dtype=dtype).reshape(10, 5)
+    X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    X_view = X_dp[start:]
+    X_roundtrip = from_table(to_table(X_view), like=X_dp)
+
+    assert_allclose(_as_numpy(X_roundtrip), X_np[start:])
 
 
 @pytest.mark.skipif(
