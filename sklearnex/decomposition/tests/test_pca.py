@@ -167,7 +167,7 @@ def test_create_model_behavior():
 
 
 @pytest.mark.skipif(
-    not _package_check_version("2.2", np.__version__),
+    not _package_check_version("2.1", np.__version__),
     reason="Array API requires more recent NumPy version",
 )
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
