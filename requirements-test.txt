@@ -11,7 +11,7 @@ pandas==2.1.3 ; python_version <= '3.10'
 pandas==3.0.3 ; python_version >= '3.11'
 xgboost==3.2.0 ; python_version <= '3.11'
 xgboost==3.3.0 ; python_version >= '3.12'
-lightgbm==4.6.0
+lightgbm==4.7.0
 catboost==1.2.10
 shap==0.49.1 ; python_version <= '3.10'
 shap==0.51.0 ; python_version == '3.11'

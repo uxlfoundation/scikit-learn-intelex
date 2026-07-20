@@ -352,12 +352,4 @@ if daal_check_version((2024, "P", 600)):
         score.__doc__ = _sklearn_Ridge.score.__doc__
 
 else:
-    from daal4py.sklearn.linear_model import Ridge
-
-    from .._device_offload import support_input_format
-
-    Ridge.fit = support_input_format(Ridge.fit)
-    Ridge.predict = support_input_format(Ridge.predict)
-    Ridge.score = support_input_format(Ridge.score)
-
-    logging.warning("Ridge requires oneDAL version >= 2024.6 but it was not found")
+    raise ImportError("Ridge requires oneDAL version >= 2024.6 but it was not found")

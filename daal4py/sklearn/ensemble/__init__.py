@@ -14,12 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from ._forest import RandomForestClassifier, RandomForestRegressor
 from .GBTDAAL import GBTDAALClassifier, GBTDAALRegressor
 
 __all__ = [
-    "RandomForestClassifier",
-    "RandomForestRegressor",
     "GBTDAALClassifier",
     "GBTDAALRegressor",
 ]

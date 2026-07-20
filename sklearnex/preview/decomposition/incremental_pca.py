@@ -43,7 +43,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _parameter_constraints: dict = {
         **_sklearn_IncrementalPCA._parameter_constraints,
-        "svd_solver": [StrOptions({"auto", "covariance_eigh", "onedal_svd"})],
+        "svd_solver": [StrOptions({"covariance_eigh", "full"})],
     }
 
     def __init__(
@@ -53,7 +53,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         whiten=False,
         copy=True,
         batch_size=None,
-        svd_solver="auto",
+        svd_solver="covariance_eigh",
     ):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
@@ -158,7 +158,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         onedal_params = {
             "n_components": self._n_components_,
             "whiten": self.whiten,
-            "method": "svd" if self.svd_solver == "onedal_svd" else "cov",
+            "method": "svd" if self.svd_solver == "full" else "cov",
         }
 
         if not hasattr(self, "_onedal_estimator"):
@@ -257,7 +257,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "Sparse input is not supported"),
-                    (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
+                    (self.svd_solver != "full", "onedal_svd not supported on GPU"),
                 ]
             )
         else:
