@@ -141,6 +141,37 @@ def _as_numpy(obj, *args, **kwargs):
     return np.asarray(obj, *args, **kwargs)
 
 
+def _assert_in_namespace(obj, dataframe):
+    """Assert obj belongs to the array namespace implied by ``dataframe``.
+
+    Under array_api_dispatch, sklearnex outputs stay in the input namespace,
+    so an on-device dpnp/array_api input should yield an on-device result
+    (dpnp-in -> dpnp-out). Scalars are namespace-agnostic and are ignored.
+    """
+    if np.isscalar(obj):
+        return
+    if dataframe == "dpnp":
+        assert dpnp_available and isinstance(
+            obj, dpnp.ndarray
+        ), f"expected dpnp output, got {type(obj)}"
+    elif dataframe in array_api_modules:
+        xp = array_api_modules[dataframe]
+        assert (
+            hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
+        ), f"expected {dataframe} output, got {type(obj)}"
+
+
+def _as_numpy_checked(obj, dataframe, *args, **kwargs):
+    """Assert obj is in ``dataframe``'s namespace, then convert to numpy.
+
+    Drop-in for ``_as_numpy`` on result values: verifies dpnp-in -> dpnp-out
+    (on-device outputs are not silently host-transferred) before converting so
+    the value can be compared against a numpy expected result.
+    """
+    _assert_in_namespace(obj, dataframe)
+    return _as_numpy(obj, *args, **kwargs)
+
+
 def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs):
     """Converted input object to certain dataframe format."""
     if target_df is None:

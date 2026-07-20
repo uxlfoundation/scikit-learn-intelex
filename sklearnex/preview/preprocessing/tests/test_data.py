@@ -22,6 +22,7 @@ from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -62,8 +63,8 @@ def test_max_abs_scaler_dense_fit_transform(dataframe, queue):
     X_trans_ex = scaler_ex.fit_transform(X_df)
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
-    assert_allclose(scaler_ex.scale_, scaler_sk.scale_)
-    assert_allclose(scaler_ex.max_abs_, scaler_sk.max_abs_)
+    assert_allclose(_as_numpy_checked(scaler_ex.scale_, dataframe), scaler_sk.scale_)
+    assert_allclose(_as_numpy_checked(scaler_ex.max_abs_, dataframe), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
@@ -93,8 +94,8 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
     assert scaler_ex.n_samples_seen_ == scaler_sk.n_samples_seen_
-    assert_allclose(scaler_ex.scale_, scaler_sk.scale_)
-    assert_allclose(scaler_ex.max_abs_, scaler_sk.max_abs_)
+    assert_allclose(_as_numpy_checked(scaler_ex.scale_, dataframe), scaler_sk.scale_)
+    assert_allclose(_as_numpy_checked(scaler_ex.max_abs_, dataframe), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
@@ -116,8 +117,12 @@ def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     assert hasattr(est, "scale_")
     assert hasattr(est, "max_abs_")
 
-    est.scale_ = np.ones(est.scale_.shape)
-    X_trans_modified = est.transform(X_df)
+    # scale_ must share X's namespace/device under array_api_dispatch, otherwise
+    # transform mixes numpy and dpnp arrays; build the override in X's namespace.
+    xp = X_df.__array_namespace__()
+    est.scale_ = xp.ones(est.scale_.shape, device=X_df.device)
+    with config_context(array_api_dispatch=True):
+        X_trans_modified = est.transform(X_df)
 
     X_np = _as_numpy(X_df)
     X_trans_modified_np = _as_numpy(X_trans_modified)

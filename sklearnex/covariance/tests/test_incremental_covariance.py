@@ -31,6 +31,7 @@ from sklearn.decomposition import PCA
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
@@ -67,8 +68,8 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[0, 0], [0, 0]])
         expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
+    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
 
     X = np.array([[1, 2], [3, 6]])
     X = X.astype(dtype)
@@ -88,8 +89,8 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[1, 2], [2, 4]])
         expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
+    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -110,8 +111,8 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
     )
     expected_means = np.array([0, 0.5, 1, 1.5])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
+    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -140,8 +141,12 @@ def test_sklearnex_partial_fit_on_random_data(
     expected_covariance = np.cov(X.T, bias=1)
     expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    assert_allclose(
+        expected_covariance, _as_numpy_checked(result.covariance_, dataframe), atol=1e-6
+    )
+    assert_allclose(
+        expected_means, _as_numpy_checked(result.location_, dataframe), atol=1e-6
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -179,8 +184,12 @@ def test_sklearnex_fit_on_random_data(
         expected_covariance = np.cov(X.T, bias=1)
         expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    assert_allclose(
+        expected_covariance, _as_numpy_checked(result.covariance_, dataframe), atol=1e-6
+    )
+    assert_allclose(
+        expected_means, _as_numpy_checked(result.location_, dataframe), atol=1e-6
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -209,11 +218,13 @@ def test_whitened_toy_score(dataframe, queue):
         -(n - slogdet(pinvh(np.cov(X.T, bias=1)))[1] + n * np.log(2 * np.pi)) / 2
     )
     # expected_result = -14.1780602988
-    result = _as_numpy(est.score(X_df))
+    result = _as_numpy_checked(est.score(X_df), dataframe)
     assert_allclose(expected_result, result, atol=1e-6)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
+# and SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle
@@ -280,6 +291,9 @@ def test_IncrementalEmpiricalCovariance_against_sklearn(monkeypatch, sklearn_tes
     sklearn_test()
 
 
+# Manages array_api_dispatch itself; exempt from the autouse dispatch fixture so the
+# dispatch=False branch still exercises the host-transfer path.
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize("dispatch", [True, False])
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_score_verify_namespace(dispatch, dataframe, queue):

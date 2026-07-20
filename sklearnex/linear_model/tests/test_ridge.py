@@ -22,6 +22,7 @@ from sklearn.exceptions import NotFittedError
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -96,8 +97,10 @@ def test_sklearnex_import_ridge(dataframe, queue):
 
     assert "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
 
-    assert_allclose(ridge_reg.intercept_, 3.86, rtol=1e-2)
-    assert_allclose(ridge_reg.coef_, [0.91, 1.64], rtol=1e-2)
+    assert_allclose(_as_numpy_checked(ridge_reg.intercept_, dataframe), 3.86, rtol=1e-2)
+    assert_allclose(
+        _as_numpy_checked(ridge_reg.coef_, dataframe), [0.91, 1.64], rtol=1e-2
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -120,8 +123,18 @@ def test_ridge_coefficients(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose(
+        _as_numpy_checked(ridge_reg.coef_, dataframe),
+        coefficients_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    assert_allclose(
+        _as_numpy_checked(ridge_reg.intercept_, dataframe),
+        intercept_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
 
 
 @pytest.mark.skipif(
@@ -188,8 +201,18 @@ def test_ridge_overdetermined_system(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose(
+        _as_numpy_checked(ridge_reg.coef_, dataframe),
+        coefficients_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    assert_allclose(
+        _as_numpy_checked(ridge_reg.intercept_, dataframe),
+        intercept_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -207,10 +230,14 @@ def test_multivariate_ridge_scalar_alpha(dataframe, queue, fit_intercept, alpha)
     ridge.fit(X_c, y_c)
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept)
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    assert_allclose(
+        _as_numpy_checked(ridge.coef_, dataframe), coef_manual, rtol=1e-6, atol=1e-6
+    )
+    assert_allclose(
+        _as_numpy_checked(ridge.intercept_, dataframe), intercept, rtol=1e-6, atol=1e-6
+    )
 
-    predictions = _as_numpy(ridge.predict(X_c))
+    predictions = _as_numpy_checked(ridge.predict(X_c), dataframe)
     predictions_manual = X @ coef_manual.T + intercept
     assert_allclose(predictions, predictions_manual, rtol=1e-6, atol=1e-6)
 
@@ -229,5 +256,9 @@ def test_underdetermined_positive_alpha_ridge(dataframe, queue):
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept=True)
 
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    assert_allclose(
+        _as_numpy_checked(ridge.coef_, dataframe), coef_manual, rtol=1e-6, atol=1e-6
+    )
+    assert_allclose(
+        _as_numpy_checked(ridge.intercept_, dataframe), intercept, rtol=1e-6, atol=1e-6
+    )
