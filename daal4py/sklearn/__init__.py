@@ -21,8 +21,6 @@ from .monkeypatch.dispatcher import enable as patch_sklearn
 from .monkeypatch.dispatcher import patch_is_enabled as sklearn_is_patched
 
 __all__ = [
-    "cluster",
-    "decomposition",
     "ensemble",
     "linear_model",
     "manifold",
@@ -33,7 +31,6 @@ __all__ = [
     "sklearn_is_patched",
     "sklearn_patch_map",
     "sklearn_patch_names",
-    "svm",
     "unpatch_sklearn",
     "utils",
 ]

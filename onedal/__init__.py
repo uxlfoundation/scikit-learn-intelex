@@ -244,14 +244,5 @@ if onedal_check_version(2023, 2, 0):
 # Exports if SPMD backend is available
 if _spmd_backend is not None:
     __all__ += ["spmd"]
-    if onedal_check_version(2023, 1, 0):
-        __all__ += [
-            "spmd.basic_statistics",
-            "spmd.decomposition",
-            "spmd.linear_model",
-            "spmd.neighbors",
-        ]
-    if onedal_check_version(2023, 2, 0):
-        __all__ += ["spmd.cluster"]
 
 __version__ = "2199.9.9"
