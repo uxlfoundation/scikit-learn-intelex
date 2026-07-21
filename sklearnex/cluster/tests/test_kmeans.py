@@ -48,7 +48,10 @@ from onedal.tests.utils._dataframes_support import (
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.cluster import KMeans
-from sklearnex.tests.utils import _IS_INTEL
+from sklearnex.tests.utils import (
+    _IS_INTEL,
+    assert_transform_output_matches_default,
+)
 
 if dpnp_available:
     import dpnp
@@ -330,33 +333,6 @@ _KMEANS_ARRAY_API_INPUTS = (
 )
 
 
-def _assert_transform_output_matches_default(km, X, transform_output, method):
-    """The polars/pandas transform_output wrapping must preserve the values of
-    the default (un-wrapped) output, independent of input type/device. Both ways
-    of requesting it -- the ``transform_output`` config and ``set_output`` on the
-    estimator -- are checked."""
-    default = _as_numpy(getattr(km, method)(X))
-    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
-
-    # 1) global config_context(transform_output=...)
-    with config_context(transform_output=transform_output):
-        out = getattr(km, method)(X)
-    assert isinstance(out, expected_type)
-    assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
-
-    # 2) per-estimator set_output(transform=...). Restore the original config
-    # afterwards -- set_output("default") would *pin* it and override (1) on a
-    # later call with the same estimator.
-    original_config = getattr(km, "_sklearn_output_config", {}).copy()
-    km.set_output(transform=transform_output)
-    try:
-        out = getattr(km, method)(X)
-        assert isinstance(out, expected_type)
-        assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
-    finally:
-        km._sklearn_output_config = original_config
-
-
 @pytest.mark.parametrize("xp,device", _KMEANS_ARRAY_API_INPUTS)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
@@ -367,7 +343,7 @@ def test_transform_output_matches_default(
     X = _kmeans_convert(X_np, xp, device)
 
     km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
-    _assert_transform_output_matches_default(km, X, transform_output, method)
+    assert_transform_output_matches_default(km, X, transform_output, method)
 
 
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
@@ -379,7 +355,7 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
     km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
-    _assert_transform_output_matches_default(km, X, transform_output, method)
+    assert_transform_output_matches_default(km, X, transform_output, method)
 
 
 @pytest.mark.skipif(
@@ -392,7 +368,7 @@ def test_transform_output_target_offload(transform_output, method):
 
     with config_context(target_offload="gpu"):
         km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np)
-        _assert_transform_output_matches_default(km, X_np, transform_output, method)
+        assert_transform_output_matches_default(km, X_np, transform_output, method)
 
 
 def _check_kmeans_results(km, X, X_np):

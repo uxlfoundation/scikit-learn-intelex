@@ -43,6 +43,7 @@ from onedal.tests.utils._dataframes_support import (
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.preview.decomposition import IncrementalPCA
+from sklearnex.tests.utils import assert_transform_output_matches_default
 
 if dpnp_available:
     import dpnp
@@ -482,32 +483,6 @@ _INCPCA_ARRAY_API_INPUTS = (
 )
 
 
-def _assert_transform_output_matches_default(incpca, X, transform_output, method):
-    """The polars/pandas transform_output wrapping must preserve the values of the
-    default (un-wrapped) output, independent of input type/device. Both ways of
-    requesting it -- the ``transform_output`` config and ``set_output`` on the
-    estimator -- are checked."""
-    default = _as_numpy(getattr(incpca, method)(X))
-    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
-
-    # 1) global config_context(transform_output=...)
-    with config_context(transform_output=transform_output):
-        out = getattr(incpca, method)(X)
-    assert isinstance(out, expected_type)
-    assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
-
-    # 2) per-estimator set_output(transform=...). Restore the original config
-    # afterwards -- set_output("default") would *pin* it and override (1).
-    original_config = getattr(incpca, "_sklearn_output_config", {}).copy()
-    incpca.set_output(transform=transform_output)
-    try:
-        out = getattr(incpca, method)(X)
-        assert isinstance(out, expected_type)
-        assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
-    finally:
-        incpca._sklearn_output_config = original_config
-
-
 @pytest.mark.parametrize("xp,device", _INCPCA_ARRAY_API_INPUTS)
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
@@ -516,7 +491,7 @@ def test_transform_output_matches_default(
 ):
     X = _incpca_convert(load_iris(return_X_y=True)[0], xp, device)
     incpca = IncrementalPCA(n_components=3).fit(X)
-    _assert_transform_output_matches_default(incpca, X, transform_output, method)
+    assert_transform_output_matches_default(incpca, X, transform_output, method)
 
 
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
@@ -528,7 +503,7 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
         load_iris(return_X_y=True)[0], sycl_queue=queue, target_df=dataframe
     )
     incpca = IncrementalPCA(n_components=3).fit(X)
-    _assert_transform_output_matches_default(incpca, X, transform_output, method)
+    assert_transform_output_matches_default(incpca, X, transform_output, method)
 
 
 @pytest.mark.skipif(
@@ -540,7 +515,7 @@ def test_transform_output_target_offload(transform_output, method):
     X = load_iris(return_X_y=True)[0]
     with config_context(target_offload="gpu"):
         incpca = IncrementalPCA(n_components=3).fit(X)
-        _assert_transform_output_matches_default(incpca, X, transform_output, method)
+        assert_transform_output_matches_default(incpca, X, transform_output, method)
 
 
 @pytest.mark.parametrize("target_offload", [False, True])
@@ -556,4 +531,4 @@ def test_transform_output_pandas_polars_input(
     ctx = config_context(target_offload="gpu") if target_offload else nullcontext()
     with ctx:
         incpca = IncrementalPCA(n_components=3).fit(X)
-        _assert_transform_output_matches_default(incpca, X, transform_output, method)
+        assert_transform_output_matches_default(incpca, X, transform_output, method)
