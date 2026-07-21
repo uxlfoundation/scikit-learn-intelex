@@ -238,21 +238,32 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
-@pytest.mark.parametrize("start", [1, 3])
+@pytest.mark.parametrize(
+    "slicer",
+    [
+        pytest.param(np.s_[3:], id="rows"),
+        pytest.param(np.s_[2:8], id="row_range"),
+        pytest.param(np.s_[::2], id="row_step"),
+        pytest.param(np.s_[:, 1:4], id="cols"),
+        pytest.param(np.s_[:, 2:3], id="single_col"),
+        pytest.param(np.s_[2:8, 1:4], id="row_and_col"),
+    ],
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_sliced_view_offset_sycl_usm(dataframe, queue, start, dtype):
-    """A sliced view (e.g. X[start:]) keeps the base allocation pointer in
+def test_sliced_view_offset_sycl_usm(dataframe, queue, slicer, dtype):
+    """A sliced view keeps the base allocation pointer in
     `__sycl_usm_array_interface__['data'][0]` and encodes its start via the
     `offset` field. The table conversion must apply that offset, otherwise the
-    view reads from row 0 (regression test for the SUA offset bug).
+    view reads from row 0 (regression test for the SUA offset bug). Non-unit
+    steps and column subsets additionally exercise non-contiguous views.
     """
     X_np = np.arange(50, dtype=dtype).reshape(10, 5)
     X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    X_view = X_dp[start:]
+    X_view = X_dp[slicer]
     X_roundtrip = from_table(to_table(X_view), like=X_dp)
 
-    assert_allclose(_as_numpy(X_roundtrip), X_np[start:])
+    assert_allclose(_as_numpy(X_roundtrip), X_np[slicer])
 
 
 @pytest.mark.skipif(
