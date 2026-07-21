@@ -314,21 +314,6 @@ def get_build_options():
     eca += get_sdl_cflags()
     ela += get_sdl_ldflags()
 
-    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
-    if sanitizer:
-        if sanitizer not in ("address", "undefined", "thread"):
-            raise ValueError(f"Unsupported sanitizer: {sanitizer}")
-        if not IS_LIN:
-            raise ValueError("Sanitizers are currently supported only on Linux")
-        sanitizer_flag = f"-fsanitize={sanitizer}"
-        eca += [
-            "-g",
-            "-fno-omit-frame-pointer",
-            "-fno-sanitize-recover=all",
-            sanitizer_flag,
-        ]
-        ela += [sanitizer_flag]
-
     if DEBUG_BUILD and not IS_WIN:
         eca += ["-g"]
 
@@ -351,7 +336,6 @@ def get_build_options():
             )
             and not USE_ABS_RPATH
             and not DEBUG_BUILD
-            and not sanitizer
         ):
             ela.append("-s")
     return eca, ela, include_dir_plat

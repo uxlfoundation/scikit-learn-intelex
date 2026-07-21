@@ -35,6 +35,15 @@
     #define PyDataType_FIELDS(descr) ((descr)->fields)
 #endif
 
+inline bool can_decref_python_object()
+{
+    if (!Py_IsInitialized()) return false;
+#if PY_VERSION_HEX >= 0x030D0000
+    if (Py_IsFinalizing()) return false;
+#endif
+    return true;
+}
+
 #define SET_NPY_FEATURE(_T, _M, _E)                                                                                      \
     switch (_T)                                                                                                          \
     {                                                                                                                    \
@@ -389,7 +398,7 @@ public:
     /** \private */
     ~NpyNumericTable()
     {
-        if (_ary)
+        if (_ary && can_decref_python_object())
         {
             PyGILState_STATE state = PyGILState_Ensure();
             Py_DECREF(_ary);

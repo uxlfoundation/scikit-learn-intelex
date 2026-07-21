@@ -186,9 +186,10 @@ def custom_build_cmake_clib(
     build_type = "Debug" if debug_build else "RelWithDebInfo" if sanitizer else "Release"
     free_threading = bool(get_config_var("Py_GIL_DISABLED"))
 
-    cmake_args = [
-        "cmake",
-        cmake_generator,
+    cmake_args = ["cmake"]
+    if cmake_generator:
+        cmake_args.append(cmake_generator)
+    cmake_args += [
         "-S" + builder_directory,
         "-B" + abs_build_temp_path,
         "-DCMAKE_INSTALL_PREFIX=" + install_directory,

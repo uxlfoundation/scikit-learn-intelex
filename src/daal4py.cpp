@@ -65,6 +65,7 @@ private:
     {
         Py_INCREF(a);
         return std::shared_ptr<PyArrayObject>(a, [](PyArrayObject * array) {
+            if (!can_decref_python_object()) return;
             PyGILState_STATE state = PyGILState_Ensure();
             Py_DECREF(array);
             PyGILState_Release(state);

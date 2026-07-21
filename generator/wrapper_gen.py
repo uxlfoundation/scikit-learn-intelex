@@ -219,6 +219,8 @@ def num_threads() -> int:
 
     :rtype: int
     '''
+    # oneDAL stores this process-global value in a non-atomic size_t. Serialize
+    # the public daal4py getter with daalinit(), which updates the same value.
     with _daal_global_lock:
         return c_num_threads()
 
@@ -1339,7 +1341,7 @@ hpat_spec.append({
 # requires {{algos}}    list of algorithms that are available
 #          {{version}}  version of DAAL
 pyx_footer_template = """
-def getTreeState(model, i=0, n_classes=1):
+cdef _getTreeState_impl(model, i, n_classes):
     cdef TreeState cTreeState
     if False:
         pass
@@ -1378,6 +1380,15 @@ def getTreeState(model, i=0, n_classes=1):
     state = pyTreeState()
     state.set(&cTreeState)
     return state
+
+
+def getTreeState(model, i=0, n_classes=1):
+{% if free_threading %}
+    with cython.critical_section(model):
+        return _getTreeState_impl(model, i, n_classes)
+{% else %}
+    return _getTreeState_impl(model, i, n_classes)
+{% endif %}
 
 
 cdef extern from "daal4py_version.h":
@@ -1676,7 +1687,11 @@ class wrapper_gen(object):
         self, no_dist=False, no_stream=False, algos=[], version="", dist_custom_algos=[]
     ):
         t = jenv.from_string(pyx_footer_template)
-        pyx_footer = t.render(algos=algos, version=version)
+        pyx_footer = t.render(
+            algos=algos,
+            version=version,
+            free_threading=self.free_threading,
+        )
         pyx_footer += "__has_dist__ = {}\n\n".format(not no_dist)
 
         if no_dist:

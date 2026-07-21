@@ -108,7 +108,7 @@ jobs:
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           # Determine dpctl support
           DPCFLAG="0"
-          if [[ "${{ matrix.PYTHON_VERSION }}" != *t ]] && [ $(echo ${{ matrix.PYTHON_VERSION }} | grep '${{ env.DPCTL_PY_VERSIONS }}') ]; then DPCFLAG=''; fi
+          if [[ "${{ matrix.PYTHON_VERSION }}" != *t ]] && grep -q '${{ env.DPCTL_PY_VERSIONS }}' <<< '${{ matrix.PYTHON_VERSION }}'; then DPCFLAG=''; fi
           echo "DPCFLAG=${DPCFLAG}" >> "$GITHUB_OUTPUT"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
@@ -236,6 +236,9 @@ jobs:
     env:
       CC: clang-18
       CXX: clang++-18
+      CFLAGS: -O1 -g -fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all
+      CXXFLAGS: -O1 -g -fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all
+      LDFLAGS: -fsanitize=thread
       NO_DPC: "1"
       NO_DIST: "1"
       PYTHON_GIL: "0"

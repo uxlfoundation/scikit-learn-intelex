@@ -121,6 +121,43 @@ def test_shared_daal4py_algorithm_is_serialized():
     assert not sys._is_gil_enabled()
 
 
+def test_daal4py_model_state_is_serialized_with_readers():
+    import numpy as np
+
+    import daal4py
+
+    x = np.arange(400, dtype=np.float64).reshape(200, 2)
+    y = (x[:, 0] > x[:, 1]).astype(np.int64).reshape(-1, 1)
+    model = (
+        daal4py.decision_forest_classification_training(
+            nClasses=2,
+            nTrees=4,
+        )
+        .compute(x, y)
+        .model
+    )
+    state = model.__getstate__()
+
+    def replace_state():
+        for _ in range(32):
+            model.__setstate__(state)
+
+    def read_state():
+        for _ in range(32):
+            assert model.NumberOfTrees == 4
+            assert model.__getstate__()
+            assert repr(model)
+            assert daal4py.getTreeState(model, 0, 2) is not None
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(replace_state)]
+        futures.extend(executor.submit(read_state) for _ in range(3))
+        for future in futures:
+            future.result()
+
+    assert not sys._is_gil_enabled()
+
+
 @pytest.mark.parametrize("legacy_capsule", [False, True])
 def test_daal4py_numeric_table_protocol_is_thread_local(legacy_capsule):
     import numpy as np
