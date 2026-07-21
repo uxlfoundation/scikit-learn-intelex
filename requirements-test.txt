@@ -18,7 +18,7 @@ shap==0.51.0 ; python_version == '3.11'
 shap==0.52.0 ; python_version >= '3.12'
 treelite==4.7.0
 array-api-compat==1.15.0
-array-api-strict==2.5
+array-api-strict==2.6
 polars==1.43.0
 packaging==26.2
 pyyaml==6.0.3
