@@ -14,33 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
-import warnings
-from functools import partial
-
 import numpy as np
-from joblib import effective_n_jobs
-from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics import pairwise_distances as pairwise_distances_original
-from sklearn.metrics.pairwise import (
-    _VALID_METRICS,
-    PAIRWISE_BOOLEAN_FUNCTIONS,
-    PAIRWISE_DISTANCE_FUNCTIONS,
-    _pairwise_callable,
-    _parallel_pairwise,
-    check_pairwise_arrays,
-)
-from sklearn.utils.validation import check_non_negative
-
-try:
-    from sklearn.metrics.pairwise import _precompute_metric_params
-except ImportError:
-
-    def _precompute_metric_params(*args, **kwrds):
-        return dict()
-
-
-from scipy.sparse import issparse
-from scipy.spatial import distance
+from sklearn.metrics.pairwise import _VALID_METRICS
 from sklearn.utils._param_validation import (
     Hidden,
     Integral,
@@ -105,12 +81,6 @@ def _pairwise_distances(
             **kwds,
         )
 
-    if metric not in _VALID_METRICS and not callable(metric) and metric != "precomputed":
-        raise ValueError(
-            "Unknown metric %s. Valid metrics are %s, or 'precomputed', "
-            "or a callable" % (metric, _VALID_METRICS)
-        )
-
     X = _daal_check_array(
         X, accept_sparse=["csr", "csc", "coo"], force_all_finite=force_all_finite
     )
@@ -132,54 +102,13 @@ def _pairwise_distances(
             force_all_finite=force_all_finite,
             **kwds,
         )
-    if _dal_ready:
-        if metric == "cosine":
-            return _daal4py_cosine_distance_dense(X)
-        if metric == "correlation":
-            return _daal4py_correlation_distance_dense(X)
-        raise ValueError(f"'{metric}' distance is wrong for daal4py.")
-    if metric == "precomputed":
-        X, _ = check_pairwise_arrays(
-            X, Y, precomputed=True, ensure_all_finite=force_all_finite
-        )
-        whom = (
-            "`pairwise_distances`. Precomputed distance "
-            " need to have non-negative values."
-        )
-        check_non_negative(X, whom=whom)
-        return X
-    if metric in PAIRWISE_DISTANCE_FUNCTIONS:
-        func = PAIRWISE_DISTANCE_FUNCTIONS[metric]
-    elif callable(metric):
-        func = partial(
-            _pairwise_callable,
-            metric=metric,
-            ensure_all_finite=force_all_finite,
-            **kwds,
-        )
-    else:
-        if issparse(X) or issparse(Y):
-            raise TypeError("scipy distance metrics do not" " support sparse matrices.")
-
-        dtype = bool if metric in PAIRWISE_BOOLEAN_FUNCTIONS else None
-
-        if dtype == bool and (X.dtype != bool or (Y is not None and Y.dtype != bool)):
-            msg = "Data was converted to boolean for metric %s" % metric
-            warnings.warn(msg, DataConversionWarning)
-
-        X, Y = check_pairwise_arrays(
-            X, Y, dtype=dtype, ensure_all_finite=force_all_finite
-        )
-
-        # precompute data-derived metric params
-        params = _precompute_metric_params(X, Y, metric=metric, **kwds)
-        kwds.update(**params)
-
-        if effective_n_jobs(n_jobs) == 1 and X is Y:
-            return distance.squareform(distance.pdist(X, metric=metric, **kwds))
-        func = partial(distance.cdist, metric=metric, **kwds)
-
-    return _parallel_pairwise(X, Y, func, n_jobs, **kwds)
+    # Reaching this point guarantees metric is "cosine" or "correlation" and
+    # X is float64, so oneDAL always handles the computation from here.
+    if metric == "cosine":
+        return _daal4py_cosine_distance_dense(X)
+    if metric == "correlation":
+        return _daal4py_correlation_distance_dense(X)
+    raise ValueError(f"'{metric}' distance is wrong for daal4py.")
 
 
 # logic to deprecate `force_all_finite` from sklearn:
