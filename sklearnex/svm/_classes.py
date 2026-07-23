@@ -20,6 +20,7 @@ from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import NuSVR as _sklearn_NuSVR
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _deprecate_positional_args
 
@@ -32,7 +33,7 @@ from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ._base import BaseSVC, BaseSVR
 
 # array API support limited to sklearn 1.5 for regressors due to an incorrect array API

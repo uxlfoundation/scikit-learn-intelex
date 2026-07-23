@@ -20,18 +20,16 @@ from functools import wraps
 from typing import Any, Union
 
 from sklearn.utils import get_tags
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _get_host_inputs, _transfer_to_host
-from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
-from onedal.utils._third_party import is_dpnp_ndarray
+from onedal.utils._array_api import _asarray, _is_numpy_namespace
 
 from ._config import get_config
 from ._utils import PatchingConditionsChain
 from .base import oneDALEstimator
-from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -216,9 +214,6 @@ def wrap_output_data(func: Callable) -> Callable:
 
         data = (*args, *kwargs.values())[0]
 
-        if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
-            return copy_to_dpnp(usm_iface["syclobj"], result)
-
         if hasattr(data, "dtype"):
             xp, is_array_api = get_namespace(data)
             if is_array_api and not _is_numpy_namespace(xp):
@@ -235,9 +230,9 @@ def wrap_output_data(func: Callable) -> Callable:
 def support_input_format(func):
     """Transform input and output function arrays to/from host.
 
-    Converts and moves the output arrays of the decorated function
-    to match the input array type and device.
-    Puts SYCLQueue from data to decorated function arguments.
+    Wraps host-side scikit-learn / daal4py fallback functions (device offload to
+    oneDAL happens in ``dispatch``): inputs are transferred to host and the output
+    is converted back to the input's array API namespace and device.
 
     Parameters
     ----------
@@ -265,23 +260,12 @@ def support_input_format(func):
         else:
             self = None
 
-        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
-            if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
-                kwargs["queue"] = usm_iface["syclobj"]
+        if len(args) == 0 and len(kwargs) == 0:
+            return invoke_func(self, *args, **kwargs)
 
-        if kwargs.get("queue") is not None:
-            # Device path — function accepts queue, pass device data directly
-            result = invoke_func(self, *args, **kwargs)
-        else:
-            # Host path — sklearn function or host data, transfer to host
-            if len(args) == 0 and len(kwargs) == 0:
-                return invoke_func(self, *args, **kwargs)
-
-            with QM.manage_global_queue(None, *args) as queue:
-                hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-                result = invoke_func(self, *hostargs, **hostkwargs)
-                if queue and hasattr(args[0], "__sycl_usm_array_interface__"):
-                    return copy_to_dpnp(queue, result)
+        with QM.manage_global_queue(None, *args):
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+            result = invoke_func(self, *hostargs, **hostkwargs)
 
         data = (*args, *kwargs.values())[0]
         if get_config().get("transform_output") in ("default", None):
@@ -292,27 +276,3 @@ def support_input_format(func):
         return result
 
     return wrapper_impl
-
-
-def support_sycl_format(func):
-    # This wrapper enables scikit-learn functions and methods to work with
-    # all sycl data frameworks as they no longer support numpy implicit
-    # conversion and must be manually converted. This is only necessary
-    # when array API is supported but not active.
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if (
-            not get_config().get("array_api_dispatch", False)
-            and _get_sycl_namespace(*args)[2]
-        ):
-            with QM.manage_global_queue(kwargs.get("queue"), *args):
-                if inspect.isfunction(func) and "." in func.__qualname__:
-                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
-                    return func(self, *args, **kwargs)
-                else:
-                    args, kwargs = _get_host_inputs(*args, **kwargs)
-                    return func(*args, **kwargs)
-        return func(*args, **kwargs)
-
-    return wrapper

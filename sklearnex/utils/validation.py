@@ -19,6 +19,7 @@ import numbers
 from collections.abc import Sequence
 
 import scipy.sparse as sp
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import (
     _num_samples,
@@ -39,7 +40,6 @@ if sklearn_check_version("1.9"):
 from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 from .._config import get_config as _get_config
-from ._array_api import get_namespace
 
 if daal_check_version((2024, "P", 700)):
     from onedal.utils.validation import check_all_finite

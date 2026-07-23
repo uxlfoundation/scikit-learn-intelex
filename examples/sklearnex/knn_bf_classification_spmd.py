@@ -22,6 +22,7 @@ import numpy as np
 from mpi4py import MPI
 from sklearn.metrics import accuracy_score
 
+from sklearnex import config_context
 from sklearnex.spmd.neighbors import KNeighborsClassifier
 
 
@@ -57,22 +58,25 @@ dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
 dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-model_spmd = KNeighborsClassifier(
-    algorithm="brute", n_neighbors=20, weights="uniform", p=2, metric="minkowski"
-)
-model_spmd.fit(dpnp_X_train, dpnp_y_train)
-
-y_predict = model_spmd.predict(dpnp_X_test)
-
-print("Brute Force Distributed kNN classification results:")
-print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
-print(
-    "Classification results (first 5 observations on rank {}):\n{}".format(
-        rank, y_predict[:5]
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    model_spmd = KNeighborsClassifier(
+        algorithm="brute", n_neighbors=20, weights="uniform", p=2, metric="minkowski"
     )
-)
-print(
-    "Accuracy for entire rank {} (256 classes): {}\n".format(
-        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+    model_spmd.fit(dpnp_X_train, dpnp_y_train)
+
+    y_predict = model_spmd.predict(dpnp_X_test)
+
+    print("Brute Force Distributed kNN classification results:")
+    print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
+    print(
+        "Classification results (first 5 observations on rank {}):\n{}".format(
+            rank, y_predict[:5]
+        )
     )
-)
+    print(
+        "Accuracy for entire rank {} (256 classes): {}\n".format(
+            rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+        )
+    )

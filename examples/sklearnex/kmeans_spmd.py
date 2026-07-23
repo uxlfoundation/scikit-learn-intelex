@@ -22,6 +22,7 @@ from dpctl import SyclQueue
 from mpi4py import MPI
 from sklearn.datasets import load_digits
 
+from sklearnex import config_context
 from sklearnex.spmd.cluster import KMeans
 
 
@@ -53,15 +54,18 @@ queue = SyclQueue("gpu")
 
 dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=queue)
 
-model = KMeans(n_clusters=10).fit(dpnp_X)
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    model = KMeans(n_clusters=10).fit(dpnp_X)
 
-print(f"Number of iterations on {rank}:\n", model.n_iter_)
-print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])
-print(f"Centers on rank {rank} (slice of 2):\n", model.cluster_centers_[:2, :])
+    print(f"Number of iterations on {rank}:\n", model.n_iter_)
+    print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])
+    print(f"Centers on rank {rank} (slice of 2):\n", model.cluster_centers_[:2, :])
 
-X_test, _ = get_test_data(size)
-dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
+    X_test, _ = get_test_data(size)
+    dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
 
-result = model.predict(dpnp_X_test)
+    result = model.predict(dpnp_X_test)
 
-print(f"Result labels on rank {rank} (slice of 5):\n", result[:5])
+    print(f"Result labels on rank {rank} (slice of 5):\n", result[:5])
