@@ -61,7 +61,7 @@ from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
-    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api"
+    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
 
 
@@ -127,6 +127,8 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
         or array_api_enabled()
     ):
         dataframes_and_queues.append(pytest.param("array_api", None, id="array_api"))
+    if torch_available and "torch" in dataframe_filter_:
+        dataframes_and_queues.extend(get_df_and_q("torch"))
 
     return dataframes_and_queues
 
@@ -135,6 +137,8 @@ def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
+    if torch_available and isinstance(obj, torch.Tensor):
+        return obj.cpu().detach().numpy(*args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
@@ -180,5 +184,18 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
 
         xp = array_api_modules[target_df]
         return xp.asarray(obj)
+    elif target_df == "torch":
+        if "dtype" in kwargs:
+            kwargs["dtype"] = torch.from_numpy(np.empty(0, dtype=kwargs["dtype"])).dtype
+        # Mirror the requested sycl_queue's device so torch tensors don't land on
+        # xpu for CPU-queue cases (dpnp honors sycl_queue; torch must too).
+        is_gpu = sycl_queue is not None and getattr(
+            sycl_queue.sycl_device, "is_gpu", False
+        )
+        if is_gpu and hasattr(torch, "xpu") and torch.xpu.is_available():
+            device = "xpu"
+        else:
+            device = "cpu"
+        return torch.as_tensor(obj, device=device, *args, **kwargs)
 
     raise RuntimeError("Unsupported dataframe conversion")

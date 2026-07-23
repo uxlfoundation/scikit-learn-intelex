@@ -47,7 +47,7 @@ attributes_to_compare = [
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -95,7 +95,7 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
@@ -159,7 +159,7 @@ def test_incremental_pca_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
@@ -211,7 +211,7 @@ def test_incremental_pca_fit_spmd_random(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
