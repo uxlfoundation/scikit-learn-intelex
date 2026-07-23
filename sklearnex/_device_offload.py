@@ -44,15 +44,12 @@ def _get_backend(
     It is assumed that the queue (which determined what hardware to possibly use for
     oneDAL) has been previously and extensively collected (i.e. the data has already
     been checked using onedal's SyclQueueManager for queues)."""
-    queue = QM.get_global_queue()
-    cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
-    gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
-    if cpu_device:
+    if QM.is_cpu_device():
         patching_status = obj._onedal_cpu_supported(method_name, *data)
         return patching_status.get_status(), patching_status
 
-    if gpu_device:
+    if QM.is_gpu_device():
         patching_status = obj._onedal_gpu_supported(method_name, *data)
         if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
             QM.fallback_to_host()
@@ -167,6 +164,13 @@ def dispatch(
             if sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
+            elif not QM.is_cpu_device() and not get_config()["allow_fallback_to_host"]:
+                # In spirit of the documentation, if there is a transfer to host which runs then
+                # scikit-learn without array API then it must be done on CPU. This is then controlled
+                # by the `allow_fallback_to_host` configuration option.
+                raise RuntimeError(
+                    "Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option"
+                )
             else:
                 patching_status.write_log()
                 return branches["sklearn"](obj, *hostargs, **hostkwargs)
