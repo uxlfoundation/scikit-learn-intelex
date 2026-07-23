@@ -14,6 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
+from contextlib import nullcontext
+
+import array_api_strict
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -27,7 +30,12 @@ if hasattr(sp, "csr_array"):
 else:
     CSR_CTOR = sp.csr_matrix
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
+from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _as_numpy_checked,
@@ -35,11 +43,21 @@ from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     get_dataframes_and_queues,
     get_queues,
+    torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.cluster import KMeans
-from sklearnex.tests.utils import _IS_INTEL
+from sklearnex.tests.utils import (
+    _IS_INTEL,
+    assert_transform_output_matches_default,
+)
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 def generate_dense_dataset(n_samples, n_features, density, n_clusters):
@@ -275,3 +293,111 @@ def test_sparse_predict_on_dense_fit(array_api):
         np.testing.assert_allclose(sp_pred, dense_pred)
         np.testing.assert_allclose(sp_transf, dense_transf, rtol=1e-4, atol=1e-4)
         np.testing.assert_allclose(sp_score, dense_score, rtol=1e-6, atol=1e-6)
+
+
+def _kmeans_convert(arr, xp, device):
+    """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
+    if xp is np:
+        return arr
+    return xp.asarray(arr, device=device)
+
+
+# array_api_strict output conversion fails on numpy < 2.2.5: numpy < 2.2.5 returns a
+# read-only fitted array that ``to_table`` cannot export through DLPack
+# (BufferError); numpy >= 2.2.5 returns a writeable array, so it works there.
+# TODO: remove this skip once sklearnex handles read-only arrays in the oneDAL data
+# conversion so array_api_strict works on numpy < 2.2.5 as well.
+_KMEANS_ARRAY_API_STRICT = pytest.param(
+    array_api_strict,
+    None,
+    marks=pytest.mark.skipif(
+        not _package_check_version("2.2.5", np.__version__),
+        reason="TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5",
+    ),
+)
+
+# (xp, device) array-API input combinations, CPU and GPU; device-specific entries
+# are dropped at collection time when the hardware/library is unavailable.
+# dpnp arrays are SYCL arrays even on "cpu", so they need a SYCL-enabled sklearnex
+# build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
+# does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
+# dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
+_KMEANS_ARRAY_API_INPUTS = (
+    [(np, None), _KMEANS_ARRAY_API_STRICT]
+    + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
+    + (
+        [(dpnp, "gpu")]
+        if dpnp_available and _dpc_backend is not None and is_sycl_device_available("gpu")
+        else []
+    )
+    + ([(torch, "cpu")] if torch_available else [])
+    + ([(torch, "xpu")] if torch_xpu_available else [])
+)
+
+
+@pytest.mark.parametrize("xp,device", _KMEANS_ARRAY_API_INPUTS)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_matches_default(
+    xp, device, transform_output, method, with_array_api
+):
+    X_np = generate_dense_dataset(50, 5, 0.5, 3)
+    X = _kmeans_convert(X_np, xp, device)
+
+    km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+    assert_transform_output_matches_default(km, X, transform_output, method)
+
+
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, method):
+    X_np = generate_dense_dataset(50, 5, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+    assert_transform_output_matches_default(km, X, transform_output, method)
+
+
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_target_offload(transform_output, method):
+    X_np = generate_dense_dataset(50, 5, 0.5, 3)
+
+    with config_context(target_offload="gpu"):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np)
+        assert_transform_output_matches_default(km, X_np, transform_output, method)
+
+
+def _check_kmeans_results(km, X, X_np):
+    """Verify the results follow the KMeans definition, independent of which
+    local optimum the backend converged to: transform gives the distance to
+    each fitted centroid, predict is the closest centroid and score is the
+    negative sum of squared distances to the assigned centroid."""
+    centers = _as_numpy(km.cluster_centers_)
+    pred = _as_numpy(km.predict(X))
+    trans = _as_numpy(km.transform(X))
+    sc = km.score(X)
+    assert isinstance(sc, float)
+
+    expected_distances = np.linalg.norm(X_np[:, None, :] - centers[None, :, :], axis=2)
+    assert_allclose(trans, expected_distances, rtol=1e-4, atol=1e-4)
+    assert_allclose(pred, trans.argmin(axis=1))
+    assert_allclose(sc, -np.square(trans.min(axis=1)).sum(), rtol=1e-5)
+
+
+@pytest.mark.parametrize("xp,device", _KMEANS_ARRAY_API_INPUTS)
+def test_array_api_dispatch_results(xp, device, with_array_api):
+    X_np = generate_dense_dataset(50, 5, 0.5, 3)
+    X = _kmeans_convert(X_np, xp, device)
+
+    km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+    # predict/transform/cluster_centers_ follow the input type.
+    assert type(km.predict(X)) == type(X)
+    assert type(km.transform(X)) == type(X)
+    assert type(km.cluster_centers_) == type(X)
+    _check_kmeans_results(km, X, X_np)

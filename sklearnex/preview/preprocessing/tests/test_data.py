@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from contextlib import nullcontext
+
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
@@ -54,15 +56,21 @@ def test_max_abs_scaler_dense_fit_transform(dataframe, queue):
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
+    # non-numpy array API inputs (e.g. dpnp) require array_api_dispatch
+    array_api = dataframe not in ("numpy", "pandas")
+    context = config_context(array_api_dispatch=True) if array_api else nullcontext()
+
     # Scikit-learn Baseline
     scaler_sk = _sklearn_MaxAbsScaler()
     X_trans_sk = scaler_sk.fit_transform(X)
 
     # Sklearnex
     scaler_ex = MaxAbsScaler()
-    X_trans_ex = scaler_ex.fit_transform(X_df)
+    with context:
+        X_trans_ex = scaler_ex.fit_transform(X_df)
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
+    # under array_api_dispatch, fitted attributes match the input namespace (e.g. dpnp)
     assert_allclose(_as_numpy_checked(scaler_ex.scale_, dataframe), scaler_sk.scale_)
     assert_allclose(_as_numpy_checked(scaler_ex.max_abs_, dataframe), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)
@@ -83,17 +91,23 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
         scaler_sk.partial_fit(batch)
     X_trans_sk = scaler_sk.transform(X)
 
+    # non-numpy array API inputs (e.g. dpnp) require array_api_dispatch
+    array_api = dataframe not in ("numpy", "pandas")
+    context = config_context(array_api_dispatch=True) if array_api else nullcontext()
+
     # Sklearnex execution
     scaler_ex = MaxAbsScaler()
-    for batch in [X1, X2, X3]:
-        batch_df = _convert_to_dataframe(batch, sycl_queue=queue, target_df=dataframe)
-        scaler_ex.partial_fit(batch_df)
-
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    X_trans_ex = scaler_ex.transform(X_df)
+    with context:
+        for batch in [X1, X2, X3]:
+            batch_df = _convert_to_dataframe(batch, sycl_queue=queue, target_df=dataframe)
+            scaler_ex.partial_fit(batch_df)
+
+        X_trans_ex = scaler_ex.transform(X_df)
     X_trans_ex_np = _as_numpy(X_trans_ex)
 
     assert scaler_ex.n_samples_seen_ == scaler_sk.n_samples_seen_
+    # under array_api_dispatch, fitted attributes match the input namespace (e.g. dpnp)
     assert_allclose(_as_numpy_checked(scaler_ex.scale_, dataframe), scaler_sk.scale_)
     assert_allclose(_as_numpy_checked(scaler_ex.max_abs_, dataframe), scaler_sk.max_abs_)
     assert_allclose(X_trans_ex_np, X_trans_sk)

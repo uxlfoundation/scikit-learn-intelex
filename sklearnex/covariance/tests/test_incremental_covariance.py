@@ -194,6 +194,7 @@ def test_sklearnex_fit_on_random_data(
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_whitened_toy_score(dataframe, queue):
+    from sklearnex import config_context
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
     # Load a sklearn toy dataset with sufficient data
@@ -206,10 +207,9 @@ def test_whitened_toy_score(dataframe, queue):
     # change dataframe
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-    # fit data
-    est = IncrementalEmpiricalCovariance()
-    est.fit(X_df)
-    # location_ attribute approximately zero (10,), covariance_ identity (10,10)
+    # non-numpy array API inputs (e.g. dpnp) require array_api_dispatch
+    array_api = dataframe not in ("numpy", "pandas")
+    context = config_context(array_api_dispatch=True) if array_api else nullcontext()
 
     # The log-likelihood can be calculated simply due to covariance_
     # use of scipy.linalg.pinvh, np.linalg.sloget and np.cov for estimator
@@ -218,7 +218,11 @@ def test_whitened_toy_score(dataframe, queue):
         -(n - slogdet(pinvh(np.cov(X.T, bias=1)))[1] + n * np.log(2 * np.pi)) / 2
     )
     # expected_result = -14.1780602988
-    result = _as_numpy_checked(est.score(X_df), dataframe)
+    with context:
+        # fit data; location_ approximately zero (10,), covariance_ identity (10,10)
+        est = IncrementalEmpiricalCovariance()
+        est.fit(X_df)
+        result = _as_numpy_checked(est.score(X_df), dataframe)
     assert_allclose(expected_result, result, atol=1e-6)
 
 
@@ -310,7 +314,8 @@ def test_score_verify_namespace(dispatch, dataframe, queue):
         cfg_context = config_context(array_api_dispatch=True)
         err = pytest.raises((TypeError, ValueError))
     else:
-        # support_sycl_format will cause it to function
+        # without array_api_dispatch, fitted attributes are host numpy, so a
+        # numpy score input shares their namespace and the call succeeds
         cfg_context = nullcontext()
         err = nullcontext()
 

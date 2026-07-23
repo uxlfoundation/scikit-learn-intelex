@@ -40,12 +40,12 @@ from daal4py.sklearn._utils import get_dtype
 from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     array_api_modules,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues
-from onedal.utils._array_api import _get_sycl_namespace
 
 data_shapes = [
     pytest.param((1000, 100), id="(1000, 100)"),  # 2-D array
@@ -70,7 +70,7 @@ class DummyEstimatorWithTableConversions:
         if not backend.is_dpc:
             raise RuntimeError("Table conversions should be done with DPC backend.")
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        xp = X.__array_namespace__()
         dbscan = DBSCAN()
         types = [xp.float32, xp.float64]
         if get_dtype(X) not in types:
@@ -218,14 +218,49 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
 
     X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    sua_iface, X_dp_namespace, _ = _get_sycl_namespace(X_dp)
-
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
     X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
+
+
+@pytest.mark.skipif(
+    not dpctl_available,
+    reason="dpctl is required for checks.",
+)
+@pytest.mark.skipif(
+    not backend.is_dpc,
+    reason="__sycl_usm_array_interface__ support requires DPC backend.",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "slicer",
+    [
+        pytest.param(np.s_[3:], id="rows"),
+        pytest.param(np.s_[2:8], id="row_range"),
+        pytest.param(np.s_[::2], id="row_step"),
+        pytest.param(np.s_[:, 1:4], id="cols"),
+        pytest.param(np.s_[:, 2:3], id="single_col"),
+        pytest.param(np.s_[2:8, 1:4], id="row_and_col"),
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sliced_view_offset_sycl_usm(dataframe, queue, slicer, dtype):
+    """A sliced view keeps the base allocation pointer in
+    `__sycl_usm_array_interface__['data'][0]` and encodes its start via the
+    `offset` field. The table conversion must apply that offset, otherwise the
+    view reads from row 0 (regression test for the SUA offset bug). Non-unit
+    steps and column subsets additionally exercise non-contiguous views.
+    """
+    X_np = np.arange(50, dtype=dtype).reshape(10, 5)
+    X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    X_view = X_dp[slicer]
+    X_roundtrip = from_table(to_table(X_view), like=X_dp)
+
+    assert_allclose(_as_numpy(X_roundtrip), X_np[slicer])
 
 
 @pytest.mark.skipif(
@@ -356,7 +391,6 @@ def test_to_table_non_contiguous_input(dataframe, queue):
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
 
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):

@@ -16,6 +16,7 @@
 
 from sklearn.base import BaseEstimator
 from sklearn.utils import gen_batches
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._param_validation import Interval, StrOptions
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -27,7 +28,7 @@ from onedal.basic_statistics import (
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.9"):
