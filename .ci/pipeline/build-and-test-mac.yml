@@ -41,6 +41,7 @@ steps:
       bash .ci/scripts/setup_sklearn.sh $(SKLEARN_VERSION)
       pip install --upgrade -r requirements-test.txt
       conda list
+      python .ci/scripts/print_skl_info.py
     displayName: 'Install testing requirements'
   - script: |
       source activate CB

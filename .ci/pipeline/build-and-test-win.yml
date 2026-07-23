@@ -50,6 +50,7 @@ steps:
       pip install --upgrade -r requirements-test.txt
       cd ..
       conda list
+      .ci\scripts\print_skl_info.py
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
