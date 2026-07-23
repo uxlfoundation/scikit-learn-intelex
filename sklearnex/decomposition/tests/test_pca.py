@@ -14,22 +14,41 @@
 # limitations under the License.
 # ===============================================================================
 
+from contextlib import nullcontext
+
+import array_api_strict
 import numpy as np
+import pandas as pd
+import polars as pl
 import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
+from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
+from sklearnex import config_context
 from sklearnex.decomposition import PCA
+from sklearnex.tests.utils import assert_transform_output_matches_default
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 @pytest.fixture
@@ -188,3 +207,95 @@ def test_pca_error_on_incompatible_devices(with_array_api):
         _ = model.transform(X_gpu)
     with pytest.raises(ValueError, match=err_match):
         _ = model.inverse_transform(X_gpu)
+
+
+def _pca_convert(arr, xp, device):
+    """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
+    if xp is np:
+        return arr
+    return xp.asarray(arr, device=device)
+
+
+# array_api_strict output conversion fails on numpy < 2.2.5: PCA rebuilds its model
+# from the fitted ``components_``, which numpy < 2.2.5 returns as a read-only array
+# that ``to_table`` cannot export through DLPack (BufferError). numpy >= 2.2.5 returns
+# a writeable array, so it works there.
+# TODO: remove this skip once sklearnex handles read-only arrays in the oneDAL data
+# conversion so array_api_strict works on numpy < 2.2.5 as well.
+_PCA_ARRAY_API_STRICT = pytest.param(
+    array_api_strict,
+    None,
+    marks=pytest.mark.skipif(
+        not _package_check_version("2.2.5", np.__version__),
+        reason="TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5",
+    ),
+)
+
+# (xp, device) array-API input combinations, CPU and GPU; device-specific entries
+# are dropped at collection time when the hardware/library is unavailable.
+# dpnp arrays are SYCL arrays even on "cpu", so they need a SYCL-enabled sklearnex
+# build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
+# does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
+# dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
+_PCA_ARRAY_API_INPUTS = (
+    [(np, None), _PCA_ARRAY_API_STRICT]
+    + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
+    + (
+        [(dpnp, "gpu")]
+        if dpnp_available and _dpc_backend is not None and is_sycl_device_available("gpu")
+        else []
+    )
+    + ([(torch, "cpu")] if torch_available else [])
+    + ([(torch, "xpu")] if torch_xpu_available else [])
+)
+
+
+@pytest.mark.parametrize("xp,device", _PCA_ARRAY_API_INPUTS)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_matches_default(
+    xp, device, transform_output, method, with_array_api
+):
+    X = _pca_convert(load_iris(return_X_y=True)[0], xp, device)
+    pca = PCA(n_components=3).fit(X)
+    assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, method):
+    X = _convert_to_dataframe(
+        load_iris(return_X_y=True)[0], sycl_queue=queue, target_df=dataframe
+    )
+    pca = PCA(n_components=3).fit(X)
+    assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_target_offload(transform_output, method):
+    X = load_iris(return_X_y=True)[0]
+    with config_context(target_offload="gpu"):
+        pca = PCA(n_components=3).fit(X)
+        assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.parametrize("target_offload", [False, True])
+@pytest.mark.parametrize("dataframe", [pd.DataFrame, pl.DataFrame])
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_pandas_polars_input(
+    dataframe, target_offload, transform_output, method
+):
+    if target_offload and not is_sycl_device_available("gpu"):
+        pytest.skip("Test for GPU-specific functionality.")
+    X = dataframe(load_iris(return_X_y=True)[0])
+    ctx = config_context(target_offload="gpu") if target_offload else nullcontext()
+    with ctx:
+        pca = PCA(n_components=3).fit(X)
+        assert_transform_output_matches_default(pca, X, transform_output, method)
