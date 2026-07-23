@@ -219,7 +219,6 @@ def test_incremental_pca_fit_spmd_random(
 @pytest.mark.parametrize("num_samples", [200, 400])
 @pytest.mark.parametrize("num_features", [10, 20])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_random(
     dataframe,
@@ -230,7 +229,6 @@ def test_incremental_pca_partial_fit_spmd_random(
     num_samples,
     num_features,
     dtype,
-    array_api_dispatch,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.preview.decomposition import IncrementalPCA
@@ -256,20 +254,23 @@ def test_incremental_pca_partial_fit_spmd_random(
         )
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
         # Configure array API dispatch status for spmd estimator
-        with config_context(array_api_dispatch=array_api_dispatch):
+        with config_context(array_api_dispatch=True):
             incpca_spmd.partial_fit(local_dpt_X)
         incpca.partial_fit(dpt_X)
 
-    for attribute in attributes_to_compare:
-        assert_allclose(
-            _as_numpy(getattr(incpca, attribute)),
-            _as_numpy(getattr(incpca_spmd, attribute)),
-            atol=tol,
-            err_msg=f"{attribute} is incorrect",
-        )
+    # Accessing an spmd attribute triggers the deferred finalize, which uses the
+    # array namespace of the stored (dpnp) data and must run under dispatch.
+    with config_context(array_api_dispatch=True):
+        for attribute in attributes_to_compare:
+            assert_allclose(
+                _as_numpy(getattr(incpca, attribute)),
+                _as_numpy(getattr(incpca_spmd, attribute)),
+                atol=tol,
+                err_msg=f"{attribute} is incorrect",
+            )
 
     # Configure array API dispatch status for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 

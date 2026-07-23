@@ -30,6 +30,7 @@ if daal_check_version((2023, "P", 200)):
     from sklearn.metrics.pairwise import (
         euclidean_distances as _sklearn_euclidean_distances,
     )
+    from sklearn.utils._array_api import get_namespace
     from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
     from sklearn.utils.validation import (
         _num_samples,
@@ -44,7 +45,7 @@ if daal_check_version((2023, "P", 200)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
-    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.9"):
@@ -494,8 +495,4 @@ if daal_check_version((2023, "P", 200)):
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:
-    from daal4py.sklearn.cluster import KMeans
-
-    logging.warning(
-        "Sklearnex KMeans requires oneDAL version >= 2023.2, falling back to daal4py."
-    )
+    raise ImportError("Sklearnex KMeans requires oneDAL version >= 2023.2.")

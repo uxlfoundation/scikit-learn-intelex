@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal import _default_backend, _dpc_backend
+from .. import _default_backend, _dpc_backend
 
 backend = _dpc_backend or _default_backend
 

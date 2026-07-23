@@ -23,6 +23,7 @@ import dpnp
 import numpy as np
 from mpi4py import MPI
 
+from sklearnex import config_context
 from sklearnex.spmd.ensemble import RandomForestClassifier
 
 
@@ -52,14 +53,21 @@ dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
 dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-rf = RandomForestClassifier(max_depth=2, random_state=0).fit(dpnp_X_train, dpnp_y_train)
-
-pred = rf.predict(dpnp_X_test)
-
-print("Random Forest classification results:")
-print("Ground truth (first 5 observations on rank {}):\n{}".format(mpi_rank, y_test[:5]))
-print(
-    "Classification results (first 5 observations on rank {}):\n{}".format(
-        mpi_rank, dpnp.asnumpy(pred)[:5]
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    rf = RandomForestClassifier(max_depth=2, random_state=0).fit(
+        dpnp_X_train, dpnp_y_train
     )
-)
+
+    pred = rf.predict(dpnp_X_test)
+
+    print("Random Forest classification results:")
+    print(
+        "Ground truth (first 5 observations on rank {}):\n{}".format(mpi_rank, y_test[:5])
+    )
+    print(
+        "Classification results (first 5 observations on rank {}):\n{}".format(
+            mpi_rank, dpnp.asnumpy(pred)[:5]
+        )
+    )

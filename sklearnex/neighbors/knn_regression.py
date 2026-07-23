@@ -18,6 +18,7 @@ from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
 )
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -27,7 +28,7 @@ from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
@@ -285,7 +286,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
             if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="_fit_X", method="kenighbors")
+                check_same_namespace(X, self, attribute="_fit_X", method="kneighbors")
         else:
             query_is_train = True
             X = self._fit_X

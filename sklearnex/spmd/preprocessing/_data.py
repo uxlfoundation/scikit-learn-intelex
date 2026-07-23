@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2014 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-from .dbscan import DBSCAN
-from .k_means import KMeans
+from onedal.spmd.basic_statistics import (
+    IncrementalBasicStatistics as onedalSPMD_IncrementalBasicStatistics,
+)
 
-__all__ = ["KMeans", "DBSCAN"]
+from ...preview.preprocessing import MaxAbsScaler as base_MaxAbsScaler
+
+
+class MaxAbsScaler(base_MaxAbsScaler):
+    _onedal_incremental_basic_statistics = staticmethod(
+        onedalSPMD_IncrementalBasicStatistics
+    )

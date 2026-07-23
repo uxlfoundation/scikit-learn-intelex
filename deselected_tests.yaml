@@ -66,6 +66,17 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-CPU_DEVICE-float64-estimator0] >=1.8,<1.9
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-device1-float32-estimator0] >=1.8,<1.9
 
+  # array_api_strict arrays are readonly; to_table -> __dlpack__ raises
+  # "BufferError: Cannot export readonly array ... readonly is unsupported by DLPack
+  # TODO: remove once dlpack data conversion issues are resolved for numpy <2.1
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=None,device=None)] >=1.6,<1.7
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-device1-float32] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
@@ -290,7 +301,6 @@ deselected_tests:
   - model_selection/tests/test_classification_threshold.py::test_tuned_threshold_classifier_cv_zeros_sample_weights_equivalence >=1.5
 
   # Deselections for 2025.0
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse
@@ -426,6 +436,9 @@ deselected_tests:
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
 
+  # sklearn does not support n_jobs in preprocessing estimators
+  - preprocessing/tests/test_common.py::test_missing_value_handling[est0-maxabs_scale-True-False-omit_kwargs0]
+
   # Fails due to numeric tolerances on some AMD systems
   - linear_model/tests/test_base.py::test_linear_regression_vs_lstsq[float32]
 
@@ -445,10 +458,6 @@ deselected_tests:
 
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
-
-  # Fails for float32 due to small numeric tolerances exposed by the random
-  # splitter update in oneDAL forest (#3649)
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float32]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
@@ -598,3 +607,20 @@ gpu:
   # Fails for float32 due to small numeric tolerances in the order of 1e-6,
   # exposed by the random splitter update in oneDAL forest (#3649)
   - ensemble/tests/test_forest.py::test_memory_layout[float32
+
+  # array_api_strict (host) arrays don't map to a oneDAL GPU device:
+  # "RuntimeError: Unsupported device in DLTensor."
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-device1-float32] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[Ridge()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[Ridge()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[GridSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_grid={'alpha':[0.1,1.0]})-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[GridSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_grid={'alpha':[0.1,1.0]})-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[HalvingGridSearchCV(cv=2,error_score='raise',estimator=Ridge(),min_resources='smallest',param_grid={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[HalvingGridSearchCV(cv=2,error_score='raise',estimator=Ridge(),min_resources='smallest',param_grid={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[HalvingRandomSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[HalvingRandomSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[RandomizedSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[RandomizedSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9

@@ -25,7 +25,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from daal4py.sklearn._utils import _package_check_version
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
-from onedal.datatypes import from_table, to_table
+from onedal.datatypes import from_table, return_type_constructor, to_table
 from onedal.utils._third_party import dpctl_available
 
 backend = _dpc_backend or _default_backend
@@ -40,12 +40,12 @@ from daal4py.sklearn._utils import get_dtype
 from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     array_api_modules,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues
-from onedal.utils._array_api import _get_sycl_namespace
 
 data_shapes = [
     pytest.param((1000, 100), id="(1000, 100)"),  # 2-D array
@@ -70,7 +70,7 @@ class DummyEstimatorWithTableConversions:
         if not backend.is_dpc:
             raise RuntimeError("Table conversions should be done with DPC backend.")
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        xp = X.__array_namespace__()
         dbscan = DBSCAN()
         types = [xp.float32, xp.float64]
         if get_dtype(X) not in types:
@@ -218,14 +218,49 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
 
     X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    sua_iface, X_dp_namespace, _ = _get_sycl_namespace(X_dp)
-
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
     X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
+
+
+@pytest.mark.skipif(
+    not dpctl_available,
+    reason="dpctl is required for checks.",
+)
+@pytest.mark.skipif(
+    not backend.is_dpc,
+    reason="__sycl_usm_array_interface__ support requires DPC backend.",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "slicer",
+    [
+        pytest.param(np.s_[3:], id="rows"),
+        pytest.param(np.s_[2:8], id="row_range"),
+        pytest.param(np.s_[::2], id="row_step"),
+        pytest.param(np.s_[:, 1:4], id="cols"),
+        pytest.param(np.s_[:, 2:3], id="single_col"),
+        pytest.param(np.s_[2:8, 1:4], id="row_and_col"),
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sliced_view_offset_sycl_usm(dataframe, queue, slicer, dtype):
+    """A sliced view keeps the base allocation pointer in
+    `__sycl_usm_array_interface__['data'][0]` and encodes its start via the
+    `offset` field. The table conversion must apply that offset, otherwise the
+    view reads from row 0 (regression test for the SUA offset bug). Non-unit
+    steps and column subsets additionally exercise non-contiguous views.
+    """
+    X_np = np.arange(50, dtype=dtype).reshape(10, 5)
+    X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    X_view = X_dp[slicer]
+    X_roundtrip = from_table(to_table(X_view), like=X_dp)
+
+    assert_allclose(_as_numpy(X_roundtrip), X_np[slicer])
 
 
 @pytest.mark.skipif(
@@ -356,7 +391,6 @@ def test_to_table_non_contiguous_input(dataframe, queue):
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
 
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):
@@ -604,6 +638,32 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
 
     # verify that table immutability is gone and copy behavior has been followed
     assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues("gpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_return_type_constructor_array_api_host_from_gpu_table(queue, dtype):
+    """array_api_strict devices are host-only, but a global GPU queue can still
+    cause oneDAL to produce a SYCL-device table for such inputs. Converting that
+    table back via ``return_type_constructor`` must transfer it to host rather
+    than raising (array_api_strict's ``from_dlpack`` does not forward the
+    'device' argument to the exporter to request that transfer itself).
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(rng.random_sample((5, 3)), dtype=dtype)
+
+    # table produced on a real SYCL/GPU queue
+    X_table = to_table(X, queue=queue)
+
+    # host-only array_api_strict "like" array, mirroring what sklearnex passes
+    # when the estimator's input was array API but not on a SYCL device
+    like = array_api_modules["array_api"].asarray(X)
+
+    func = return_type_constructor(like)
+    X_out = func(X_table)
+
+    assert X_out.__dlpack_device__() == like.__dlpack_device__()
+    assert_allclose(np.asarray(X_out), X)
 
 
 @pytest.mark.skipif(_dpc_backend is None, reason="Functionality requires DPC module")

@@ -22,75 +22,12 @@ from typing import Union
 
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
-from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
+from onedal.utils._array_api import _is_numpy_namespace
 
-from .._config import get_config
 from ..base import Tags, oneDALEstimator
-
-
-def get_namespace(*arrays):
-    """Get namespace of arrays.
-
-    Introspect `arrays` arguments and return their common Array API
-    compatible namespace object, if any. NumPy 1.22 and later can
-    construct such containers using the `numpy.array_api` namespace
-    for instance.
-
-    This function will return the namespace of SYCL-related arrays
-    which define the __sycl_usm_array_interface__ attribute
-    regardless of array_api support, the configuration of
-    array_api_dispatch, or scikit-learn version.
-
-    See: https://numpy.org/neps/nep-0047-array-api-standard.html
-
-    If `arrays` are regular numpy arrays, an instance of the
-    `_NumPyApiWrapper` compatibility wrapper is returned instead.
-
-    Namespace support is not enabled by default. To enabled it
-    call:
-
-      sklearn.set_config(array_api_dispatch=True)
-
-    or:
-
-      with sklearn.config_context(array_api_dispatch=True):
-          # your code here
-
-    Otherwise an instance of the `_NumPyApiWrapper`
-    compatibility wrapper is always returned irrespective of
-    the fact that arrays implement the `__array_namespace__`
-    protocol or not.
-
-    Parameters
-    ----------
-    *arrays : array objects
-        Array objects.
-
-    Returns
-    -------
-    namespace : module
-        Namespace shared by array objects.
-
-    is_array_api : bool
-        True of the arrays are containers that implement the Array API spec.
-    """
-
-    # check required because _get_sycl_namespace only verifies that *arrays
-    # are of the same sycl namespace, not of the same array namespace.
-    # When array_api_dispatch is enabled, then sklearn's version is required
-    # for the additional array namespace check. This is now possible with
-    # dpnp as it supports `__array_namespace__`.
-    if not get_config().get("array_api_dispatch", False):
-        sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
-        if sycl_type:
-            return xp, is_array_api_compliant
-
-    # sklearn contains a specially patched numpy wrapper that should be
-    # reused which is yielded from sklearn's get_namespace.
-    return sklearn_get_namespace(*arrays)
 
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:

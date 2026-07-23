@@ -16,12 +16,11 @@
 
 import numpy as np
 
-from onedal import _default_backend as backend
-from onedal._device_offload import supports_queue
-from onedal.common._backend import BackendFunction
-from onedal.utils import _sycl_queue_manager as QM
-
+from .. import _default_backend as backend
+from .._device_offload import supports_queue
+from ..common._backend import BackendFunction
 from ..datatypes import from_table, to_table
+from ..utils import _sycl_queue_manager as QM
 
 
 def _compute_kernel(params, submodule, X, Y):

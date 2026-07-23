@@ -70,7 +70,6 @@ def test_dbscan_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_dbscan_spmd_synthetic(
     n_samples,
@@ -80,7 +79,6 @@ def test_dbscan_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
 ):
     n_features, eps = n_features_and_eps
     # Import spmd and batch algo
@@ -97,7 +95,7 @@ def test_dbscan_spmd_synthetic(
 
     # Ensure labels from fit of batch algo matches spmd
     # Configure array API dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
     batch_model = DBSCAN_Batch(eps=eps, min_samples=min_samples).fit(data)
 

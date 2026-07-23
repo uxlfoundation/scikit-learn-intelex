@@ -28,6 +28,7 @@ if daal_check_version((2024, "P", 1)):
     from scipy.sparse import issparse
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
+    from sklearn.utils._array_api import get_namespace
     from sklearn.utils.multiclass import type_of_target
     from sklearn.utils.validation import _num_samples, check_is_fitted
 
@@ -39,7 +40,7 @@ if daal_check_version((2024, "P", 1)):
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, get_patch_message
-    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.9"):

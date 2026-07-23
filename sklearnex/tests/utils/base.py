@@ -20,6 +20,9 @@ from functools import partial
 from inspect import Parameter, getattr_static, isclass, signature
 
 import numpy as np
+import pandas as pd
+import polars as pl
+from numpy.testing import assert_allclose
 from scipy import sparse as sp
 from sklearn import clone
 from sklearn.base import (
@@ -35,8 +38,14 @@ from sklearn.neighbors._base import KNeighborsMixin
 from sklearn.utils.validation import check_is_fitted
 
 from onedal.datatypes import from_table, to_table
-from onedal.tests.utils._dataframes_support import _convert_to_dataframe
-from sklearnex import get_patch_map, patch_sklearn, sklearn_is_patched, unpatch_sklearn
+from onedal.tests.utils._dataframes_support import _as_numpy, _convert_to_dataframe
+from sklearnex import (
+    config_context,
+    get_patch_map,
+    patch_sklearn,
+    sklearn_is_patched,
+    unpatch_sklearn,
+)
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
 from sklearnex.dummy import DummyRegressor
 from sklearnex.linear_model import LogisticRegression
@@ -453,3 +462,30 @@ class DummyEstimator(BaseEstimator):
         returned_X = from_table(X_table, like=X)
 
         return returned_X
+
+
+def assert_transform_output_matches_default(estimator, X, transform_output, method):
+    """The polars/pandas transform_output wrapping must preserve the values of the
+    default (un-wrapped) output, independent of input type/device. Both ways of
+    requesting it -- the ``transform_output`` config and ``set_output`` on the
+    estimator -- are checked."""
+    default = _as_numpy(getattr(estimator, method)(X))
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+
+    # 1) global config_context(transform_output=...)
+    with config_context(transform_output=transform_output):
+        out = getattr(estimator, method)(X)
+    assert isinstance(out, expected_type)
+    assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+
+    # 2) per-estimator set_output(transform=...). Restore the original config
+    # afterwards -- set_output("default") would *pin* it and override (1) on a
+    # later call with the same estimator.
+    original_config = getattr(estimator, "_sklearn_output_config", {}).copy()
+    estimator.set_output(transform=transform_output)
+    try:
+        out = getattr(estimator, method)(X)
+        assert isinstance(out, expected_type)
+        assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+    finally:
+        estimator._sklearn_output_config = original_config

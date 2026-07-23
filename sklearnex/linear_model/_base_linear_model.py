@@ -15,7 +15,7 @@
 # ==============================================================================
 from abc import ABC, abstractmethod
 
-from ..utils._array_api import get_namespace
+from sklearn.utils._array_api import get_namespace
 
 
 # Adds common methods to create oneDAL objects after a fallback

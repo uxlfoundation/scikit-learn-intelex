@@ -110,10 +110,9 @@ def test_kmeans_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_kmeans_spmd_synthetic(
-    n_samples, n_features, n_clusters, dataframe, queue, dtype, array_api_dispatch
+    n_samples, n_features, n_clusters, dataframe, queue, dtype
 ):
     # Import spmd and batch algo
     from sklearnex.cluster import KMeans as KMeans_Batch
@@ -133,7 +132,7 @@ def test_kmeans_spmd_synthetic(
 
     # Validate KMeans init
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model_init = KMeans_SPMD(
             n_clusters=n_clusters, max_iter=1, random_state=0
         ).fit(local_dpt_X_train)
@@ -148,7 +147,7 @@ def test_kmeans_spmd_synthetic(
         n_clusters=n_clusters, init=spmd_model_init.cluster_centers_, random_state=0
     )
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model.fit(local_dpt_X_train)
     batch_model = KMeans_Batch(
         n_clusters=n_clusters,
@@ -172,7 +171,7 @@ def test_kmeans_spmd_synthetic(
 
     # Ensure predictions of batch algo match spmd
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 

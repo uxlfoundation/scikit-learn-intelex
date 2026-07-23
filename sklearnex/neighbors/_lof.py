@@ -19,6 +19,7 @@ from functools import wraps
 
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor as _sklearn_LocalOutlierFactor
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_is_fitted
 
@@ -29,7 +30,7 @@ from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 
 
 @enable_array_api
