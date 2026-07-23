@@ -19,15 +19,24 @@
 BUILD_DIR="doc/_build/scikit-learn-intelex"
 STORAGE_BRANCH="doc_archive"
 
+# Parse command line arguments
+IS_DEV_MODE=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dev)
+            IS_DEV_MODE=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
 # Check if TEMP_DOC_FOLDER is set
 if [ -z "$TEMP_DOC_FOLDER" ]; then
     echo "::error::TEMP_DOC_FOLDER environment variable is not set!"
-    exit 1
-fi
-
-# Ensure the build directory exists
-if [ ! -d "$BUILD_DIR" ]; then
-    echo "::error: Documentation build directory not found!"
     exit 1
 fi
 
@@ -53,24 +62,61 @@ sync_from_branch $STORAGE_BRANCH
 sync_from_branch "gh-pages"
 
 ##### Prepare new doc #####
-# Copy the new built version to $TEMP_DOC_FOLDER
-mkdir -p $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION
-cp -R doc/_build/scikit-learn-intelex/$SHORT_DOC_VERSION/* $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION/
+if [ "$IS_DEV_MODE" = true ]; then
+    # Dev mode: Build and update dev documentation
+    echo "Building dev documentation..."
+    
+    # Ensure the build directory exists
+    if [ ! -d "$BUILD_DIR" ]; then
+        echo "::error: Documentation build directory not found!"
+        exit 1
+    fi
+    
+    # Copy dev documentation from build directory
+    if [ ! -d "$BUILD_DIR/dev" ]; then
+        echo "::error: Dev documentation not found in build directory!"
+        exit 1
+    fi
+    
+    rm -rf $TEMP_DOC_FOLDER/dev
+    mkdir -p $TEMP_DOC_FOLDER/dev
+    cp -R $BUILD_DIR/dev/* $TEMP_DOC_FOLDER/dev/
+else
+    # Release mode: Copy from dev to create new release version
+    echo "Creating release documentation for version $SHORT_DOC_VERSION from dev..."
+    
+    if [ ! -d "$TEMP_DOC_FOLDER/dev" ]; then
+        echo "::error: Dev documentation not found! Cannot create release."
+        exit 1
+    fi
+    
+    # Create versioned folder from dev
+    mkdir -p $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION
+    cp -R $TEMP_DOC_FOLDER/dev/* $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION/
 
-# Update latest
-rm -rf $TEMP_DOC_FOLDER/latest
-mkdir -p $TEMP_DOC_FOLDER/latest
-cp -R doc/_build/scikit-learn-intelex/$SHORT_DOC_VERSION/* $TEMP_DOC_FOLDER/latest/
+    # Update latest
+    rm -rf $TEMP_DOC_FOLDER/latest
+    mkdir -p $TEMP_DOC_FOLDER/latest
+    cp -R $TEMP_DOC_FOLDER/dev/* $TEMP_DOC_FOLDER/latest/
+fi
 
-# Copy index.html
-cp doc/_build/scikit-learn-intelex/index.html $TEMP_DOC_FOLDER/
+# Copy root index.html if it exists (only in dev mode, as release mode doesn't build)
+if [ "$IS_DEV_MODE" = true ] && [ -f "$BUILD_DIR/index.html" ]; then
+    cp $BUILD_DIR/index.html $TEMP_DOC_FOLDER/
+fi
 
 # Generate versions.json
-mkdir -p $TEMP_DOC_FOLDER
 echo "[" > $TEMP_DOC_FOLDER/versions.json
-# Add latest entry first
-echo '  {"name": "latest", "version": "'$SHORT_DOC_VERSION'", "url": "/scikit-learn-intelex/latest/"},' >> $TEMP_DOC_FOLDER/versions.json
-# Add all year.month folders
+# Add dev entry if it exists
+if [ -d "$TEMP_DOC_FOLDER/dev" ]; then
+    echo '  {"name": "dev (next release)", "version": "dev", "url": "/scikit-learn-intelex/dev/"},' >> $TEMP_DOC_FOLDER/versions.json
+fi
+# Add latest entry if it exists
+if [ -d "$TEMP_DOC_FOLDER/latest" ]; then
+    LATEST_VERSION=$(find $TEMP_DOC_FOLDER -mindepth 1 -maxdepth 1 -type d -name "[0-9][0-9][0-9][0-9].[0-9]*" | sort -rV | head -n 1 | xargs basename 2>/dev/null || echo "latest")
+    echo '  {"name": "latest", "version": "'$LATEST_VERSION'", "url": "/scikit-learn-intelex/latest/"},' >> $TEMP_DOC_FOLDER/versions.json
+fi
+# Add all versioned folders
 for version in $(ls -d $TEMP_DOC_FOLDER/[0-9][0-9][0-9][0-9].[0-9]* 2>/dev/null || true); do
     version=$(basename "$version")
     echo '  {"name": "'$version'", "version": "'$version'", "url": "/scikit-learn-intelex/'$version'/"},'
@@ -85,42 +131,65 @@ cat $TEMP_DOC_FOLDER/versions.json
 git checkout -- .github/scripts/doc_release.sh
 
 ##### Archive to doc_archive branch #####
-echo "Archiving version $SHORT_DOC_VERSION to branch $STORAGE_BRANCH..."
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Check if storage branch exists
-if git ls-remote --heads origin "$STORAGE_BRANCH" | grep -q "$STORAGE_BRANCH"; then
-    echo "Storage branch exists, fetching it..."
-    git fetch origin $STORAGE_BRANCH
-    git checkout $STORAGE_BRANCH
+if [ "$IS_DEV_MODE" = true ]; then
+    # Dev mode: Archive dev documentation
+    echo "Archiving dev documentation to branch $STORAGE_BRANCH..."
     
-    # Add only the new version directory
-    mkdir -p $SHORT_DOC_VERSION
-    rsync -av $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION/ $SHORT_DOC_VERSION/    
-    git add $SHORT_DOC_VERSION
-    git commit -m "Add documentation for version $SHORT_DOC_VERSION"
+    if git ls-remote --heads origin "$STORAGE_BRANCH" | grep -q "$STORAGE_BRANCH"; then
+        echo "Storage branch exists, updating dev documentation..."
+        git fetch origin $STORAGE_BRANCH
+        git checkout $STORAGE_BRANCH
+        
+        rm -rf dev
+        mkdir -p dev
+        rsync -av $TEMP_DOC_FOLDER/dev/ dev/
+        git add dev
+        git commit -m "Update dev documentation" || echo "No changes to commit for dev"
+    else
+        echo "Creating new storage branch with dev documentation..."
+        git checkout --orphan $STORAGE_BRANCH
+        git rm -rf .
+        
+        mkdir -p dev
+        rsync -av $TEMP_DOC_FOLDER/dev/ dev/
+        git add dev
+        git commit -m "Initialize doc archive branch with dev documentation"
+    fi
+    
+    git push origin $STORAGE_BRANCH
+    git checkout $CURRENT_BRANCH
 else
-    echo "Creating new storage branch with all current versions..."
-    # Create an empty orphan branch
-    git checkout --orphan $STORAGE_BRANCH
-    git rm -rf .
+    # Release mode: Archive versioned documentation
+    echo "Archiving version $SHORT_DOC_VERSION to branch $STORAGE_BRANCH..."
 
-    # Copy only version folders
-    for version_dir in $(find $TEMP_DOC_FOLDER -maxdepth 1 -type d -name "[0-9][0-9][0-9][0-9].[0-9]*" 2>/dev/null); do
-        version=$(basename "$version_dir")
-        mkdir -p $version
-        rsync -av "$version_dir/" $version/
-    done
-    
-    # Git only add version folders
-    git add -- [0-9][0-9][0-9][0-9].[0-9]* 
-    git commit -m "Initialize doc archive branch with all versions"
+    if git ls-remote --heads origin "$STORAGE_BRANCH" | grep -q "$STORAGE_BRANCH"; then
+        echo "Storage branch exists, fetching it..."
+        git fetch origin $STORAGE_BRANCH
+        git checkout $STORAGE_BRANCH
+        
+        mkdir -p $SHORT_DOC_VERSION
+        rsync -av $TEMP_DOC_FOLDER/$SHORT_DOC_VERSION/ $SHORT_DOC_VERSION/    
+        git add $SHORT_DOC_VERSION
+        git commit -m "Add documentation for version $SHORT_DOC_VERSION"
+    else
+        echo "Creating new storage branch..."
+        git checkout --orphan $STORAGE_BRANCH
+        git rm -rf .
+
+        for version_dir in $(find $TEMP_DOC_FOLDER -maxdepth 1 -type d -name "[0-9][0-9][0-9][0-9].[0-9]*" 2>/dev/null); do
+            version=$(basename "$version_dir")
+            mkdir -p $version
+            rsync -av "$version_dir/" $version/
+        done
+        
+        git add -- [0-9][0-9][0-9][0-9].[0-9]* 
+        git commit -m "Initialize doc archive branch with all versions"
+    fi
+
+    git push origin $STORAGE_BRANCH
+    git checkout $CURRENT_BRANCH
 fi
-
-# Push changes
-git push origin $STORAGE_BRANCH
-
-# Return to original branch
-git checkout $CURRENT_BRANCH
