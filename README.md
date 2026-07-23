@@ -46,7 +46,7 @@ This software acceleration is achieved with vector instructions, AI hardware-spe
 
 With Extension for scikit-learn, you can:
 
-* Speed up training and inference by up to 100x with equivalent mathematical accuracy
+* Get an average speed up of 8.5x on training and inference with equivalent mathematical accuracy
 * Benefit from performance improvements across different hardware configurations, including [GPUs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html) and [multi-GPU](https://uxlfoundation.github.io/scikit-learn-intelex/latest/distributed-mode.html) configurations
 * Integrate the extension into your existing [scikit-learn](https://scikit-learn.org) applications without code modifications
 * Continue to use the open-source [scikit-learn](https://scikit-learn.org) API
@@ -54,7 +54,7 @@ With Extension for scikit-learn, you can:
 
 ## Acceleration
 
-![](https://raw.githubusercontent.com/uxlfoundation/scikit-learn-intelex/master/doc/sources/_static/scikit-learn-acceleration.PNG)
+![](https://raw.githubusercontent.com/uxlfoundation/scikit-learn-intelex/main/doc/sources/_static/scikit-learn-acceleration.PNG)
 
 [Benchmarks code](https://github.com/IntelPython/scikit-learn_bench)
 
