@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -92,8 +93,8 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
     for option in options_and_tests:
         attr = option + "_"
         assert_allclose(
-            getattr(incbs_spmd, attr),
-            getattr(incbs, attr),
+            _as_numpy_checked(getattr(incbs_spmd, attr), dataframe),
+            _as_numpy(getattr(incbs, attr)),
             err_msg=f"Result for {option} is incorrect",
         )
 
@@ -166,8 +167,8 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
     for option in options_and_tests:
         attr = option + "_"
         assert_allclose(
-            getattr(incbs_spmd, attr),
-            getattr(incbs, attr),
+            _as_numpy_checked(getattr(incbs_spmd, attr), dataframe),
+            _as_numpy(getattr(incbs, attr)),
             err_msg=f"Result for {option} is incorrect",
         )
 
@@ -238,7 +239,10 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 
     incbs.fit(dpt_data, sample_weight=dpt_weights if weighted else None)
     attr = option + "_"
-    assert_allclose(getattr(incbs_spmd, attr), getattr(incbs, attr))
+    assert_allclose(
+        _as_numpy_checked(getattr(incbs_spmd, attr), dataframe),
+        _as_numpy(getattr(incbs, attr)),
+    )
 
 
 @pytest.mark.skipif(

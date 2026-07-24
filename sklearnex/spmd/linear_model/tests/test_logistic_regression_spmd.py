@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -91,8 +92,16 @@ def test_logistic_spmd_gold(dataframe, queue):
         dpt_X_train, dpt_y_train
     )
 
-    assert_allclose(spmd_model.coef_, batch_model.coef_, rtol=1e-2)
-    assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=1e-2)
+    assert_allclose(
+        _as_numpy_checked(spmd_model.coef_, dataframe),
+        _as_numpy(batch_model.coef_),
+        rtol=1e-2,
+    )
+    assert_allclose(
+        _as_numpy_checked(spmd_model.intercept_, dataframe),
+        _as_numpy(batch_model.intercept_),
+        rtol=1e-2,
+    )
 
     # Ensure predictions of batch algo match spmd
     spmd_result = spmd_model.predict(local_dpt_X_test)

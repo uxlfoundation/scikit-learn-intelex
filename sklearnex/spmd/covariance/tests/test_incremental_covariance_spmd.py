@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -78,8 +79,14 @@ def test_incremental_covariance_fit_spmd_gold(dataframe, queue, assume_centered,
         dpt_data
     )
 
-    assert_allclose(spmd_result.covariance_, non_spmd_result.covariance_)
-    assert_allclose(spmd_result.location_, non_spmd_result.location_)
+    assert_allclose(
+        _as_numpy_checked(spmd_result.covariance_, dataframe),
+        _as_numpy(non_spmd_result.covariance_),
+    )
+    assert_allclose(
+        _as_numpy_checked(spmd_result.location_, dataframe),
+        _as_numpy(non_spmd_result.location_),
+    )
 
 
 @pytest.mark.skipif(
@@ -134,8 +141,14 @@ def test_incremental_covariance_partial_fit_spmd_gold(
 
     inccov.fit(dpt_data)
 
-    assert_allclose(inccov_spmd.covariance_, inccov.covariance_)
-    assert_allclose(inccov_spmd.location_, inccov.location_)
+    assert_allclose(
+        _as_numpy_checked(inccov_spmd.covariance_, dataframe),
+        _as_numpy(inccov.covariance_),
+    )
+    assert_allclose(
+        _as_numpy_checked(inccov_spmd.location_, dataframe),
+        _as_numpy(inccov.location_),
+    )
 
 
 @pytest.mark.skipif(

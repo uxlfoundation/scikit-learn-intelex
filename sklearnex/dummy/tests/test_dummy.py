@@ -58,4 +58,4 @@ def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
 
     np.testing.assert_array_equal(np.full(pred.shape, np.e), pred)
     est.constant_ = np.ones(est.constant_.shape)
-    np.testing.assert_array_equal(np.ones(pred.shape), est.predict([[0, 0, 0, 0]]))
+    np.testing.assert_array_equal(np.ones(pred.shape), _as_numpy(est.predict(X_test)))

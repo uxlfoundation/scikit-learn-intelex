@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -70,7 +71,10 @@ def test_basic_stats_spmd_gold(dataframe, queue):
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(getattr(spmd_result, attr), getattr(batch_result, attr))
+        assert_allclose(
+            _as_numpy_checked(getattr(spmd_result, attr), dataframe),
+            _as_numpy(getattr(batch_result, attr)),
+        )
 
 
 @pytest.mark.skipif(

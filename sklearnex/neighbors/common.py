@@ -33,6 +33,7 @@ if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 from onedal._device_offload import _transfer_to_host
+from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features, _num_samples
 
@@ -382,20 +383,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 distances = xp.take_along_axis(distances, seq, axis=1)
             except RuntimeError:
                 # Fallback for array API < 2024.12 (e.g. array-api-strict
-                # with api_version='2023.12' has the function but raises)
+                # with api_version='2023.12' has the function but raises).
+                # dlpack_to_numpy avoids np.from_dlpack(device=), whose device
+                # kwarg only exists on numpy >= 2.1.
+                seq_np = dlpack_to_numpy(seq)
                 indices = xp.from_dlpack(
-                    np.take_along_axis(
-                        np.from_dlpack(indices, device="cpu"),
-                        np.from_dlpack(seq, device="cpu"),
-                        axis=1,
-                    )
+                    np.take_along_axis(dlpack_to_numpy(indices), seq_np, axis=1)
                 )
                 distances = xp.from_dlpack(
-                    np.take_along_axis(
-                        np.from_dlpack(distances, device="cpu"),
-                        np.from_dlpack(seq, device="cpu"),
-                        axis=1,
-                    )
+                    np.take_along_axis(dlpack_to_numpy(distances), seq_np, axis=1)
                 )
 
         if not query_is_train:
