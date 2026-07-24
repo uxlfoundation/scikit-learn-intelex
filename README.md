@@ -54,7 +54,7 @@ With Extension for scikit-learn, you can:
 
 ## Acceleration
 
-![](https://raw.githubusercontent.com/uxlfoundation/scikit-learn-intelex/main/doc/sources/_static/scikit-learn-acceleration.PNG)
+![](doc/sources/_static/scikit-learn-acceleration.PNG)
 
 [Benchmarks code](https://github.com/IntelPython/scikit-learn_bench)
 
