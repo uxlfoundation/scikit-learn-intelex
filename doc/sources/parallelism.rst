@@ -90,7 +90,7 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     Free-threaded CPython support means that importing supported native CPU
     extensions does not re-enable the GIL. It does not change the concurrency
     restrictions below: use process-based parallelism for concurrent estimator
-    calls unless an estimator explicitly documents Python-thread safety.
+    calls.
 
 .. warning::
     The patched classes :obj:`sklearn.linear_model.LogisticRegression` and

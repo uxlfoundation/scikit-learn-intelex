@@ -21,8 +21,15 @@ from inspect import Parameter, getattr_static, isclass, signature
 
 import numpy as np
 import pandas as pd
-import polars as pl
+import pytest
 from numpy.testing import assert_allclose
+
+try:
+    import polars as pl
+except ModuleNotFoundError as error:
+    if error.name != "polars":
+        raise
+    pl = None
 from scipy import sparse as sp
 from sklearn import clone
 from sklearn.base import (
@@ -469,6 +476,9 @@ def assert_transform_output_matches_default(estimator, X, transform_output, meth
     default (un-wrapped) output, independent of input type/device. Both ways of
     requesting it -- the ``transform_output`` config and ``set_output`` on the
     estimator -- are checked."""
+    if transform_output == "polars" and pl is None:
+        pytest.skip("Polars is not installed")
+
     default = _as_numpy(getattr(estimator, method)(X))
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
 

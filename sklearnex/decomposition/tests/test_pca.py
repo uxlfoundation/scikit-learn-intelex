@@ -19,8 +19,14 @@ from contextlib import nullcontext
 import array_api_strict
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
+
+try:
+    import polars as pl
+except ModuleNotFoundError as error:
+    if error.name != "polars":
+        raise
+    pl = None
 import scipy.sparse as sp
 from numpy.testing import assert_allclose
 from sklearn.base import clone
@@ -44,6 +50,20 @@ from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.decomposition import PCA
 from sklearnex.tests.utils import assert_transform_output_matches_default
+
+_TRANSFORM_OUTPUTS = [
+    pytest.param(
+        "polars", marks=pytest.mark.skipif(pl is None, reason="Polars is not installed")
+    ),
+    "pandas",
+]
+_INPUT_DATAFRAMES = [
+    pd.DataFrame,
+    pytest.param(
+        pl.DataFrame if pl is not None else None,
+        marks=pytest.mark.skipif(pl is None, reason="Polars is not installed"),
+    ),
+]
 
 if dpnp_available:
     import dpnp
@@ -255,7 +275,7 @@ _PCA_ARRAY_API_INPUTS = (
 
 
 @pytest.mark.parametrize("xp,device", _PCA_ARRAY_API_INPUTS)
-@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("transform_output", _TRANSFORM_OUTPUTS)
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_matches_default(
     xp, device, transform_output, method, with_array_api
@@ -267,7 +287,7 @@ def test_transform_output_matches_default(
 
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
-@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("transform_output", _TRANSFORM_OUTPUTS)
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, method):
     X = _convert_to_dataframe(
@@ -280,7 +300,7 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
 @pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
 )
-@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("transform_output", _TRANSFORM_OUTPUTS)
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_target_offload(transform_output, method):
     X = load_iris(return_X_y=True)[0]
@@ -290,8 +310,8 @@ def test_transform_output_target_offload(transform_output, method):
 
 
 @pytest.mark.parametrize("target_offload", [False, True])
-@pytest.mark.parametrize("dataframe", [pd.DataFrame, pl.DataFrame])
-@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("dataframe", _INPUT_DATAFRAMES)
+@pytest.mark.parametrize("transform_output", _TRANSFORM_OUTPUTS)
 @pytest.mark.parametrize("method", ["transform", "fit_transform"])
 def test_transform_output_pandas_polars_input(
     dataframe, target_offload, transform_output, method
