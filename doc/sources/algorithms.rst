@@ -239,7 +239,7 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
@@ -544,7 +544,7 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
@@ -786,7 +786,7 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`

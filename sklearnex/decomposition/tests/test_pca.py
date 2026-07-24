@@ -178,6 +178,10 @@ def test_create_model_behavior():
     assert_allclose(X_trans, X_trans_sparse)
 
 
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API requires more recent NumPy version",
+)
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),

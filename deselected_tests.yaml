@@ -459,6 +459,19 @@ deselected_tests:
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
 
+  # Requires newer numpy version for array API support. Skip logic might need to be changed
+  # according to numpy version used by CI jobs that run these tests - at the moment, only
+  # sklearn versions are accepted, but this should be a condition like 'skip if numpy<2.2'
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full')-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
