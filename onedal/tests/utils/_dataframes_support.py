@@ -18,6 +18,7 @@ import os
 import pytest
 import scipy.sparse as sp
 
+from daal4py.sklearn._utils import _package_check_version
 from sklearnex import get_config
 
 try:
@@ -178,6 +179,21 @@ def _as_numpy_checked(obj, dataframe, *args, **kwargs):
     """
     _assert_in_namespace(obj, dataframe)
     return _as_numpy(obj, *args, **kwargs)
+
+
+def skip_array_api_strict_readonly(dataframe):
+    """Skip if ``dataframe`` is array_api_strict and numpy is older than 2.2.5.
+
+    Estimators that rebuild a oneDAL model from fitted arrays (PCA/IncrementalPCA
+    components_, DummyRegressor constant_) route them back through ``to_table``.
+    numpy < 2.2.5 returns those arrays read-only, which ``to_table`` cannot export
+    through DLPack, so array_api_strict inputs raise a BufferError / read-only
+    assignment error under forced array_api_dispatch. numpy >= 2.2.5 returns
+    writeable arrays.
+    TODO: remove once the oneDAL data conversion handles read-only arrays.
+    """
+    if dataframe == "array_api" and not _package_check_version("2.2.5", np.__version__):
+        pytest.skip("TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5")
 
 
 def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs):

@@ -21,6 +21,7 @@ from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
 )
 from sklearnex import config_context
 from sklearnex.dummy import DummyRegressor
@@ -28,6 +29,7 @@ from sklearnex.dummy import DummyRegressor
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_DummyRegressor(dataframe, queue):
+    skip_array_api_strict_readonly(dataframe)
     rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
@@ -36,7 +38,8 @@ def test_sklearnex_import_DummyRegressor(dataframe, queue):
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     est = DummyRegressor(strategy="constant", constant=np.pi).fit(X, y)
     assert "sklearnex" in est.__module__
-    pred = _as_numpy(est.predict([[0, 0, 0, 0]]))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(est.predict(X_test))
     np.testing.assert_array_equal(np.pi * np.ones(pred.shape), pred)
 
 

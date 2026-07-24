@@ -38,6 +38,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
     torch_available,
     torch_xpu_available,
 )
@@ -54,6 +55,7 @@ if torch_available:
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import(dataframe, queue):
+    skip_array_api_strict_readonly(dataframe)
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     incpca = IncrementalPCA(n_components=2)
@@ -248,6 +250,7 @@ def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -270,6 +273,7 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -289,6 +293,7 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype)
 def test_sklearnex_fit_transform_on_gold_data(
     dataframe, queue, whiten, num_blocks, dtype
 ):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -310,6 +315,7 @@ def test_sklearnex_fit_transform_on_gold_data(
 def test_sklearnex_partial_fit_on_random_data(
     dataframe, queue, n_components, whiten, num_blocks, row_count, column_count, dtype
 ):
+    skip_array_api_strict_readonly(dataframe)
     seed = 81
     gen = np.random.default_rng(seed)
     X = gen.uniform(low=-0.3, high=+0.7, size=(row_count, column_count))
