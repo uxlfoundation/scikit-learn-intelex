@@ -22,6 +22,8 @@ from numpy.testing import assert_allclose
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -58,16 +60,18 @@ def test_partial_fit_multiple_options_on_gold_data(dataframe, queue, weighted, d
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(expected_weighted_mean, result.mean_)
-        assert_allclose(expected_weighted_max, result.max_)
-        assert_allclose(expected_weighted_min, result.min_)
+        assert_allclose(
+            expected_weighted_mean, _as_numpy_checked(result.mean_, dataframe)
+        )
+        assert_allclose(expected_weighted_max, _as_numpy_checked(result.max_, dataframe))
+        assert_allclose(expected_weighted_min, _as_numpy_checked(result.min_, dataframe))
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, result.mean_)
-        assert_allclose(expected_max, result.max_)
-        assert_allclose(expected_min, result.min_)
+        assert_allclose(expected_mean, _as_numpy_checked(result.mean_, dataframe))
+        assert_allclose(expected_max, _as_numpy_checked(result.max_, dataframe))
+        assert_allclose(expected_min, _as_numpy_checked(result.min_, dataframe))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -105,7 +109,7 @@ def test_partial_fit_single_option_on_random_data(
         else:
             result = incbs.partial_fit(X_split_df)
 
-    res = getattr(result, result_option + "_")
+    res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr = function(weighted_data)
@@ -148,7 +152,11 @@ def test_partial_fit_multiple_options_on_random_data(
         else:
             result = incbs.partial_fit(X_split_df)
 
-    res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
+    res_mean, res_max, res_sum = (
+        _as_numpy_checked(result.mean_, dataframe),
+        _as_numpy_checked(result.max_, dataframe),
+        _as_numpy_checked(result.sum_, dataframe),
+    )
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr_mean, gtr_max, gtr_sum = (
@@ -207,7 +215,7 @@ def test_partial_fit_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(result, result_option + "_")
+        res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
         if weighted:
             gtr = function(weighted_data)
         else:
@@ -238,16 +246,18 @@ def test_fit_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(expected_weighted_mean, result.mean_)
-        assert_allclose(expected_weighted_max, result.max_)
-        assert_allclose(expected_weighted_min, result.min_)
+        assert_allclose(
+            expected_weighted_mean, _as_numpy_checked(result.mean_, dataframe)
+        )
+        assert_allclose(expected_weighted_max, _as_numpy_checked(result.max_, dataframe))
+        assert_allclose(expected_weighted_min, _as_numpy_checked(result.min_, dataframe))
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, result.mean_)
-        assert_allclose(expected_max, result.max_)
-        assert_allclose(expected_min, result.min_)
+        assert_allclose(expected_mean, _as_numpy_checked(result.mean_, dataframe))
+        assert_allclose(expected_max, _as_numpy_checked(result.max_, dataframe))
+        assert_allclose(expected_min, _as_numpy_checked(result.min_, dataframe))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -281,7 +291,7 @@ def test_fit_single_option_on_random_data(
     else:
         result = incbs.fit(X_df)
 
-    res = getattr(result, result_option + "_")
+    res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr = function(weighted_data)
@@ -320,7 +330,11 @@ def test_fit_multiple_options_on_random_data(
     else:
         result = incbs.fit(X_df)
 
-    res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
+    res_mean, res_max, res_sum = (
+        _as_numpy_checked(result.mean_, dataframe),
+        _as_numpy_checked(result.max_, dataframe),
+        _as_numpy_checked(result.sum_, dataframe),
+    )
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr_mean, gtr_max, gtr_sum = (
@@ -373,7 +387,7 @@ def test_fit_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(result, result_option + "_")
+        res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
         if weighted:
             gtr = function(weighted_data)
         else:
@@ -382,7 +396,9 @@ def test_fit_all_option_on_random_data(
         assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
+# and SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle
@@ -421,8 +437,8 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     for result_option in options_and_tests:
         _, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(incbs, result_option + "_")
-        res_loaded = getattr(incbs_loaded, result_option + "_")
+        res = _as_numpy(getattr(incbs, result_option + "_"))
+        res_loaded = _as_numpy(getattr(incbs_loaded, result_option + "_"))
         tol = fp32tol if res.dtype == np.float32 else fp64tol
         assert_allclose(res, res_loaded, atol=tol)
 
@@ -432,8 +448,8 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     for result_option in options_and_tests:
         _, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(incbs, result_option + "_")
-        res_loaded = getattr(incbs_loaded, result_option + "_")
+        res = _as_numpy(getattr(incbs, result_option + "_"))
+        res_loaded = _as_numpy(getattr(incbs_loaded, result_option + "_"))
         tol = fp32tol if res.dtype == np.float32 else fp64tol
         assert_allclose(res, res_loaded, atol=tol)
 

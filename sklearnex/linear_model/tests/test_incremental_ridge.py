@@ -24,6 +24,7 @@ if daal_check_version((2024, "P", 600)):
 
     from onedal.tests.utils._dataframes_support import (
         _as_numpy,
+        _as_numpy_checked,
         _convert_to_dataframe,
         get_dataframes_and_queues,
     )
@@ -77,9 +78,19 @@ if daal_check_version((2024, "P", 600)):
             X, y, alpha, fit_intercept
         )
         if fit_intercept:
-            assert_allclose(inc_ridge.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+            assert_allclose(
+                _as_numpy_checked(inc_ridge.intercept_, dataframe),
+                intercept_manual,
+                rtol=1e-6,
+                atol=1e-6,
+            )
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        assert_allclose(
+            _as_numpy_checked(inc_ridge.coef_, dataframe),
+            coefficients_manual,
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
     @pytest.mark.parametrize("batch_size", [2, 5])
@@ -107,7 +118,12 @@ if daal_check_version((2024, "P", 600)):
         xt_y = np.dot(X.T, y)
         coefficients_manual = np.dot(inverse_term, xt_y)
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        assert_allclose(
+            _as_numpy_checked(inc_ridge.coef_, dataframe),
+            coefficients_manual,
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     def test_inc_ridge_score_before_fit():
         X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
@@ -150,10 +166,14 @@ if daal_check_version((2024, "P", 600)):
         if fit_intercept:
             y_pred_manual += intercept_manual
 
-        assert_allclose(_as_numpy(y_pred), y_pred_manual, rtol=1e-6, atol=1e-6)
+        assert_allclose(
+            _as_numpy_checked(y_pred, dataframe), y_pred_manual, rtol=1e-6, atol=1e-6
+        )
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
+# and SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):

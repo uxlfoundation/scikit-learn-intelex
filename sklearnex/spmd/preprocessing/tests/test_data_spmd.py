@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -63,8 +64,14 @@ def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
     scaler_spmd = MaxAbsScaler_SPMD().fit(local_dpt_data)
     scaler = MaxAbsScaler().fit(dpt_data)
 
-    assert_allclose(scaler_spmd.scale_, scaler.scale_)
-    assert_allclose(scaler_spmd.max_abs_, scaler.max_abs_)
+    assert_allclose(
+        _as_numpy_checked(scaler_spmd.scale_, dataframe),
+        _as_numpy(scaler.scale_),
+    )
+    assert_allclose(
+        _as_numpy_checked(scaler_spmd.max_abs_, dataframe),
+        _as_numpy(scaler.max_abs_),
+    )
 
 
 @pytest.mark.skipif(
@@ -110,5 +117,11 @@ def test_max_abs_scaler_partial_fit_spmd_gold(dataframe, queue, num_blocks, dtyp
 
     scaler.fit(dpt_data)
 
-    assert_allclose(scaler_spmd.scale_, scaler.scale_)
-    assert_allclose(scaler_spmd.max_abs_, scaler.max_abs_)
+    assert_allclose(
+        _as_numpy_checked(scaler_spmd.scale_, dataframe),
+        _as_numpy(scaler.scale_),
+    )
+    assert_allclose(
+        _as_numpy_checked(scaler_spmd.max_abs_, dataframe),
+        _as_numpy(scaler.max_abs_),
+    )

@@ -34,9 +34,11 @@ from daal4py.sklearn._utils import (
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
     torch_available,
     torch_xpu_available,
 )
@@ -53,16 +55,19 @@ if torch_available:
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import(dataframe, queue):
+    skip_array_api_strict_readonly(dataframe)
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     incpca = IncrementalPCA(n_components=2)
     result = incpca.fit(X)
     assert "sklearnex" in incpca.__module__
     assert hasattr(incpca, "_onedal_estimator")
-    assert_allclose(_as_numpy(result.singular_values_), [6.30061232, 0.54980396])
+    assert_allclose(
+        _as_numpy_checked(result.singular_values_, dataframe), [6.30061232, 0.54980396]
+    )
 
 
-def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data):
+def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe):
     expected_n_samples_seen_ = 6
     expected_n_features_in_ = 2
     expected_n_components_ = 2
@@ -105,37 +110,62 @@ def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data):
     assert incpca.n_features_in_ == expected_n_features_in_
     assert incpca.n_components_ == expected_n_components_
 
-    assert_allclose(incpca.singular_values_, expected_singular_values_, atol=tol)
-    assert_allclose(incpca.mean_, expected_mean_, atol=tol)
-    assert_allclose(incpca.var_, expected_var_, atol=tol)
-    assert_allclose(incpca.explained_variance_, expected_explained_variance_, atol=tol)
     assert_allclose(
-        incpca.explained_variance_ratio_, expected_explained_variance_ratio_, atol=tol
+        _as_numpy_checked(incpca.singular_values_, dataframe),
+        expected_singular_values_,
+        atol=tol,
     )
-    assert np.abs(incpca.noise_variance_ - expected_noise_variance_) < tol
+    assert_allclose(_as_numpy_checked(incpca.mean_, dataframe), expected_mean_, atol=tol)
+    assert_allclose(_as_numpy_checked(incpca.var_, dataframe), expected_var_, atol=tol)
+    assert_allclose(
+        _as_numpy_checked(incpca.explained_variance_, dataframe),
+        expected_explained_variance_,
+        atol=tol,
+    )
+    assert_allclose(
+        _as_numpy_checked(incpca.explained_variance_ratio_, dataframe),
+        expected_explained_variance_ratio_,
+        atol=tol,
+    )
+    assert (
+        np.abs(
+            _as_numpy_checked(incpca.noise_variance_, dataframe)
+            - expected_noise_variance_
+        )
+        < tol
+    )
     if daal_check_version((2024, "P", 500)):
-        assert_allclose(incpca.components_, expected_components_, atol=tol)
-        assert_allclose(_as_numpy(transformed_data), expected_transformed_data, atol=tol)
+        assert_allclose(
+            _as_numpy_checked(incpca.components_, dataframe),
+            expected_components_,
+            atol=tol,
+        )
+        assert_allclose(
+            _as_numpy_checked(transformed_data, dataframe),
+            expected_transformed_data,
+            atol=tol,
+        )
     else:
+        components = _as_numpy_checked(incpca.components_, dataframe)
         for i in range(incpca.n_components_):
-            abs_dot_product = np.abs(
-                np.dot(incpca.components_[i], expected_components_[i])
-            )
+            abs_dot_product = np.abs(np.dot(components[i], expected_components_[i]))
             assert np.abs(abs_dot_product - 1.0) < tol
 
-            if np.dot(incpca.components_[i], expected_components_[i]) < 0:
+            if np.dot(components[i], expected_components_[i]) < 0:
                 assert_allclose(
-                    _as_numpy(-transformed_data[i]),
+                    _as_numpy_checked(-transformed_data[i], dataframe),
                     expected_transformed_data[i],
                     atol=tol,
                 )
             else:
                 assert_allclose(
-                    _as_numpy(transformed_data[i]), expected_transformed_data[i], atol=tol
+                    _as_numpy_checked(transformed_data[i], dataframe),
+                    expected_transformed_data[i],
+                    atol=tol,
                 )
 
 
-def check_pca(incpca, dtype, whiten, data, transformed_data):
+def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
     tol = 3e-3 if dtype == np.float32 else 2e-6
 
     n_components = incpca.n_components_
@@ -147,8 +177,8 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
     assert n_samples_seen == expected_n_samples_seen
     assert n_features_in == expected_n_features_in
 
-    components = incpca.components_
-    singular_values = incpca.singular_values_
+    components = _as_numpy_checked(incpca.components_, dataframe)
+    singular_values = _as_numpy_checked(incpca.singular_values_, dataframe)
     centered_data = data - np.mean(data, axis=0)
     cov_eigenvalues, cov_eigenvectors = np.linalg.eig(
         centered_data.T @ centered_data / (n_samples_seen - 1)
@@ -171,19 +201,25 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
         assert np.abs(abs_dot_product - 1.0) < tol
 
     expected_mean = np.mean(data, axis=0)
-    assert_allclose(incpca.mean_, expected_mean, atol=tol)
+    assert_allclose(_as_numpy_checked(incpca.mean_, dataframe), expected_mean, atol=tol)
 
     expected_var = np.var(_as_numpy(data), ddof=1, axis=0)
-    assert_allclose(incpca.var_, expected_var, atol=tol)
+    assert_allclose(_as_numpy_checked(incpca.var_, dataframe), expected_var, atol=tol)
 
     expected_explained_variance = sorted_eigenvalues[:n_components]
-    assert_allclose(incpca.explained_variance_, expected_explained_variance, atol=tol)
+    assert_allclose(
+        _as_numpy_checked(incpca.explained_variance_, dataframe),
+        expected_explained_variance,
+        atol=tol,
+    )
 
     expected_explained_variance_ratio = expected_explained_variance / np.sum(
         sorted_eigenvalues
     )
     assert_allclose(
-        incpca.explained_variance_ratio_, expected_explained_variance_ratio, atol=tol
+        _as_numpy_checked(incpca.explained_variance_ratio_, dataframe),
+        expected_explained_variance_ratio,
+        atol=tol,
     )
 
     expected_noise_variance = (
@@ -196,13 +232,17 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
 
     expected_transformed_data = centered_data @ components.T
     if whiten:
-        scale = np.sqrt(incpca.explained_variance_)
+        scale = np.sqrt(_as_numpy_checked(incpca.explained_variance_, dataframe))
         min_scale = np.finfo(scale.dtype).eps
         scale[scale < min_scale] = np.inf
         expected_transformed_data /= scale
 
     if not (whiten and n_components == n_samples_seen):
-        assert_allclose(_as_numpy(transformed_data), expected_transformed_data, atol=tol)
+        assert_allclose(
+            _as_numpy_checked(transformed_data, dataframe),
+            expected_transformed_data,
+            atol=tol,
+        )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -210,6 +250,7 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -224,7 +265,7 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.transform(X_df)
-    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
+    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -232,6 +273,7 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -241,7 +283,7 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype)
     incpca.fit(X_df)
     transformed_data = incpca.transform(X_df)
 
-    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
+    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -251,6 +293,7 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype)
 def test_sklearnex_fit_transform_on_gold_data(
     dataframe, queue, whiten, num_blocks, dtype
 ):
+    skip_array_api_strict_readonly(dataframe)
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
@@ -259,7 +302,7 @@ def test_sklearnex_fit_transform_on_gold_data(
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.fit_transform(X_df)
 
-    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
+    check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -272,6 +315,7 @@ def test_sklearnex_fit_transform_on_gold_data(
 def test_sklearnex_partial_fit_on_random_data(
     dataframe, queue, n_components, whiten, num_blocks, row_count, column_count, dtype
 ):
+    skip_array_api_strict_readonly(dataframe)
     seed = 81
     gen = np.random.default_rng(seed)
     X = gen.uniform(low=-0.3, high=+0.7, size=(row_count, column_count))
@@ -287,10 +331,12 @@ def test_sklearnex_partial_fit_on_random_data(
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.transform(X_df)
-    check_pca(incpca, dtype, whiten, X, transformed_data)
+    check_pca(incpca, dtype, whiten, X, transformed_data, dataframe)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
+# and SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle

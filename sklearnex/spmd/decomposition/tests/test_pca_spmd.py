@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -67,16 +68,26 @@ def test_pca_spmd_gold(dataframe, queue):
     spmd_result = PCA_SPMD(n_components=2).fit(local_dpt_data)
     batch_result = PCA_Batch(n_components=2).fit(data)
 
-    assert_allclose(spmd_result.mean_, batch_result.mean_)
-    assert_allclose(spmd_result.components_, batch_result.components_)
-    assert_allclose(spmd_result.singular_values_, batch_result.singular_values_)
     assert_allclose(
-        spmd_result.noise_variance_,
-        batch_result.noise_variance_,
+        _as_numpy_checked(spmd_result.mean_, dataframe),
+        _as_numpy(batch_result.mean_),
+    )
+    assert_allclose(
+        _as_numpy_checked(spmd_result.components_, dataframe),
+        _as_numpy(batch_result.components_),
+    )
+    assert_allclose(
+        _as_numpy_checked(spmd_result.singular_values_, dataframe),
+        _as_numpy(batch_result.singular_values_),
+    )
+    assert_allclose(
+        _as_numpy_checked(spmd_result.noise_variance_, dataframe),
+        _as_numpy(batch_result.noise_variance_),
         atol=1e-7,
     )
     assert_allclose(
-        spmd_result.explained_variance_ratio_, batch_result.explained_variance_ratio_
+        _as_numpy_checked(spmd_result.explained_variance_ratio_, dataframe),
+        _as_numpy(batch_result.explained_variance_ratio_),
     )
 
 

@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -83,8 +84,8 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
 
     for attribute in attributes_to_compare:
         assert_allclose(
-            getattr(incpca, attribute),
-            getattr(incpca_spmd, attribute),
+            _as_numpy(getattr(incpca, attribute)),
+            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
             err_msg=f"{attribute} is incorrect",
         )
 
@@ -147,8 +148,8 @@ def test_incremental_pca_partial_fit_spmd_gold(
 
     for attribute in attributes_to_compare:
         assert_allclose(
-            getattr(incpca, attribute),
-            getattr(incpca_spmd, attribute),
+            _as_numpy(getattr(incpca, attribute)),
+            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
             err_msg=f"{attribute} is incorrect",
         )
 
@@ -193,8 +194,8 @@ def test_incremental_pca_fit_spmd_random(
 
     for attribute in attributes_to_compare:
         assert_allclose(
-            getattr(incpca, attribute),
-            getattr(incpca_spmd, attribute),
+            _as_numpy(getattr(incpca, attribute)),
+            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
             atol=tol,
             err_msg=f"{attribute} is incorrect",
         )

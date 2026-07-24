@@ -23,6 +23,7 @@ from sklearn.datasets import make_regression
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _as_numpy_checked,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -102,8 +103,10 @@ def test_sklearnex_import_linear(
     assert "sklearnex" in linreg.__module__
 
     rtol = 1e-3 if dtype == np.float32 else 1e-5
-    assert_allclose(_as_numpy(linreg.coef_), expected_coefs, rtol=rtol)
-    assert_allclose(_as_numpy(linreg.intercept_), expected_intercept, rtol=rtol)
+    assert_allclose(_as_numpy_checked(linreg.coef_, dataframe), expected_coefs, rtol=rtol)
+    assert_allclose(
+        _as_numpy_checked(linreg.intercept_, dataframe), expected_intercept, rtol=rtol
+    )
 
     # check that it also works with lists
     if isinstance(X, np.ndarray):
@@ -165,10 +168,13 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     linreg = LinearRegression(fit_intercept=True)
-    linreg.coef_ = coef.T
-    linreg.intercept_ = intercept
+    # reconstructed attrs must share X's namespace/device under array_api_dispatch
+    linreg.coef_ = _convert_to_dataframe(coef.T, sycl_queue=queue, target_df=dataframe)
+    linreg.intercept_ = _convert_to_dataframe(
+        intercept, sycl_queue=queue, target_df=dataframe
+    )
 
     y_pred = linreg.predict(X)
 
-    tol = 1e-5 if _as_numpy(y_pred).dtype == np.float32 else 1e-7
-    assert_allclose(gtr, _as_numpy(y_pred), rtol=tol)
+    tol = 1e-5 if _as_numpy_checked(y_pred, dataframe).dtype == np.float32 else 1e-7
+    assert_allclose(gtr, _as_numpy_checked(y_pred, dataframe), rtol=tol)

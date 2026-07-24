@@ -18,6 +18,7 @@ import os
 import pytest
 import scipy.sparse as sp
 
+from daal4py.sklearn._utils import _package_check_version
 from sklearnex import get_config
 
 try:
@@ -147,6 +148,52 @@ def _as_numpy(obj, *args, **kwargs):
         # np.from_dlpack). array_api libraries that np.asarray already handles
         # never reach this path.
         return dlpack_to_numpy(obj)
+
+
+def _assert_in_namespace(obj, dataframe):
+    """Assert obj belongs to the array namespace implied by ``dataframe``.
+
+    Under array_api_dispatch, sklearnex outputs stay in the input namespace,
+    so an on-device dpnp/array_api input should yield an on-device result
+    (dpnp-in -> dpnp-out). Scalars are namespace-agnostic and are ignored.
+    """
+    if np.isscalar(obj):
+        return
+    if dataframe == "dpnp":
+        assert dpnp_available and isinstance(
+            obj, dpnp.ndarray
+        ), f"expected dpnp output, got {type(obj)}"
+    elif dataframe in array_api_modules:
+        xp = array_api_modules[dataframe]
+        assert (
+            hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
+        ), f"expected {dataframe} output, got {type(obj)}"
+
+
+def _as_numpy_checked(obj, dataframe, *args, **kwargs):
+    """Assert obj is in ``dataframe``'s namespace, then convert to numpy.
+
+    Drop-in for ``_as_numpy`` on result values: verifies dpnp-in -> dpnp-out
+    (on-device outputs are not silently host-transferred) before converting so
+    the value can be compared against a numpy expected result.
+    """
+    _assert_in_namespace(obj, dataframe)
+    return _as_numpy(obj, *args, **kwargs)
+
+
+def skip_array_api_strict_readonly(dataframe):
+    """Skip if ``dataframe`` is array_api_strict and numpy is older than 2.2.5.
+
+    Estimators that rebuild a oneDAL model from fitted arrays (PCA/IncrementalPCA
+    components_, DummyRegressor constant_) route them back through ``to_table``.
+    numpy < 2.2.5 returns those arrays read-only, which ``to_table`` cannot export
+    through DLPack, so array_api_strict inputs raise a BufferError / read-only
+    assignment error under forced array_api_dispatch. numpy >= 2.2.5 returns
+    writeable arrays.
+    TODO: remove once the oneDAL data conversion handles read-only arrays.
+    """
+    if dataframe == "array_api" and not _package_check_version("2.2.5", np.__version__):
+        pytest.skip("TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5")
 
 
 def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs):
