@@ -1,0 +1,40 @@
+# Copyright 2026 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# CPython 3.14t's biased-reference-counting object stack is part of the
+# uninstrumented setup-python runtime. An externally preloaded TSan runtime
+# cannot observe its internal atomic synchronization and reports allocator
+# reuse between _PyObjectStackChunk_New and _PyObjectStack_Pop as a race.
+# Keep these scoped to exact CPython frames; reports in sklearnex/daal4py/
+# onedal frames remain fatal.
+race:_PyObjectStack_Pop
+race:ucs1lib_rfind_char
+race:_PyUnicode_FromASCII
+race:resize_ringbuf
+
+# oneDAL itself is supplied as an uninstrumented binary. Argument::set performs
+# one side of a correct atomic SharedPtr decrement inside libonedal_core, which
+# TSan cannot observe, then dispatches its inline deleter in the instrumented
+# extension. Suppress only that exact HomogenNumericTable<double> control-block
+# destructor; other oneDAL/daal4py frames remain fatal.
+race:RefCounterImp<daal::services::interface1::ObjectDeleter<daal::data_management::interface1::HomogenNumericTable<double>>>::~RefCounterImp
+
+# pybind11 protects its free-threaded patients map with CPython's PyMutex.
+# setup-python's interpreter is not TSan-instrumented, so the external runtime
+# cannot observe that lock. Scope this to the exact reported helper.
+race:pybind11::detail::add_patient
+
+# BlockDescriptor state crosses synchronization inside the uninstrumented
+# oneDAL/TBB binaries. Scope this to the exact reported inline accessor.
+race:BlockDescriptor<double>::getRWFlag

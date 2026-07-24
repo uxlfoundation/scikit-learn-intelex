@@ -35,6 +35,15 @@
     #define PyDataType_FIELDS(descr) ((descr)->fields)
 #endif
 
+inline bool can_decref_python_object()
+{
+    if (!Py_IsInitialized()) return false;
+#if PY_VERSION_HEX >= 0x030D0000
+    if (Py_IsFinalizing()) return false;
+#endif
+    return true;
+}
+
 #define SET_NPY_FEATURE(_T, _M, _E)                                                                                      \
     switch (_T)                                                                                                          \
     {                                                                                                                    \
@@ -200,7 +209,9 @@ public:
             throw std::invalid_argument("Encountered unexpected element size or type when copying block.");
         }
 
+#ifndef Py_GIL_DISABLED
         PyGILState_Release(__state);
+#endif
 
         // ptr to column in block
         T * blockPtr = block.getBlockPtr();
@@ -231,7 +242,9 @@ public:
             } while (iternext(iter));
         }
 
+#ifndef Py_GIL_DISABLED
         __state = PyGILState_Ensure();
+#endif
         NpyIter_Deallocate(iter);
         PyGILState_Release(__state);
         return;
@@ -317,7 +330,9 @@ public:
             // iterate through column, use casting functions to upcast, dataptr will point to current element
             void ** dataptr = reinterpret_cast<void **>(NpyIter_GetDataPtrArray(iter));
 
+#ifndef Py_GIL_DISABLED
             PyGILState_Release(__state);
+#endif
 
             if (WBack)
             {
@@ -338,7 +353,9 @@ public:
                 } while (iternext(iter) && n < nrows);
             }
 
+#ifndef Py_GIL_DISABLED
             __state = PyGILState_Ensure();
+#endif
             // deallocate iterator
             NpyIter_Deallocate(iter);
         }
@@ -362,14 +379,32 @@ public:
      */
     NpyNumericTable(PyArrayObject * ary) : NumericTable(daal::data_management::NumericTableDictionaryPtr()), _ary(ary)
     {
-        _ddict = Hndlr::init(_ary);
-        setNumberOfRows(PyArray_DIMS(ary)[0]);
-        _layout    = daal::data_management::NumericTableIface::aos;
-        _memStatus = daal::data_management::NumericTableIface::userAllocated;
+        Py_INCREF(_ary);
+        try
+        {
+            _ddict = Hndlr::init(_ary);
+            setNumberOfRows(PyArray_DIMS(ary)[0]);
+            _layout    = daal::data_management::NumericTableIface::aos;
+            _memStatus = daal::data_management::NumericTableIface::userAllocated;
+        }
+        catch (...)
+        {
+            Py_DECREF(_ary);
+            _ary = nullptr;
+            throw;
+        }
     }
 
     /** \private */
-    ~NpyNumericTable() { Py_XDECREF(_ary); }
+    ~NpyNumericTable()
+    {
+        if (_ary && can_decref_python_object())
+        {
+            PyGILState_STATE state = PyGILState_Ensure();
+            Py_DECREF(_ary);
+            PyGILState_Release(state);
+        }
+    }
 
     virtual daal::services::Status resize(size_t nrows) override { throw std::invalid_argument("Resizing numpy array through daal not supported."); }
 

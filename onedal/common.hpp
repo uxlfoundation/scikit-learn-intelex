@@ -37,4 +37,5 @@
 #include "onedal/common/dispatch_utils.hpp"
 #include "onedal/common/instantiate_utils.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
+#include "onedal/common/result_options.hpp"
 #include "onedal/common/serialization.hpp"

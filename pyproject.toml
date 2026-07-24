@@ -14,7 +14,6 @@
 # limitations under the License.
 #===============================================================================
 
-
 [tool.black]
 line-length = 90
 extend-ignore = 'E203'

@@ -76,6 +76,16 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      conda install -q -y -c conda-forge mpi4py
+      mpiexec -n 2 python tests/mpi_lifecycle_smoke.py
+    env:
+      TBBROOT: ${{ variables.TBBROOT }}
+      RUN_MPI_TESTS: ${{ variables.RUN_MPI_TESTS }}
+    displayName: "MPI two-rank lifecycle smoke"
+    condition: and(succeeded(), eq(variables['RUN_MPI_TESTS'], '1'))
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
