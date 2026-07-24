@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from sklearn.utils._array_api import get_namespace
+
 from onedal.spmd.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.spmd.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.spmd.neighbors import NearestNeighbors as onedal_NearestNeighbors
@@ -22,7 +24,6 @@ from onedal.utils._array_api import _is_numpy_namespace
 from ...neighbors import KNeighborsClassifier as base_KNeighborsClassifier
 from ...neighbors import KNeighborsRegressor as base_KNeighborsRegressor
 from ...neighbors import NearestNeighbors as base_NearestNeighbors
-from ...utils._array_api import get_namespace
 
 
 class KNeighborsClassifier(base_KNeighborsClassifier):

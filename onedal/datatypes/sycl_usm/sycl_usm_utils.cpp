@@ -89,6 +89,17 @@ bool is_sua_readonly(const py::dict& sua) {
     return data[1ul].cast<bool>();
 }
 
+// Get `__sycl_usm_array_interface__['offset']`, the offset in elements from the start
+// of the USM allocation to the first array element. The field is optional and defaults
+// to zero; sliced views (e.g. dpnp X[a:b]) report a non-zero offset while keeping the
+// same base pointer in `data[0]`, so it must be applied to avoid reading the wrong rows.
+std::int64_t get_sua_offset(const py::dict& sua) {
+    if (!sua.contains("offset") || sua["offset"].is_none()) {
+        return 0l;
+    }
+    return sua["offset"].cast<std::int64_t>();
+}
+
 // Get `__sycl_usm_array_interface__['shape']`.
 // shape : a tuple of integers describing dimensions of an N-dimensional array.
 py::tuple get_sua_shape(const py::dict& sua) {

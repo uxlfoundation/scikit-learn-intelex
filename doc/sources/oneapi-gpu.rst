@@ -265,31 +265,6 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API in estimators with :ref:`array API support <array_api_estimators>`, but note that using this alternative without array API enabled always involves data movement to host and back, thus not being the most efficient route in computational terms and **not recommended**.
-
-Example:
-
-.. code-block:: python
-
-    import numpy as np
-    import dpnp
-    from sklearnex import config_context
-    from sklearnex.linear_model import LinearRegression
-
-    rng = np.random.default_rng(seed=123)
-    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
-    y_np = rng.standard_normal(size=100, dtype=np.float32)
-
-    X = dpnp.array(X_np, device="gpu")
-    y = dpnp.array(y_np, device="gpu")
-
-    model = LinearRegression()
-    model.fit(X, y)
-
-
-Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SYCL queue contained by those objects.
-
-.. note::
-    All the input data for an algorithm must reside on the same device when not using array API.
+GPU arrays from |dpnp| are array-API-compliant and are used like any other array API framework: array API dispatch must be enabled through scikit-learn's ``config_context(array_api_dispatch=True)`` for the data to be consumed as-is on the device where it resides. Without array API enabled, |dpnp| arrays are treated as unsupported device inputs and moved to host for computation, with results returned as NumPy arrays.
 
 When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.

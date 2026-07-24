@@ -93,7 +93,6 @@ def test_pca_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_pca_spmd_synthetic(
     n_samples,
@@ -103,7 +102,6 @@ def test_pca_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
 ):
     # TODO: Resolve issues with batch fallback and lack of support for n_rows_rank < n_cols
     if n_components == "mle" or n_components == 3:
@@ -123,7 +121,7 @@ def test_pca_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = PCA_SPMD(n_components=n_components, whiten=whiten).fit(
             local_dpt_data
         )

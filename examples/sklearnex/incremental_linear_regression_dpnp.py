@@ -17,6 +17,7 @@
 import dpctl
 import dpnp
 
+from sklearnex import config_context
 from sklearnex.linear_model import IncrementalLinearRegression
 
 # We create GPU SyclQueue and then put data to dpnp arrays using
@@ -24,32 +25,37 @@ from sklearnex.linear_model import IncrementalLinearRegression
 
 queue = dpctl.SyclQueue("gpu")
 
-inclin = IncrementalLinearRegression()
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    inclin = IncrementalLinearRegression()
 
-# We do partial_fit for each batch and then print final result.
-X_1, y_1 = dpnp.asarray([[0, 1], [1, 2]], sycl_queue=queue), dpnp.asarray(
-    [2, 4], sycl_queue=queue
-)
-result = inclin.partial_fit(X_1, y_1)
+    # We do partial_fit for each batch and then print final result.
+    X_1, y_1 = dpnp.asarray([[0, 1], [1, 2]], sycl_queue=queue), dpnp.asarray(
+        [2, 4], sycl_queue=queue
+    )
+    result = inclin.partial_fit(X_1, y_1)
 
-X_2, y_2 = dpnp.asarray([[2, 3]], sycl_queue=queue), dpnp.asarray([6], sycl_queue=queue)
-result = inclin.partial_fit(X_2, y_2)
+    X_2, y_2 = dpnp.asarray([[2, 3]], sycl_queue=queue), dpnp.asarray(
+        [6], sycl_queue=queue
+    )
+    result = inclin.partial_fit(X_2, y_2)
 
-X_3, y_3 = dpnp.asarray([[0, 2], [1, 3], [2, 4]], sycl_queue=queue), dpnp.asarray(
-    [3, 5, 7], sycl_queue=queue
-)
-result = inclin.partial_fit(X_3, y_3)
+    X_3, y_3 = dpnp.asarray([[0, 2], [1, 3], [2, 4]], sycl_queue=queue), dpnp.asarray(
+        [3, 5, 7], sycl_queue=queue
+    )
+    result = inclin.partial_fit(X_3, y_3)
 
-print(f"Coefs:\n{result.coef_}")
-print(f"Intercept:\n{result.intercept_}")
+    print(f"Coefs:\n{result.coef_}")
+    print(f"Intercept:\n{result.intercept_}")
 
-# We put the whole data to fit method, it is split automatically and then
-# partial_fit is called for each batch.
-inclin = IncrementalLinearRegression(batch_size=3)
-X, y = dpnp.asarray(
-    [[0, 1], [1, 2], [2, 3], [0, 2], [1, 3], [2, 4]], sycl_queue=queue
-), dpnp.asarray([2, 4, 6, 3, 5, 7], sycl_queue=queue)
-result = inclin.fit(X, y)
+    # We put the whole data to fit method, it is split automatically and then
+    # partial_fit is called for each batch.
+    inclin = IncrementalLinearRegression(batch_size=3)
+    X, y = dpnp.asarray(
+        [[0, 1], [1, 2], [2, 3], [0, 2], [1, 3], [2, 4]], sycl_queue=queue
+    ), dpnp.asarray([2, 4, 6, 3, 5, 7], sycl_queue=queue)
+    result = inclin.fit(X, y)
 
-print(f"Coefs:\n{result.coef_}")
-print(f"Intercept:\n{result.intercept_}")
+    print(f"Coefs:\n{result.coef_}")
+    print(f"Intercept:\n{result.intercept_}")

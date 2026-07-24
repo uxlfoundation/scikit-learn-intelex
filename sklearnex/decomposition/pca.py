@@ -25,6 +25,7 @@ if daal_check_version((2024, "P", 100)):
     import numpy as np
     from sklearn.decomposition import PCA as _sklearn_PCA
     from sklearn.decomposition._pca import _infer_dimension
+    from sklearn.utils._array_api import get_namespace
     from sklearn.utils._param_validation import StrOptions
     from sklearn.utils.extmath import stable_cumsum
     from sklearn.utils.validation import check_is_fitted
@@ -36,10 +37,10 @@ if daal_check_version((2024, "P", 100)):
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
 
-    from .._device_offload import dispatch, support_sycl_format, wrap_output_data
+    from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
-    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.9"):
@@ -76,9 +77,6 @@ if daal_check_version((2024, "P", 100)):
             self.random_state = random_state
 
         _onedal_PCA = staticmethod(onedal_PCA)
-        # guarantee operability with dpnp, runs on CPU unless
-        # array_api_dispatch is enabled.
-        score_samples = support_sycl_format(_sklearn_PCA.score_samples)
 
         def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
@@ -427,7 +425,6 @@ if daal_check_version((2024, "P", 100)):
         transform.__doc__ = _sklearn_PCA.transform.__doc__
         fit_transform.__doc__ = _sklearn_PCA.fit_transform.__doc__
         inverse_transform.__doc__ = _sklearn_PCA.inverse_transform.__doc__
-        score_samples.__doc__ = _sklearn_PCA.score_samples.__doc__
 
 else:
     raise ImportError(

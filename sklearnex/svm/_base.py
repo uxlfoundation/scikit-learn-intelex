@@ -27,6 +27,7 @@ from sklearn.metrics import accuracy_score, r2_score
 from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
 from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
 from sklearn.utils import indexable
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._response import _get_response_values
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.multiclass import check_classification_targets
@@ -46,7 +47,6 @@ from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, validate_data
 
