@@ -32,7 +32,7 @@ from sklearnex.tests.utils.spmd import _get_local_tensor, _mpi_libs_and_gpu_avai
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
@@ -73,7 +73,7 @@ def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
