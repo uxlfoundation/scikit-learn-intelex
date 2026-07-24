@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 import os
+from typing import Any
 
 import pytest
 import scipy.sparse as sp
@@ -150,12 +151,30 @@ def _as_numpy(obj, *args, **kwargs):
         return dlpack_to_numpy(obj)
 
 
-def _assert_in_namespace(obj, dataframe):
-    """Assert obj belongs to the array namespace implied by ``dataframe``.
+def _assert_in_namespace(obj: Any, dataframe: str) -> None:
+    """Assert ``obj`` belongs to the array namespace implied by ``dataframe``.
 
-    Under array_api_dispatch, sklearnex outputs stay in the input namespace,
+    Under ``array_api_dispatch``, sklearnex outputs stay in the input namespace,
     so an on-device dpnp/array_api input should yield an on-device result
     (dpnp-in -> dpnp-out). Scalars are namespace-agnostic and are ignored.
+
+    Parameters
+    ----------
+    obj : object
+        The value produced by a sklearnex estimator (an array, or a scalar,
+        which is skipped).
+    dataframe : str
+        The dataframe name the input was created with, as returned by
+        :func:`get_dataframes_and_queues` (e.g. ``"numpy"``, ``"dpnp"``,
+        ``"array_api"``). Only ``"dpnp"`` and entries of ``array_api_modules``
+        trigger a namespace assertion; other values are treated as numpy and
+        pass through unchecked.
+
+    Returns
+    -------
+    None
+        Nothing is returned; an ``AssertionError`` is raised when ``obj`` is not
+        in the expected namespace.
     """
     if np.isscalar(obj):
         return
@@ -170,26 +189,58 @@ def _assert_in_namespace(obj, dataframe):
         ), f"expected {dataframe} output, got {type(obj)}"
 
 
-def _as_numpy_checked(obj, dataframe, *args, **kwargs):
-    """Assert obj is in ``dataframe``'s namespace, then convert to numpy.
+def _as_numpy_checked(obj: Any, dataframe: str, *args: Any, **kwargs: Any) -> np.ndarray:
+    """Assert ``obj`` is in ``dataframe``'s namespace, then convert to numpy.
 
-    Drop-in for ``_as_numpy`` on result values: verifies dpnp-in -> dpnp-out
+    Drop-in for :func:`_as_numpy` on result values: verifies dpnp-in -> dpnp-out
     (on-device outputs are not silently host-transferred) before converting so
     the value can be compared against a numpy expected result.
+
+    Parameters
+    ----------
+    obj : object
+        The value produced by a sklearnex estimator to check and convert.
+    dataframe : str
+        The dataframe name the input was created with, forwarded to
+        :func:`_assert_in_namespace`.
+    *args : tuple
+        Positional arguments forwarded to :func:`_as_numpy`.
+    **kwargs : dict
+        Keyword arguments forwarded to :func:`_as_numpy`.
+
+    Returns
+    -------
+    numpy.ndarray
+        ``obj`` converted to a numpy array.
     """
     _assert_in_namespace(obj, dataframe)
     return _as_numpy(obj, *args, **kwargs)
 
 
-def skip_array_api_strict_readonly(dataframe):
+def skip_array_api_strict_readonly(dataframe: str) -> None:
     """Skip if ``dataframe`` is array_api_strict and numpy is older than 2.2.5.
 
     Estimators that rebuild a oneDAL model from fitted arrays (PCA/IncrementalPCA
-    components_, DummyRegressor constant_) route them back through ``to_table``.
-    numpy < 2.2.5 returns those arrays read-only, which ``to_table`` cannot export
-    through DLPack, so array_api_strict inputs raise a BufferError / read-only
-    assignment error under forced array_api_dispatch. numpy >= 2.2.5 returns
-    writeable arrays.
+    ``components_``, DummyRegressor ``constant_``) route them back through
+    ``to_table``. numpy < 2.2.5 returns those arrays read-only, which ``to_table``
+    cannot export through DLPack, so array_api_strict inputs raise a
+    ``BufferError`` / read-only assignment error under forced ``array_api_dispatch``.
+    numpy >= 2.2.5 returns writeable arrays.
+
+    Parameters
+    ----------
+    dataframe : str
+        The dataframe name the input was created with. Only ``"array_api"``
+        combined with numpy < 2.2.5 triggers a skip; all other values are no-ops.
+
+    Returns
+    -------
+    None
+        Nothing is returned; :func:`pytest.skip` is invoked when the running
+        numpy version cannot support the array_api_strict path.
+
+    Notes
+    -----
     TODO: remove once the oneDAL data conversion handles read-only arrays.
     """
     if dataframe == "array_api" and not _package_check_version("2.2.5", np.__version__):
