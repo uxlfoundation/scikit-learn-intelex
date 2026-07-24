@@ -27,10 +27,11 @@ Python versions supported by current versions of |sklearn| - see :doc:`about` fo
 Free-threaded Python
 --------------------
 
-Free-threaded support starts with CPython 3.14 on Linux* x86-64 for CPU
-execution. Importing the native CPU extensions covered by this support level
-does not re-enable the GIL. See :doc:`unsupported` for the current platform and
-execution-mode limitations.
+Source-build support for free-threaded Python starts with CPython 3.14 on
+Linux* x86-64 for CPU execution. Importing the native CPU extensions covered by
+this support level does not re-enable the GIL. Availability of free-threaded
+binary wheels is release-dependent. See :doc:`unsupported` and
+:doc:`parallelism` for current platform and execution-mode limitations.
 
 Installing from PyPI
 --------------------

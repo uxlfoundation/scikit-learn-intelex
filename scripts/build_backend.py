@@ -180,10 +180,7 @@ def custom_build_cmake_clib(
     env_build = dict(os.environ)
     if cxx:
         env_build["CXX"] = cxx
-    sanitizer = os.environ.get("SKLEARNEX_SANITIZER", "")
-    if sanitizer and sanitizer not in ("address", "undefined", "thread"):
-        raise ValueError(f"Unsupported sanitizer: {sanitizer}")
-    build_type = "Debug" if debug_build else "RelWithDebInfo" if sanitizer else "Release"
+    build_type = "Debug" if debug_build else "Release"
     free_threading = bool(get_config_var("Py_GIL_DISABLED"))
 
     cmake_args = ["cmake"]
@@ -215,9 +212,6 @@ def custom_build_cmake_clib(
     python_soabi = get_config_var("SOABI")
     if python_soabi:
         cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
-
-    if sanitizer:
-        cmake_args += [f"-DSKLEARNEX_SANITIZER={sanitizer}"]
 
     if build_distribute:
         cmake_args += [

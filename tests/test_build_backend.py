@@ -149,14 +149,12 @@ def test_get_onedal_library_dir_reports_missing_sonames(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "is_win,debug_build,sanitizer,expected_build_type",
+    "is_win,debug_build,expected_build_type",
     [
-        (False, False, None, "Release"),
-        (False, True, None, "Debug"),
-        (True, False, None, "Release"),
-        (True, True, None, "Debug"),
-        (False, False, "address", "RelWithDebInfo"),
-        (False, True, "address", "Debug"),
+        (False, False, "Release"),
+        (False, True, "Debug"),
+        (True, False, "Release"),
+        (True, True, "Debug"),
     ],
 )
 @pytest.mark.parametrize("free_threading", [False, True])
@@ -165,7 +163,6 @@ def test_cmake_build_type_is_explicit(
     tmp_path,
     is_win,
     debug_build,
-    sanitizer,
     expected_build_type,
     free_threading,
 ):
@@ -183,10 +180,6 @@ def test_cmake_build_type_is_explicit(
     _create_libraries(library_dir, libraries)
 
     monkeypatch.setenv("DALROOT", str(dal_root))
-    if sanitizer:
-        monkeypatch.setenv("SKLEARNEX_SANITIZER", sanitizer)
-    else:
-        monkeypatch.delenv("SKLEARNEX_SANITIZER", raising=False)
     monkeypatch.setitem(
         sys.modules, "pybind11", SimpleNamespace(get_cmake_dir=lambda: "pybind11-cmake")
     )
@@ -223,8 +216,7 @@ def test_cmake_build_type_is_explicit(
     assert f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}" in calls[0]
     assert "" not in calls[0]
     assert ("-GNinja" in calls[0]) is is_win
-    sanitizer_args = [arg for arg in calls[0] if arg.startswith("-DSKLEARNEX_SANITIZER=")]
-    assert sanitizer_args == ([f"-DSKLEARNEX_SANITIZER={sanitizer}"] if sanitizer else [])
+    assert not any(arg.startswith("-DSKLEARNEX_SANITIZER=") for arg in calls[0])
     assert calls[1][:2] == ["cmake", "--build"]
     assert Path(calls[1][2]).parts[-2:] == ("build", "backend_host")
     assert calls[1][3:] == ["-j", "1"]

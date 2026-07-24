@@ -86,6 +86,12 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     If concurrent calls are to be performed, process-based parallelism should
     be used instead.
 
+.. note::
+    Free-threaded CPython support means that importing supported native CPU
+    extensions does not re-enable the GIL. It does not change the concurrency
+    restrictions below: use process-based parallelism for concurrent estimator
+    calls unless an estimator explicitly documents Python-thread safety.
+
 .. warning::
     The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
     :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not

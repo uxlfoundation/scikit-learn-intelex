@@ -38,22 +38,6 @@ message(STATUS "SKLEARNEX_GCOV:" ${SKLEARNEX_GCOV})
 option(USING_LLD "Using LLD as linker" OFF)
 message(STATUS "USING_LLD:" ${USING_LLD})
 
-set(SKLEARNEX_SANITIZER "" CACHE STRING "Sanitizer: address, undefined, or thread")
-set_property(CACHE SKLEARNEX_SANITIZER PROPERTY STRINGS "" address undefined thread)
-if(SKLEARNEX_SANITIZER)
-    if(NOT UNIX OR APPLE)
-        message(FATAL_ERROR "SKLEARNEX_SANITIZER is currently supported only on Linux")
-    endif()
-    if(NOT SKLEARNEX_SANITIZER MATCHES "^(address|undefined|thread)$")
-        message(FATAL_ERROR "Unsupported sanitizer: ${SKLEARNEX_SANITIZER}")
-    endif()
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-    add_compile_options(-fno-omit-frame-pointer -fno-sanitize-recover=all
-                        "-fsanitize=${SKLEARNEX_SANITIZER}")
-    add_link_options("-fsanitize=${SKLEARNEX_SANITIZER}")
-endif()
-message(STATUS "SKLEARNEX_SANITIZER:" ${SKLEARNEX_SANITIZER})
-
 if(WIN32)
     set(SDL_FLAGS "-GS -DynamicBase")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MD")
@@ -277,11 +261,7 @@ else()
     message(FATAL_ERROR "Invalid IFACE value: " ${IFACE})
 endif()
 
-if(SKLEARNEX_SANITIZER)
-    pybind11_add_module(${TARGET} NO_EXTRAS ${sources})
-else()
-    pybind11_add_module(${TARGET} ${sources})
-endif()
+pybind11_add_module(${TARGET} ${sources})
 
 set(EXTERNAL_INCLUDE_DIRECTORIES
     ${PYTHON_ONEDAL}../

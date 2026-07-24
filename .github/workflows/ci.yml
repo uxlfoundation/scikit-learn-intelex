@@ -156,8 +156,9 @@ jobs:
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
             # These optional integrations do not publish cp314t wheels. Their
-            # focused tests skip when the packages are absent.
-            grep -v -E '^(catboost|shap|polars)==' requirements-test.txt > requirements-test-free-threaded.txt
+            # focused tests skip when the packages are absent. Polars publishes
+            # an abi3 runtime wheel, so retain it for the regular test suite.
+            grep -v -E '^(catboost|shap)==' requirements-test.txt > requirements-test-free-threaded.txt
             pip install --upgrade -r requirements-test-free-threaded.txt
           else
             pip install --upgrade -r requirements-test.txt
@@ -243,7 +244,6 @@ jobs:
       NO_DIST: "1"
       PYTHON_GIL: "0"
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
-      SKLEARNEX_SANITIZER: thread
       TSAN_OPTIONS: halt_on_error=1:exitcode=66:log_path=/tmp/tsan-report
 
     steps:
