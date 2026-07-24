@@ -20,22 +20,15 @@ Unsupported |sklearn| features
 
 In general, estimators and functions from the |sklearnex| are sub-classed from their analogs in |sklearn| and are fully API compatible, but some particular features offered by |sklearn| cannot be used in the |sklearnex| due to differences in how the two libraries work internally.
 
-Python threads and free-threaded Python
----------------------------------------
+Free-threaded Python limitations
+---------------------------------
 
-Free-threaded support starts with CPython 3.14 on Linux* x86-64 for CPU
-execution. Importing the native extensions does not re-enable the GIL. Use
-independent estimator instances for concurrent operations unless an estimator
-explicitly documents that sharing one instance between threads is supported.
+The initial free-threaded support described in :doc:`installation` does not
+cover Windows*, DPC/SYCL, SPMD, or distributed execution. Use independent
+estimator instances for concurrent operations unless an estimator explicitly
+documents that sharing one instance between threads is supported.
 
-CatBoost and SHAP integrations are optional and depend on upstream packages
-being available for the selected free-threaded Python version. Free-threaded
-Windows*, DPC/SYCL, SPMD, and distributed builds are not covered by this
-support level.
-
-Process-based parallelization (the default mode in :mod:`joblib`) is recommended instead, whether through forked processes or through sub-processes. The |sklearnex| is fork-safe and this parallelization mode will usually be faster on Linux*, but note that other libraries that could be used together with it (such as `Polars <https://pola.rs>`__) might not always work correctly under forked processes.
-
-See :doc:`parallelism` for more details.
+See :doc:`parallelism` for general parallel-execution guidance.
 
 .. _config_unsupported:
 

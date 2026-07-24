@@ -20,6 +20,7 @@ import subprocess
 import sys
 import sysconfig
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 
@@ -137,20 +138,23 @@ def test_daal4py_model_state_is_serialized_with_readers():
         .model
     )
     state = model.__getstate__()
+    start = Barrier(5)
 
     def replace_state():
+        start.wait()
         for _ in range(32):
             model.__setstate__(state)
 
     def read_state():
+        start.wait()
         for _ in range(32):
             assert model.NumberOfTrees == 4
             assert model.__getstate__()
             assert repr(model)
             assert daal4py.getTreeState(model, 0, 2) is not None
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(replace_state)]
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(replace_state) for _ in range(2)]
         futures.extend(executor.submit(read_state) for _ in range(3))
         for future in futures:
             future.result()

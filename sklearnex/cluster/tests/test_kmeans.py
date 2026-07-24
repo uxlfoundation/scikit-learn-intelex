@@ -16,8 +16,14 @@
 
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
+
+try:
+    import polars as pl
+except ModuleNotFoundError as error:
+    if error.name != "polars":
+        raise
+    pl = None
 import scipy.sparse as sp
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_blobs
@@ -160,6 +166,8 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
     torch = pytest.importorskip("torch")
+    if transform_output == "polars" and pl is None:
+        pytest.skip("Polars is not installed")
 
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X_torch = torch.tensor(X_np, device="cpu")
@@ -183,6 +191,9 @@ def test_transform_output_torch(output_format, transform_output):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_gpu(dataframe, queue, transform_output):
+    if transform_output == "polars" and pl is None:
+        pytest.skip("Polars is not installed")
+
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 

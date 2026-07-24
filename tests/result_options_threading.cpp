@@ -40,9 +40,13 @@ void require(bool condition) {
 }
 
 int main() {
+    require(result_option_detail::is_ascii_word_character('_'));
+    require(!result_option_detail::is_ascii_word_character(static_cast<char>(0xe9)));
+    require(!result_option_detail::is_ascii_word_character(static_cast<char>(0xff)));
     require(tokenize("").empty());
     require(tokenize("|, ").empty());
     require(tokenize("max|max") == std::vector<std::string>({ "max", "max" }));
+    require(tokenize("alpha_beta") == std::vector<std::string>({ "alpha_beta" }));
     require(tokenize("max|unknown|min") ==
             std::vector<std::string>({ "max", "unknown", "min" }));
     require(tokenize(std::string_view("max\0min", 7)) ==

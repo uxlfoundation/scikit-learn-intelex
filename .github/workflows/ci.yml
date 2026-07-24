@@ -155,9 +155,9 @@ jobs:
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
-            # CatBoost and SHAP are optional integrations, not free-threaded
-            # support requirements. Their tests skip when the packages are absent.
-            grep -v -E '^(catboost|shap)==' requirements-test.txt > requirements-test-free-threaded.txt
+            # These optional integrations do not publish cp314t wheels. Their
+            # focused tests skip when the packages are absent.
+            grep -v -E '^(catboost|shap|polars)==' requirements-test.txt > requirements-test-free-threaded.txt
             pip install --upgrade -r requirements-test-free-threaded.txt
           else
             pip install --upgrade -r requirements-test.txt

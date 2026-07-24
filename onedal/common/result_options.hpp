@@ -26,8 +26,10 @@ inline constexpr bool is_ascii_word_character(char value) noexcept {
            (value >= '0' && value <= '9') || value == '_';
 }
 
-// Result-option names are ASCII identifiers. Avoid std::regex("\\w+"), whose
-// libstdc++ locale cache is not safe for concurrent first use without the GIL.
+// Result-option names are ASCII identifiers. Keep this predicate independent
+// of the global locale; std::isalnum() is locale-sensitive and excludes '_'.
+// Avoid std::regex("\\w+"), whose libstdc++ locale cache is not safe for
+// concurrent first use without the GIL.
 template <typename Callback>
 void for_each_result_option(std::string_view value, Callback&& callback) {
     std::size_t position = 0;

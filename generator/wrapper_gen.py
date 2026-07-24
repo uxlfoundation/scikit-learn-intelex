@@ -572,6 +572,7 @@ cdef class {{flatname}}:
 {% endfor %}
 
 {% if free_threading %}
+    # Serialize native pointer replacement with readers of the same wrapper.
     @cython.critical_section
 {% endif %}
     def __setstate__(self, state):
