@@ -15,7 +15,8 @@
 # ===============================================================================
 
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
-from sklearn.utils import gen_batches
+from sklearn.utils import check_array, gen_batches
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._param_validation import StrOptions
 from sklearn.utils.validation import check_is_fitted
 
@@ -26,7 +27,7 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 from ..._device_offload import dispatch, support_input_format, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace
+from ...utils._array_api import enable_array_api
 from ...utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
@@ -59,7 +60,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         )
         self.svd_solver = svd_solver
         self._need_to_finalize = False
-        # Note: use of the onedal_svd solver will cause partial result to grow proportionally
+        # Note: use of the 'full' (svd-based) solver will cause partial result to grow proportionally
         # to the input data and for that reason is not the default, which is contrary
         # to the scikit-learn implementation.
 
@@ -189,6 +190,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.singular_values_ = xp.where(
             xp.isnan(self.singular_values_), 0, self.singular_values_
         )
+
         self._onedal_estimator.singular_values_ = self.singular_values_
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
@@ -251,13 +253,13 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
-        # onedal_svd doesn't exist for GPU
+        # SVD solver doesn't exist for GPU
         X = data[0]
         if "fit" in method_name:
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "Sparse input is not supported"),
-                    (self.svd_solver != "full", "onedal_svd not supported on GPU"),
+                    (self.svd_solver != "full", "SVD not supported on GPU"),
                 ]
             )
         else:

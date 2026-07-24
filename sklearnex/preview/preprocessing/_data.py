@@ -18,6 +18,7 @@ from functools import partial
 
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.preprocessing._data import _handle_zeros_in_scale
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -26,13 +27,10 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
-from ..._device_offload import (
-    dispatch,
-    support_sycl_format,
-)
+from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace
+from ...utils._array_api import enable_array_api
 from ...utils.validation import assert_all_finite, validate_data
 
 __check_kwargs = {
@@ -193,16 +191,11 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
-    # Transform relies completely on standard scikit-learn functionality and does not need to
-    # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
-    transform = support_sycl_format(_sklearn_MaxAbsScaler.transform)
-
-    inverse_transform = support_sycl_format(_sklearn_MaxAbsScaler.inverse_transform)
+    # transform is inherited unchanged from scikit-learn: it relies only on the fitted
+    # scale vectors and array API operations, so no oneDAL override is needed.
 
     fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
     partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
-    transform.__doc__ = _sklearn_MaxAbsScaler.transform.__doc__
-    inverse_transform.__doc__ = _sklearn_MaxAbsScaler.inverse_transform.__doc__
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
     # explicitly from the user. We wrap properties that require a finalized state.

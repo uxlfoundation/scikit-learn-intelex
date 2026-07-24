@@ -15,6 +15,7 @@
 # ===============================================================================
 
 from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -25,7 +26,7 @@ from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 

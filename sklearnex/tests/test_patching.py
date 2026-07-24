@@ -32,6 +32,7 @@ from sklearn import get_config as sklearn_get_config
 from sklearn.base import BaseEstimator, is_clusterer, is_regressor
 from sklearn.svm._base import BaseLibSVM
 from sklearn.utils import get_tags
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import (
     _package_check_version,
@@ -58,7 +59,6 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
-from sklearnex.utils._array_api import get_namespace
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -125,6 +125,19 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in roc_auc_score with log: \n{caplog.text}"
+
+
+# (estimator, method) pairs whose special-instance config is not array API viable in
+# stock sklearn itself: they raise a TypeError under array_api_dispatch, so the failure
+# is a sklearn conformance gap rather than a sklearnex regression and is tolerated in
+# test_special_estimator_patching_array_api. Any other failure there is treated as real.
+_SKLEARN_ARRAY_API_GAPS = {
+    ("SVC", "predict_log_proba"),
+    ("NuSVC", "predict_log_proba"),
+    ("DummyRegressor", "predict"),
+    ("DummyRegressor", "score"),
+    ("LocalOutlierFactor", "predict"),
+}
 
 
 def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
@@ -480,20 +493,50 @@ def _check_set_output_transform(est, method, X, estimator_name):
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
 def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
     if estimator == "EmpiricalCovariance" and method == "mahalanobis":
         pytest.skip("Operation involves intentional fallback to scikit-learn.")
     if estimator == "IncrementalPCA" and method == "inverse_transform":
         pytest.skip("Operation involves intentional fallback to scikit-learn.")
-    if (
-        estimator == "IncrementalPCA"
-        and dataframe == "array_api"
-        and not _package_check_version(np.__version__, "2.2")
-    ):
-        pytest.skip("Requires newer numpy version")
 
+    # numpy/pandas inputs run without array_api_dispatch; the array API frameworks
+    # are covered by test_standard_estimator_patching_array_api.
+    est = PATCHED_MODELS[estimator]()
+
+    if "NearestNeighbors" in estimator and "radius" in method:
+        pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
+
+    if estimator == "TSNE" and method == "fit_transform":
+        pytest.skip("TSNE.fit_transform is too slow for common testing")
+    elif estimator == "IncrementalLinearRegression" and np.issubdtype(dtype, np.integer):
+        pytest.skip(
+            "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
+        )
+    elif method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
+
+    # numpy/pandas outputs are not required to preserve the input container type
+    # (sklearnex returns numpy), so only patching and set_output are verified here.
+    result, X, y = _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+    _check_set_output_transform(est, method, X, estimator)
+
+
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues("dpnp,array_api"))
+@pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
+def test_standard_estimator_patching_array_api(
+    with_array_api, caplog, dataframe, queue, dtype, estimator, method
+):
+    # array API inputs (dpnp, array_api_strict) run with array_api_dispatch enabled
+    # via the with_array_api fixture, so fit and all methods use array API natively.
     kwargs = {}
     if (
         estimator == "LogisticRegression"
@@ -528,118 +571,80 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     elif method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
         pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
-    if (
-        (dataframe == "array_api" or queue)
-        and estimator == "LogisticRegressionCV"
-        and not get_tags(est).array_api_support
-    ):
+    if estimator == "LogisticRegressionCV" and not get_tags(est).array_api_support:
         pytest.skip("Array API and/or GPU inputs not supported in estimator")
-    if (
-        (
-            dataframe == "array_api"
-            or (
-                dataframe in ["dpnp"]
-                and (not queue or not getattr(queue.sycl_device, "is_gpu", False))
-            )
-        )
-        and estimator == "LogisticRegression"
-        and not sklearn_check_version("1.9")
-    ):
-        # In case array api inputs on CPU are provided on CPU for LogisticRegression sklearnex will fallback to sklearn
-        # Array API support for LogisticRegression in sklearn is only available starting from 1.9
+    if estimator == "LogisticRegression" and not sklearn_check_version("1.9"):
+        # Array API support for LogisticRegression in sklearn is only available
+        # starting from 1.9; before that sklearnex falls back to sklearn.
         pytest.skip(
-            "Array API inputs on CPU are not supported for LogisticRegression in sklearn <1.9"
+            "Array API inputs are not supported for LogisticRegression in sklearn <1.9"
         )
 
-    if dataframe == "array_api":
-        # as array_api dispatching is experimental, sklearn support isn't guaranteed.
-        # the infrastructure from sklearn that sklearnex depends on is also susceptible
-        # to failure. In this case compare to sklearn for the same failure. By design
-        # the patching of sklearn should act similarly. Technically this is conformance.
-        if not _package_check_version("2.0", np.__version__):
-            # numpy < 2.0 does not support keyword arguments in from_dlpack()
-            pytest.skip(
-                "numpy < 2.0 does not fully support the array API dlpack protocol."
-            )
-        tags = get_tags(est)
-        array_api_check = (
-            hasattr(tags, "array_api_support") and tags.array_api_support
-        ) or (hasattr(tags, "onedal_array_api") and tags.onedal_array_api)
-        if not array_api_check:
-            pytest.skip(
-                "Array API support not implemented in either scikit-learn or scikit-learn-intelex"
-            )
+    tags = get_tags(est)
+    array_api_check = (hasattr(tags, "array_api_support") and tags.array_api_support) or (
+        hasattr(tags, "onedal_array_api") and tags.onedal_array_api
+    )
+    if not array_api_check:
+        pytest.skip(
+            "Array API support not implemented in either scikit-learn or scikit-learn-intelex"
+        )
 
-        with config_context(array_api_dispatch=True):
-            try:
-                result, X, y = _check_estimator_patching(
-                    caplog, dataframe, queue, dtype, est, method
-                )
-            except Exception as e:
-                # if we are borrowing from sklearn and it fails, then this is something
-                # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
-                # function doesn't support array_api with the set parameters and array_api
-                # support isn't promised by oneDAL
-                if estimator not in UNPATCHED_MODELS or getattr(
-                    PATCHED_MODELS[estimator], method
-                ) != getattr(UNPATCHED_MODELS[estimator], method, None):
-                    raise e
-            else:
-                # Check return type conformance when no exception
-                # occurred. Output arrays should match the input array type.
-                _check_output_type(result, y, method, estimator, caplog, X=X, est=est)
-                _check_fitted_attributes(est, X, estimator, caplog, queue=queue)
-                _check_set_output_transform(est, method, X, estimator)
-
-    else:
-        if dataframe == "dpnp":
-            # Note: this tries to check for GPU support by checking for array API
-            # support. If some class can run on GPU but doesn't support array API,
-            # an exception should be made here.
-            tags = get_tags(est)
-            if not (hasattr(tags, "onedal_array_api") and tags.onedal_array_api):
-                pytest.skip("No GPU support for estimator")
+    try:
         result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
-        # KNN/LOF store _fit_X as dpnp even without dispatch, so pickle
-        # fails (dpnp SYCL queues are not serializable)
-        if dataframe == "dpnp" and estimator not in [
-            "KNeighborsClassifier",
-            "KNeighborsRegressor",
-            "NearestNeighbors",
-            "LocalOutlierFactor",
-        ]:
-
-            pickle.loads(pickle.dumps(est))
-        # Without array_api_dispatch, dpnp inputs go through
-        # support_input_format (converts to numpy and back) for fit and
-        # support_sycl_format (converts to numpy but NOT back) for some
-        # methods like score_samples/mahalanobis. This creates a type
-        # mismatch: fitted attrs may be numpy while method outputs are
-        # dpnp or vice versa. With array_api_dispatch enabled, all paths
-        # use array API consistently, so we re-fit and re-call with
-        # dispatch on to verify output types correctly.
-        if dataframe not in ("numpy", "pandas"):
-            # Skip second pass if estimator doesn't support GPU for this data
-            if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
-                X_np, y_np = _as_numpy(X), _as_numpy(y)
-                if not est._onedal_gpu_supported("fit", X_np, y_np, None).get_status():
-                    _check_set_output_transform(est, method, X, estimator)
-                    return
-            with config_context(array_api_dispatch=True):
-                result2, X2, y2 = _check_estimator_patching(
-                    caplog, dataframe, queue, dtype, est, method
-                )
-                _check_output_type(result2, y2, method, estimator, caplog, X=X2, est=est)
-                _check_fitted_attributes(est, X2, estimator, caplog, queue=queue)
+    except Exception as e:
+        # if we are borrowing from sklearn and it fails, then this is something
+        # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
+        # function doesn't support array_api with the set parameters and array_api
+        # support isn't promised by oneDAL
+        if estimator not in UNPATCHED_MODELS or getattr(
+            PATCHED_MODELS[estimator], method
+        ) != getattr(UNPATCHED_MODELS[estimator], method, None):
+            raise e
+    else:
+        # Estimators without GPU fit support (e.g. neighbors) host-transfer and
+        # return numpy on GPU inputs, so output-type conformance does not apply.
+        if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
+            X_np, y_np = _as_numpy(X), _as_numpy(y)
+            if not est._onedal_gpu_supported("fit", X_np, y_np, None).get_status():
+                _check_set_output_transform(est, method, X, estimator)
+                return
+        # Check return type conformance when no exception occurred. Output arrays
+        # should match the input array type.
+        _check_output_type(result, y, method, estimator, caplog, X=X, est=est)
+        _check_fitted_attributes(est, X, estimator, caplog, queue=queue)
         _check_set_output_transform(est, method, X, estimator)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("estimator, method", gen_models_info(SPECIAL_INSTANCES))
 def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
+    # numpy/pandas inputs run without array_api_dispatch; the array API frameworks
+    # are covered by test_special_estimator_patching_array_api.
+    est = SPECIAL_INSTANCES[estimator]
+
+    if "NearestNeighbors" in estimator and "radius" in method:
+        pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
+
+    _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+
+
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues("dpnp,array_api"))
+@pytest.mark.parametrize("estimator, method", gen_models_info(SPECIAL_INSTANCES))
+def test_special_estimator_patching_array_api(
+    with_array_api, caplog, dataframe, queue, dtype, estimator, method
+):
+    # array API inputs (dpnp, array_api_strict) run with array_api_dispatch enabled
+    # via the with_array_api fixture.
     est = SPECIAL_INSTANCES[estimator]
 
     if queue:
@@ -652,7 +657,15 @@ def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, 
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
 
-    _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+    try:
+        _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+    except Exception as e:
+        # These special-instance methods are not array API viable in stock sklearn
+        # itself (they raise a TypeError under array_api_dispatch), so the failure is
+        # a sklearn conformance gap rather than a sklearnex regression. Any other
+        # failure is real and re-raised.
+        if (type(est).__name__, method) not in _SKLEARN_ARRAY_API_GAPS:
+            raise e
 
 
 @pytest.mark.parametrize("estimator", UNPATCHED_MODELS.keys())

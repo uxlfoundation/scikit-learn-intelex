@@ -84,11 +84,8 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     "dataframe,queue",
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
-def test_basic_stats_spmd_synthetic(
-    n_samples, n_features, dataframe, queue, dtype, array_api_dispatch
-):
+def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dtype):
     # Import spmd and batch algo
     from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
     from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatistics_SPMD
@@ -102,7 +99,7 @@ def test_basic_stats_spmd_synthetic(
 
     # Ensure results of batch algo match spmd
     # Configure array API dispatch status for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
