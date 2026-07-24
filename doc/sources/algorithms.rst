@@ -239,13 +239,11 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - All parameters are supported except:
-
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+     - 
      - Sparse data is not supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.manifold.TSNE`
@@ -546,15 +544,13 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - All parameters are supported except:
-
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
+     - 
      - Sparse data is not supported
-     - Estimator is **only** available in :doc:`preview mode <preview>`.
+     - Estimator is **only** available in :doc:`preview mode <preview>`. Additional parameter ``svd_solver`` (see :doc:`additional_parameters`) is not supported on GPU.
 
 Anomaly Detection
 *****************
@@ -790,7 +786,7 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`

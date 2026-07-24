@@ -17,47 +17,13 @@
 import numpy as np
 from sklearn.utils import check_random_state
 
-from sklearnex._config import config_context, get_config
-
-from .. import onedal_check_version
+from .. import _default_backend, onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 from ..utils import _sycl_queue_manager as QM
 
 if onedal_check_version(2023, 2, 0):
-
-    def force_host_if_csr(func):
-        """
-        Decorator to force computation on the host if the input data is in CSR format.
-
-        CSR (Compressed Sparse Row) format is not supported on GPU. This decorator ensures that
-        the computation is performed on the host (CPU) when the input data is in CSR format.
-        It is necessary that `self.is_csr` is to the correct value (True or False) before calling.
-        It temporarily modifies the configuration to target the CPU and removes the global SYCL queue
-        to ensure the computation is executed on the host. The original configuration is restored upon exit.
-
-        Parameters:
-        func (function): The function to be decorated.
-
-        Returns:
-        function: The wrapped function with the modified configuration if the input data is in CSR format.
-        """
-        config = get_config()
-        # `auto` rather than `cpu` is necessary in order to force host when a SYCL cpu target is unavailable
-        config["target_offload"] = "auto"
-
-        def wrapper(self, *args, **kwargs):
-            if self.is_csr:
-                with (
-                    config_context(**config),
-                    QM.manage_global_queue(None, None),
-                ):
-                    return func(self, *args, **kwargs)
-            else:
-                return func(self, *args, **kwargs)
-
-        return wrapper
 
     class KMeansInit:
         """
@@ -83,8 +49,16 @@ if onedal_check_version(2023, 2, 0):
             else:
                 self.local_trials_count = local_trials_count
 
-        @bind_default_backend("kmeans_init.init", lookup_name="compute")
-        def backend_compute(self, params, X_table): ...
+        # force use of `no_policy` as it must be directly managed for csr data
+        @bind_default_backend("kmeans_init.init", lookup_name="compute", no_policy=True)
+        def _backend_compute(self, policy, params, X_table): ...
+
+        # it checks for csr data and forces computation on host
+        def backend_compute(self, params, X_table):
+            policy = _default_backend.get_policy(
+                None if self.is_csr else QM.get_global_queue()
+            )
+            return self._backend_compute(policy, params, X_table)
 
         def _get_onedal_params(self, dtype=np.float32):
             return {
@@ -95,27 +69,20 @@ if onedal_check_version(2023, 2, 0):
                 "cluster_count": self.cluster_count,
             }
 
-        def _get_params_and_input(self, X, queue):
-            X = to_table(X, queue=queue)
-            params = self._get_onedal_params(X.dtype)
-            return (params, X, X.dtype)
-
-        def _compute_raw(self, X_table, dtype=np.float32):
+        def _compute_raw(self, X_table, dtype=np.float32, queue=None):
             params = self._get_onedal_params(dtype)
             result = self.backend_compute(params, X_table)
             return result.centroids
 
         def _compute(self, X):
-            _, X_table, dtype = self._get_params_and_input(X, queue=QM.get_global_queue())
-            centroids = self._compute_raw(X_table, dtype)
+            X_table = to_table(X, queue=QM.get_global_queue())
+            centroids = self._compute_raw(X_table, X_table.dtype)
             return from_table(centroids)
 
-        @force_host_if_csr
         def compute_raw(self, X_table, dtype=np.float32, queue=None):
             # no @supports_queue decorator here, because we only accept X_table that has no queue information
-            return self._compute_raw(X_table, dtype)
+            return self._compute_raw(X_table, dtype, queue)
 
-        @force_host_if_csr
         @supports_queue
         def compute(self, X, queue=None):
             return self._compute(X)

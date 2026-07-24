@@ -23,6 +23,7 @@ from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
@@ -37,7 +38,6 @@ from onedal.utils.validation import _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):

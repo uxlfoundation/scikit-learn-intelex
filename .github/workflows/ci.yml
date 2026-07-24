@@ -82,7 +82,7 @@ jobs:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}  
       - name: Download oneDAL build artifact
@@ -453,7 +453,7 @@ jobs:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
       - name: Download oneDAL build artifact
@@ -585,7 +585,7 @@ jobs:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.UXL_PYTHONVERSION }}
           cache: 'pip'
@@ -661,7 +661,7 @@ jobs:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v7
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.UXL_PYTHONVERSION }}
           cache-dependency-path: |

@@ -432,8 +432,10 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     else if (input.get_kind() == csr_table_t::kind()) {
         const auto &csr_input = static_cast<const csr_table_t &>(input);
         const dal::data_type dtype = csr_input.get_metadata().get_data_type(0);
-#define MAKE_PY_FROM_CSR(NpType, T) \
-    { res = convert_to_py_from_csr_impl<NpType, T>(csr_input); }
+#define MAKE_PY_FROM_CSR(NpType, T)                              \
+    {                                                            \
+        res = convert_to_py_from_csr_impl<NpType, T>(csr_input); \
+    }
         SET_CTYPES_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_PY_FROM_CSR,

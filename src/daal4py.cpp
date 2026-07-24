@@ -531,7 +531,7 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
                 }
                 ptr = soatbl;
             } // else not a list of 1d arrays
-        }     // else not a list of 1d arrays
+        } // else not a list of 1d arrays
         if (!ptr && ((strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0) || (strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0)))
         {
             daal::services::SharedPtr<daal::data_management::CSRNumericTable> ret;

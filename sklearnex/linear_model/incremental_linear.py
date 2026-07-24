@@ -21,6 +21,7 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import check_is_fitted
 
@@ -37,7 +38,7 @@ from .._utils import (
     register_hyperparameters,
 )
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
