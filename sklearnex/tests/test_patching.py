@@ -545,7 +545,6 @@ def test_standard_estimator_patching_array_api(
     ):
         # sklearnex.LogisticRegression only has support for newton-cg solver on GPU
         kwargs = {"solver": "newton-cg"}
-
     est = PATCHED_MODELS[estimator](**kwargs)
 
     if queue:
