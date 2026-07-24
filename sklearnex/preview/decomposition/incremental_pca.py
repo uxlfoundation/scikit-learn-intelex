@@ -24,7 +24,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
-from ..._device_offload import dispatch, support_input_format, wrap_output_data
+from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api
@@ -384,8 +384,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator._onedal_model = None
         self._explained_variance_ = value
 
-    inverse_transform = support_input_format(_sklearn_IncrementalPCA.inverse_transform)
-
     __doc__ = _add_inc_serialization_note(
         _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
     )
@@ -393,4 +391,3 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     fit_transform.__doc__ = _sklearn_IncrementalPCA.fit_transform.__doc__
     transform.__doc__ = _sklearn_IncrementalPCA.transform.__doc__
     partial_fit.__doc__ = _sklearn_IncrementalPCA.partial_fit.__doc__
-    inverse_transform.__doc__ = _sklearn_IncrementalPCA.inverse_transform.__doc__
