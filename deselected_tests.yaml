@@ -459,6 +459,11 @@ deselected_tests:
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
 
+  # These fail due to trying to convert array-api-strict 'device1' to NumPy.
+  # TODO: remove these after issue is fixed on sklearnex side.
+  - preprocessing/tests/test_data.py::test_preprocessing_array_api_compliance[MaxAbsScaler()-check_array_api_input_and_values-array_api_strict-device1-float32]
+  - preprocessing/tests/test_data.py::test_preprocessing_array_api_compliance[MaxAbsScaler(clip=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
+
   # Requires newer numpy version for array API support. Skip logic might need to be changed
   # according to numpy version used by CI jobs that run these tests - at the moment, only
   # sklearn versions are accepted, but this should be a condition like 'skip if numpy<2.2'
