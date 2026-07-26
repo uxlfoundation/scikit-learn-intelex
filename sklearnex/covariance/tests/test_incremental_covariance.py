@@ -30,9 +30,9 @@ from sklearn.decomposition import PCA
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
 )
@@ -68,8 +68,9 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[0, 0], [0, 0]])
         expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
-    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
     X = np.array([[1, 2], [3, 6]])
     X = X.astype(dtype)
@@ -89,8 +90,8 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[1, 2], [2, 4]])
         expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
-    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -111,8 +112,9 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
     )
     expected_means = np.array([0, 0.5, 1, 1.5])
 
-    assert_allclose(expected_covariance, _as_numpy_checked(result.covariance_, dataframe))
-    assert_allclose(expected_means, _as_numpy_checked(result.location_, dataframe))
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -141,12 +143,9 @@ def test_sklearnex_partial_fit_on_random_data(
     expected_covariance = np.cov(X.T, bias=1)
     expected_means = np.mean(X, axis=0)
 
-    assert_allclose(
-        expected_covariance, _as_numpy_checked(result.covariance_, dataframe), atol=1e-6
-    )
-    assert_allclose(
-        expected_means, _as_numpy_checked(result.location_, dataframe), atol=1e-6
-    )
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -184,12 +183,9 @@ def test_sklearnex_fit_on_random_data(
         expected_covariance = np.cov(X.T, bias=1)
         expected_means = np.mean(X, axis=0)
 
-    assert_allclose(
-        expected_covariance, _as_numpy_checked(result.covariance_, dataframe), atol=1e-6
-    )
-    assert_allclose(
-        expected_means, _as_numpy_checked(result.location_, dataframe), atol=1e-6
-    )
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -222,8 +218,9 @@ def test_whitened_toy_score(dataframe, queue):
         # fit data; location_ approximately zero (10,), covariance_ identity (10,10)
         est = IncrementalEmpiricalCovariance()
         est.fit(X_df)
-        result = _as_numpy_checked(est.score(X_df), dataframe)
-    assert_allclose(expected_result, result, atol=1e-6)
+        score = est.score(X_df)
+        _assert_in_namespace(score, dataframe)
+    assert_allclose_numpy(expected_result, score, atol=1e-6)
 
 
 # dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch

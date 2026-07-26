@@ -16,12 +16,11 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -83,9 +82,10 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
     incpca.fit(dpt_X)
 
     for attribute in attributes_to_compare:
-        assert_allclose(
-            _as_numpy(getattr(incpca, attribute)),
-            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
+        _assert_in_namespace(getattr(incpca_spmd, attribute), dataframe)
+        assert_allclose_numpy(
+            getattr(incpca, attribute),
+            getattr(incpca_spmd, attribute),
             err_msg=f"{attribute} is incorrect",
         )
 
@@ -147,9 +147,10 @@ def test_incremental_pca_partial_fit_spmd_gold(
         incpca_spmd.partial_fit(local_dpt_X)
 
     for attribute in attributes_to_compare:
-        assert_allclose(
-            _as_numpy(getattr(incpca, attribute)),
-            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
+        _assert_in_namespace(getattr(incpca_spmd, attribute), dataframe)
+        assert_allclose_numpy(
+            getattr(incpca, attribute),
+            getattr(incpca_spmd, attribute),
             err_msg=f"{attribute} is incorrect",
         )
 
@@ -193,9 +194,10 @@ def test_incremental_pca_fit_spmd_random(
     incpca.fit(dpt_X)
 
     for attribute in attributes_to_compare:
-        assert_allclose(
-            _as_numpy(getattr(incpca, attribute)),
-            _as_numpy_checked(getattr(incpca_spmd, attribute), dataframe),
+        _assert_in_namespace(getattr(incpca_spmd, attribute), dataframe)
+        assert_allclose_numpy(
+            getattr(incpca, attribute),
+            getattr(incpca_spmd, attribute),
             atol=tol,
             err_msg=f"{attribute} is incorrect",
         )
@@ -203,7 +205,7 @@ def test_incremental_pca_fit_spmd_random(
     y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 
-    assert_allclose(_as_numpy(y_trans_spmd), _as_numpy(y_trans), atol=tol)
+    assert_allclose_numpy(y_trans_spmd, y_trans, atol=tol)
 
 
 @pytest.mark.skipif(
@@ -263,9 +265,9 @@ def test_incremental_pca_partial_fit_spmd_random(
     # array namespace of the stored (dpnp) data and must run under dispatch.
     with config_context(array_api_dispatch=True):
         for attribute in attributes_to_compare:
-            assert_allclose(
-                _as_numpy(getattr(incpca, attribute)),
-                _as_numpy(getattr(incpca_spmd, attribute)),
+            assert_allclose_numpy(
+                getattr(incpca, attribute),
+                getattr(incpca_spmd, attribute),
                 atol=tol,
                 err_msg=f"{attribute} is incorrect",
             )
@@ -275,4 +277,4 @@ def test_incremental_pca_partial_fit_spmd_random(
         y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 
-    assert_allclose(_as_numpy(y_trans_spmd), _as_numpy(y_trans), atol=tol)
+    assert_allclose_numpy(y_trans_spmd, y_trans, atol=tol)

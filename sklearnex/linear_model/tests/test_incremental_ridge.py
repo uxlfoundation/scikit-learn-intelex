@@ -23,9 +23,9 @@ if daal_check_version((2024, "P", 600)):
     from sklearn.exceptions import NotFittedError
 
     from onedal.tests.utils._dataframes_support import (
-        _as_numpy,
-        _as_numpy_checked,
+        _assert_in_namespace,
         _convert_to_dataframe,
+        assert_allclose_numpy,
         get_dataframes_and_queues,
     )
     from sklearnex.linear_model import IncrementalRidge
@@ -77,16 +77,17 @@ if daal_check_version((2024, "P", 600)):
         coefficients_manual, intercept_manual = _compute_ridge_coefficients(
             X, y, alpha, fit_intercept
         )
+        _assert_in_namespace(inc_ridge.coef_, dataframe)
         if fit_intercept:
-            assert_allclose(
-                _as_numpy_checked(inc_ridge.intercept_, dataframe),
+            assert_allclose_numpy(
+                inc_ridge.intercept_,
                 intercept_manual,
                 rtol=1e-6,
                 atol=1e-6,
             )
 
-        assert_allclose(
-            _as_numpy_checked(inc_ridge.coef_, dataframe),
+        assert_allclose_numpy(
+            inc_ridge.coef_,
             coefficients_manual,
             rtol=1e-6,
             atol=1e-6,
@@ -118,8 +119,9 @@ if daal_check_version((2024, "P", 600)):
         xt_y = np.dot(X.T, y)
         coefficients_manual = np.dot(inverse_term, xt_y)
 
-        assert_allclose(
-            _as_numpy_checked(inc_ridge.coef_, dataframe),
+        _assert_in_namespace(inc_ridge.coef_, dataframe)
+        assert_allclose_numpy(
+            inc_ridge.coef_,
             coefficients_manual,
             rtol=1e-6,
             atol=1e-6,
@@ -166,9 +168,8 @@ if daal_check_version((2024, "P", 600)):
         if fit_intercept:
             y_pred_manual += intercept_manual
 
-        assert_allclose(
-            _as_numpy_checked(y_pred, dataframe), y_pred_manual, rtol=1e-6, atol=1e-6
-        )
+        _assert_in_namespace(y_pred, dataframe)
+        assert_allclose_numpy(y_pred, y_pred_manual, rtol=1e-6, atol=1e-6)
 
 
 # dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch

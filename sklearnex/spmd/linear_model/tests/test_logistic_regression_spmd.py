@@ -16,12 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -92,14 +92,15 @@ def test_logistic_spmd_gold(dataframe, queue):
         dpt_X_train, dpt_y_train
     )
 
-    assert_allclose(
-        _as_numpy_checked(spmd_model.coef_, dataframe),
-        _as_numpy(batch_model.coef_),
+    _assert_in_namespace(spmd_model.coef_, dataframe)
+    assert_allclose_numpy(
+        spmd_model.coef_,
+        batch_model.coef_,
         rtol=1e-2,
     )
-    assert_allclose(
-        _as_numpy_checked(spmd_model.intercept_, dataframe),
-        _as_numpy(batch_model.intercept_),
+    assert_allclose_numpy(
+        spmd_model.intercept_,
+        batch_model.intercept_,
         rtol=1e-2,
     )
 
@@ -163,12 +164,10 @@ def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue
 
     # TODO: Logistic Regression coefficients do not align
     tol = 1e-2
-    assert_allclose(
-        _as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_), rtol=tol, atol=tol
-    )
-    assert_allclose(
-        _as_numpy(spmd_model.intercept_),
-        _as_numpy(batch_model.intercept_),
+    assert_allclose_numpy(spmd_model.coef_, batch_model.coef_, rtol=tol, atol=tol)
+    assert_allclose_numpy(
+        spmd_model.intercept_,
+        batch_model.intercept_,
         rtol=tol,
         atol=tol,
     )

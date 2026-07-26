@@ -34,8 +34,9 @@ from daal4py.sklearn._utils import (
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
     skip_array_api_strict_readonly,
@@ -62,9 +63,8 @@ def test_sklearnex_import(dataframe, queue):
     result = incpca.fit(X)
     assert "sklearnex" in incpca.__module__
     assert hasattr(incpca, "_onedal_estimator")
-    assert_allclose(
-        _as_numpy_checked(result.singular_values_, dataframe), [6.30061232, 0.54980396]
-    )
+    _assert_in_namespace(result.singular_values_, dataframe)
+    assert_allclose_numpy(result.singular_values_, [6.30061232, 0.54980396])
 
 
 def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe):
@@ -110,56 +110,51 @@ def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe):
     assert incpca.n_features_in_ == expected_n_features_in_
     assert incpca.n_components_ == expected_n_components_
 
-    assert_allclose(
-        _as_numpy_checked(incpca.singular_values_, dataframe),
+    _assert_in_namespace(incpca.singular_values_, dataframe)
+    assert_allclose_numpy(
+        incpca.singular_values_,
         expected_singular_values_,
         atol=tol,
     )
-    assert_allclose(_as_numpy_checked(incpca.mean_, dataframe), expected_mean_, atol=tol)
-    assert_allclose(_as_numpy_checked(incpca.var_, dataframe), expected_var_, atol=tol)
-    assert_allclose(
-        _as_numpy_checked(incpca.explained_variance_, dataframe),
+    assert_allclose_numpy(incpca.mean_, expected_mean_, atol=tol)
+    assert_allclose_numpy(incpca.var_, expected_var_, atol=tol)
+    assert_allclose_numpy(
+        incpca.explained_variance_,
         expected_explained_variance_,
         atol=tol,
     )
-    assert_allclose(
-        _as_numpy_checked(incpca.explained_variance_ratio_, dataframe),
+    assert_allclose_numpy(
+        incpca.explained_variance_ratio_,
         expected_explained_variance_ratio_,
         atol=tol,
     )
-    assert (
-        np.abs(
-            _as_numpy_checked(incpca.noise_variance_, dataframe)
-            - expected_noise_variance_
-        )
-        < tol
-    )
+    assert np.abs(_as_numpy(incpca.noise_variance_) - expected_noise_variance_) < tol
     if daal_check_version((2024, "P", 500)):
-        assert_allclose(
-            _as_numpy_checked(incpca.components_, dataframe),
+        assert_allclose_numpy(
+            incpca.components_,
             expected_components_,
             atol=tol,
         )
-        assert_allclose(
-            _as_numpy_checked(transformed_data, dataframe),
+        assert_allclose_numpy(
+            transformed_data,
             expected_transformed_data,
             atol=tol,
         )
     else:
-        components = _as_numpy_checked(incpca.components_, dataframe)
+        components = _as_numpy(incpca.components_)
         for i in range(incpca.n_components_):
             abs_dot_product = np.abs(np.dot(components[i], expected_components_[i]))
             assert np.abs(abs_dot_product - 1.0) < tol
 
             if np.dot(components[i], expected_components_[i]) < 0:
-                assert_allclose(
-                    _as_numpy_checked(-transformed_data[i], dataframe),
+                assert_allclose_numpy(
+                    -transformed_data[i],
                     expected_transformed_data[i],
                     atol=tol,
                 )
             else:
-                assert_allclose(
-                    _as_numpy_checked(transformed_data[i], dataframe),
+                assert_allclose_numpy(
+                    transformed_data[i],
                     expected_transformed_data[i],
                     atol=tol,
                 )
@@ -177,8 +172,9 @@ def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
     assert n_samples_seen == expected_n_samples_seen
     assert n_features_in == expected_n_features_in
 
-    components = _as_numpy_checked(incpca.components_, dataframe)
-    singular_values = _as_numpy_checked(incpca.singular_values_, dataframe)
+    _assert_in_namespace(incpca.components_, dataframe)
+    components = _as_numpy(incpca.components_)
+    singular_values = _as_numpy(incpca.singular_values_)
     centered_data = data - np.mean(data, axis=0)
     cov_eigenvalues, cov_eigenvectors = np.linalg.eig(
         centered_data.T @ centered_data / (n_samples_seen - 1)
@@ -201,14 +197,14 @@ def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
         assert np.abs(abs_dot_product - 1.0) < tol
 
     expected_mean = np.mean(data, axis=0)
-    assert_allclose(_as_numpy_checked(incpca.mean_, dataframe), expected_mean, atol=tol)
+    assert_allclose_numpy(incpca.mean_, expected_mean, atol=tol)
 
     expected_var = np.var(_as_numpy(data), ddof=1, axis=0)
-    assert_allclose(_as_numpy_checked(incpca.var_, dataframe), expected_var, atol=tol)
+    assert_allclose_numpy(incpca.var_, expected_var, atol=tol)
 
     expected_explained_variance = sorted_eigenvalues[:n_components]
-    assert_allclose(
-        _as_numpy_checked(incpca.explained_variance_, dataframe),
+    assert_allclose_numpy(
+        incpca.explained_variance_,
         expected_explained_variance,
         atol=tol,
     )
@@ -216,8 +212,8 @@ def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
     expected_explained_variance_ratio = expected_explained_variance / np.sum(
         sorted_eigenvalues
     )
-    assert_allclose(
-        _as_numpy_checked(incpca.explained_variance_ratio_, dataframe),
+    assert_allclose_numpy(
+        incpca.explained_variance_ratio_,
         expected_explained_variance_ratio,
         atol=tol,
     )
@@ -232,14 +228,14 @@ def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
 
     expected_transformed_data = centered_data @ components.T
     if whiten:
-        scale = np.sqrt(_as_numpy_checked(incpca.explained_variance_, dataframe))
+        scale = np.sqrt(_as_numpy(incpca.explained_variance_))
         min_scale = np.finfo(scale.dtype).eps
         scale[scale < min_scale] = np.inf
         expected_transformed_data /= scale
 
     if not (whiten and n_components == n_samples_seen):
-        assert_allclose(
-            _as_numpy_checked(transformed_data, dataframe),
+        assert_allclose_numpy(
+            transformed_data,
             expected_transformed_data,
             atol=tol,
         )

@@ -23,8 +23,9 @@ from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
@@ -60,18 +61,18 @@ def test_partial_fit_multiple_options_on_gold_data(dataframe, queue, weighted, d
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(
-            expected_weighted_mean, _as_numpy_checked(result.mean_, dataframe)
-        )
-        assert_allclose(expected_weighted_max, _as_numpy_checked(result.max_, dataframe))
-        assert_allclose(expected_weighted_min, _as_numpy_checked(result.min_, dataframe))
+        _assert_in_namespace(result.mean_, dataframe)
+        assert_allclose_numpy(expected_weighted_mean, result.mean_)
+        assert_allclose_numpy(expected_weighted_max, result.max_)
+        assert_allclose_numpy(expected_weighted_min, result.min_)
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, _as_numpy_checked(result.mean_, dataframe))
-        assert_allclose(expected_max, _as_numpy_checked(result.max_, dataframe))
-        assert_allclose(expected_min, _as_numpy_checked(result.min_, dataframe))
+        _assert_in_namespace(result.mean_, dataframe)
+        assert_allclose_numpy(expected_mean, result.mean_)
+        assert_allclose_numpy(expected_max, result.max_)
+        assert_allclose_numpy(expected_min, result.min_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -109,7 +110,8 @@ def test_partial_fit_single_option_on_random_data(
         else:
             result = incbs.partial_fit(X_split_df)
 
-    res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
+    _assert_in_namespace(getattr(result, result_option + "_"), dataframe)
+    res = _as_numpy(getattr(result, result_option + "_"))
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr = function(weighted_data)
@@ -152,10 +154,11 @@ def test_partial_fit_multiple_options_on_random_data(
         else:
             result = incbs.partial_fit(X_split_df)
 
+    _assert_in_namespace(result.mean_, dataframe)
     res_mean, res_max, res_sum = (
-        _as_numpy_checked(result.mean_, dataframe),
-        _as_numpy_checked(result.max_, dataframe),
-        _as_numpy_checked(result.sum_, dataframe),
+        _as_numpy(result.mean_),
+        _as_numpy(result.max_),
+        _as_numpy(result.sum_),
     )
     if weighted:
         weighted_data = np.diag(weights) @ X
@@ -215,7 +218,8 @@ def test_partial_fit_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
+        _assert_in_namespace(getattr(result, result_option + "_"), dataframe)
+        res = _as_numpy(getattr(result, result_option + "_"))
         if weighted:
             gtr = function(weighted_data)
         else:
@@ -246,18 +250,18 @@ def test_fit_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(
-            expected_weighted_mean, _as_numpy_checked(result.mean_, dataframe)
-        )
-        assert_allclose(expected_weighted_max, _as_numpy_checked(result.max_, dataframe))
-        assert_allclose(expected_weighted_min, _as_numpy_checked(result.min_, dataframe))
+        _assert_in_namespace(result.mean_, dataframe)
+        assert_allclose_numpy(expected_weighted_mean, result.mean_)
+        assert_allclose_numpy(expected_weighted_max, result.max_)
+        assert_allclose_numpy(expected_weighted_min, result.min_)
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, _as_numpy_checked(result.mean_, dataframe))
-        assert_allclose(expected_max, _as_numpy_checked(result.max_, dataframe))
-        assert_allclose(expected_min, _as_numpy_checked(result.min_, dataframe))
+        _assert_in_namespace(result.mean_, dataframe)
+        assert_allclose_numpy(expected_mean, result.mean_)
+        assert_allclose_numpy(expected_max, result.max_)
+        assert_allclose_numpy(expected_min, result.min_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -291,7 +295,8 @@ def test_fit_single_option_on_random_data(
     else:
         result = incbs.fit(X_df)
 
-    res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
+    _assert_in_namespace(getattr(result, result_option + "_"), dataframe)
+    res = _as_numpy(getattr(result, result_option + "_"))
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr = function(weighted_data)
@@ -330,10 +335,11 @@ def test_fit_multiple_options_on_random_data(
     else:
         result = incbs.fit(X_df)
 
+    _assert_in_namespace(result.mean_, dataframe)
     res_mean, res_max, res_sum = (
-        _as_numpy_checked(result.mean_, dataframe),
-        _as_numpy_checked(result.max_, dataframe),
-        _as_numpy_checked(result.sum_, dataframe),
+        _as_numpy(result.mean_),
+        _as_numpy(result.max_),
+        _as_numpy(result.sum_),
     )
     if weighted:
         weighted_data = np.diag(weights) @ X
@@ -387,7 +393,8 @@ def test_fit_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = _as_numpy_checked(getattr(result, result_option + "_"), dataframe)
+        _assert_in_namespace(getattr(result, result_option + "_"), dataframe)
+        res = _as_numpy(getattr(result, result_option + "_"))
         if weighted:
             gtr = function(weighted_data)
         else:

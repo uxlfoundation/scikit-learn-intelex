@@ -18,6 +18,7 @@ from typing import Any
 
 import pytest
 import scipy.sparse as sp
+from numpy.testing import assert_allclose
 
 from daal4py.sklearn._utils import _package_check_version
 from sklearnex import get_config
@@ -189,32 +190,34 @@ def _assert_in_namespace(obj: Any, dataframe: str) -> None:
         ), f"expected {dataframe} output, got {type(obj)}"
 
 
-def _as_numpy_checked(obj: Any, dataframe: str, *args: Any, **kwargs: Any) -> np.ndarray:
-    """Assert ``obj`` is in ``dataframe``'s namespace, then convert to numpy.
+def assert_allclose_numpy(actual: Any, desired: Any, *args: Any, **kwargs: Any) -> None:
+    """Convert both operands to numpy, then ``numpy.testing.assert_allclose``.
 
-    Drop-in for :func:`_as_numpy` on result values: verifies dpnp-in -> dpnp-out
-    (on-device outputs are not silently host-transferred) before converting so
-    the value can be compared against a numpy expected result.
+    Estimator results carrying a non-numpy array API namespace (e.g. dpnp under
+    ``array_api_dispatch``) cannot be consumed by ``assert_allclose`` directly, so
+    both operands are routed through :func:`_as_numpy` first. Namespace
+    preservation (dpnp-in -> dpnp-out) is asserted separately via
+    :func:`_assert_in_namespace` where the test needs it, keeping the comparison
+    itself free of dataframe bookkeeping.
 
     Parameters
     ----------
-    obj : object
-        The value produced by a sklearnex estimator to check and convert.
-    dataframe : str
-        The dataframe name the input was created with, forwarded to
-        :func:`_assert_in_namespace`.
+    actual : object
+        Array-like actual value; converted to numpy before comparison.
+    desired : object
+        Array-like desired value; converted to numpy before comparison.
     *args : tuple
-        Positional arguments forwarded to :func:`_as_numpy`.
+        Positional arguments forwarded to ``numpy.testing.assert_allclose``.
     **kwargs : dict
-        Keyword arguments forwarded to :func:`_as_numpy`.
+        Keyword arguments forwarded to ``numpy.testing.assert_allclose``.
 
     Returns
     -------
-    numpy.ndarray
-        ``obj`` converted to a numpy array.
+    None
+        Nothing is returned; an ``AssertionError`` is raised when the arrays do
+        not match.
     """
-    _assert_in_namespace(obj, dataframe)
-    return _as_numpy(obj, *args, **kwargs)
+    assert_allclose(_as_numpy(actual), _as_numpy(desired), *args, **kwargs)
 
 
 def skip_array_api_strict_readonly(dataframe: str) -> None:

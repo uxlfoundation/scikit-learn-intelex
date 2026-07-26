@@ -20,8 +20,9 @@ from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex.linear_model import IncrementalLinearRegression
@@ -48,13 +49,13 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block
     inclin.fit(X_df, y_df)
 
     y_pred = inclin.predict(X_df)
-    np_y_pred = _as_numpy_checked(y_pred, dataframe)
+    _assert_in_namespace(y_pred, dataframe)
 
     tol = 5e-5 if dtype == np.float32 else 1e-7
-    assert_allclose(_as_numpy_checked(inclin.coef_, dataframe), [1], atol=tol)
+    assert_allclose_numpy(inclin.coef_, [1], atol=tol)
     if fit_intercept:
-        assert_allclose(_as_numpy_checked(inclin.intercept_, dataframe), [0], atol=tol)
-    assert_allclose(np_y_pred, y, atol=tol)
+        assert_allclose_numpy(inclin.intercept_, [0], atol=tol)
+    assert_allclose_numpy(y_pred, y, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -87,15 +88,15 @@ def test_sklearnex_partial_fit_on_gold_data(
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y_pred = inclin.predict(X_df)
-    np_y_pred = _as_numpy_checked(y_pred, dataframe)
+    _assert_in_namespace(y_pred, dataframe)
 
     assert inclin.n_features_in_ == 1
     tol = 1e-5 if dtype == np.float32 else 1e-7
-    assert_allclose(_as_numpy_checked(inclin.coef_, dataframe), [[1]], atol=tol)
+    assert_allclose_numpy(inclin.coef_, [[1]], atol=tol)
     if fit_intercept:
-        assert_allclose(_as_numpy_checked(inclin.intercept_, dataframe), 3, atol=tol)
+        assert_allclose_numpy(inclin.intercept_, 3, atol=tol)
 
-    assert_allclose(np_y_pred, y, atol=tol)
+    assert_allclose_numpy(y_pred, y, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -128,18 +129,18 @@ def test_sklearnex_partial_fit_multitarget_on_gold_data(
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y_pred = inclin.predict(X_df)
-    np_y_pred = _as_numpy_checked(y_pred, dataframe)
+    _assert_in_namespace(y_pred, dataframe)
 
     assert inclin.n_features_in_ == 2
     tol = 1e-7
     if dtype == np.float32:
         tol = 7e-6 if _IS_INTEL else 2e-5
 
-    assert_allclose(_as_numpy_checked(inclin.coef_, dataframe), [1.0, 2.0], atol=tol)
+    assert_allclose_numpy(inclin.coef_, [1.0, 2.0], atol=tol)
     if fit_intercept:
-        assert_allclose(_as_numpy_checked(inclin.intercept_, dataframe), 3.0, atol=tol)
+        assert_allclose_numpy(inclin.intercept_, 3.0, atol=tol)
 
-    assert_allclose(np_y_pred, y, atol=tol)
+    assert_allclose_numpy(y_pred, y, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -189,14 +190,13 @@ def test_sklearnex_partial_fit_on_random_data(
         )
         inclin.partial_fit(X_split_df, y_split_df)
 
-    coef_ = _as_numpy_checked(inclin.coef_, dataframe)
+    _assert_in_namespace(inclin.coef_, dataframe)
+    coef_ = _as_numpy(inclin.coef_)
     tol = 1e-4 if coef_.dtype == np.float32 else 1e-7
     assert_allclose(coef.T.squeeze(), coef_, atol=tol)
 
     if fit_intercept:
-        assert_allclose(
-            intercept, _as_numpy_checked(inclin.intercept_, dataframe), atol=tol
-        )
+        assert_allclose_numpy(intercept, inclin.intercept_, atol=tol)
 
     X_test = gen.random(size=(num_samples, num_features), dtype=dtype)
     if fit_intercept:
@@ -208,7 +208,7 @@ def test_sklearnex_partial_fit_on_random_data(
 
     y_pred = inclin.predict(X_test_df)
 
-    assert_allclose(expected_y_pred, _as_numpy_checked(y_pred, dataframe), atol=tol)
+    assert_allclose_numpy(expected_y_pred, y_pred, atol=tol)
 
 
 # dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch

@@ -16,12 +16,11 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
-    _as_numpy_checked,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex.tests.utils.spmd import _get_local_tensor, _mpi_libs_and_gpu_available
@@ -64,13 +63,14 @@ def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
     scaler_spmd = MaxAbsScaler_SPMD().fit(local_dpt_data)
     scaler = MaxAbsScaler().fit(dpt_data)
 
-    assert_allclose(
-        _as_numpy_checked(scaler_spmd.scale_, dataframe),
-        _as_numpy(scaler.scale_),
+    _assert_in_namespace(scaler_spmd.scale_, dataframe)
+    assert_allclose_numpy(
+        scaler_spmd.scale_,
+        scaler.scale_,
     )
-    assert_allclose(
-        _as_numpy_checked(scaler_spmd.max_abs_, dataframe),
-        _as_numpy(scaler.max_abs_),
+    assert_allclose_numpy(
+        scaler_spmd.max_abs_,
+        scaler.max_abs_,
     )
 
 
@@ -117,11 +117,12 @@ def test_max_abs_scaler_partial_fit_spmd_gold(dataframe, queue, num_blocks, dtyp
 
     scaler.fit(dpt_data)
 
-    assert_allclose(
-        _as_numpy_checked(scaler_spmd.scale_, dataframe),
-        _as_numpy(scaler.scale_),
+    _assert_in_namespace(scaler_spmd.scale_, dataframe)
+    assert_allclose_numpy(
+        scaler_spmd.scale_,
+        scaler.scale_,
     )
-    assert_allclose(
-        _as_numpy_checked(scaler_spmd.max_abs_, dataframe),
-        _as_numpy(scaler.max_abs_),
+    assert_allclose_numpy(
+        scaler_spmd.max_abs_,
+        scaler.max_abs_,
     )
