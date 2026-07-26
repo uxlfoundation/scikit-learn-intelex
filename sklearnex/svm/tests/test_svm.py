@@ -40,8 +40,8 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import (
     get_queues,
@@ -512,22 +512,8 @@ def test_svm_mixed_array_namespaces(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
-)
-@pytest.mark.parametrize(
-    "w_xp, w_device",
-    [(None, None)]
-    + ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device, w_xp, w_device",
+    mixed_device_params(include_pandas_y=True, include_weight=True, x_devices=("cpu",)),
 )
 @pytest.mark.parametrize(
     "estimator_class",
@@ -576,15 +562,7 @@ def test_svr_mixed_devices(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
 )
 def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     from sklearnex.svm import SVC

@@ -30,17 +30,10 @@ from daal4py.sklearn._utils import (
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
-    dpnp_available,
     get_dataframes_and_queues,
-    torch_available,
-    torch_xpu_available,
+    mixed_device_params,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
-
-if dpnp_available:
-    import dpnp
-if torch_available:
-    import torch
 
 hparam_values = [
     (None, None, None, None),
@@ -290,15 +283,7 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
 )
 @pytest.mark.parametrize(
     "estimator_class",

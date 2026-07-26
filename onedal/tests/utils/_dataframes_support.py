@@ -133,6 +133,81 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     return dataframes_and_queues
 
 
+# Device labels a namespace supports for the mixed-device tests. GPU-capable
+# array-API frameworks may hold data on host ("cpu") or device; torch names its
+# device "xpu", dpnp names it "gpu".
+_NAMESPACE_DEVICES = {}
+if torch_xpu_available:
+    _NAMESPACE_DEVICES["torch"] = ("xpu", "cpu")
+if dpnp_available:
+    _NAMESPACE_DEVICES["gpu-dpnp"] = ("gpu", "cpu")
+
+
+def mixed_device_params(include_pandas_y=False, include_weight=False, x_devices=None):
+    """Parameterize the "same namespace, inputs on possibly different devices"
+    tests the array-API-dispatch way.
+
+    Under ``array_api_dispatch`` a fit resolves a single namespace across all
+    inputs; X, y (and sample weights) from *different* frameworks (e.g. torch +
+    dpnp) is not a supported scenario and sklearn rejects it with a "same
+    namespace" error, so those combinations are never emitted. Within one
+    namespace, inputs may still live on different devices (xpu/cpu, gpu/cpu) --
+    that is what these tests exercise. A pandas ``y``/weight is optionally
+    allowed since it is namespace-neutral (host targets alongside an array-API X).
+
+    Parameters
+    ----------
+    include_pandas_y : bool, default=False
+        Also emit combinations with a pandas (host) ``y``/weight.
+    include_weight : bool, default=False
+        Add a sample-weight column; each row becomes
+        ``(X_xp, X_device, y_xp, y_device, w_xp, w_device)`` and the weight
+        ranges over the same namespace's devices plus ``None`` (no weight).
+    x_devices : tuple of str or None, default=None
+        Restrict X to these device labels (e.g. ``("cpu",)`` for CPU-only
+        estimators). ``None`` uses every device the namespace supports.
+
+    Yields
+    ------
+    pytest.param
+        ``(X_xp, X_device, y_xp, y_device)`` tuples, or with two extra weight
+        fields when ``include_weight``.
+    """
+    for xp, devices in _NAMESPACE_DEVICES.items():
+        module = torch if xp == "torch" else dpnp
+        x_dev_list = tuple(d for d in (x_devices or devices) if d in devices)
+        y_options = [(module, d, f"{xp}-{d}") for d in devices]
+        if include_pandas_y:
+            y_options.append((pd, None, "pandas"))
+        w_options = [(None, None, "no")] + (
+            [(module, d, f"{xp}-{d}") for d in devices]
+            + ([(pd, None, "pandas")] if include_pandas_y else [])
+            if include_weight
+            else []
+        )
+        for x_device in x_dev_list:
+            for y_xp, y_device, y_id in y_options:
+                if not include_weight:
+                    yield pytest.param(
+                        module,
+                        x_device,
+                        y_xp,
+                        y_device,
+                        id=f"{xp}-{x_device}-X-{y_id}-y",
+                    )
+                    continue
+                for w_xp, w_device, w_id in w_options:
+                    yield pytest.param(
+                        module,
+                        x_device,
+                        y_xp,
+                        y_device,
+                        w_xp,
+                        w_device,
+                        id=f"{xp}-{x_device}-X-{y_id}-y-{w_id}-w",
+                    )
+
+
 def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):

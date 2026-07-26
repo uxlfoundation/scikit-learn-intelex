@@ -22,8 +22,8 @@ import pytest
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 
@@ -191,15 +191,7 @@ def test_error_on_incompatible_namespaces(
     reason="Functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
 )
 @pytest.mark.parametrize("estimator_class", all_estimators)
 @pytest.mark.parametrize("use_partial_fit", [False, True])

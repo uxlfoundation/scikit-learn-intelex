@@ -801,7 +801,8 @@ def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_
     ).fit(X_np, y_np)
     proba_sklearn = model_sklearn.predict_proba(X_np)
     pred_sklearn = model_sklearn.predict(X_np)
-    np.testing.assert_allclose(proba, proba_sklearn)
+    # oneDAL GPU vs sklearn CPU compute differ within float tolerance.
+    np.testing.assert_allclose(proba, proba_sklearn, rtol=1e-5, atol=1e-5)
     np.testing.assert_array_equal(pred, pred_sklearn)
 
 

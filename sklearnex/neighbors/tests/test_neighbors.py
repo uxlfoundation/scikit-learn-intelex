@@ -36,8 +36,8 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.neighbors import (
@@ -316,15 +316,7 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
 )
 @pytest.mark.parametrize(
     "estimator",
@@ -334,6 +326,10 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     ],
 )
 def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array_api):
+    # torch X + pandas y hits torch's DLPack re-wrap assertion ("device and copy
+    # kwargs not supported when ext_tensor is already a DLPack capsule").
+    if torch_available and X_xp is torch and y_xp is pd:
+        pytest.xfail("torch DLPack capsule re-wrap; see pytorch dlpack.py")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
     if is_regressor(estimator):
