@@ -40,7 +40,7 @@
 
 ## Overview
 
-Extension for scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to existing workflows from [scikit-learn](https://scikit-learn.org), which is the most widely-used Python library for machine learning on tabular data.
+Extension for scikit-learn is a **free software AI accelerator** designed to deliver up to **100X** acceleration to existing workflows from [scikit-learn](https://scikit-learn.org), which is the most widely-used Python library for machine learning on tabular data.
 This software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
 

@@ -12,7 +12,7 @@ Direct access to oneDAL algorithms with explicit setup/compute/finalize phases. 
 Drop-in replacements for sklearn estimators. Located in `daal4py/sklearn/`. Monkeypatch system provides transparent acceleration via `patch_sklearn()`.
 
 ### 3. Model Builders API
-Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`. Provides 10-100X speedup (varies by model and data).
+Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`. Provides up to 100X speedup (varies by model and data).
 
 ## Key Components
 
@@ -47,7 +47,7 @@ Checks data characteristics (density, dtype, shape), algorithm parameters, and o
 
 ## Model Builders
 
-Convert externally trained models to oneDAL format for **10-100X faster inference** (speedup varies by model complexity and data size).
+Convert externally trained models to oneDAL format for up to **100X faster inference** (speedup varies by model complexity and data size).
 
 ### Supported Frameworks
 
@@ -73,7 +73,7 @@ xgb_model = xgb.XGBClassifier().fit(X_train, y_train)
 # 2. Convert to oneDAL
 daal_model = convert_model(xgb_model)
 
-# 3. Accelerated inference (10-100X faster)
+# 3. Accelerated inference (up to 100X faster)
 predictions = daal_model.predict(X_test)
 ```
 
