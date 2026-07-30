@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import logging
-
 from daal4py.sklearn._utils import daal_check_version, is_sparse
 
 if daal_check_version((2024, "P", 100)):
@@ -26,7 +24,6 @@ if daal_check_version((2024, "P", 100)):
     from sklearn.decomposition import PCA as _sklearn_PCA
     from sklearn.decomposition._pca import _infer_dimension
     from sklearn.utils._array_api import get_namespace
-    from sklearn.utils._param_validation import StrOptions
     from sklearn.utils.extmath import stable_cumsum
     from sklearn.utils.validation import check_is_fitted
 
