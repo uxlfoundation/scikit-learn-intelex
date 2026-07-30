@@ -294,6 +294,7 @@ _SKIP = {
     ("NearestNeighbors", "radius_neighbors"): {"output_type"},
     ("ElasticNet", "path"): {"output_dtype"},
     ("Lasso", "path"): {"output_dtype"},
+    ("EmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     # Attr — always
     ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
