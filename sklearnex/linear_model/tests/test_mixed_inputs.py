@@ -23,27 +23,15 @@ from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     mixed_device_params,
+    pd_to_torch_working,
     torch_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
-
-PD_TO_TORCH_WORKING: bool = False
 
 if dpnp_available:
     import dpnp
 if torch_available:
     import torch
-
-    # Workaround until sklearn bug is fixed:
-    # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if sklearn_check_version("1.9"):
-        from sklearn.utils._array_api import move_to
-
-        try:
-            _ = move_to(pd.Series([1, 2, 3]), xp=torch)
-            PD_TO_TORCH_WORKING = True
-        except Exception:
-            pass
 
 
 from sklearnex.linear_model import (
@@ -110,7 +98,7 @@ def _check_attributes_and_output(model, X, y, X_xp):
     if (
         not isinstance(y, pd.Series)
         or (not torch_available or X_xp != torch)
-        or PD_TO_TORCH_WORKING
+        or pd_to_torch_working
     ):
         score = model.score(X, y)
         assert isinstance(score, (float, np.floating))

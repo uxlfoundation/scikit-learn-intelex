@@ -41,6 +41,7 @@ from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     get_dataframes_and_queues,
     mixed_device_params,
+    pd_to_torch_working,
     torch_available,
 )
 from onedal.tests.utils._device_selection import (
@@ -527,7 +528,11 @@ def test_svr_mixed_devices(
 ):
     # Re-enable this once bug in scikit-learn is solved:
     # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if (torch_available and X_xp is torch) and (y_xp is pd or w_xp is pd):
+    if (
+        not pd_to_torch_working
+        and (torch_available and X_xp is torch)
+        and (y_xp is pd or w_xp is pd)
+    ):
         pytest.skip("Bug in scikit-learn")
     from sklearnex import svm
 

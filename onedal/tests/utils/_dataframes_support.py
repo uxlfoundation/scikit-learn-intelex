@@ -18,7 +18,7 @@ import os
 import pytest
 import scipy.sparse as sp
 
-from sklearnex import get_config
+from sklearnex import config_context, get_config
 
 try:
     import dpnp
@@ -57,12 +57,32 @@ except (ImportError, KeyError):
 import numpy as np
 import pandas as pd
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
+
+# sklearn's ``move_to`` cannot convert inputs that lack ``__dlpack__`` (e.g. a
+# pandas Series) into a torch tensor: torch raises ``AssertionError``, which is
+# not among the exceptions ``move_to`` falls back on.
+# See https://github.com/scikit-learn/scikit-learn/issues/34046.
+pd_to_torch_working = False
+if torch_available and sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
+
+    try:
+        with config_context(array_api_dispatch=True):
+            # ``xp`` must be the array-api-wrapped torch namespace, not the
+            # ``torch`` module itself, which lacks ``__array_namespace_info__``.
+            # The failure is device-independent, so a host tensor suffices.
+            xp, _, device = get_namespace_and_device(torch.empty(0))
+            _ = move_to(pd.Series([1, 2, 3]), xp=xp, device=device)
+        pd_to_torch_working = True
+    except Exception:
+        pass
 
 
 def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
