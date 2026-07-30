@@ -107,6 +107,17 @@ else:
 from sklearn.linear_model._logistic import _logistic_regression_path as lr_path_original
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 
+if sklearn_check_version("1.10"):
+    # sklearn 1.10 folded class_weight into sample_weight inside
+    # LogisticRegression.fit, dropping the parameter from the path function.
+    def _lr_path_class_weight_kwarg(class_weight):
+        return {}
+
+else:
+
+    def _lr_path_class_weight_kwarg(class_weight):
+        return {"class_weight": class_weight}
+
 
 # This code is a patch for sklearn 1.8, which is related to https://github.com/scikit-learn/scikit-learn/pull/32073
 # where the multi_class keyword is deprecated and this aspect is removed.
@@ -189,13 +200,19 @@ def logistic_regression_path_d4p(
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
+
+    # sklearn 1.10 passes 'y' already label-encoded to 0..n_classes-1, while
+    # 'classes' stays the original labels, so both the positive class and the
+    # encoder have to be expressed in encoded space rather than label space.
+    y_classes = np.arange(n_classes) if sklearn_check_version("1.10") else classes
+
     if pos_class is None and multi_class != "multinomial":
         if classes.size > 2:
             raise ValueError("To fit OvR, use the pos_class argument")
         # np.unique(y) gives labels in sorted order.
-        pos_class = classes[1]
+        pos_class = y_classes[1]
 
-    le = LabelEncoder().fit(classes)
+    le = LabelEncoder().fit(y_classes)
 
     # Note: the LBFGS solver from SciPy will always cast the input to float64
     w0_dtype = X.dtype if solver != "lbfgs" else np.float64
@@ -971,7 +988,7 @@ def logistic_regression_path_dispatcher(
                 verbose=verbose,
                 solver=solver,
                 coef=coef,
-                class_weight=class_weight,
+                **_lr_path_class_weight_kwarg(class_weight),
                 dual=dual,
                 penalty=penalty,
                 intercept_scaling=intercept_scaling,

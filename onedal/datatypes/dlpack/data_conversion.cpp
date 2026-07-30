@@ -252,7 +252,11 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
 }
 
 static inline void move_dlpack_data(dal::array<byte_t>& array, py::tuple dl_device, bool copy) {
-    DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<std::int32_t>() };
+    // The array API standard specifies dl_device as a tuple of plain ints, and
+    // pybind11 enums are not implicitly constructible from int, so the device
+    // type must be cast as an integer before being narrowed to the enum.
+    DLDevice requested{ static_cast<DLDeviceType>(dl_device[0].cast<std::int32_t>()),
+                        dl_device[1].cast<std::int32_t>() };
 #ifdef ONEDAL_DATA_PARALLEL
     DLDevice current = get_dlpack_device(array);
     // only allow transfers to host, dlpack implementation does not provide sufficient
