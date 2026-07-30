@@ -352,7 +352,7 @@ In order to use AddressSanitizer (ASan) together with the |sklearnex|, it's nece
 
 See the `instructions on the oneDAL repository <https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md>`__ for building the library from source with ASAN enabled.
 
-When building this library, the system's default compiler is used unless specified otherwise through variables such as ``$CXX``. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if the |onedal| was built with ICX (the default for it).
+When building this library, the system's default compiler is used unless specified otherwise through variables such as ``$CXX``. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if the |onedal| was built with ICX (the default for it), or otherwise use the same compiler to build both libraries.
 
 The compiler and flags to build with both ASan and debug symbols can be controlled through environment variables - **assuming a Linux\* system** (ASan on Windows* has not been tested):
 
@@ -363,13 +363,15 @@ The compiler and flags to build with both ASan and debug symbols can be controll
 
 .. hint:: The Cython module ``daal4py`` that gets built through ``build_ext`` does not do incremental compilation, so one might want to add ``ccache`` into the compiler call for development purposes - e.g. ``CXX="ccache icx -fsanitize=address -g"``.
 
-The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+The ASan runtime used by ICX is the same as the one by Clang, but they might expect different file names depending on versions. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from ICX / Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
 
 .. code-block:: bash
 
-    export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
+    export LD_PRELOAD="$(icx -print-file-name=libclang_rt.asan.so)" # if using ICX
+    export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" # if using CLANG
+    export LD_PRELOAD="$(gcc -print-file-name=libasan.so)".so # if using GCC
 
-.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
+.. note:: For ICX, this requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
 
 Then, the Python memory allocator can be set to ``malloc`` like this:
 
