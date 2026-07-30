@@ -107,17 +107,6 @@ else:
 from sklearn.linear_model._logistic import _logistic_regression_path as lr_path_original
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 
-if sklearn_check_version("1.10"):
-    # sklearn 1.10 folded class_weight into sample_weight inside
-    # LogisticRegression.fit, dropping the parameter from the path function.
-    def _lr_path_class_weight_kwarg(class_weight):
-        return {}
-
-else:
-
-    def _lr_path_class_weight_kwarg(class_weight):
-        return {"class_weight": class_weight}
-
 
 # This code is a patch for sklearn 1.8, which is related to https://github.com/scikit-learn/scikit-learn/pull/32073
 # where the multi_class keyword is deprecated and this aspect is removed.
@@ -976,7 +965,8 @@ def logistic_regression_path_dispatcher(
     )
     if not _dal_ready:
         _patching_status.write_log()
-        if sklearn_check_version("1.8"):
+        if sklearn_check_version("1.10"):
+            # 'class_weight' is folded into 'sample_weight' by the caller.
             return lr_path_original(
                 X,
                 y,
@@ -988,7 +978,29 @@ def logistic_regression_path_dispatcher(
                 verbose=verbose,
                 solver=solver,
                 coef=coef,
-                **_lr_path_class_weight_kwarg(class_weight),
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+                n_threads=n_threads,
+            )
+        elif sklearn_check_version("1.8"):
+            return lr_path_original(
+                X,
+                y,
+                classes=classes,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                class_weight=class_weight,
                 dual=dual,
                 penalty=penalty,
                 intercept_scaling=intercept_scaling,
