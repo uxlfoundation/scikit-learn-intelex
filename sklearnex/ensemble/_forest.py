@@ -83,37 +83,35 @@ _check_array = partial(check_array, **__check_kwargs)
 if sklearn_check_version("1.10"):
     from sklearn.tree._tree import NODE_DTYPE
 
-    def _tree_extra_args(n_features):
-        # Categorical split support added a required 'n_categories' argument to
-        # Tree.__cinit__; -1 marks a feature as non-categorical. oneDAL forests
-        # are numerical-only, so every feature is marked as such.
-        return (np.full(n_features, -1, dtype=np.intp),)
 
-    def _map_node_ar_to_sklearn(node_ar):
-        # The same change widened NODE_DTYPE with a 'left_cat_bitset' field, which
-        # oneDAL's node struct does not have. Copy field-wise into the wider dtype
-        # so the absent categorical bitset stays zeroed (i.e. no categories).
-        nodes = np.zeros(node_ar.shape, dtype=NODE_DTYPE)
-        for name in node_ar.dtype.names:
-            nodes[name] = node_ar[name]
-        return nodes
-
-    def _set_tree_fitted_attrs(est):
-        # '_validate_X_predict' requires this attribute, normally set by
-        # 'BaseDecisionTree._fit', which is bypassed here; None means no
-        # feature is categorical.
-        est.is_categorical_ = None
-
-else:
-
-    def _tree_extra_args(n_features):
+def _tree_extra_args(n_features):
+    # Categorical split support added a required 'n_categories' argument to
+    # Tree.__cinit__; -1 marks a feature as non-categorical. oneDAL forests
+    # are numerical-only, so every feature is marked as such.
+    if not sklearn_check_version("1.10"):
         return ()
+    return (np.full(n_features, -1, dtype=np.intp),)
 
-    def _map_node_ar_to_sklearn(node_ar):
+
+def _map_node_ar_to_sklearn(node_ar):
+    # The same change widened NODE_DTYPE with a 'left_cat_bitset' field, which
+    # oneDAL's node struct does not have. Copy field-wise into the wider dtype
+    # so the absent categorical bitset stays zeroed (i.e. no categories).
+    if not sklearn_check_version("1.10"):
         return node_ar
+    nodes = np.zeros(node_ar.shape, dtype=NODE_DTYPE)
+    for name in node_ar.dtype.names:
+        nodes[name] = node_ar[name]
+    return nodes
 
-    def _set_tree_fitted_attrs(est):
-        pass
+
+def _set_tree_fitted_attrs(est):
+    # '_validate_X_predict' requires this attribute, normally set by
+    # 'BaseDecisionTree._fit', which is bypassed here; None means no
+    # feature is categorical.
+    if not sklearn_check_version("1.10"):
+        return
+    est.is_categorical_ = None
 
 
 class BaseForest(oneDALEstimator, ABC):
