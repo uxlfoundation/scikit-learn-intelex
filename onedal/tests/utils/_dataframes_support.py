@@ -57,7 +57,6 @@ except (ImportError, KeyError):
 import numpy as np
 import pandas as pd
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
@@ -70,10 +69,12 @@ test_frameworks = os.environ.get(
 # not among the exceptions ``move_to`` falls back on.
 # See https://github.com/scikit-learn/scikit-learn/issues/34046.
 pd_to_torch_working = False
-if torch_available and sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import get_namespace_and_device, move_to
-
+if torch_available:
     try:
+        # ``move_to`` does not exist before sklearn 1.8, so importing it inside
+        # the probe doubles as the version gate.
+        from sklearn.utils._array_api import get_namespace_and_device, move_to
+
         with config_context(array_api_dispatch=True):
             # ``xp`` must be the array-api-wrapped torch namespace, not the
             # ``torch`` module itself, which lacks ``__array_namespace_info__``.
