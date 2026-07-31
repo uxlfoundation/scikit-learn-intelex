@@ -75,11 +75,14 @@ usage in Python threads, even if running under the Python GIL:
   parameter due to usage of other Python-level global state variables.
   Attempting to fit multiple logistic regression estimator objects in parallel
   might result in crashes and incorrect estimations.
-- Patched classes that rely on K-nearest neighbors set their internal state
-  during calls to methods other than ``.fit()`` - hence, if calling methods
-  on the **same** estimator instance from multiple threads, they might override
-  one another when setting variables, leading to incorrect results and potential
-  crashes. These classes include:
+- While most estimators only set their attributes and internal state during
+  calls to ``.fit()`` and then use them without modifications in ``.predict()``
+  and similar, estimators based on K-nearest neighbors instead set their
+  attributes / state also during calls to methods like ``.transform()`` - hence,
+  when it comes to KNN-based classes, if calling methods on the **same** estimator
+  instance from multiple threads, they might override one another when setting
+  variables, leading to incorrect results and potential crashes. These classes
+  include:
 
     - :obj:`sklearn.neighbors.NearestNeighbors`.
     - :obj:`sklearn.neighbors.KNeighborsRegressor`.
