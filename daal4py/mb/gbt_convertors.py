@@ -115,6 +115,7 @@ class Node:
         default_left: bool,
         feature: int,
         value: float,
+        left_inclusive: bool = False,
         n_children: int = 0,
         left_child: "Optional[Node]" = None,
         right_child: "Optional[Node]" = None,
@@ -126,6 +127,10 @@ class Node:
         self.default_left = default_left
         self.__feature = feature
         self.value = value
+        # whether an observation whose feature value is exactly equal to
+        # 'value' goes to the left child ('x <= value') or to the right
+        # one ('x < value') in the model being converted
+        self.left_inclusive = left_inclusive
         self.n_children = n_children
         self.left_child = left_child
         self.right_child = right_child
@@ -159,6 +164,8 @@ class Node:
             default_left=default_left,
             feature=feature,
             value=input_dict["leaf"] if is_leaf else input_dict["split_condition"],
+            # XGBoost sends observations to the left child when 'x < threshold'
+            left_inclusive=False,
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
@@ -193,6 +200,8 @@ class Node:
             default_left=tree.get("default_left", 0),
             feature=tree.get("split_feature"),
             value=value,
+            # LightGBM sends observations to the left child when 'x <= threshold'
+            left_inclusive=True,
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
@@ -219,16 +228,19 @@ class Node:
             right_child = None
 
         value = this_node["leaf_value"] if is_leaf else this_node["threshold"]
+        left_inclusive = False
         if not is_leaf:
             comp = this_node["comparison_op"]
-            if comp == "<=":
-                value = float(np.nextafter(value, np.inf))
-            elif comp in [">", ">="]:
+            if comp in ("<", "<="):
+                left_inclusive = comp == "<="
+            elif comp in (">", ">="):
+                # in oneDAL, the left child always holds the lower values, so
+                # the children are swapped: 'x > t' becomes 'x <= t' and
+                # 'x >= t' becomes 'x < t'
                 left_child, right_child = right_child, left_child
                 default_left = not default_left
-                if comp == ">":
-                    value = float(np.nextafter(value, -np.inf))
-            elif comp != "<":
+                left_inclusive = comp == ">"
+            else:
                 raise TypeError(
                     f"Model to convert contains unsupported split type: {comp}."
                 )
@@ -239,14 +251,31 @@ class Node:
             default_left=default_left,
             feature=this_node.get("split_feature_id"),
             value=value,
+            left_inclusive=left_inclusive,
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
         )
 
-    def get_value_closest_float_downward(self) -> np.float64:
-        """Get the closest exact fp value smaller than self.value"""
-        return np.nextafter(np.single(self.value), np.single(-np.inf))
+    def get_split_threshold(self) -> np.float32:
+        """Get the split threshold in the form that oneDAL expects
+
+        oneDAL sends an observation to the left child when 'x <= feature_value'
+        and stores the split value as float32, so what needs to be passed is the
+        largest float32 that reproduces the comparison from the model being
+        converted - that is, 'x <= self.value' if 'self.left_inclusive',
+        otherwise 'x < self.value'.
+
+        Note that this is exact for float32 inputs only: float64 values that
+        fall between the returned float32 and the original threshold end up in
+        a different child than they would in the model being converted.
+        """
+        threshold = np.float32(self.value)
+        # Note: casting to float32 rounds to nearest, which might round upwards
+        rounded = float(threshold)
+        if rounded > self.value or (not self.left_inclusive and rounded == self.value):
+            threshold = np.nextafter(threshold, np.float32(-np.inf))
+        return threshold
 
     def get_children(self) -> "Optional[Tuple[Node, Node]]":
         if not self.left_child or not self.right_child:
@@ -433,7 +462,7 @@ def get_gbt_model_from_tree_list(
         parent_id = mb.add_split(
             tree_id=tree_id,
             feature_index=root_node.feature,
-            feature_value=root_node.get_value_closest_float_downward(),
+            feature_value=root_node.get_split_threshold(),
             cover=root_node.cover,
             default_left=root_node.default_left,
         )
@@ -464,7 +493,7 @@ def get_gbt_model_from_tree_list(
                 parent_id = mb.add_split(
                     tree_id=tree_id,
                     feature_index=node.feature,
-                    feature_value=node.get_value_closest_float_downward(),
+                    feature_value=node.get_split_threshold(),
                     cover=node.cover,
                     default_left=node.default_left,
                     parent_id=node.parent_id,

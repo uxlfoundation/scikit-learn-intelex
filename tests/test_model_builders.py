@@ -1622,6 +1622,61 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
+@pytest.mark.parametrize("value", [0.5, 3.25, -1.5, 2.5, 12345.6789, 1e10 + 0.5])
+@pytest.mark.parametrize("left_inclusive", [False, True])
+def test_split_threshold(value, left_inclusive):
+    # oneDAL sends an observation to the left child when 'x <= threshold', so
+    # the converted threshold must route every float32 input to the same child
+    # as the comparison from the model being converted.
+    node = gbt_convertors.Node(
+        cover=1.0,
+        is_leaf=False,
+        default_left=False,
+        feature=0,
+        value=value,
+        left_inclusive=left_inclusive,
+    )
+    threshold = float(node.get_split_threshold())
+
+    # check every float32 within 'n_ulps' of the threshold, from below to above
+    n_ulps = 4
+    x = np.float32(value)
+    for _ in range(n_ulps):
+        x = np.nextafter(x, np.float32(-np.inf))
+    for _ in range(2 * n_ulps + 1):
+        goes_left = (float(x) <= value) if left_inclusive else (float(x) < value)
+        assert (float(x) <= threshold) == goes_left
+        x = np.nextafter(x, np.float32(np.inf))
+
+
+@pytest.mark.parametrize(
+    "comparison_op,left_inclusive,swaps_children",
+    [("<", False, False), ("<=", True, False), (">=", False, True), (">", True, True)],
+)
+def test_treelite_comparison_ops(comparison_op, left_inclusive, swaps_children):
+    nodes = [
+        {
+            "node_id": 0,
+            "split_feature_id": 1,
+            "threshold": 2.0,
+            "comparison_op": comparison_op,
+            "default_left": True,
+            "left_child": 1,
+            "right_child": 2,
+        },
+        {"node_id": 1, "leaf_value": 5.0},
+        {"node_id": 2, "leaf_value": 7.0},
+    ]
+    node = gbt_convertors.Node.from_treelite_dict(nodes, 0)
+
+    assert node.left_inclusive == left_inclusive
+    assert node.default_left == (not swaps_children)
+    assert node.left_child.value == (7.0 if swaps_children else 5.0)
+    assert node.right_child.value == (5.0 if swaps_children else 7.0)
+    # an observation with x == 2.0 must land on the same side as in treelite
+    assert (2.0 <= float(node.get_split_threshold())) == left_inclusive
+
+
 @pytest.mark.skip(reason="causes timeouts in CI")
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_unsupported_multiclass(from_treelite):
