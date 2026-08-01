@@ -223,9 +223,10 @@ def test_whitened_toy_score(dataframe, queue):
     assert_allclose_numpy(expected_result, score, atol=1e-6)
 
 
-# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
-# and SYCL-queue-backed arrays are not picklable.
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
+# dpnp excluded: SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,array_api")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle

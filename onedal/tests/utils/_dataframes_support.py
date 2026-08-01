@@ -152,7 +152,15 @@ def _as_numpy(obj, *args, **kwargs):
         return dlpack_to_numpy(obj)
 
 
-def _assert_in_namespace(obj: Any, dataframe: str) -> None:
+# dpnp exposes itself as its own array API namespace, so result-side namespace
+# assertions need no dpnp special-casing; input conversion still does, hence the
+# separate mapping from the one used by _convert_to_dataframe.
+_expected_namespaces = dict(array_api_modules)
+if dpnp_available:
+    _expected_namespaces["dpnp"] = dpnp
+
+
+def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
     """Assert ``obj`` belongs to the array namespace implied by ``dataframe``.
 
     Under ``array_api_dispatch``, sklearnex outputs stay in the input namespace,
@@ -167,27 +175,32 @@ def _assert_in_namespace(obj: Any, dataframe: str) -> None:
     dataframe : str
         The dataframe name the input was created with, as returned by
         :func:`get_dataframes_and_queues` (e.g. ``"numpy"``, ``"dpnp"``,
-        ``"array_api"``). Only ``"dpnp"`` and entries of ``array_api_modules``
-        trigger a namespace assertion; other values are treated as numpy and
-        pass through unchecked.
+        ``"array_api"``). Only array API namespaces (``"dpnp"`` and entries of
+        ``array_api_modules``) trigger an assertion; other values are treated as
+        numpy and pass through unchecked.
+    device : object, default=None
+        Optional expected device, compared against ``obj.device``. Pass the
+        test's ``queue`` (or any object exposing ``sycl_device``) to also assert
+        that the result stayed on the input's device. When None, only the
+        namespace is checked.
 
     Returns
     -------
     None
         Nothing is returned; an ``AssertionError`` is raised when ``obj`` is not
-        in the expected namespace.
+        in the expected namespace or not on the expected device.
     """
-    if np.isscalar(obj):
+    if np.isscalar(obj) or dataframe not in _expected_namespaces:
         return
-    if dataframe == "dpnp":
-        assert dpnp_available and isinstance(
-            obj, dpnp.ndarray
-        ), f"expected dpnp output, got {type(obj)}"
-    elif dataframe in array_api_modules:
-        xp = array_api_modules[dataframe]
-        assert (
-            hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
-        ), f"expected {dataframe} output, got {type(obj)}"
+    xp = _expected_namespaces[dataframe]
+    assert (
+        hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
+    ), f"expected {dataframe} output, got {type(obj)}"
+    if device is not None:
+        # a SyclQueue is not itself a device; compare the device it wraps
+        expected = getattr(device, "sycl_device", device)
+        actual = getattr(obj, "sycl_device", getattr(obj, "device", None))
+        assert actual == expected, f"expected output on {expected}, got {actual}"
 
 
 def assert_allclose_numpy(actual: Any, desired: Any, *args: Any, **kwargs: Any) -> None:

@@ -211,9 +211,10 @@ def test_sklearnex_partial_fit_on_random_data(
     assert_allclose_numpy(expected_y_pred, y_pred, atol=tol)
 
 
-# dpnp/array_api excluded: fitted state stays device-bound under array_api_dispatch
-# and SYCL-queue-backed arrays are not picklable.
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
+# dpnp excluded: SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,array_api")
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):
