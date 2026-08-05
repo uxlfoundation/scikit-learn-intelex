@@ -598,7 +598,7 @@ def test_xgb_unsupported(from_treelite):
 
     # Note: dart booster in previous versions had a different
     # structure than regular tree booster.
-    if not _package_check_version(xgb.__version__, "3.3.0"):
+    if not _package_check_version("3.3.0", xgb.__version__):
         xgb_model = xgb.train(
             dtrain=xgb.DMatrix(X, y),
             num_boost_round=5,

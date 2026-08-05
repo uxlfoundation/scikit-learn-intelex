@@ -77,6 +77,14 @@ deselected_tests:
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
 
+  # PCA get_precision() inverts a rank-deficient covariance on the check's fixture; sklearn
+  # xfails these with "linalg.inv fails because input is singular" (gh-33205). The XPASS/XFAIL
+  # outcome is numerically unstable, so patched vs stock flip inconsistently.
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=CPU_DEVICE,dtype_name=float64)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=device1,dtype_name=float32)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=numpy,device_name=None,dtype_name=None)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_same_namespace(array_namespace=array_api_strict)]
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
@@ -458,6 +466,19 @@ deselected_tests:
 
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
+
+  # Requires newer numpy version for array API support. Skip logic might need to be changed
+  # according to numpy version used by CI jobs that run these tests - at the moment, only
+  # sklearn versions are accepted, but this should be a condition like 'skip if numpy<2.2'
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full')-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-array_api_strict <1.8
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict <1.8
 
   # --------------------------------------------------------
   # No need to test daal4py patching
