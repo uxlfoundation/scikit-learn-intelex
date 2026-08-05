@@ -14,10 +14,13 @@
 # limitations under the License.
 # ===============================================================================
 import os
+from typing import Any
 
 import pytest
 import scipy.sparse as sp
+from numpy.testing import assert_allclose
 
+from daal4py.sklearn._utils import _package_check_version
 from sklearnex import get_config
 
 try:
@@ -147,6 +150,131 @@ def _as_numpy(obj, *args, **kwargs):
         # np.from_dlpack). array_api libraries that np.asarray already handles
         # never reach this path.
         return dlpack_to_numpy(obj)
+
+
+# dpnp exposes itself as its own array API namespace, so result-side namespace
+# assertions need no dpnp special-casing; input conversion still does, hence the
+# separate mapping from the one used by _convert_to_dataframe.
+_expected_namespaces = dict(array_api_modules)
+if dpnp_available:
+    _expected_namespaces["dpnp"] = dpnp
+
+
+def _device_key(obj: Any) -> Any:
+    """Comparable device identity of an array, queue, or device object.
+
+    SYCL arrays that share a device may still sit on different queues, and two
+    distinct queues on the same device compare unequal. The queue is therefore
+    the finer-grained identity and is preferred when present; other array API
+    libraries only expose ``device``.
+    """
+    queue = getattr(obj, "sycl_queue", None)
+    if queue is not None:
+        return queue
+    return getattr(obj, "device", obj)
+
+
+def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
+    """Assert ``obj`` belongs to the array namespace implied by ``dataframe``.
+
+    Under ``array_api_dispatch``, sklearnex outputs stay in the input namespace,
+    so an on-device dpnp/array_api input should yield an on-device result
+    (dpnp-in -> dpnp-out). Scalars are namespace-agnostic and are ignored.
+
+    Parameters
+    ----------
+    obj : object
+        The value produced by a sklearnex estimator (an array, or a scalar,
+        which is skipped).
+    dataframe : str
+        The dataframe name the input was created with, as returned by
+        :func:`get_dataframes_and_queues` (e.g. ``"numpy"``, ``"dpnp"``,
+        ``"array_api"``). Only array API namespaces (``"dpnp"`` and entries of
+        ``array_api_modules``) trigger an assertion; other values are treated as
+        numpy and pass through unchecked.
+    device : object, default=None
+        Optional expected device, compared against the device of ``obj``. Pass
+        the test's ``queue``, or the ``device`` of another array. When None, only
+        the namespace is checked.
+
+    Returns
+    -------
+    None
+        Nothing is returned; an ``AssertionError`` is raised when ``obj`` is not
+        in the expected namespace or not on the expected device.
+    """
+    if np.isscalar(obj) or dataframe not in _expected_namespaces:
+        return
+    xp = _expected_namespaces[dataframe]
+    assert (
+        hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
+    ), f"expected {dataframe} output, got {type(obj)}"
+    if device is not None:
+        expected, actual = _device_key(device), _device_key(obj)
+        assert actual == expected, (
+            f"expected output on {getattr(expected, 'sycl_device', expected)}"
+            f" ({expected!r}), got {getattr(actual, 'sycl_device', actual)} ({actual!r})"
+        )
+
+
+def assert_allclose_numpy(actual: Any, desired: Any, *args: Any, **kwargs: Any) -> None:
+    """Convert both operands to numpy, then ``numpy.testing.assert_allclose``.
+
+    Estimator results carrying a non-numpy array API namespace (e.g. dpnp under
+    ``array_api_dispatch``) cannot be consumed by ``assert_allclose`` directly, so
+    both operands are routed through :func:`_as_numpy` first. Namespace
+    preservation (dpnp-in -> dpnp-out) is asserted separately via
+    :func:`_assert_in_namespace` where the test needs it, keeping the comparison
+    itself free of dataframe bookkeeping.
+
+    Parameters
+    ----------
+    actual : object
+        Array-like actual value; converted to numpy before comparison.
+    desired : object
+        Array-like desired value; converted to numpy before comparison.
+    *args : tuple
+        Positional arguments forwarded to ``numpy.testing.assert_allclose``.
+    **kwargs : dict
+        Keyword arguments forwarded to ``numpy.testing.assert_allclose``.
+
+    Returns
+    -------
+    None
+        Nothing is returned; an ``AssertionError`` is raised when the arrays do
+        not match.
+    """
+    assert_allclose(_as_numpy(actual), _as_numpy(desired), *args, **kwargs)
+
+
+def skip_array_api_strict_readonly(dataframe: str) -> None:
+    """Skip if ``dataframe`` is array_api_strict and numpy is older than 2.2.5.
+
+    Estimators that rebuild a oneDAL model from fitted arrays (PCA/IncrementalPCA
+    ``components_``, DummyRegressor ``constant_``) route them back through
+    ``to_table``. numpy < 2.2.5 returns those arrays read-only, which ``to_table``
+    cannot export through DLPack, so array_api_strict inputs raise a
+    ``BufferError`` / read-only assignment error under forced ``array_api_dispatch``.
+    numpy >= 2.2.5 returns writeable arrays.
+
+    Parameters
+    ----------
+    dataframe : str
+        The dataframe name the input was created with. Only ``"array_api"``
+        combined with numpy < 2.2.5 triggers a skip; all other values are no-ops.
+
+    Returns
+    -------
+    None
+        Nothing is returned; :func:`pytest.skip` is invoked when the running
+        numpy version cannot support the array_api_strict path.
+
+    Notes
+    -----
+    TODO: remove once the oneDAL data conversion handles read-only arrays.
+    """
+    if dataframe == "array_api" and not _package_check_version("2.2.5", np.__version__):
+        pytest.skip("TODO: sklearnex read-only DLPack conversion fails on numpy<2.2.5")
 
 
 def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs):

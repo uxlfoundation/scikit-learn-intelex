@@ -23,8 +23,9 @@ if daal_check_version((2024, "P", 600)):
     from sklearn.exceptions import NotFittedError
 
     from onedal.tests.utils._dataframes_support import (
-        _as_numpy,
+        _assert_in_namespace,
         _convert_to_dataframe,
+        assert_allclose_numpy,
         get_dataframes_and_queues,
     )
     from sklearnex.linear_model import IncrementalRidge
@@ -76,10 +77,21 @@ if daal_check_version((2024, "P", 600)):
         coefficients_manual, intercept_manual = _compute_ridge_coefficients(
             X, y, alpha, fit_intercept
         )
+        _assert_in_namespace(inc_ridge.coef_, dataframe)
         if fit_intercept:
-            assert_allclose(inc_ridge.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+            assert_allclose_numpy(
+                inc_ridge.intercept_,
+                intercept_manual,
+                rtol=1e-6,
+                atol=1e-6,
+            )
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        assert_allclose_numpy(
+            inc_ridge.coef_,
+            coefficients_manual,
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
     @pytest.mark.parametrize("batch_size", [2, 5])
@@ -107,7 +119,13 @@ if daal_check_version((2024, "P", 600)):
         xt_y = np.dot(X.T, y)
         coefficients_manual = np.dot(inverse_term, xt_y)
 
-        assert_allclose(inc_ridge.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
+        _assert_in_namespace(inc_ridge.coef_, dataframe)
+        assert_allclose_numpy(
+            inc_ridge.coef_,
+            coefficients_manual,
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     def test_inc_ridge_score_before_fit():
         X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
@@ -150,10 +168,14 @@ if daal_check_version((2024, "P", 600)):
         if fit_intercept:
             y_pred_manual += intercept_manual
 
-        assert_allclose(_as_numpy(y_pred), y_pred_manual, rtol=1e-6, atol=1e-6)
+        _assert_in_namespace(y_pred, dataframe)
+        assert_allclose_numpy(y_pred, y_pred_manual, rtol=1e-6, atol=1e-6)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp excluded: SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,array_api")
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):

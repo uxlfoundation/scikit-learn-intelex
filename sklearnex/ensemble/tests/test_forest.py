@@ -90,7 +90,8 @@ def test_sklearnex_import_rf_classifier(
         hyperparameters.min_number_of_rows_for_vect_seq_compute = rows
         hyperparameters.scale_factor_for_vect_parallel_compute = scale
     assert "sklearnex" in rf.__module__
-    assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    assert_allclose([1], _as_numpy(rf.predict(X_test)))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -104,7 +105,8 @@ def test_sklearnex_import_rf_regression(dataframe, queue):
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     rf = RandomForestRegressor(max_depth=2, random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    pred = _as_numpy(rf.predict([[0, 0, 0, 0]]))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(rf.predict(X_test))
 
     # Check that the prediction is within a reasonable range.
     # 'y' should be in the neighborhood of zero for x=0.
@@ -136,7 +138,8 @@ def test_sklearnex_import_et_classifier(dataframe, queue):
     # defaults to seed=777, although it is set to 0
     rf = ExtraTreesClassifier(max_depth=2, random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    assert_allclose([1], _as_numpy(rf.predict(X_test)))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -152,15 +155,8 @@ def test_sklearnex_import_et_regression(dataframe, queue):
     # defaults to seed=777, although it is set to 0
     rf = ExtraTreesRegressor(random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    pred = _as_numpy(
-        rf.predict(
-            [
-                [
-                    0,
-                ]
-            ]
-        )
-    )
+    X_test = _convert_to_dataframe([[0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(rf.predict(X_test))
 
     # Check that the prediction is within a reasonable range.
     # 'y' should be in the neighborhood of zero for x=0.
