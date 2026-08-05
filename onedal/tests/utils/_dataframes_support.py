@@ -160,6 +160,20 @@ if dpnp_available:
     _expected_namespaces["dpnp"] = dpnp
 
 
+def _device_key(obj: Any) -> Any:
+    """Comparable device identity of an array, queue, or device object.
+
+    SYCL arrays that share a device may still sit on different queues, and two
+    distinct queues on the same device compare unequal. The queue is therefore
+    the finer-grained identity and is preferred when present; other array API
+    libraries only expose ``device``.
+    """
+    queue = getattr(obj, "sycl_queue", None)
+    if queue is not None:
+        return queue
+    return getattr(obj, "device", obj)
+
+
 def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
     """Assert ``obj`` belongs to the array namespace implied by ``dataframe``.
 
@@ -179,10 +193,9 @@ def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
         ``array_api_modules``) trigger an assertion; other values are treated as
         numpy and pass through unchecked.
     device : object, default=None
-        Optional expected device, compared against ``obj.device``. Pass the
-        test's ``queue`` (or any object exposing ``sycl_device``) to also assert
-        that the result stayed on the input's device. When None, only the
-        namespace is checked.
+        Optional expected device, compared against the device of ``obj``. Pass
+        the test's ``queue``, or the ``device`` of another array. When None, only
+        the namespace is checked.
 
     Returns
     -------
@@ -197,10 +210,11 @@ def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
         hasattr(obj, "__array_namespace__") and obj.__array_namespace__() is xp
     ), f"expected {dataframe} output, got {type(obj)}"
     if device is not None:
-        # a SyclQueue is not itself a device; compare the device it wraps
-        expected = getattr(device, "sycl_device", device)
-        actual = getattr(obj, "sycl_device", getattr(obj, "device", None))
-        assert actual == expected, f"expected output on {expected}, got {actual}"
+        expected, actual = _device_key(device), _device_key(obj)
+        assert actual == expected, (
+            f"expected output on {getattr(expected, 'sycl_device', expected)}"
+            f" ({expected!r}), got {getattr(actual, 'sycl_device', actual)} ({actual!r})"
+        )
 
 
 def assert_allclose_numpy(actual: Any, desired: Any, *args: Any, **kwargs: Any) -> None:
