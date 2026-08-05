@@ -77,6 +77,14 @@ deselected_tests:
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
 
+  # PCA get_precision() inverts a rank-deficient covariance on the check's fixture; sklearn
+  # xfails these with "linalg.inv fails because input is singular" (gh-33205). The XPASS/XFAIL
+  # outcome is numerically unstable, so patched vs stock flip inconsistently.
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=CPU_DEVICE,dtype_name=float64)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=device1,dtype_name=float32)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=numpy,device_name=None,dtype_name=None)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_same_namespace(array_namespace=array_api_strict)]
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
