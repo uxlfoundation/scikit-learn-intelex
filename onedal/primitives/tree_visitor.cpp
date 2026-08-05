@@ -299,7 +299,7 @@ void init_get_tree_state(py::module_& m) {
 
             // Sets the 'missing_go_to_left' values on non-terminal nodes.
             // Note that this requires having the values in the arrays
-            // already filled-in for the children of node, so it cannot be
+            // already filled-in for the children of each node, so it cannot be
             // done in the same pass that sets these initial values.
             py::array_t<skl_tree_node>& node_ar = tsv.node_ar;
             skl_tree_node* nodes = static_cast<skl_tree_node*>(node_ar.request().ptr);
