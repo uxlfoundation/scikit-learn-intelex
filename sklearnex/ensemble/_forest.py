@@ -358,9 +358,11 @@ class BaseForest(oneDALEstimator, ABC):
                 return patching_status
             xp, _ = get_namespace(X)
             has_nan = xp.any(xp.isnan(X))
-            patching_status.and_conditions([
-                (not has_nan, "Missing values are not supported."),
-            ])
+            patching_status.and_conditions(
+                [
+                    (not has_nan, "Missing values are not supported."),
+                ]
+            )
 
             if method_name == "predict_proba":
                 patching_status.and_conditions(
@@ -405,7 +407,7 @@ class BaseForest(oneDALEstimator, ABC):
         elif method_name in self._n_jobs_supported_onedal_methods:
             X = data[0]
 
-            patching_status.and_conditions(
+            dal_ready = patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                     (
@@ -421,6 +423,16 @@ class BaseForest(oneDALEstimator, ABC):
                         self.n_outputs_ == 1,
                         f"Number of outputs ({self.n_outputs_}) is not 1.",
                     ),
+                ]
+            )
+
+            if not dal_ready:
+                return patching_status
+            xp, _ = get_namespace(X)
+            has_nan = xp.any(xp.isnan(X))
+            patching_status.and_conditions(
+                [
+                    (not has_nan, "Missing values are not supported."),
                 ]
             )
 
