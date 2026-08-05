@@ -354,14 +354,24 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_matrix]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_array]
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
-  # Unterminated ids: sklearn 1.10 appends the solver, so match on the id prefix
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-False-False
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-True-False
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-True-newton-cg] >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-True-newton-cg] >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-False-False-newton-cg] >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-False-True-newton-cg] >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-True-False-newton-cg] >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-True-True-newton-cg] >=1.10
 
   # Logistic regression array api compliance test fails on Windows only due to convergence issue
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-balanced-True-True-True >=1.9 win32
+
+  # Logistic regression CV array api compliance tests fail in preview mode.
+  # Unterminated ids keep the deselections compatible with evolving parameters.
+  - linear_model/tests/test_logistic.py::test_logistic_regression_cv_array_api_compliance[array_api_strict-CPU_DEVICE-float64 >=1.10
+  - linear_model/tests/test_logistic.py::test_logistic_regression_cv_array_api_compliance[array_api_strict-device1-float32 >=1.10
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
