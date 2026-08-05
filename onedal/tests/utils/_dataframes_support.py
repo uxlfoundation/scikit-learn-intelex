@@ -64,11 +64,12 @@ test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
 
-# sklearn's ``move_to`` cannot convert inputs that lack ``__dlpack__`` (e.g. a
-# pandas Series) into a torch tensor: torch raises ``AssertionError``, which is
-# not among the exceptions ``move_to`` falls back on.
-# See https://github.com/scikit-learn/scikit-learn/issues/34046.
-pd_to_torch_working = False
+# sklearn's ``move_to`` cannot convert inputs that lack ``__dlpack__`` into a
+# torch tensor: torch raises ``AssertionError``, which is not among the
+# exceptions ``move_to`` falls back on. This affects every host dataframe
+# library, not just pandas (polars fails identically), so a pandas probe is
+# representative. See https://github.com/scikit-learn/scikit-learn/issues/34046.
+host_df_to_torch_working = False
 if torch_available:
     try:
         # ``move_to`` does not exist before sklearn 1.8, so importing it inside
@@ -81,7 +82,7 @@ if torch_available:
             # The failure is device-independent, so a host tensor suffices.
             xp, _, device = get_namespace_and_device(torch.empty(0))
             _ = move_to(pd.Series([1, 2, 3]), xp=xp, device=device)
-        pd_to_torch_working = True
+        host_df_to_torch_working = True
     except Exception:
         pass
 
@@ -234,7 +235,9 @@ def _as_numpy(obj, *args, **kwargs):
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
     if torch_available and isinstance(obj, torch.Tensor):
-        return obj.cpu().detach().numpy(*args, **kwargs)
+        # ``Tensor.numpy()`` takes no dtype/order/copy args, so apply them after
+        # the host transfer to match the other branches' behavior.
+        return np.asarray(obj.cpu().detach().numpy(), *args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):

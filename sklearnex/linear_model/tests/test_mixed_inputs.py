@@ -22,8 +22,8 @@ import pytest
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
+    host_df_to_torch_working,
     mixed_device_params,
-    pd_to_torch_working,
     torch_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
@@ -32,7 +32,6 @@ if dpnp_available:
     import dpnp
 if torch_available:
     import torch
-
 
 from sklearnex.linear_model import (
     IncrementalLinearRegression,
@@ -98,7 +97,7 @@ def _check_attributes_and_output(model, X, y, X_xp):
     if (
         not isinstance(y, pd.Series)
         or (not torch_available or X_xp != torch)
-        or pd_to_torch_working
+        or host_df_to_torch_working
     ):
         score = model.score(X, y)
         assert isinstance(score, (float, np.floating))

@@ -36,8 +36,8 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    host_df_to_torch_working,
     mixed_device_params,
-    pd_to_torch_working,
     torch_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
@@ -329,7 +329,11 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
 def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array_api):
     # Re-enable this once bug in scikit-learn is solved:
     # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if not pd_to_torch_working and (torch_available and X_xp is torch) and y_xp is pd:
+    if (
+        not host_df_to_torch_working
+        and (torch_available and X_xp is torch)
+        and y_xp is pd
+    ):
         pytest.skip("Bug in scikit-learn")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
