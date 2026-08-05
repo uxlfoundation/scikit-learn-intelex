@@ -505,7 +505,9 @@ class build(onedal_build, orig_build.build):
 
 project_urls = {
     "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
+    "Changelog": "https://github.com/uxlfoundation/scikit-learn-intelex/releases",
     "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
+    "Examples": "https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples.html",
     "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex",
 }
 
@@ -610,7 +612,6 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Other Audience",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3",
