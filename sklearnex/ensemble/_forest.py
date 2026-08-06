@@ -432,13 +432,17 @@ class BaseForest(oneDALEstimator, ABC):
 
             if not dal_ready:
                 return patching_status
-            xp, _ = get_namespace(X)
-            has_nan = xp.any(xp.isnan(X))
-            patching_status.and_conditions(
-                [
-                    (not has_nan, "Missing values are not supported."),
-                ]
-            )
+
+            try:
+                X_arr = _check_array(X)
+                assert_all_finite(X_arr)
+            except ValueError:
+                patching_status.and_conditions(
+                    [
+                        (False, "Missing values and infinites are not supported."),
+                    ]
+                )
+                return patching_status
 
         else:
             raise RuntimeError(
