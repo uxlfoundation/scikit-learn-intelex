@@ -427,22 +427,27 @@ def test_incpca_error_on_incompatible_devices(with_array_api):
     X_cpu = dpnp.array(X, device="cpu")
     X_gpu = dpnp.array(X, device="gpu")
 
-    err_match = "device|queue"
+    err_match = "device|queue|namespace"
 
     model = IncrementalPCA(svd_solver="covariance_eigh").fit(X_gpu)
+
+    # Note: 'partial_fit' is handled by sklearnex, whereas other methods
+    # are reused from scikit-learn. As of 1.9, they do not have a consistent
+    # error throwing logic across classes - exceptions might be of different
+    # types and contain different messages.
     with pytest.raises(ValueError, match=err_match):
         _ = model.partial_fit(X_cpu)
-    with pytest.raises(ValueError, match=err_match):
+    with pytest.raises((TypeError, ValueError), match=err_match):
         _ = model.transform(X_cpu)
-    with pytest.raises(ValueError, match=err_match):
+    with pytest.raises((TypeError, ValueError), match=err_match):
         _ = model.inverse_transform(X_cpu)
 
     model.fit(X_cpu)
     with pytest.raises(ValueError, match=err_match):
         _ = model.partial_fit(X_gpu)
-    with pytest.raises(ValueError, match=err_match):
+    with pytest.raises((TypeError, ValueError), match=err_match):
         _ = model.transform(X_gpu)
-    with pytest.raises(ValueError, match=err_match):
+    with pytest.raises((TypeError, ValueError), match=err_match):
         _ = model.inverse_transform(X_gpu)
 
 

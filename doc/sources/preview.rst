@@ -76,19 +76,19 @@ patching and without setting environment variable ``SKLEARNEX_PREVIEW``:
 Current list of preview estimators:
 
 .. list-table::
-   :widths: 30 20 10
+   :widths: 30 20
    :header-rows: 1
    :align: left
 
    * - Estimator name
-     - Module
      - Is patching supported
+   * - :obj:`sklearn.linear_model.Lasso`
+     - Yes
+   * - :obj:`sklearn.covariance.ElasticNet`
+     - Yes
    * - :obj:`sklearn.covariance.EmpiricalCovariance`
-     - ``sklearnex.preview.covariance``
      - Yes
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - ``sklearnex.preview.decomposition``
      - Yes
    * - :obj:`sklearn.linear_model.LogisticRegressionCV`
-     - ``sklearnex.preview.linear_model``
      - Yes

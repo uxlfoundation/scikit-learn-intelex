@@ -81,7 +81,7 @@ def _load_all_models(with_sklearnex=True, estimator=True):
     already_patched = any(already_patched_map.values())
     try:
         if with_sklearnex:
-            patch_sklearn()
+            patch_sklearn(preview=True)
         elif already_patched:
             unpatch_sklearn()
 
@@ -290,7 +290,7 @@ def call_method(estimator, method, X, y, **kwargs):
         ]
     )
 
-    if method == "inverse_transform":
+    if method == "inverse_transform" and hasattr(estimator, "n_components_"):
         # PCA's inverse_transform takes (n_samples, n_components)
         data = (
             (X[:, : estimator.n_components_],)
