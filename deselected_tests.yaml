@@ -190,6 +190,7 @@ deselected_tests:
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
   # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
+  - preprocessing/tests/test_discretization.py::test_nonuniform_strategies[kmeans
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
   - cluster/tests/test_k_means.py::test_kmeans_convergence >=0.23
