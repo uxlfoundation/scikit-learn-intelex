@@ -64,11 +64,13 @@ test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
 
-# sklearn's ``move_to`` cannot convert inputs that lack ``__dlpack__`` into a
-# torch tensor: torch raises ``AssertionError``, which is not among the
-# exceptions ``move_to`` falls back on. This affects every host dataframe
-# library, not just pandas (polars fails identically), so a pandas probe is
-# representative. See https://github.com/scikit-learn/scikit-learn/issues/34046.
+# ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
+# but only for the exceptions it catches; torch signals this case with
+# ``AssertionError``, which escapes instead. Namespaces raising a caught
+# exception (e.g. array_api_strict) convert such inputs fine. Any host dataframe
+# is affected, not just pandas (polars fails identically), so the pandas probe
+# below is representative.
+# See https://github.com/scikit-learn/scikit-learn/issues/34046.
 host_df_to_torch_working = False
 if torch_available:
     try:
