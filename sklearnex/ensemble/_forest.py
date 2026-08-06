@@ -812,11 +812,13 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         else:
             xp, is_array_api_compliant = get_namespace(X, self.classes_)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )
 
         res = self._onedal_estimator.predict(X, queue=queue)
@@ -839,11 +841,13 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         else:
             xp, _ = get_namespace(X)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
@@ -1030,11 +1034,13 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         check_is_fitted(self, "_onedal_estimator")
         xp, _ = get_namespace(X)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)

@@ -345,18 +345,22 @@ def test_rf_mixed_devices(
         assert proba.__class__ == X.__class__
     _ = model.score(X, y)
 
+
 @pytest.mark.allow_sklearn_fallback
-@pytest.mark.parametrize("estimator_class", [
-    "RandomForestRegressor",
-    "RandomForestClassifier",
-    "ExtraTreesRegressor",
-    "ExtraTreesClassifier",
-])
+@pytest.mark.parametrize(
+    "estimator_class",
+    [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+        "ExtraTreesRegressor",
+        "ExtraTreesClassifier",
+    ],
+)
 def test_predict_with_nan(estimator_class):
     from sklearnex import ensemble
 
     model = getattr(ensemble, estimator_class)(n_estimators=2)
-    
+
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(10, 4))
     if is_regressor(model):
@@ -370,3 +374,11 @@ def test_predict_with_nan(estimator_class):
     X_nan[:, 2:3] = np.nan
     pred = model.predict(X_nan)
     assert not np.any(np.isnan(pred))
+
+    score = model.score(X_nan, y)
+    assert not np.isnan(score)
+    assert not np.isinf(score)
+
+    if not is_regressor(model):
+        proba = model.predict_proba(X_nan)
+        assert not np.any(np.isnan(proba))
