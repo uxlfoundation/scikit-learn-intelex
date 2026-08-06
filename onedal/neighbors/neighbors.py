@@ -185,14 +185,14 @@ class KNeighborsClassifier(NeighborsBase):
         params = self._get_onedal_params(X_table, y)
         return self.train(params, X_table, y_table).model
 
-    def _onedal_predict(self, model, X, params):
-        X = to_table(X, queue=QM.get_global_queue())
-        if "responses" not in params["result_option"]:
-            params["result_option"] += "|responses"
-        params["fptype"] = X.dtype
-        result = self.infer(params, model, X)
+    @supports_queue
+    def predict(self, X, queue=None):
+        X_table = to_table(X, queue=queue)
+        # pass Y as non-None to trigger 'responses'
+        params = self._get_onedal_params(X_table, 0)
+        result = self.infer(params, self._onedal_model, X)
 
-        return result
+        return from_table(result.responses, like=X)
 
     @supports_queue
     def fit(self, X, y, queue=None):
@@ -200,7 +200,21 @@ class KNeighborsClassifier(NeighborsBase):
 
     @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        return self._kneighbors(X, n_neighbors, return_distance)
+        _check_is_fitted(self)
+
+        if n_neighbors is None:
+            n_neighbors = self.n_neighbors
+
+        if X is None:
+            X = self._fit_X
+
+        X_table = to_table(X)
+        params = self._get_onedal_params(X, n_neighbors=n_neighbors)
+        prediction_results = self.infer(self._onedal_model, X_table, params)
+        distances = from_table(prediction_results.distances, like=X)
+        indices = from_table(prediction_results.indices, like=X)
+
+        return distances, indices if return_distance else indices
 
 
 class KNeighborsRegressor(NeighborsBase):
