@@ -303,7 +303,7 @@ void init_get_tree_state(py::module_& m) {
             // done in the same pass that sets these initial values.
             py::array_t<skl_tree_node>& node_ar = tsv.node_ar;
             skl_tree_node* nodes = static_cast<skl_tree_node*>(node_ar.request().ptr);
-            for (size_t node_index = 0; node_index < node_ar.size(); node_index++) {
+            for (Py_ssize_t node_index = 0; node_index < node_ar.size(); node_index++) {
                 skl_tree_node& node = nodes[node_index];
                 if (node.left_child >= 0 && node.right_child >= 0) {
                     node.missing_go_to_left = nodes[node.left_child].n_node_samples >=
