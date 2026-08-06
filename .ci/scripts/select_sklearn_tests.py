@@ -51,7 +51,7 @@ tests_map = {
     "neighbors/tests": ["test_lof.py", "test_neighbors.py", "test_neighbors_pipeline.py"],
     "preprocessing/tests": ["test_common.py", "test_data.py"],
     "svm/tests": ["test_sparse.py", "test_svm.py"],
-    "tests": ["test_public_functions.py"],
+    "tests": ["test_dummy.py", "test_public_functions.py"],
 }
 
 
