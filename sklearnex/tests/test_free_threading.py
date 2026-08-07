@@ -151,7 +151,9 @@ def test_daal4py_model_is_read_only_and_readable_concurrently():
         model.__setstate__(state)
 
     # The supported path - unpickling allocates a fresh object - still works.
-    assert pickle.loads(pickle.dumps(model)).NumberOfTrees == 4
+    # nosec B301: the input is pickle.dumps of an object created on the line
+    # above, not untrusted data. Round-tripping is the behavior under test.
+    assert pickle.loads(pickle.dumps(model)).NumberOfTrees == 4  # nosec
 
     start = Barrier(4)
 
