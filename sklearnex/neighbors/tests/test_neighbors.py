@@ -36,8 +36,10 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    host_df_modules,
+    host_df_to_torch_working,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.neighbors import (
@@ -316,15 +318,7 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 @pytest.mark.parametrize(
     "estimator",
@@ -334,6 +328,14 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     ],
 )
 def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array_api):
+    # Re-enable this once bug in scikit-learn is solved:
+    # https://github.com/scikit-learn/scikit-learn/issues/34046
+    if (
+        not host_df_to_torch_working
+        and (torch_available and X_xp is torch)
+        and y_xp in host_df_modules
+    ):
+        pytest.skip("Bug in scikit-learn")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
     if is_regressor(estimator):
@@ -342,11 +344,11 @@ def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array
         y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         if is_regressor(estimator):
-            y = pd.Series(y)
+            y = y_xp.Series(y)
         else:
-            y = pd.Series(np.array(["a", "b"])[y])
+            y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
@@ -355,7 +357,7 @@ def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array
     if is_regressor(estimator):
         assert pred.__class__ == X.__class__
     else:
-        if y_xp is pd:
+        if y_xp in host_df_modules:
             assert isinstance(pred, np.ndarray)
         else:
             assert pred.__class__ == y.__class__
