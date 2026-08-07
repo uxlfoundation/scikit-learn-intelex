@@ -20,7 +20,6 @@ import logging
 import os
 import platform as plt
 import subprocess
-import sys
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
@@ -192,8 +191,6 @@ def custom_build_cmake_clib(
         "-DCMAKE_PREFIX_PATH=" + install_directory,
         "-DIFACE=" + iface,
         "-DONEDAL_MAJOR_BINARY=" + str(onedal_major_binary_version),
-        "-DPYTHON_EXECUTABLE=" + sys.executable,
-        "-DPython_EXECUTABLE=" + sys.executable,
         "-DPYTHON_INCLUDE_DIR=" + python_include,
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
         "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
@@ -221,18 +218,12 @@ def custom_build_cmake_clib(
     # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
     # using make conventions (i.e. -j flag) but is set as a cmake argument to
     # support Windows and Linux simultaneously
-    # Keep the job count as a separate argument: CMake 3.13 accepts ``-j 2``
-    # but not the concatenated ``-j2`` spelling.
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j", str(n_threads)]
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j" + str(n_threads)]
 
-    # ``cmake --install`` was added in CMake 3.15. Use the generated install
-    # target so the legacy GIL-enabled path remains compatible with CMake 3.13.
     make_install_args = [
         "cmake",
-        "--build",
+        "--install",
         abs_build_temp_path,
-        "--target",
-        "install",
     ]
 
     subprocess.check_call(cmake_args, env=env_build)

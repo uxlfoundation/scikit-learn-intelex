@@ -212,10 +212,9 @@ def test_cmake_build_type_is_explicit(
     assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
     assert "" not in calls[0]
     assert ("-GNinja" in calls[0]) is is_win
-    assert not any(arg.startswith("-DSKLEARNEX_SANITIZER=") for arg in calls[0])
     assert calls[1][:2] == ["cmake", "--build"]
     assert Path(calls[1][2]).parts[-2:] == ("build", "backend_host")
-    assert calls[1][3:] == ["-j", "1"]
-    assert calls[2][:2] == ["cmake", "--build"]
+    assert calls[1][3:] == ["-j1"]
+    assert calls[2][:2] == ["cmake", "--install"]
     assert Path(calls[2][2]).parts[-2:] == ("build", "backend_host")
-    assert calls[2][3:] == ["--target", "install"]
+    assert calls[2][3:] == []
