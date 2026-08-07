@@ -136,6 +136,8 @@ cdef extern from "daal4py.h":
     cdef object make_nda(list_NumericTablePtr * nt_ptr) except +
     cdef object make_nda(dict_NumericTablePtr * nt_ptr, void *) except +
     cdef NumericTablePtr make_nt(PyObject * nda) except +
+    cdef object make_nt_capsule_for_testing(PyObject * nda, bool legacy) except +
+    cdef object roundtrip_nt_for_testing(PyObject * nda) except +
     cdef list_NumericTablePtr make_datacoll(PyObject * nda) except +
     cdef dict_NumericTablePtr make_dnt(PyObject * nda, void *) except +
 
@@ -256,6 +258,14 @@ def enable_thread_pinning(enabled: bool = True) -> None:
     :rtype: None
     '''
     c_enable_thread_pinning(enabled)
+
+def _make_nt_capsule_for_testing(obj, legacy=False):
+    return make_nt_capsule_for_testing(<PyObject*>obj, legacy)
+
+
+def _roundtrip_nt_for_testing(obj):
+    return roundtrip_nt_for_testing(<PyObject*>obj)
+
 
 def get_data(x):
     if isinstance(x, pdDataFrame):
