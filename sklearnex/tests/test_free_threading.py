@@ -122,7 +122,15 @@ def test_shared_daal4py_algorithm_is_serialized():
     assert not sys._is_gil_enabled()
 
 
-def test_daal4py_model_state_is_serialized_with_readers():
+def test_daal4py_model_is_read_only_and_readable_concurrently():
+    """Model wrappers hold a write-once native pointer.
+
+    Readers dereference it without synchronization, so replacing it would be a
+    use-after-free for a thread already inside a getter. Unpickling into a
+    populated object is therefore rejected, and concurrent reads are safe.
+    """
+    import pickle
+
     import numpy as np
 
     import daal4py
@@ -138,12 +146,14 @@ def test_daal4py_model_state_is_serialized_with_readers():
         .model
     )
     state = model.__getstate__()
-    start = Barrier(5)
 
-    def replace_state():
-        start.wait()
-        for _ in range(32):
-            model.__setstate__(state)
+    with pytest.raises(ValueError, match="already-initialized"):
+        model.__setstate__(state)
+
+    # The supported path - unpickling allocates a fresh object - still works.
+    assert pickle.loads(pickle.dumps(model)).NumberOfTrees == 4
+
+    start = Barrier(4)
 
     def read_state():
         start.wait()
@@ -153,9 +163,8 @@ def test_daal4py_model_state_is_serialized_with_readers():
             assert repr(model)
             assert daal4py.getTreeState(model, 0, 2) is not None
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(replace_state) for _ in range(2)]
-        futures.extend(executor.submit(read_state) for _ in range(3))
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(read_state) for _ in range(4)]
         for future in futures:
             future.result()
 

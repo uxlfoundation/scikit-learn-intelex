@@ -188,6 +188,9 @@ def daalinit(nthreads: int = -1) -> None:
 
     :rtype: None
     '''
+    # Serialize concurrent initialization requests against each other. Note this
+    # does not make the underlying global thread count safe to change while
+    # other threads are running computations - see the docs on parallelism.
     with _daal_global_lock:
         c_daalinit(nthreads)
 
@@ -219,10 +222,7 @@ def num_threads() -> int:
 
     :rtype: int
     '''
-    # oneDAL stores this process-global value in a non-atomic size_t. Serialize
-    # the public daal4py getter with daalinit(), which updates the same value.
-    with _daal_global_lock:
-        return c_num_threads()
+    return c_num_threads()
 
 def num_procs() -> int:
     '''
@@ -235,8 +235,7 @@ def num_procs() -> int:
 
     :rtype: int
     '''
-    with _daal_global_lock:
-        return c_num_procs()
+    return c_num_procs()
 
 def my_procid() -> int:
     '''
@@ -250,8 +249,7 @@ def my_procid() -> int:
 
     :rtype: int
     '''
-    with _daal_global_lock:
-        return c_my_procid()
+    return c_my_procid()
 
 def enable_thread_pinning(enabled: bool = True) -> None:
     '''
@@ -270,8 +268,7 @@ def enable_thread_pinning(enabled: bool = True) -> None:
 
     :rtype: None
     '''
-    with _daal_global_lock:
-        c_enable_thread_pinning(enabled)
+    c_enable_thread_pinning(enabled)
 
 def _make_nt_capsule_for_testing(obj, legacy=False):
     return make_nt_capsule_for_testing(<PyObject*>obj, legacy)
@@ -473,18 +470,12 @@ cdef class {{flatname}}:
     def __init__(self, int64_t ptr=0):
         self.c_ptr = <{{class_type|flat}}>ptr
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def __repr__(self):
         return _str(self, [{% for m in enum_gets+named_gets %}'{{m[1]}}',{% endfor %}])
 {% for m in enum_gets+named_gets %}
 {% set rtype = m[2]|d2cy(False) if m in enum_gets else m[0]|d2cy(False) %}
 
     @property
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def {{m[1]}}(self):
 {% if ('Ptr' in rtype and 'NumericTablePtr' not in rtype) or '__iface__' in rtype %}
 {% set frtype=(rtype.strip(' *&')|flat(False)|strip(' *')).replace('Ptr', '')|lower %}
@@ -520,9 +511,6 @@ cdef class {{flatname}}:
 {% if (flatname.startswith('gbt_') or flatname.startswith('decision_forest')) \
     and flatname.endswith('model') %}
     @property
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def NumberOfTrees(self):
         '''
         NumberOfTrees
@@ -551,9 +539,6 @@ cdef class {{flatname}}:
 
 {% for m in get_methods %}
 {% set frtype = m[0].replace('Ptr', '')|d2cy(False)|lower %}
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def {{m[1]|d2cy(False)}}(self, {{m[2]|d2cy(False)}} {{m[3]}}):
         ':type: {{frtype}} (or derived)'
         if not is_valid_ptrptr(self.c_ptr):
@@ -572,21 +557,24 @@ cdef class {{flatname}}:
 {% endfor %}
 
 {% if free_threading %}
-    # Serialize native pointer replacement with readers of the same wrapper.
+    # Guards the NULL -> set transition of c_ptr. Readers need no
+    # synchronization because c_ptr is only ever written once.
     @cython.critical_section
 {% endif %}
     def __setstate__(self, state):
-        cdef {{class_type|flat}} old_ptr
-        if isinstance(state, bytes):
-           old_ptr = self.c_ptr
-           self.c_ptr = deserialize_si[{{class_type|flat|strip(' *')}}](state)
-           del old_ptr
-        else:
+        if not isinstance(state, bytes):
            raise ValueError("Invalid state .....")
+        # c_ptr is write-once: readers of this object dereference it without
+        # synchronization, so replacing it here would be a use-after-free for
+        # any thread already inside a property getter. Un-pickling always
+        # targets a freshly allocated object, so this only rejects reuse of an
+        # already-populated one.
+        if self.c_ptr != NULL:
+           raise ValueError(
+               "Cannot unpickle into an already-initialized object."
+           )
+        self.c_ptr = deserialize_si[{{class_type|flat|strip(' *')}}](state)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def __getstate__(self):
         if self.c_ptr == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -599,12 +587,7 @@ cdef class {{flatname}}:
 
 
 cdef api void * unbox_{{flatname}}(a):
-{% if free_threading %}
-    with cython.critical_section(a):
-        return _daal_clone((<{{flatname}}>a).c_ptr)
-{% else %}
-    return _daal_clone((<{{flatname}}>a).c_ptr)
-{% endif %}
+    return (<{{flatname}}>a).c_ptr
 
 
 hpat_spec.append({
@@ -1342,7 +1325,7 @@ hpat_spec.append({
 # requires {{algos}}    list of algorithms that are available
 #          {{version}}  version of DAAL
 pyx_footer_template = """
-cdef _getTreeState_impl(model, i, n_classes):
+def getTreeState(model, i=0, n_classes=1):
     cdef TreeState cTreeState
     if False:
         pass
@@ -1381,15 +1364,6 @@ cdef _getTreeState_impl(model, i, n_classes):
     state = pyTreeState()
     state.set(&cTreeState)
     return state
-
-
-def getTreeState(model, i=0, n_classes=1):
-{% if free_threading %}
-    with cython.critical_section(model):
-        return _getTreeState_impl(model, i, n_classes)
-{% else %}
-    return _getTreeState_impl(model, i, n_classes)
-{% endif %}
 
 
 cdef extern from "daal4py_version.h":
