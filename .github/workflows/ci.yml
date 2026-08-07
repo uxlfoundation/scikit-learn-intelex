@@ -141,6 +141,13 @@ jobs:
           pip install --upgrade -r requirements-test.txt
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
+      - name: Result-option parser test
+        run: |
+          g++ -std=c++17 -O1 -g -pthread -Wall -Werror \
+            -I"$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/tests/result_options_threading.cpp" \
+            -o result-options-threading
+          ./result-options-threading
       - name: Sklearnex testing
         run: |
           source venv/bin/activate
