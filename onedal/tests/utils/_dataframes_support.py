@@ -38,6 +38,13 @@ except ImportError:
     torch_available = False
 
 try:
+    import polars as pl
+
+    polars_available = True
+except ImportError:
+    polars_available = False
+
+try:
     # This should be lazy imported in the
     # future along with other popular
     # array_api libraries when testing
@@ -63,6 +70,9 @@ from onedal.tests.utils._device_selection import get_queues
 test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
+
+# Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
+host_df_modules = (pd, pl) if polars_available else (pd,)
 
 # ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
 # but only for the exceptions it catches; torch signals this case with
@@ -167,7 +177,7 @@ if dpnp_available:
     _NAMESPACE_DEVICES["gpu-dpnp"] = ("gpu", "cpu")
 
 
-def mixed_device_params(include_pandas_y=False, include_weight=False, x_devices=None):
+def mixed_device_params(include_host_df_y=False, include_weight=False, x_devices=None):
     """Parameterize the "same namespace, inputs on possibly different devices"
     tests the array-API-dispatch way.
 
@@ -176,13 +186,15 @@ def mixed_device_params(include_pandas_y=False, include_weight=False, x_devices=
     dpnp) is not a supported scenario and sklearn rejects it with a "same
     namespace" error, so those combinations are never emitted. Within one
     namespace, inputs may still live on different devices (xpu/cpu, gpu/cpu) --
-    that is what these tests exercise. A pandas ``y``/weight is optionally
-    allowed since it is namespace-neutral (host targets alongside an array-API X).
+    that is what these tests exercise. A host data frame ``y``/weight is
+    optionally allowed since it is namespace-neutral (host targets alongside an
+    array-API X).
 
     Parameters
     ----------
-    include_pandas_y : bool, default=False
-        Also emit combinations with a pandas (host) ``y``/weight.
+    include_host_df_y : bool, default=False
+        Also emit combinations with a host data frame ``y``/weight, one per
+        library in ``host_df_modules`` (pandas, and polars when installed).
     include_weight : bool, default=False
         Add a sample-weight column; each row becomes
         ``(X_xp, X_device, y_xp, y_device, w_xp, w_device)`` and the weight
@@ -200,12 +212,12 @@ def mixed_device_params(include_pandas_y=False, include_weight=False, x_devices=
     for xp, devices in _NAMESPACE_DEVICES.items():
         module = torch if xp == "torch" else dpnp
         x_dev_list = tuple(d for d in (x_devices or devices) if d in devices)
-        y_options = [(module, d, f"{xp}-{d}") for d in devices]
-        if include_pandas_y:
-            y_options.append((pd, None, "pandas"))
+        host_df_options = (
+            [(m, None, m.__name__) for m in host_df_modules] if include_host_df_y else []
+        )
+        y_options = [(module, d, f"{xp}-{d}") for d in devices] + host_df_options
         w_options = [(None, None, "no")] + (
-            [(module, d, f"{xp}-{d}") for d in devices]
-            + ([(pd, None, "pandas")] if include_pandas_y else [])
+            [(module, d, f"{xp}-{d}") for d in devices] + host_df_options
             if include_weight
             else []
         )

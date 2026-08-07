@@ -40,6 +40,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    host_df_modules,
     host_df_to_torch_working,
     mixed_device_params,
     torch_available,
@@ -514,7 +515,7 @@ def test_svm_mixed_array_namespaces(
 )
 @pytest.mark.parametrize(
     "X_xp, X_device, y_xp, y_device, w_xp, w_device",
-    mixed_device_params(include_pandas_y=True, include_weight=True, x_devices=("cpu",)),
+    mixed_device_params(include_host_df_y=True, include_weight=True, x_devices=("cpu",)),
 )
 @pytest.mark.parametrize(
     "estimator_class",
@@ -531,7 +532,7 @@ def test_svr_mixed_devices(
     if (
         not host_df_to_torch_working
         and (torch_available and X_xp is torch)
-        and (y_xp is pd or w_xp is pd)
+        and (y_xp in host_df_modules or w_xp in host_df_modules)
     ):
         pytest.skip("Bug in scikit-learn")
     from sklearnex import svm
@@ -544,12 +545,12 @@ def test_svr_mixed_devices(
     w = rng.standard_gamma(1, size=X.shape[0]) if w_xp is not None else None
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
-        y = pd.Series(y)
+    if y_xp in host_df_modules:
+        y = y_xp.Series(y)
     else:
         y = y_xp.asarray(y, device=y_device)
-    if w_xp is pd:
-        w = pd.Series(w)
+    if w_xp in host_df_modules:
+        w = w_xp.Series(w)
     elif w_xp is not None:
         w = w_xp.asarray(w, device=w_device)
 
@@ -567,7 +568,7 @@ def test_svr_mixed_devices(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     from sklearnex.svm import SVC
@@ -579,14 +580,14 @@ def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
-        y = pd.Series(np.array(["a", "b"])[y])
+    if y_xp in host_df_modules:
+        y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
     model.fit(X, y)
     pred = model.predict(X)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         assert isinstance(pred, np.ndarray)
     else:
         assert pred.__class__ == y.__class__

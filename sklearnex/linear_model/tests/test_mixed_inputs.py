@@ -22,6 +22,7 @@ import pytest
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
+    host_df_modules,
     host_df_to_torch_working,
     mixed_device_params,
     torch_available,
@@ -45,15 +46,19 @@ incremental_estimators = [IncrementalLinearRegression, IncrementalRidge]
 all_estimators = non_incremental_estimators + incremental_estimators
 
 
+host_df_series = tuple(m.Series for m in host_df_modules)
+
+
 def _expected_type(X, X_xp):
-    """Predict/attributes follow X, but pandas inputs produce numpy outputs."""
-    return np.ndarray if X_xp is pd else X.__class__
+    """Predict/attributes follow X, but host data frame inputs produce numpy outputs."""
+    return np.ndarray if X_xp in host_df_modules else X.__class__
 
 
 def _split_row(arr, start, stop):
     if hasattr(arr, "iloc"):
         return arr.iloc[start:stop]
-    if arr.ndim == 1:
+    # Polars slices rows for both Series and DataFrame, and exposes no ``ndim``.
+    if getattr(arr, "ndim", 1) == 1:
         return arr[start:stop]
     return arr[start:stop, ...]
 
@@ -75,8 +80,8 @@ def _generate_data():
 
 
 def _convert(arr, xp, device=None):
-    if xp is pd:
-        return pd.DataFrame(arr) if arr.ndim == 2 else pd.Series(arr)
+    if xp in host_df_modules:
+        return xp.DataFrame(arr) if arr.ndim == 2 else xp.Series(arr)
     return xp.asarray(arr) if device is None else xp.asarray(arr, device=device)
 
 
@@ -85,17 +90,17 @@ def _check_attributes_and_output(model, X, y, X_xp):
     expected_device = getattr(X, "device", None)
     assert isinstance(model.coef_, expected)
     assert isinstance(model.intercept_, (expected, float, np.floating))
-    if X_xp is not pd:
+    if X_xp not in host_df_modules:
         assert getattr(model.coef_, "device", None) == expected_device
         assert getattr(model.intercept_, "device", None) == expected_device
 
     pred = model.predict(X)
     assert pred.__class__ == expected
-    if X_xp is not pd:
+    if X_xp not in host_df_modules:
         assert getattr(pred, "device", None) == expected_device
 
     if (
-        not isinstance(y, pd.Series)
+        not isinstance(y, host_df_series)
         or (not torch_available or X_xp != torch)
         or host_df_to_torch_working
     ):
@@ -178,7 +183,7 @@ def test_error_on_incompatible_namespaces(
     reason="Functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 @pytest.mark.parametrize("estimator_class", all_estimators)
 @pytest.mark.parametrize("use_partial_fit", [False, True])

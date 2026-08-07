@@ -31,6 +31,7 @@ from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
+    host_df_modules,
     mixed_device_params,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
@@ -283,7 +284,7 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_pandas_y=True)
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 @pytest.mark.parametrize(
     "estimator_class",
@@ -309,11 +310,11 @@ def test_rf_mixed_devices(
         y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         if is_regressor(model):
-            y = pd.Series(y)
+            y = y_xp.Series(y)
         else:
-            y = pd.Series(np.array(["a", "b"])[y])
+            y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
@@ -322,7 +323,7 @@ def test_rf_mixed_devices(
     if is_regressor(model):
         assert pred.__class__ == X.__class__
     else:
-        if y_xp is pd:
+        if y_xp in host_df_modules:
             assert isinstance(pred, np.ndarray)
         else:
             assert pred.__class__ == y.__class__
