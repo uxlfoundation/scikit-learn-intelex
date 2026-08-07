@@ -18,6 +18,7 @@
 #include "daal4py_defines.h"
 #include <mpi.h>
 #include <Python.h>
+#include <cstdio>
 #include <exception>
 #include <limits>
 #include <stdexcept>
@@ -26,13 +27,20 @@
 
 namespace
 {
+std::string mpi_error_text(const char * operation, int code)
+{
+    char error[MPI_MAX_ERROR_STRING] = { 0 };
+    int length                       = 0;
+    if (MPI_Error_string(code, error, &length) != MPI_SUCCESS) length = 0;
+    return std::string(operation) + " failed: " + std::string(error, static_cast<size_t>(length));
+}
+
+// Raises std::runtime_error, which Cython's ``except +`` translates into a
+// Python RuntimeError at the daal4py boundary, with this message preserved.
 void mpi_check(int code, const char * operation)
 {
     if (code == MPI_SUCCESS) return;
-    char error[MPI_MAX_ERROR_STRING];
-    int length = 0;
-    MPI_Error_string(code, error, &length);
-    throw std::runtime_error(std::string(operation) + " failed: " + std::string(error, length));
+    throw std::runtime_error(mpi_error_text(operation, code));
 }
 
 int mpi_count(size_t value, const char * name)
@@ -41,11 +49,42 @@ int mpi_count(size_t value, const char * name)
     return static_cast<int>(value);
 }
 
+// Report a teardown failure without throwing. fini() runs from a destructor and
+// from interpreter shutdown, so there is no caller left to catch an exception -
+// but staying silent hides a real fault, so surface it as a Python warning when
+// the interpreter can still take one, and on stderr when it cannot.
+void report_teardown_failure(const std::string & reason) noexcept
+{
+    const std::string message = "daal4py could not shut MPI down cleanly: " + reason;
+
+    if (Py_IsInitialized()
+#if PY_VERSION_HEX >= 0x030D0000 // >= Python 3.13
+        && !Py_IsFinalizing()
+#endif
+    )
+    {
+        const PyGILState_STATE state = PyGILState_Ensure();
+        // A warning raised here cannot propagate, so clear it rather than
+        // leaving an exception set for an unrelated later call to trip over.
+        if (PyErr_WarnEx(PyExc_RuntimeWarning, message.c_str(), 1) < 0) PyErr_Clear();
+        PyGILState_Release(state);
+        return;
+    }
+    std::fputs((message + "\n").c_str(), stderr);
+}
+
 void mpi_finalize_noexcept() noexcept
 {
-    int finalized = 0;
-    if (MPI_Finalized(&finalized) != MPI_SUCCESS) return;
-    if (!finalized) (void)MPI_Finalize();
+    int finalized   = 0;
+    const int query = MPI_Finalized(&finalized);
+    if (query != MPI_SUCCESS)
+    {
+        report_teardown_failure(mpi_error_text("MPI_Finalized", query));
+        return;
+    }
+    if (finalized) return;
+    const int code = MPI_Finalize();
+    if (code != MPI_SUCCESS) report_teardown_failure(mpi_error_text("MPI_Finalize", code));
 }
 
 // Agree across ranks on whether it is safe to enter a collective. This is only
@@ -143,8 +182,17 @@ void mpi_transceiver::fini() noexcept
         m_initialized       = false;
         if (owns_mpi) mpi_finalize_noexcept();
     }
+    catch (const std::exception & e)
+    {
+        // Only the lock_guard can get here; MPI failures are already reported by
+        // mpi_finalize_noexcept. Reported rather than swallowed so a failure to
+        // take the lifecycle mutex is not invisible.
+        report_teardown_failure(e.what());
+    }
     catch (...)
-    {}
+    {
+        report_teardown_failure("unknown error during transceiver shutdown");
+    }
 }
 
 size_t mpi_transceiver::nMembers()
@@ -187,7 +235,7 @@ void * mpi_transceiver::gather(const void * ptr, size_t N, size_t root, const si
     {
         collective_preflight([&] {
             count = mpi_count(N, "gather size");
-            if (root >= m_nMembers) throw std::out_of_range("gather root rank is outside MPI_COMM_WORLD");
+            if (root >= m_nMembers) throw std::invalid_argument("gather root rank is outside MPI_COMM_WORLD");
             root_rank = static_cast<int>(root);
 
             if (m_me != root) return;
@@ -281,7 +329,7 @@ static MPI_Op to_mpi(transceiver_iface::operation_type operation)
 void mpi_transceiver::bcast(void * ptr, size_t N, size_t root)
 {
     const int count = mpi_count(N, "broadcast size");
-    if (root >= m_nMembers) throw std::out_of_range("broadcast root rank is outside MPI_COMM_WORLD");
+    if (root >= m_nMembers) throw std::invalid_argument("broadcast root rank is outside MPI_COMM_WORLD");
     mpi_check(MPI_Bcast(ptr, count, MPI_CHAR, static_cast<int>(root), MPI_COMM_WORLD), "MPI_Bcast");
 }
 

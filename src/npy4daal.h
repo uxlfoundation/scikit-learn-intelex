@@ -38,7 +38,7 @@
 inline bool can_decref_python_object()
 {
     if (!Py_IsInitialized()) return false;
-#if PY_VERSION_HEX >= 0x030D0000
+#if PY_VERSION_HEX >= 0x030D0000 // >= Python 3.13
     if (Py_IsFinalizing()) return false;
 #endif
     return true;
@@ -101,10 +101,12 @@ struct npy_type<int>
 class NpyNonContigHandler
 {
 public:
+    // The array reference is owned by NpyNumericTable, which increfs in its
+    // constructor and decrefs in its destructor. This must not take a reference
+    // of its own: nothing ever releases it, and the sibling NpyStructHandler
+    // never took one either, so the two handlers disagreed on ownership.
     static daal::data_management::NumericTableDictionaryPtr init(PyArrayObject * ary)
     {
-        Py_XINCREF(ary);
-
         PyArray_Descr * descr = PyArray_DESCR(ary); // type descriptor
 
         if (PyArray_NDIM(ary) != 2)

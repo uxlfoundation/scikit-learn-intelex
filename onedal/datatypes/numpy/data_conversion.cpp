@@ -205,15 +205,14 @@ dal::table convert_to_table(py::object inp_obj,
                 py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
             }
         }
-        py::object py_data = py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "data"));
-        py::object py_column_indices =
-            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "indices"));
-        py::object py_row_indices =
-            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "indptr"));
-        py::object py_shape =
-            py::reinterpret_steal<py::object>(PyObject_GetAttrString(obj, "shape"));
-        if (!(py_data && py_column_indices && py_row_indices && py_shape &&
-              is_array(py_data.ptr()) && is_array(py_column_indices.ptr()) &&
+        // py::getattr returns an owning py::object and raises Python's own
+        // AttributeError if the lookup fails, so no reference bookkeeping or
+        // null check is needed here.
+        py::object py_data = py::getattr(obj, "data");
+        py::object py_column_indices = py::getattr(obj, "indices");
+        py::object py_row_indices = py::getattr(obj, "indptr");
+        py::object py_shape = py::getattr(obj, "shape");
+        if (!(is_array(py_data.ptr()) && is_array(py_column_indices.ptr()) &&
               is_array(py_row_indices.ptr()) && array_numdims(py_data.ptr()) == 1 &&
               array_numdims(py_column_indices.ptr()) == 1 &&
               array_numdims(py_row_indices.ptr()) == 1)) {

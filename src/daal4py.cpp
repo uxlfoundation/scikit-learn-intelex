@@ -63,7 +63,14 @@ public:
 private:
     static std::shared_ptr<PyArrayObject> make_owner(PyArrayObject * a)
     {
+        // Symmetric with the deleter below. Every current caller reaches this from
+        // a Python-facing conversion and so already holds the GIL, which makes the
+        // Ensure a cheap no-op recursive acquisition; the deleter genuinely needs
+        // it, because oneDAL can drop the last table reference on a worker thread.
+        // Guarding both sides means neither depends on the other's caller.
+        PyGILState_STATE state = PyGILState_Ensure();
         Py_INCREF(a);
+        PyGILState_Release(state);
         return std::shared_ptr<PyArrayObject>(a, [](PyArrayObject * array) {
             if (!can_decref_python_object()) return;
             PyGILState_STATE state = PyGILState_Ensure();
