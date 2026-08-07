@@ -20,15 +20,24 @@ Unsupported |sklearn| features
 
 In general, estimators and functions from the |sklearnex| are sub-classed from their analogs in |sklearn| and are fully API compatible, but some particular features offered by |sklearn| cannot be used in the |sklearnex| due to differences in how the two libraries work internally.
 
-Free-threaded Python limitations
----------------------------------
+Python threads
+--------------
 
-The initial free-threaded support described in :doc:`installation` does not
-cover Windows*, DPC/SYCL, SPMD, or distributed execution. Use independent
-estimator instances for concurrent operations unless an estimator explicitly
-documents that sharing one instance between threads is supported.
+Estimators and functions from the |sklearnex| are not meant to be parallelizable through Python threads, since they do not raise the GIL (global interpreter lock) and in some cases might rely on global variables.
 
-See :doc:`parallelism` for general parallel-execution guidance.
+Process-based parallelization (the default mode in :mod:`joblib`) is recommended instead, whether through forked processes or through sub-processes. The |sklearnex| is fork-safe and this parallelization mode will usually be faster on Linux*, but note that other libraries that could be used together with it (such as `Polars <https://pola.rs>`__) might not always work correctly under forked processes.
+
+See :doc:`parallelism` for more details.
+
+Free-threaded Python
+--------------------
+
+Source builds for free-threaded CPython (see :doc:`installation`) are limited to
+Linux* x86-64 CPU execution; Windows*, DPC/SYCL, SPMD and distributed builds are
+not covered. Note that being importable without re-enabling the GIL does not
+make the estimators safe for concurrent use - all of the restrictions described
+in :doc:`parallelism` continue to apply, and process-based parallelism remains
+the recommended way to run concurrent estimator calls.
 
 .. _config_unsupported:
 
