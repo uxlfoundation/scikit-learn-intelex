@@ -215,6 +215,22 @@ def test_cmake_build_type_is_explicit(
     assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
     assert f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}" in calls[0]
     assert "" not in calls[0]
+
+    # The interpreter pinning is scoped to the free-threaded build, which is the
+    # only path that calls find_package(Python) and so the only one that can
+    # pick an ABI-incompatible interpreter. Passing it unconditionally would
+    # change how the GIL-enabled build resolves Python for no reason.
+    soabi = "cp312-win_amd64" if is_win else "cpython-312-x86_64-linux-gnu"
+    pinning_args = [
+        f"-DPython_EXECUTABLE={sys.executable}",
+        f"-DPython_ROOT_DIR={sys.prefix}",
+        f"-DEXPECTED_PYTHON_SOABI={soabi}",
+    ]
+    for arg in pinning_args:
+        assert (arg in calls[0]) is free_threading
+    # The deprecated spelling must not be passed: pybind11's FindPython does not
+    # read it, and setting it can steer the search away from Python_EXECUTABLE.
+    assert not [arg for arg in calls[0] if arg.startswith("-DPYTHON_EXECUTABLE=")]
     assert ("-GNinja" in calls[0]) is is_win
     assert calls[1][:2] == ["cmake", "--build"]
     assert Path(calls[1][2]).parts[-2:] == ("build", "backend_host")

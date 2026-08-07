@@ -114,19 +114,18 @@ if(SKLEARNEX_FREE_THREADING)
         )
     endif()
     set(PYBIND11_FINDPYTHON ON)
+    # Python_EXECUTABLE and Python_ROOT_DIR are supplied by build_backend.py.
+    # FindPython treats them as hints, not requirements, and its own search
+    # prefers a system interpreter over the venv one driving the build - so on a
+    # host with both cp312 and cp314t installed it can still pick the wrong one.
+    # The SOABI check below is what actually makes this fatal rather than
+    # silently producing an unimportable extension.
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-    if(DEFINED PYTHON_EXECUTABLE)
-        get_filename_component(EXPECTED_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}" REALPATH)
-        get_filename_component(FOUND_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" REALPATH)
-        if(NOT FOUND_PYTHON_EXECUTABLE STREQUAL EXPECTED_PYTHON_EXECUTABLE)
-            message(FATAL_ERROR
-                "CMake selected Python ${Python_EXECUTABLE}, but the build was invoked with ${PYTHON_EXECUTABLE}"
-            )
-        endif()
-    endif()
     if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
         message(FATAL_ERROR
-            "CMake selected Python SOABI ${Python_SOABI}, expected ${EXPECTED_PYTHON_SOABI}"
+            "CMake selected Python ${Python_EXECUTABLE} with SOABI ${Python_SOABI}, "
+            "but the build was invoked from an interpreter with SOABI ${EXPECTED_PYTHON_SOABI}. "
+            "The resulting extension would not be importable."
         )
     endif()
     message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
