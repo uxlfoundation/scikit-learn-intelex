@@ -136,7 +136,7 @@ else:
     DIST_CPPS = ["src/transceiver.cpp"]
     MPI_INCDIRS = [jp(mpi_root, "include")]
     MPI_LIBDIRS = [jp(mpi_root, "lib")]
-    MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+    MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
     if MPI_LIBNAME:
         MPI_LIBS = [MPI_LIBNAME]
     elif IS_WIN:
