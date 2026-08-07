@@ -338,7 +338,7 @@ class BaseForest(oneDALEstimator, ABC):
         elif method_name in self._n_jobs_supported_onedal_methods:
             X = data[0]
 
-            patching_status.and_conditions(
+            dal_ready = patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
@@ -354,6 +354,19 @@ class BaseForest(oneDALEstimator, ABC):
                     ),
                 ]
             )
+            if not dal_ready:
+                return patching_status
+
+            try:
+                X_arr = _check_array(X)
+                assert_all_finite(X_arr)
+            except ValueError:
+                patching_status.and_conditions(
+                    [
+                        (False, "Missing values and infinites are not supported."),
+                    ]
+                )
+                return patching_status
 
             if method_name == "predict_proba":
                 patching_status.and_conditions(
@@ -398,7 +411,7 @@ class BaseForest(oneDALEstimator, ABC):
         elif method_name in self._n_jobs_supported_onedal_methods:
             X = data[0]
 
-            patching_status.and_conditions(
+            dal_ready = patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                     (
@@ -416,6 +429,20 @@ class BaseForest(oneDALEstimator, ABC):
                     ),
                 ]
             )
+
+            if not dal_ready:
+                return patching_status
+
+            try:
+                X_arr = _check_array(X)
+                assert_all_finite(X_arr)
+            except ValueError:
+                patching_status.and_conditions(
+                    [
+                        (False, "Missing values and infinites are not supported."),
+                    ]
+                )
+                return patching_status
 
         else:
             raise RuntimeError(
@@ -793,11 +820,13 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         else:
             xp, is_array_api_compliant = get_namespace(X, self.classes_)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )
 
         res = self._onedal_estimator.predict(X, queue=queue)
@@ -820,11 +849,13 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         else:
             xp, _ = get_namespace(X)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
@@ -1011,11 +1042,13 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         check_is_fitted(self, "_onedal_estimator")
         xp, _ = get_namespace(X)
 
+        # Note: the data will already have been checked for NaNs in the dispatcher
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
+            ensure_all_finite=False,
         )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
