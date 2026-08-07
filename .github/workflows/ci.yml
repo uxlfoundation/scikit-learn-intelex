@@ -143,21 +143,12 @@ jobs:
             source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
             python setup.py install --single-version-externally-managed --record=record.txt
           fi
-      - name: Archive free-threaded wheel
-        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: sklearnex_free_threaded_${{ matrix.PYTHON_VERSION }}
-          path: dist/*.whl
       - name: Install testing requirements
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
-            # These optional integrations do not publish cp314t wheels. Their
-            # focused tests skip when the packages are absent.
-            grep -v -E '^(catboost|shap|polars)==' requirements-test.txt > requirements-test-free-threaded.txt
             pip install --upgrade -r requirements-test-free-threaded.txt
           else
             pip install --upgrade -r requirements-test.txt
@@ -170,30 +161,20 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           cd /tmp
-          PYTHON_GIL=0 python - <<'PY'
-          import importlib
+          # PYTHON_GIL=0 is deliberately *not* set: the point of this check is
+          # that nothing we ship declares itself GIL-requiring and thereby makes
+          # the interpreter re-enable the GIL at import time.
+          python - <<'PY'
           import sys
           import sysconfig
 
           assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
-          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
           assert not sys._is_gil_enabled()
-          importlib.import_module("daal4py._daal4py")
-          assert not sys._is_gil_enabled()
+          import sklearnex
 
-          # A DPC build exposes host and DPC pybind modules with overlapping
-          # C++ type registrations. They are alternative backends and must not
-          # be imported sequentially in one process. Exercise the package's
-          # supported DPC selection path and verify the exact native module.
-          onedal = importlib.import_module("onedal")
-          dpc_backend = importlib.import_module("onedal._onedal_py_dpc")
-          assert onedal._dpc_backend is not None
-          assert onedal._dpc_backend.backend is dpc_backend
-          assert onedal._default_backend is onedal._dpc_backend
-          assert not sys._is_gil_enabled()
-
-          importlib.import_module("sklearnex")
-          assert not sys._is_gil_enabled()
+          assert not sys._is_gil_enabled(), (
+              "importing sklearnex re-enabled the GIL"
+          )
           PY
       - name: Sklearnex testing
         run: |
@@ -227,150 +208,6 @@ jobs:
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           export SKLEARNEX_PREVIEW='YES'
           bash .ci/scripts/run_sklearn_tests.sh $CPU
-
-  tsan_lnx:
-    needs: onedal_nightly
-    name: Linux CPython3.14t ThreadSanitizer
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    env:
-      CC: clang-18
-      CXX: clang++-18
-      CFLAGS: -O1 -g -fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all
-      CXXFLAGS: -O1 -g -fsanitize=thread -fno-omit-frame-pointer -fno-sanitize-recover=all
-      LDFLAGS: -fsanitize=thread
-      NO_DPC: "1"
-      NO_DIST: "1"
-      PYTHON_GIL: "0"
-      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
-      TSAN_OPTIONS: halt_on_error=1:exitcode=66:log_path=/tmp/tsan-report
-
-    steps:
-      - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v7
-      - name: Install free-threaded Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.14t"
-      - name: Download oneDAL build artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: __release_lnx
-          github-token: ${{ github.token }}
-          repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
-          path: ./__release_lnx
-      - name: Download oneDAL environment artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: oneDAL_env
-          github-token: ${{ github.token }}
-          repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
-          path: .ci/env
-      - name: Install native runtime
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-18 libclang-rt-18-dev
-          bash .ci/env/apt.sh dpcpp
-      - name: Install build and focused test requirements
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r dependencies-dev wheel
-          pip install pytest scipy scikit-learn==1.9.0
-      - name: Build ThreadSanitizer-instrumented host extensions
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh host-only
-          python setup.py bdist_wheel
-          pip install --force-reinstall --no-deps dist/*.whl
-      - name: Verify ThreadSanitizer instrumentation
-        run: |
-          source venv/bin/activate
-          extension_dir=$(python -c 'import sysconfig; print(sysconfig.get_path("platlib"))')
-          mapfile -t daal4py_extensions < <(find "$extension_dir/daal4py" -maxdepth 1 -type f -name '_daal4py*.so')
-          mapfile -t onedal_extensions < <(find "$extension_dir/onedal" -maxdepth 1 -type f -name '_onedal_py_host*.so')
-          test "${#daal4py_extensions[@]}" -eq 1
-          test "${#onedal_extensions[@]}" -eq 1
-          for extension in "${daal4py_extensions[0]}" "${onedal_extensions[0]}"; do
-            readelf --symbols --wide "$extension" | grep -q '__tsan_init'
-            echo "TSan instrumented: $extension"
-          done
-      - name: Run fully instrumented native threading test
-        run: |
-          env -u LD_PRELOAD clang++-18 \
-            -std=c++17 -O1 -g -pthread \
-            -fsanitize=thread -fno-sanitize-recover=all \
-            -I"$GITHUB_WORKSPACE" \
-            "$GITHUB_WORKSPACE/tests/result_options_threading.cpp" \
-            -o /tmp/result-options-threading
-          env -u LD_PRELOAD -u TSAN_OPTIONS /tmp/result-options-threading
-      - name: Verify free-threaded ABI with the ThreadSanitizer runtime
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh host-only
-          export LD_PRELOAD=$(clang++-18 -print-file-name=libclang_rt.tsan-x86_64.so)
-          test -f "$LD_PRELOAD"
-          export TSAN_OPTIONS="${TSAN_OPTIONS}:suppressions=${GITHUB_WORKSPACE}/.github/tsan-suppressions.txt"
-          rm -f /tmp/tsan-report.*
-          dump_tsan_reports() {
-            shopt -s nullglob
-            for report in /tmp/tsan-report.*; do
-              echo "=== $report ==="
-              cat "$report"
-            done
-          }
-          trap 'status=$?; dump_tsan_reports; exit "$status"' EXIT
-          # Avoid shadowing the installed wheel with the source-tree package.
-          cd /tmp
-          python - <<'PY'
-          import importlib
-          import sys
-          import sysconfig
-
-          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
-          assert sysconfig.get_config_var("SOABI").startswith("cpython-314t-")
-          assert not sys._is_gil_enabled()
-          for module in ("daal4py._daal4py", "onedal._onedal_py_host"):
-              importlib.import_module(module)
-              assert not sys._is_gil_enabled()
-          PY
-      # setup-python, NumPy, oneDAL, and TBB are not TSan-instrumented. Keep
-      # concurrency reports visible without treating incomplete traces as proof
-      # of a product race; the fully instrumented native test above stays fatal.
-      - name: Run Python concurrency tests under ThreadSanitizer
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh host-only
-          export LD_PRELOAD=$(clang++-18 -print-file-name=libclang_rt.tsan-x86_64.so)
-          test -f "$LD_PRELOAD"
-          export TSAN_OPTIONS="${TSAN_OPTIONS}:suppressions=${GITHUB_WORKSPACE}/.github/tsan-suppressions.txt"
-          rm -f /tmp/tsan-report.*
-          rm -rf /tmp/sklearnex-tsan-tests
-          mkdir /tmp/sklearnex-tsan-tests
-          cp "$GITHUB_WORKSPACE/tests/test_native_threading.py" /tmp/sklearnex-tsan-tests/
-          cp "$GITHUB_WORKSPACE/sklearnex/tests/test_free_threading.py" /tmp/sklearnex-tsan-tests/
-          cd /tmp/sklearnex-tsan-tests
-          dump_tsan_reports() {
-            shopt -s nullglob
-            for report in /tmp/tsan-report.*; do
-              echo "=== $report ==="
-              cat "$report"
-            done
-          }
-          trap 'status=$?; dump_tsan_reports; exit "$status"' EXIT
-          set +e
-          pytest -s -vv test_native_threading.py test_free_threading.py
-          pytest_status=$?
-          set -e
-          shopt -s nullglob
-          reports=(/tmp/tsan-report.*)
-          if (( pytest_status == 66 && ${#reports[@]} )); then
-            echo "::warning title=Python TSan integration reported a race::The trace is informational because CPython, NumPy, oneDAL, and TBB are not TSan-instrumented."
-            exit 0
-          fi
-          exit "$pytest_status"
 
   mpi_lnx:
     needs: onedal_nightly

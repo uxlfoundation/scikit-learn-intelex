@@ -1,0 +1,25 @@
+# Test requirements for free-threaded CPython builds.
+#
+# This mirrors requirements-test.txt minus the packages that do not publish a
+# free-threaded (cp3XXt) wheel: catboost, shap and polars. PEP 508 has no
+# environment marker for the free-threaded build, so the split cannot be
+# expressed as a marker in requirements-test.txt itself.
+#
+# The tests that need those packages skip when they are absent, so the only
+# effect is reduced coverage of the optional integrations - see
+# doc/sources/unsupported.rst. Revisit whenever one of them starts shipping a
+# free-threaded wheel.
+pytest==9.1.1
+pytest-json-report==1.5.0
+pytest-cov==7.1.0
+pytest-mock==3.15.1
+numpy>=2.0.0
+scikit-learn==1.9.0
+pandas==3.0.5
+xgboost==3.4.0
+lightgbm==4.7.0
+treelite==4.7.0
+array-api-compat==1.15.0
+array-api-strict==2.5
+packaging==26.3
+pyyaml==6.0.3

@@ -209,6 +209,13 @@ public:
             throw std::invalid_argument("Encountered unexpected element size or type when copying block.");
         }
 
+        // On free-threaded builds the GIL is not held around this loop, so
+        // releasing it here would unbalance the PyGILState_Ensure() taken at
+        // the top of this function: every path out of it - including the early
+        // returns and the throw above - pairs with exactly one Release, and
+        // PyGILState_Ensure/Release must nest per thread. The loop below only
+        // touches the NumPy iterator's buffers, not the interpreter, so keeping
+        // the state held across it is safe.
 #ifndef Py_GIL_DISABLED
         PyGILState_Release(__state);
 #endif
@@ -242,6 +249,7 @@ public:
             } while (iternext(iter));
         }
 
+        // Re-acquire only if it was released above - see the note there.
 #ifndef Py_GIL_DISABLED
         __state = PyGILState_Ensure();
 #endif
@@ -330,6 +338,9 @@ public:
             // iterate through column, use casting functions to upcast, dataptr will point to current element
             void ** dataptr = reinterpret_cast<void **>(NpyIter_GetDataPtrArray(iter));
 
+            // Same GIL-state pairing as above: on free-threaded builds the
+            // state stays held across the copy loop so that each Ensure has
+            // exactly one matching Release on every path.
 #ifndef Py_GIL_DISABLED
             PyGILState_Release(__state);
 #endif
@@ -353,6 +364,7 @@ public:
                 } while (iternext(iter) && n < nrows);
             }
 
+            // Re-acquire only if it was released above.
 #ifndef Py_GIL_DISABLED
             __state = PyGILState_Ensure();
 #endif

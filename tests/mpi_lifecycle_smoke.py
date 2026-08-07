@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2026 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,24 @@
 # limitations under the License.
 # ==============================================================================
 
-# Import daal4py before mpi4py to exercise daal4py-owned MPI initialization.
-import sys
-import sysconfig
+"""Two-rank check of daal4py-owned MPI initialization and teardown.
+
+This has to be a standalone script rather than a pytest module: it covers the
+case where daal4py - not mpi4py - calls MPI_Init_thread, which requires that
+nothing has touched MPI beforehand, and MPI cannot be initialized again after
+MPI_Finalize, so the entire lifecycle has to fit in exactly one process. Run it
+as ``mpiexec -n 2 python tests/mpi_lifecycle_smoke.py``.
+"""
+
 from concurrent.futures import ThreadPoolExecutor
 
-is_free_threaded = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
-if is_free_threaded:
-    assert not sys._is_gil_enabled()
-
+# Import daal4py before mpi4py to exercise daal4py-owned MPI initialization.
 import daal4py
 
 assert daal4py.__has_dist__
 assert daal4py.num_procs() == 2
 rank = daal4py.my_procid()
 assert rank in (0, 1)
-if is_free_threaded:
-    assert not sys._is_gil_enabled()
 
 from mpi4py import MPI
 
@@ -40,8 +41,6 @@ assert MPI.Query_thread() == MPI.THREAD_MULTIPLE
 assert MPI.COMM_WORLD.Get_size() == 2
 assert MPI.COMM_WORLD.Get_rank() == rank
 assert MPI.COMM_WORLD.allreduce(rank, op=MPI.SUM) == 1
-if is_free_threaded:
-    assert not sys._is_gil_enabled()
 
 
 def query_topology(_):

@@ -48,6 +48,13 @@ void mpi_finalize_noexcept() noexcept
     if (!finalized) (void)MPI_Finalize();
 }
 
+// Agree across ranks on whether it is safe to enter a collective. This is only
+// worth its extra MPI_Allreduce where the validation is *asymmetric* - i.e. the
+// gather path, where only the root allocates a receive buffer and so only the
+// root can fail before the collective. Without this, a failing root would
+// leave every other rank blocked in MPI_Gather until the job is killed.
+// Symmetric checks (count range, root rank) fail on all ranks at once and need
+// no agreement, so the collectives on the hot path must not use this.
 template <typename Validate>
 void collective_preflight(Validate && validate)
 {
@@ -98,7 +105,20 @@ void mpi_transceiver::init()
             mpi_check(MPI_Query_thread(&provided), "MPI_Query_thread");
         }
 
-        if (provided < MPI_THREAD_MULTIPLE) throw std::runtime_error("daal4py distributed free-threaded execution requires MPI_THREAD_MULTIPLE");
+        // MPI_THREAD_MULTIPLE is what daal4py needs in order to let more than
+        // one Python thread drive distributed computations. Not getting it is
+        // not fatal - single-threaded distributed use stays correct - so warn
+        // rather than fail, which also lets callers escalate it with -W error.
+        // The GIL is held here: init() is only reached from a Python call.
+        if (provided < MPI_THREAD_MULTIPLE)
+        {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                             "The MPI library provides a thread support level below MPI_THREAD_MULTIPLE. "
+                             "Distributed daal4py computations must then be driven from a single thread.",
+                             1)
+                < 0)
+                throw std::runtime_error("MPI thread support level below MPI_THREAD_MULTIPLE");
+        }
 
         transceiver_impl::init();
         m_users = 1;
@@ -254,42 +274,27 @@ static MPI_Op to_mpi(transceiver_iface::operation_type operation)
     }
 }
 
+// The validation in the three collectives below is deliberately local: every
+// rank passes the same count, root and data type, so any rank that rejects the
+// arguments is joined by all the others. See collective_preflight above for the
+// asymmetric case.
 void mpi_transceiver::bcast(void * ptr, size_t N, size_t root)
 {
-    int count     = 0;
-    int root_rank = 0;
-    collective_preflight([&] {
-        count = mpi_count(N, "broadcast size");
-        if (root >= m_nMembers) throw std::out_of_range("broadcast root rank is outside MPI_COMM_WORLD");
-        root_rank = static_cast<int>(root);
-    });
-    mpi_check(MPI_Bcast(ptr, count, MPI_CHAR, root_rank, MPI_COMM_WORLD), "MPI_Bcast");
+    const int count = mpi_count(N, "broadcast size");
+    if (root >= m_nMembers) throw std::out_of_range("broadcast root rank is outside MPI_COMM_WORLD");
+    mpi_check(MPI_Bcast(ptr, count, MPI_CHAR, static_cast<int>(root), MPI_COMM_WORLD), "MPI_Bcast");
 }
 
 void mpi_transceiver::reduce_all(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type operation)
 {
-    int count             = 0;
-    MPI_Datatype datatype = MPI_DATATYPE_NULL;
-    MPI_Op op             = MPI_OP_NULL;
-    collective_preflight([&] {
-        count    = mpi_count(N, "allreduce count");
-        datatype = to_mpi(T);
-        op       = to_mpi(operation);
-    });
-    mpi_check(MPI_Allreduce(MPI_IN_PLACE, inout, count, datatype, op, MPI_COMM_WORLD), "MPI_Allreduce");
+    const int count = mpi_count(N, "allreduce count");
+    mpi_check(MPI_Allreduce(MPI_IN_PLACE, inout, count, to_mpi(T), to_mpi(operation), MPI_COMM_WORLD), "MPI_Allreduce");
 }
 
 void mpi_transceiver::reduce_exscan(void * inout, transceiver_iface::type_type T, size_t N, transceiver_iface::operation_type operation)
 {
-    int count             = 0;
-    MPI_Datatype datatype = MPI_DATATYPE_NULL;
-    MPI_Op op             = MPI_OP_NULL;
-    collective_preflight([&] {
-        count    = mpi_count(N, "exscan count");
-        datatype = to_mpi(T);
-        op       = to_mpi(operation);
-    });
-    mpi_check(MPI_Exscan(MPI_IN_PLACE, inout, count, datatype, op, MPI_COMM_WORLD), "MPI_Exscan");
+    const int count = mpi_count(N, "exscan count");
+    mpi_check(MPI_Exscan(MPI_IN_PLACE, inout, count, to_mpi(T), to_mpi(operation), MPI_COMM_WORLD), "MPI_Exscan");
 }
 
 extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
@@ -300,13 +305,6 @@ extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
     };
     PyObject * module = PyModule_Create(&moduledef);
     if (!module) return nullptr;
-#if PY_VERSION_HEX >= 0x030D0000 && defined(Py_GIL_DISABLED)
-    if (PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED) < 0)
-    {
-        Py_DECREF(module);
-        return nullptr;
-    }
-#endif
 
     transceiver_instance = std::make_shared<mpi_transceiver>();
     PyObject * pointer   = PyLong_FromVoidPtr(static_cast<void *>(&transceiver_instance));
