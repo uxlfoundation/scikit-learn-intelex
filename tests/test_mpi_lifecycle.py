@@ -14,17 +14,54 @@
 # limitations under the License.
 # ==============================================================================
 
+"""Lifecycle tests for the case where MPI is owned by *another* library.
+
+Importing ``mpi4py.MPI`` calls ``MPI_Init_thread`` as a side effect, so doing it
+before ``daal4py`` is what puts these tests on the not-``m_owns_mpi`` path: the
+transceiver must adopt the existing MPI, and ``daalfini`` must never call
+``MPI_Finalize`` on something it did not initialize. The import order below is
+therefore load-bearing and not merely stylistic.
+
+The mirror case - daal4py itself calling ``MPI_Init_thread`` - cannot be a
+pytest module, because it requires that nothing has touched MPI beforehand and
+MPI cannot be reinitialized after ``MPI_Finalize``, so the whole lifecycle has
+to fit in one process. It lives in ``tests/mpi_lifecycle_smoke.py``.
+"""
+
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import numpy as np
 import pytest
 
+# Must precede the daal4py import: this is what makes mpi4py the owner of MPI.
 MPI = pytest.importorskip("mpi4py.MPI", exc_type=ImportError)
 
 import daal4py
 
 pytest.importorskip("daal4py.mpi_transceiver", exc_type=ImportError)
+
+
+def test_mpi_is_externally_owned():
+    """Guard the premise of this module: mpi4py, not daal4py, initialized MPI.
+
+    If the import order above ever gets reordered by a formatter or an editor,
+    the other tests here would silently start covering the daal4py-owned path
+    instead - and would still pass. This fails loudly instead.
+    """
+    assert MPI.Is_initialized()
+    assert not MPI.Is_finalized()
+
+
+def test_transceiver_does_not_finalize_mpi_it_does_not_own():
+    """daalfini must leave externally owned MPI usable."""
+    daal4py.daalinit()
+    daal4py.daalfini()
+
+    assert not MPI.Is_finalized()
+    # Not just "not finalized" - still actually usable by its owner.
+    comm = MPI.COMM_WORLD
+    assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
 def test_external_mpi_survives_repeated_transceiver_lifecycle():
