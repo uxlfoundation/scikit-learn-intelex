@@ -21,7 +21,9 @@ project("oneDAL python interface"
     HOMEPAGE_URL https://github.com/uxlfoundation/oneDAL
 )
 
-set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -37,10 +39,6 @@ option(USING_LLD "Using LLD as linker" OFF)
 message(STATUS "USING_LLD:" ${USING_LLD})
 
 if(WIN32)
-    # hint CMake to get python from PYTHON env. variable if defined
-    if(DEFINED ENV{PYTHON})
-        set(PYTHON_EXECUTABLE $ENV{PYTHON})
-    endif()
     set(SDL_FLAGS "-GS -DynamicBase")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MD")
 elseif(UNIX)
@@ -172,7 +170,7 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_CXX_FLAGS "-fsycl ${CMAKE_CXX_FLAGS}")
-        
+
     endif()
 
     if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
