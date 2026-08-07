@@ -20,12 +20,80 @@ import logging
 import os
 import platform as plt
 import subprocess
+import sys
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
 import numpy as np
 
 logger = logging.getLogger("sklearnex")
+
+
+def _get_required_onedal_libraries(
+    iface, major_version, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return the exact oneDAL libraries required by the selected backend."""
+    if iface not in ("host", "dpc", "spmd_dpc"):
+        raise ValueError(f"Unsupported oneDAL backend: {iface}")
+
+    is_dpc = iface in ("dpc", "spmd_dpc")
+    backend_name = "onedal_dpc" if is_dpc else "onedal"
+    library_names = [backend_name, "onedal_core"]
+    if not is_win:
+        library_names.append("onedal_thread")
+    if use_parameters_lib:
+        if is_win:
+            parameter_name = (
+                "onedal_core_parameters_dpc_dll"
+                if is_dpc
+                else "onedal_core_parameters_dll"
+            )
+        else:
+            parameter_name = "onedal_parameters_dpc" if is_dpc else "onedal_parameters"
+        library_names.append(parameter_name)
+
+    if is_win:
+        library_names = [
+            name if name.endswith("_dll") else f"{name}_dll" for name in library_names
+        ]
+        return [f"{name}.{major_version}.lib" for name in library_names]
+    if is_mac:
+        return [f"lib{name}.{major_version}.dylib" for name in library_names]
+    return [f"lib{name}.so.{major_version}" for name in library_names]
+
+
+def _get_onedal_library_dir(
+    dal_root,
+    arch_dir,
+    iface="host",
+    major_version=1,
+    use_parameters_lib=True,
+    is_win=False,
+    is_mac=False,
+):
+    """Find a complete oneDAL library directory in packaged and classic layouts."""
+    candidates = [jp(dal_root, "lib", arch_dir)]
+    if is_win:
+        candidates.append(jp(dal_root, "Library", "lib"))
+    candidates.append(jp(dal_root, "lib"))
+    required = _get_required_onedal_libraries(
+        iface,
+        major_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=is_mac,
+    )
+
+    checked = []
+    for candidate in candidates:
+        missing = [name for name in required if not os.path.isfile(jp(candidate, name))]
+        if not missing:
+            return candidate
+        checked.append(f"{candidate} (missing: {', '.join(missing)})")
+
+    raise FileNotFoundError(
+        "Could not find a complete oneDAL library set: " + "; ".join(checked)
+    )
 
 
 def custom_build_cmake_clib(
@@ -77,7 +145,7 @@ def custom_build_cmake_clib(
     if build_distribute:
         MPI_INCDIRS = jp(mpi_root, "include")
         MPI_LIBDIRS = jp(mpi_root, "lib")
-        MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+        MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
         if MPI_LIBNAME:
             MPI_LIBS = MPI_LIBNAME
         elif is_win:
@@ -92,6 +160,16 @@ def custom_build_cmake_clib(
     arch_dir = plt.machine()
     plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
     arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
+    onedal_library_dir = _get_onedal_library_dir(
+        os.environ["DALROOT"],
+        arch_dir,
+        iface=iface,
+        major_version=onedal_major_binary_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=plt.system() == "Darwin",
+    )
+    logger.info(f"oneDAL library directory: {onedal_library_dir}")
     use_parameters_arg = "yes" if use_parameters_lib else "no"
     logger.info(f"Build using parameters library: {use_parameters_arg}")
 
@@ -102,9 +180,13 @@ def custom_build_cmake_clib(
     env_build = dict(os.environ)
     if cxx:
         env_build["CXX"] = cxx
-    cmake_args = [
-        "cmake",
-        cmake_generator,
+    build_type = "Debug" if debug_build else "Release"
+    free_threading = bool(get_config_var("Py_GIL_DISABLED"))
+
+    cmake_args = ["cmake"]
+    if cmake_generator:
+        cmake_args.append(cmake_generator)
+    cmake_args += [
         "-S" + builder_directory,
         "-B" + abs_build_temp_path,
         "-DCMAKE_INSTALL_PREFIX=" + install_directory,
@@ -115,14 +197,30 @@ def custom_build_cmake_clib(
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
         "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
         "-DoneDAL_INCLUDE_DIRS=" + jp(os.environ["DALROOT"], "include"),
-        "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
+        "-DoneDAL_LIBRARY_DIR=" + onedal_library_dir,
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
+        f"-DCMAKE_BUILD_TYPE={build_type}",
+        f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}",
     ]
 
-    if debug_build:
-        cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]
+    if free_threading:
+        # Tell CMake which interpreter to use, and check afterwards that it
+        # listened. Only the free-threaded path needs this: it is the one that
+        # calls find_package(Python), whose own search prefers a system
+        # interpreter over the venv one running this build - on a host with both
+        # cp312 and cp314t installed it picks cp312 and produces a wheel that
+        # cannot be imported. Passing the hint alone is not enough, because
+        # FindPython treats it as a hint rather than a requirement, hence the
+        # SOABI cross-check.
+        cmake_args += [
+            "-DPython_EXECUTABLE=" + sys.executable,
+            "-DPython_ROOT_DIR=" + sys.prefix,
+        ]
+        python_soabi = get_config_var("SOABI")
+        if python_soabi:
+            cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
 
     if build_distribute:
         cmake_args += [

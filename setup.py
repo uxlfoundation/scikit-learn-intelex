@@ -40,6 +40,8 @@ import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
+FREE_THREADING_BUILD = bool(get_config_vars().get("Py_GIL_DISABLED"))
+
 
 def check_for_build_arg(arg: str) -> bool:
     if arg in sys.argv:
@@ -103,9 +105,11 @@ if (not no_dist) and (mpi_root is None):
         "'MPIROOT' is not set, cannot build with distributed mode."
         " Use 'NO_DIST=1' to build without distributed mode."
     )
+onedal_shared_libs = get_onedal_shared_libs(dal_root, IS_WIN)
+dpc_backend_library = "onedal_dpc"
 dpcpp = (
     shutil.which("icpx" if not IS_WIN else "icx") is not None
-    and "onedal_dpc" in get_onedal_shared_libs(dal_root, IS_WIN)
+    and dpc_backend_library in onedal_shared_libs
     and not no_dpc
     and not (IS_WIN and debug_build)
 )
@@ -136,7 +140,7 @@ else:
     DIST_CPPS = ["src/transceiver.cpp"]
     MPI_INCDIRS = [jp(mpi_root, "include")]
     MPI_LIBDIRS = [jp(mpi_root, "lib")]
-    MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+    MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
     if MPI_LIBNAME:
         MPI_LIBS = [MPI_LIBNAME]
     elif IS_WIN:
@@ -391,13 +395,23 @@ for key, value in get_config_vars().items():
 
 
 def gen_pyx(odir):
-    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + ["./setup.py"]
+    generation_mode = "free-threaded" if FREE_THREADING_BUILD else "gil-enabled"
+    generation_mode_file = pathlib.Path(odir) / ".daal4py-generation-mode"
+    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + [
+        "./setup.py",
+        "./src/gbt_model_builder.pyx",
+        "./src/log_reg_model_builder.pyx",
+    ]
     src_files = [
         os.path.abspath("build/daal4py_cpp.h"),
         os.path.abspath("build/daal4py_cpp.cpp"),
         os.path.abspath("build/daal4py_cy.pyx"),
     ]
-    if all(os.path.isfile(x) for x in src_files):
+    if (
+        all(os.path.isfile(x) for x in src_files)
+        and generation_mode_file.is_file()
+        and generation_mode_file.read_text() == generation_mode
+    ):
         src_files.sort(key=os.path.getmtime)
         gtr_files.sort(key=os.path.getmtime, reverse=True)
         if os.path.getmtime(src_files[0]) > os.path.getmtime(gtr_files[0]):
@@ -412,7 +426,15 @@ def gen_pyx(odir):
     odir = os.path.abspath(odir)
     if not os.path.isdir(odir):
         os.mkdir(odir)
-    gen_daal4py(dal_root, odir, sklearnex_version, no_dist=no_dist, no_stream=no_stream)
+    gen_daal4py(
+        dal_root,
+        odir,
+        sklearnex_version,
+        no_dist=no_dist,
+        no_stream=no_stream,
+        free_threading=FREE_THREADING_BUILD,
+    )
+    generation_mode_file.write_text(generation_mode)
 
 
 gen_pyx(os.path.abspath("./build"))

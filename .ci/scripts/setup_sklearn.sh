@@ -23,9 +23,13 @@ cd $repo_dir
 
 sklearn_version=${1:-main}
 
+# Both files pin scikit-learn and either can be the one installed, depending on
+# whether the job runs on a free-threaded interpreter. Keep them in sync.
+requirements_files=(requirements-test.txt requirements-test-free-threaded.txt)
+
 if [ "$sklearn_version" == "main" ]; then
     # remove sklearn version from test requirements file
-    sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn/" requirements-test.txt
+    sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn/" "${requirements_files[@]}"
     # install sklearn build dependencies
     pip install threadpoolctl joblib scipy
     # Install latest scikit-learn nightly wheel
@@ -35,5 +39,5 @@ if [ "$sklearn_version" == "main" ]; then
     # unset CC CXX CFLAGS CXXFLAGS LDFLAGS MAKEFLAGS 
     # pip install git+https://github.com/scikit-learn/scikit-learn.git@main
 else
-    sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn==${sklearn_version}.*/" requirements-test.txt
+    sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn==${sklearn_version}.*/" "${requirements_files[@]}"
 fi

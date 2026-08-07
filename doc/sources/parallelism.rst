@@ -58,8 +58,15 @@ In general, accelerated computations offered by estimators from the |sklearnex|
 do not raise the Python GIL, thus they are not compatible with parallelization
 backends that rely on Python threads. Instead, process-based parallelism is
 recommended, which is the default mode in tools like :mod:`joblib` and by
-extension in metaestimators from |sklearn|. Note that builds of the |sklearnex| for
-free-threaded Python are not offered at this moment.
+extension in metaestimators from |sklearn|.
+
+The |sklearnex| can be built from source for free-threaded CPython (see
+:doc:`installation`), in which case importing it does not re-enable the GIL.
+This only removes the GIL as an obstacle to running Python code in parallel -
+it does **not** lift any of the restrictions described in this section, since
+those come from global state in the |sklearnex| and in the |onedal| rather than
+from the GIL. If anything, they become easier to hit, as Python threads then
+execute concurrently instead of being serialized by the interpreter.
 
 Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
 usage in Python threads, even if running under the Python GIL:
@@ -69,6 +76,11 @@ usage in Python threads, even if running under the Python GIL:
   calls to estimators with different ``n_jobs`` are performed in parallel
   through **Python threads**, there might be threading races that override
   one another's configuration, potentially leading to process-wide crashes.
+  Note that a call with an explicit ``n_jobs`` sets this process-global value
+  for the duration of the call and restores the previous value afterwards, so
+  a concurrent call can both observe the wrong thread count and have its own
+  value discarded when the other call finishes. This is a property of the
+  global configuration itself and is not something the caller can lock around.
 - The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
   :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
   suitable for parallel calls in Python threads regardless of the ``n_jobs``
@@ -88,6 +100,12 @@ usage in Python threads, even if running under the Python GIL:
     - :obj:`sklearn.neighbors.KNeighborsRegressor`.
     - :obj:`sklearn.neighbors.KNeighborsClassifier`.
     - :obj:`sklearn.neighbors.LocalOutlierFactor`.
+
+- Result and model objects from the deprecated :doc:`daal4py <daal4py>` module
+  are read-only once constructed, and reading their attributes from multiple
+  threads is safe. Un-pickling into an already-populated object is not, and is
+  rejected with an error rather than silently replacing state that another
+  thread might be reading.
 
 Other considerations
 ====================
