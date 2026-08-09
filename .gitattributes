@@ -1,4 +1,7 @@
-# Shell scripts require LF
-*.sh    text eol=lf
-# Batch scripts require CRLF
+# Normalize all text files to LF; overrides below can still change this
+* text=auto eol=lf
+
+# These are explicitly Windows files and should use CRLF
 *.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
