@@ -115,11 +115,8 @@ def test_logistic_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
-def test_logistic_spmd_synthetic(
-    n_samples, n_features, C, tol, dataframe, queue, dtype, array_api_dispatch
-):
+def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue, dtype):
     # TODO: Resolve numerical issues when n_rows_rank < n_cols
     if n_samples <= n_features:
         pytest.skip("Numerical issues when rank rows < columns")
@@ -149,7 +146,7 @@ def test_logistic_spmd_synthetic(
     # Ensure trained model of batch algo matches spmd
     spmd_model = LogisticRegression_SPMD(random_state=0, solver="newton-cg", C=C, tol=tol)
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LogisticRegression_Batch(
         random_state=0, solver="newton-cg", C=C, tol=tol
@@ -169,7 +166,7 @@ def test_logistic_spmd_synthetic(
 
     # Ensure predictions of batch algo match spmd
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(dpt_X_test)
 

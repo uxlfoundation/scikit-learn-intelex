@@ -485,7 +485,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
     )
 
     params = {"C": C}
-    if not sklearn_check_version:
+    if multi_class is not None:
         params["multi_class"] = multi_class
 
     with warnings.catch_warnings():
@@ -588,9 +588,6 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     assert not np.any(np.isinf(pred_log_proba))
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("y_type", ["numeric", "string"])
 @pytest.mark.allow_sklearn_fallback
@@ -830,3 +827,19 @@ def test_no_warning_for_n_jobs():
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=FutureWarning)
         model.fit(X, y, w)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_dtype_is_preserved(dtype):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3)).astype(dtype)
+    y = rng.integers(2, size=X.shape[0]).astype(np.int64)
+    model = LogisticRegression().fit(X, y)
+    assert model.coef_.dtype == X.dtype
+    assert model.intercept_.dtype == X.dtype

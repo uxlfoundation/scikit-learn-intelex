@@ -12,11 +12,13 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
+.. include:: substitutions.rst
+
 #######################
 Ideas for Contributions
 #######################
 
-As an open-source project, we welcome community contributions to Extension for Scikit-learn.
+As an open-source project, we welcome community contributions to |sklearnex|.
 This document suggests contribution directions which we consider good introductory projects with meaningful
 impact. You can directly contribute to next-generation supercomputing, or just learn in depth about key 
 aspects of performant machine learning code for a range of architectures. This list is expected to evolve 
@@ -32,8 +34,8 @@ extended goal. They are grouped into relative similarity to allow for easy combi
 Implement Covariance Estimators for Supercomputers
 --------------------------------------------------
 
-The Extension for Scikit-learn contains an MPI-enabled covariance algorithm, showing high performance
-from SBCs to multi-node clusters. It directly matches the capabilities of Scikit-Learn's EmpiricalCovariance
+The |sklearnex| contains an MPI-enabled covariance algorithm, showing high performance
+from SBCs to multi-node clusters. It directly matches the capabilities of scikit-learn's EmpiricalCovariance
 estimator. There exist a number of closely related algorithms which modify the outputs of EmpiricalCovariance
 which can be created using our implementation. This includes Oracles Approximated Shrinkage (OAS) and Shrunk 
 Covariance (ShrunkCovariance) algorithms. Adding these algorithms to our codebase will assist the community 
@@ -50,7 +52,7 @@ When implemented in python reusing our EmpiricalCovariance estimator, this would
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
-available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
+available in scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy
 used for our Ridge Regression estimator.
 
 Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2305>`__.
@@ -66,7 +68,7 @@ When implemented in python reusing our EmpiricalCovariance estimator, this would
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
-available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
+available in scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy
 used for our Ridge Regression estimator.
 
 Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2306>`__.
@@ -75,11 +77,11 @@ Questions, status, and additional information can be tracked on `GitHub <https:/
 Implement the Preprocessing Estimators for Supercomputers
 ---------------------------------------------------------
 
-The Extension for Scikit-learn contains two unique estimators used to get vital metrics from large datasets,
+The |sklearnex| contains two unique estimators used to get vital metrics from large datasets,
 known as BasicStatistics and IncrementalBasicStatistics. They generate relevant values like 'min', 'max', 'mean' 
 and 'variance' with special focus on multithreaded performance. It is also MPI-enabled working on SBCs to multi-node 
 clusters, and can prove very useful for important big data pre-processing steps which may be otherwise unwieldy. 
-Several pre-processsing algorithms in Scikit-learn use these basic metrics where BasicStatistics could be used instead. 
+Several pre-processsing algorithms in scikit-learn use these basic metrics where BasicStatistics could be used instead.
 The overall goal would be to use the online version, IncrementalBasicStatistics, to create advanced pre-processing 
 scikit-learn-intelex estimators which can be used on supercomputing clusters. The difficulty of this project is easy,
 with a combined time commitment of a large project. It does not have any extended goals.
@@ -90,7 +92,7 @@ StandardScaler Estimator (small)
 
 The StandardScaler estimator scales the data to zero mean and unit variance. Use the IncrementalBasicStatistics estimator
 to generate the mean and variance to scale the data. Investigate where the new implementation may be low performance and 
-include guards in the code to use Scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
+include guards in the code to use scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
 interfaces which are effective on MPI-enabled supercomputers, this will use the underlying MPI-enabled mean and variance 
 calculators in IncrementalBasicStatistics. This is an easy difficulty project, and would be a medium time commitment 
 when combined with other pre-processing projects.
@@ -103,7 +105,7 @@ MaxAbsScaler Estimator (small)
 
 The MaxAbScaler estimator scales the data by its maximum absolute value. Use the IncrementalBasicStatistics estimator
 to generate the min and max to scale the data. Investigate where the new implementation may be low performance and 
-include guards in the code to use Scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
+include guards in the code to use scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
 interfaces which are effective on MPI-enabled supercomputers, this will use the underlying MPI-enabled minimum and maximum 
 calculators in IncrementalBasicStatistics. This is similar to the MinMaxScaler and can be combined into a small project.
 This is an easy difficulty project.
@@ -115,7 +117,7 @@ MinMaxScaler Estimator (small)
 
 The MinMaxScaler estimator scales the data to a range set by the minimum and maximum. Use the IncrementalBasicStatistics 
 estimator to generate the min and max to scale the data. Investigate where the new implementation may be low performance and 
-include guards in the code to use Scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
+include guards in the code to use scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
 interfaces which are effective on MPI-enabled supercomputers, this will use the underlying MPI-enabled minimum and maximum
 calculators in IncrementalBasicStatistics. This is similar to the MaxAbsScaler and can be combined into a small project.
 This is an easy difficulty project.
@@ -127,7 +129,7 @@ Normalizer Estimator (small)
 
 The normalizer estimator scales the samples independently by the sample's norm (l1, l2). Use the IncrementalBasicStatistics 
 estimator to generate the sum squared data and use it for generating only the l2 version of the normalizer. Investigate where 
-the new implementation may be low performance and include guards in the code to use Scikit-learn as necessary.  The final 
+the new implementation may be low performance and include guards in the code to use scikit-learn as necessary.  The final
 deliverable would be to add this estimator to the 'spmd' interfaces which are effective on MPI-enabled supercomputers, this 
 will use the underlying MPI-enabled mean and variance calculators in IncrementalBasicStatistics. This is an easy difficulty project, 
 and would be a medium time commitment when combined with other pre-processing projects.
@@ -138,9 +140,9 @@ Questions, status, and additional information can be tracked on `GitHub <https:/
 Expose Accelerated Kernel Distance Functions
 --------------------------------------------
 
-The Extension for Scikit-learn contains several kernel functions which have not been made available in our public API but
+The |sklearnex| contains several kernel functions which have not been made available in our public API but
 are available in our onedal package.  Making these available to the users is an easy, python-only project good for learning about 
-Scikit-learn, testing and the underlying math of kernels. The goal would be to make them available in a similar fashion as in Scikit-Learn.
+scikit-learn, testing and the underlying math of kernels. The goal would be to make them available in a similar fashion as in scikit-learn.
 Their general nature makes them have high utility for both scikit-learn and scikit-learn-intelex as they can be used as plugins for a 
 number of other estimators (see the Kernel trick).
 

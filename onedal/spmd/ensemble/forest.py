@@ -14,10 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.ensemble import RandomForestClassifier as RandomForestClassifier_Batch
-from onedal.ensemble import RandomForestRegressor as RandomForestRegressor_Batch
-
 from ...common._backend import bind_spmd_backend
+from ...ensemble import RandomForestClassifier as RandomForestClassifier_Batch
+from ...ensemble import RandomForestRegressor as RandomForestRegressor_Batch
 
 
 class RandomForestClassifier(RandomForestClassifier_Batch):

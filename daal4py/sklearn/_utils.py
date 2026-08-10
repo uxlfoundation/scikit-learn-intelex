@@ -22,7 +22,6 @@ from typing import Any, Tuple
 
 import numpy as np
 import scipy.sparse as sp
-from numpy.lib.recfunctions import require_fields
 from sklearn import __version__ as sklearn_version
 
 from daal4py import _get__daal_link_version__ as dv
@@ -173,27 +172,6 @@ def get_number_of_types(dataframe):
         return len(set(dtypes))
     except TypeError:
         return 1
-
-
-def check_tree_nodes(tree_nodes):
-    def convert_to_old_tree_nodes(tree_nodes):
-        # conversion from sklearn>=1.3 tree nodes format to previous format:
-        # removal of 'missing_go_to_left' field from node dtype
-        new_field = "missing_go_to_left"
-        new_dtype = tree_nodes.dtype
-        old_dtype = np.dtype(
-            [
-                (key, value[0])
-                for key, value in new_dtype.fields.items()
-                if key != new_field
-            ]
-        )
-        return require_fields(tree_nodes, old_dtype)
-
-    if sklearn_check_version("1.3"):
-        return tree_nodes
-    else:
-        return convert_to_old_tree_nodes(tree_nodes)
 
 
 def is_sparse(x):

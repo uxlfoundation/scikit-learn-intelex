@@ -124,8 +124,8 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
         responses = from_table(result.responses, like=X)
         return responses[:, 0]
 
-    def _get_onedal_params(self, X, y=None):
-        params = super()._get_onedal_params(X, y)
+    def _get_onedal_params(self, X, y=None, n_neighbors=None):
+        params = super()._get_onedal_params(X, y=y, n_neighbors=n_neighbors)
         if "responses" not in params["result_option"]:
             params["result_option"] += "|responses"
         return params

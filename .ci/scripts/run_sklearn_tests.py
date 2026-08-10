@@ -39,7 +39,8 @@ if __name__ == "__main__":
     )
     args, extra_args = parser.parse_known_args()
 
-    sklearn_file_dir = os.path.dirname(sklearn.__file__)
+    # Normalize path casing for Windows py3.10 + pytest 8+ compatibility
+    sklearn_file_dir = os.path.realpath(os.path.dirname(sklearn.__file__))
     os.chdir(sklearn_file_dir)
 
     if os.environ["SELECTED_TESTS"] == "all":

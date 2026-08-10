@@ -42,6 +42,8 @@ std::uintptr_t get_sua_ptr(const py::dict& sua);
 
 bool is_sua_readonly(const py::dict& sua);
 
+std::int64_t get_sua_offset(const py::dict& sua);
+
 py::tuple get_sua_shape(const py::dict& sua);
 
 void report_problem_for_sua_iface(const char* clarification);

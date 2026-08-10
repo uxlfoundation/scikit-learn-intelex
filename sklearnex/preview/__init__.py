@@ -14,4 +14,4 @@
 # limitations under the License.
 # ==============================================================================
 
-__all__ = ["covariance", "decomposition"]
+__all__ = ["covariance", "decomposition", "preprocessing"]

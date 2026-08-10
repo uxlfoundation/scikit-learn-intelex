@@ -20,9 +20,9 @@ from math import sqrt
 from scipy import sparse as sp
 
 from daal4py.sklearn._utils import is_sparse
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
 
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
 from ..utils.validation import _is_csr

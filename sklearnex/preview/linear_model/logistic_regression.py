@@ -17,17 +17,14 @@
 from daal4py.sklearn._utils import daal_check_version
 
 if daal_check_version((2024, "P", 1)):
-    from daal4py.sklearn._utils import sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import (
         LogisticRegressionCV as _daal4py_LogisticRegressionCV,
     )
 
+    from ...base import Tags
     from ...linear_model.logistic_regression import (
         LogisticRegression as _sklearnex_LogisticRegression,
     )
-
-    if sklearn_check_version("1.6"):
-        from ...base import Tags
 
     # This is necessary due to how sklearn handles array API inputs
     class LogisticRegressionCV(
@@ -40,9 +37,7 @@ if daal_check_version((2024, "P", 1)):
 
         __doc__ = _daal4py_LogisticRegressionCV.__doc__
 
-        if sklearn_check_version("1.6"):
-
-            def __sklearn_tags__(self) -> Tags:
-                tags = super().__sklearn_tags__()
-                tags.onedal_array_api = False
-                return tags
+        def __sklearn_tags__(self) -> Tags:
+            tags = super().__sklearn_tags__()
+            tags.onedal_array_api = False
+            return tags

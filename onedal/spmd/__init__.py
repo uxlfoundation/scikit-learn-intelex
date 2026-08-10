@@ -14,22 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 
-from . import (
-    basic_statistics,
-    cluster,
-    covariance,
-    decomposition,
-    ensemble,
-    linear_model,
-    neighbors,
-)
+from .. import onedal_check_version
+from . import covariance, ensemble
 
-__all__ = [
-    "basic_statistics",
-    "cluster",
-    "covariance",
-    "decomposition",
-    "ensemble",
-    "linear_model",
-    "neighbors",
-]
+__all__ = ["covariance", "ensemble"]
+
+if onedal_check_version(2023, 1, 0):
+    from . import basic_statistics, decomposition, linear_model, neighbors
+
+    __all__ += [
+        "basic_statistics",
+        "decomposition",
+        "linear_model",
+        "neighbors",
+    ]
+if onedal_check_version(2023, 2, 0):
+    from . import cluster
+
+    __all__ += ["cluster"]

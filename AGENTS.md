@@ -1,4 +1,4 @@
-# AGENTS.md - Extension for Scikit-learn
+# AGENTS.md - Extension for scikit-learn
 
 ## Quick Context
 - **Purpose**: Accelerate scikit-learn using Intel oneDAL optimizations
@@ -43,7 +43,7 @@ GPU offloading and device control available through sklearnex config_context for
 - **Memory**: Zero-copy NumPy↔oneDAL, SYCL USM for GPU
 - **Parallelism**: Intel TBB threading, MPI distributed (SPMD), SIMD vectorization
 - **Fallbacks**: oneDAL → sklearn cascading fallback on unsupported operations
-- **Speedups**: 10-100X acceleration over sklearn (varies by algorithm and data characteristics)
+- **Speedups**: Up to 100X acceleration over sklearn (varies by algorithm and data characteristics)
 
 ## Key Files for AI Agents
 - `sklearnex/dispatcher.py`: Patching system and algorithm dispatch

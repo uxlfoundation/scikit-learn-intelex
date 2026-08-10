@@ -11,17 +11,18 @@
 .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
+.. include:: substitutions.rst
 
 ##################
 How to Contribute
 ##################
 
-As an open source project, we welcome community contributions to Extension for Scikit-learn.
+As an open source project, we welcome community contributions to |sklearnex|.
 This document explains how to participate in project conversations, log bugs and enhancement requests, and submit code patches.
 
 Licensing
 ----------------------------------
-Extension for Scikit-learn uses the `Apache 2.0 License <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
+|sklearnex| uses the `Apache 2.0 License <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
 
 Pull Requests
 ----------------------------------

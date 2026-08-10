@@ -1,7 +1,7 @@
 # AGENTS.md - Documentation (doc/)
 
 ## Purpose
-Sphinx-based documentation generation system for Intel Extension for Scikit-learn.
+Sphinx-based documentation generation system for Intel Extension for scikit-learn.
 
 ## Key Files
 - `sources/conf.py`: Sphinx configuration with extensions

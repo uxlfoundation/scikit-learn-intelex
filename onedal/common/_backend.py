@@ -17,8 +17,8 @@
 import logging
 from typing import Any, Callable, Literal, Optional
 
-from onedal import Backend, _default_backend, _spmd_backend
-from onedal.utils import _sycl_queue_manager as QM
+from .. import Backend, _default_backend, _spmd_backend
+from ..utils import _sycl_queue_manager as QM
 
 logger = logging.getLogger("sklearnex")
 
@@ -116,7 +116,7 @@ class BackendFunction:
         queue = QM.get_global_queue()
 
         if queue is not None and not (self.backend.is_dpc or self.backend.is_spmd):
-            from onedal import _ensure_dpc_available
+            from .. import _ensure_dpc_available
 
             # Always raises with install instructions (and ImportError reason if
             # available). The old generic raise is removed — _ensure_dpc_available

@@ -38,7 +38,7 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = "Extension for Scikit-learn*"
+project = "Extension for scikit-learn*"
 copyright = "oneDAL project"
 author = "oneDAL project"
 
@@ -129,7 +129,7 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |sklearnex| replace:: Extension for Scikit-learn*
+.. |sklearnex| replace:: Extension for scikit-learn*
 .. |onedal| replace:: oneAPI Data Analytics Library
 """
 
@@ -215,7 +215,7 @@ latex_documents = [
     (
         master_doc,
         "scikit-learn-intelex.tex",
-        "Extension for Scikit-learn* Documentation",
+        "Extension for scikit-learn* Documentation",
         "Intel",
         "manual",
     ),
@@ -230,7 +230,7 @@ man_pages = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Extension for Scikit-learn* Documentation",
+        "Extension for scikit-learn* Documentation",
         [author],
         1,
     )
@@ -246,10 +246,10 @@ texinfo_documents = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Extension for Scikit-learn* Documentation",
+        "Extension for scikit-learn* Documentation",
         author,
         "scikit-learn-intelex",
-        "Extension for Scikit-learn speeds up scikit-learn "
+        "Extension for scikit-learn speeds up scikit-learn "
         "beyond by providing drop-in patching.",
         "Miscellaneous",
     ),

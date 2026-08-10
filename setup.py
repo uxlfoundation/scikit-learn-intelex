@@ -516,15 +516,12 @@ packages_with_tests = [
     "daal4py",
     "daal4py.mb",
     "daal4py.sklearn",
-    "daal4py.sklearn.cluster",
-    "daal4py.sklearn.decomposition",
     "daal4py.sklearn.ensemble",
     "daal4py.sklearn.linear_model",
     "daal4py.sklearn.manifold",
     "daal4py.sklearn.metrics",
     "daal4py.sklearn.neighbors",
     "daal4py.sklearn.monkeypatch",
-    "daal4py.sklearn.svm",
     "daal4py.sklearn.utils",
     "daal4py.sklearn.model_selection",
     "onedal",
@@ -555,6 +552,7 @@ packages_with_tests = [
     "sklearnex.preview.covariance",
     "sklearnex.preview.decomposition",
     "sklearnex.preview.linear_model",
+    "sklearnex.preview.preprocessing",
     "sklearnex.svm",
     "sklearnex.utils",
 ]
@@ -586,12 +584,16 @@ if build_distributed:
             "sklearnex.spmd.neighbors",
         ]
     if ONEDAL_VERSION >= 20230200:
-        packages_with_tests += ["onedal.spmd.cluster", "sklearnex.spmd.cluster"]
+        packages_with_tests += [
+            "onedal.spmd.cluster",
+            "sklearnex.spmd.cluster",
+            "sklearnex.spmd.preprocessing",
+        ]
 
 setup(
     name="scikit-learn-intelex",
-    description="Extension for Scikit-learn is a "
-    "seamless way to speed up your Scikit-learn application.",
+    description="Extension for scikit-learn is a "
+    "seamless way to speed up your scikit-learn application.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache-2.0",
@@ -623,7 +625,7 @@ setup(
     ],
     python_requires=">=3.10",
     install_requires=[
-        "scikit-learn>=1.0",
+        "scikit-learn>=1.6",
         "numpy>=1.21.6 ; python_version <= '3.10'",
         "numpy>=1.23.5 ; python_version >= '3.11'",
         "packaging",

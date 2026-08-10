@@ -18,6 +18,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
 )
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
 
@@ -29,7 +30,7 @@ from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
@@ -50,10 +51,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     # Default onedal estimator class - SPMD subclasses can override this
     _onedal_estimator = onedal_KNeighborsClassifier
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_KNeighborsClassifier._parameter_constraints
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_KNeighborsClassifier._parameter_constraints
+    }
 
     def __init__(
         self,
