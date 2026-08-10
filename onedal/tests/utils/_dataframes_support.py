@@ -38,13 +38,6 @@ except ImportError:
     torch_available = False
 
 try:
-    import polars as pl
-
-    polars_available = True
-except ImportError:
-    polars_available = False
-
-try:
     # This should be lazy imported in the
     # future along with other popular
     # array_api libraries when testing
@@ -63,6 +56,7 @@ except (ImportError, KeyError):
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
@@ -72,7 +66,7 @@ test_frameworks = os.environ.get(
 )
 
 # Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
-host_df_modules = (pd, pl) if polars_available else (pd,)
+host_df_modules = (pd, pl)
 
 # ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
 # but only for the exceptions it catches; torch signals this case with
@@ -181,20 +175,19 @@ def mixed_device_params(include_host_df_y=False, include_weight=False, x_devices
     """Parameterize the "same namespace, inputs on possibly different devices"
     tests the array-API-dispatch way.
 
-    Under ``array_api_dispatch`` a fit resolves a single namespace across all
-    inputs; X, y (and sample weights) from *different* frameworks (e.g. torch +
-    dpnp) is not a supported scenario and sklearn rejects it with a "same
-    namespace" error, so those combinations are never emitted. Within one
-    namespace, inputs may still live on different devices (xpu/cpu, gpu/cpu) --
-    that is what these tests exercise. A host data frame ``y``/weight is
+    Everything follows ``X``: an estimator moves ``y`` and sample weights to
+    ``X``'s namespace and device. Only devices vary within one namespace here --
+    cross-namespace ``X``/``y`` (e.g. torch + dpnp) is supported from sklearn 1.9
+    on but needs both frameworks installed, so it is left to
+    ``test_*_mixed_array_namespaces``. A host data frame ``y``/weight is
     optionally allowed since it is namespace-neutral (host targets alongside an
-    array-API X).
+    array-API ``X``).
 
     Parameters
     ----------
     include_host_df_y : bool, default=False
         Also emit combinations with a host data frame ``y``/weight, one per
-        library in ``host_df_modules`` (pandas, and polars when installed).
+        library in ``host_df_modules`` (pandas, polars).
     include_weight : bool, default=False
         Add a sample-weight column; each row becomes
         ``(X_xp, X_device, y_xp, y_device, w_xp, w_device)`` and the weight

@@ -17,6 +17,7 @@
 import array_api_strict
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
@@ -57,8 +58,9 @@ def _expected_type(X, X_xp):
 def _split_row(arr, start, stop):
     if hasattr(arr, "iloc"):
         return arr.iloc[start:stop]
-    # Polars slices rows for both Series and DataFrame, and exposes no ``ndim``.
-    if getattr(arr, "ndim", 1) == 1:
+    # Array-API namespaces need the trailing ellipsis to slice rows only; polars
+    # slices rows already and rejects it as a column selector.
+    if len(arr.shape) == 1 or isinstance(arr, pl.DataFrame):
         return arr[start:stop]
     return arr[start:stop, ...]
 
