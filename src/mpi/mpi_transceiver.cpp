@@ -21,8 +21,10 @@
 #include <cstdio>
 #include <exception>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace
@@ -345,6 +347,19 @@ void mpi_transceiver::reduce_exscan(void * inout, transceiver_iface::type_type T
     mpi_check(MPI_Exscan(MPI_IN_PLACE, inout, count, to_mpi(T), to_mpi(operation), MPI_COMM_WORLD), "MPI_Exscan");
 }
 
+// The exported pointer is a std::shared_ptr<mpi_transceiver> *, which
+// create_transceiver() in src/transceiver.cpp reinterprets as a
+// std::shared_ptr<transceiver_iface> *. That only works because
+// transceiver_iface is a non-virtual base of mpi_transceiver reached through
+// single public inheritance, so the two shared_ptr instantiations have the same
+// layout and the stored pointer needs no adjustment. Nothing in the type system
+// enforces that, so pin it here: a hierarchy change that breaks the assumption
+// must fail to compile rather than silently corrupt the control block.
+static_assert(std::is_base_of<transceiver_iface, mpi_transceiver>::value,
+              "mpi_transceiver must derive from transceiver_iface for the exported pointer cast");
+static_assert(sizeof(std::shared_ptr<mpi_transceiver>) == sizeof(std::shared_ptr<transceiver_iface>),
+              "shared_ptr layout must match between mpi_transceiver and transceiver_iface");
+
 extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
 {
     static std::shared_ptr<mpi_transceiver> transceiver_instance;
@@ -355,7 +370,20 @@ extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
     if (!module) return nullptr;
 
     transceiver_instance = std::make_shared<mpi_transceiver>();
-    PyObject * pointer   = PyLong_FromVoidPtr(static_cast<void *>(&transceiver_instance));
+
+    // The static_asserts above cannot express "the base subobject sits at offset
+    // zero", which is the other half of what the consumer's cast relies on.
+    // Check it once at import time, where a mismatch is a clean ImportError
+    // instead of undefined behaviour on the first collective.
+    if (static_cast<const void *>(transceiver_instance.get()) != static_cast<const void *>(static_cast<transceiver_iface *>(transceiver_instance.get())))
+    {
+        transceiver_instance.reset();
+        Py_DECREF(module);
+        PyErr_SetString(PyExc_ImportError, "daal4py transceiver ABI mismatch: transceiver_iface is not the primary base of mpi_transceiver");
+        return nullptr;
+    }
+
+    PyObject * pointer = PyLong_FromVoidPtr(static_cast<void *>(&transceiver_instance));
     if (!pointer || PyModule_AddObject(module, "transceiver", pointer) < 0)
     {
         Py_XDECREF(pointer);
