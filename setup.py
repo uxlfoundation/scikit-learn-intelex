@@ -195,64 +195,17 @@ def get_daal_type_defines():
 
 
 def get_libs(iface="daal"):
-    major_version = ONEDAL_MAJOR_BINARY_VERSION
-    if IS_WIN:
-        libraries_plat = [f"onedal_core_dll.{major_version}"]
-        onedal_lib = [
-            f"onedal_dll.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f"onedal_dpc_dll.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f"onedal_parameters.{major_version}",
-                f"onedal_parameters_dll.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f"onedal_parameters_dpc_dll.{major_version}",
-            ]
-    elif IS_MAC:
-        libraries_plat = [
-            f"onedal_core.{major_version}",
-            f"onedal_thread.{major_version}",
-        ]
-        onedal_lib = [
-            f"onedal.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f"onedal_dpc.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f"onedal_parameters.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f"onedal_parameters_dpc.{major_version}",
-            ]
-    else:
-        libraries_plat = [
-            f":libonedal_core.so.{major_version}",
-            f":libonedal_thread.so.{major_version}",
-        ]
-        onedal_lib = [
-            f":libonedal.so.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f":libonedal_dpc.so.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f":libonedal_parameters.so.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f":libonedal_parameters_dpc.so.{major_version}",
-            ]
-    if iface == "onedal":
-        libraries_plat = onedal_lib + libraries_plat
-    elif iface == "onedal_dpc":
-        libraries_plat = onedal_dpc_lib + libraries_plat
-    return libraries_plat
+    # Naming lives in scripts/build_backend.py, which the CMake backend uses to
+    # locate the same libraries. Keeping one source avoids the two build paths
+    # disagreeing about what oneDAL is called on a given platform.
+    iface_name = {"onedal": "host", "onedal_dpc": "dpc"}.get(iface, iface)
+    return build_backend.get_onedal_libraries(
+        iface_name,
+        ONEDAL_MAJOR_BINARY_VERSION,
+        use_parameters_lib=use_parameters_lib,
+        is_win=IS_WIN,
+        is_mac=IS_MAC,
+    )
 
 
 def get_build_options():

@@ -21,8 +21,11 @@ project("oneDAL python interface"
     HOMEPAGE_URL https://github.com/uxlfoundation/oneDAL
 )
 
+# build_backend.py always passes -DCMAKE_BUILD_TYPE, so this only applies to a
+# direct cmake invocation, which would otherwise get no optimization flags at
+# all. Guarded rather than unconditional so it cannot discard a caller's choice.
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
 endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

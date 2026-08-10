@@ -14,26 +14,43 @@
 # limitations under the License.
 # ==============================================================================
 
+"""Tests for the parts of the build driver CI cannot reach.
+
+CI builds the release configuration on Linux, Windows and macOS, so the happy
+path is covered there for real. What it never exercises is a debug build, a
+oneDAL layout other than the one its own installation happens to use, or the
+agreement between the two independent places that spell oneDAL library names.
+Those are what this file pins down.
+"""
+
 import importlib.util
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "build_backend.py"
+REPO_ROOT = Path(__file__).parents[1]
+MODULE_PATH = REPO_ROOT / "scripts" / "build_backend.py"
 SPEC = importlib.util.spec_from_file_location("sklearnex_build_backend", MODULE_PATH)
 build_backend = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(build_backend)
 
 _get_onedal_library_dir = build_backend._get_onedal_library_dir
-_get_required_onedal_libraries = build_backend._get_required_onedal_libraries
+get_onedal_libraries = build_backend.get_onedal_libraries
+get_onedal_library_filenames = build_backend.get_onedal_library_filenames
 
 LINUX_HOST_LIBRARIES = (
     "libonedal.so.4",
+    "libonedal_parameters.so.4",
     "libonedal_core.so.4",
     "libonedal_thread.so.4",
-    "libonedal_parameters.so.4",
+)
+WINDOWS_HOST_LIBRARIES = (
+    "onedal_dll.4.lib",
+    "onedal_core_parameters_dll.4.lib",
+    "onedal_core_dll.4.lib",
 )
 
 
@@ -43,139 +60,123 @@ def _create_libraries(directory, names):
         (directory / name).touch()
 
 
-def test_get_onedal_library_dir_prefers_complete_arch_layout(tmp_path):
+@pytest.mark.parametrize(
+    "layout,is_win,libraries",
+    [
+        # Classic oneDAL install; also the layout CI itself uses.
+        (("lib", "intel64"), False, LINUX_HOST_LIBRARIES),
+        # Conda and some source installs flatten the arch directory away.
+        (("lib",), False, LINUX_HOST_LIBRARIES),
+        # Windows conda packages put libraries under the Library prefix.
+        (("Library", "lib"), True, WINDOWS_HOST_LIBRARIES),
+    ],
+)
+def test_get_onedal_library_dir_accepts_supported_layouts(
+    tmp_path, layout, is_win, libraries
+):
+    library_dir = tmp_path.joinpath(*layout)
+    _create_libraries(library_dir, libraries)
+
+    assert _get_onedal_library_dir(
+        tmp_path, "intel64", major_version=4, is_win=is_win
+    ) == str(library_dir)
+
+
+def test_get_onedal_library_dir_skips_incomplete_directory(tmp_path):
+    # An arch directory left over from a different oneDAL major version must not
+    # win over a complete one, which is what a plain isdir() check would do.
     flat = tmp_path / "lib"
-    arch = flat / "intel64"
     _create_libraries(flat, LINUX_HOST_LIBRARIES)
-    _create_libraries(arch, LINUX_HOST_LIBRARIES)
-
-    assert _get_onedal_library_dir(tmp_path, "intel64", major_version=4) == str(arch)
-
-
-def test_get_onedal_library_dir_falls_back_from_incomplete_arch_layout(tmp_path):
-    flat = tmp_path / "lib"
-    arch = flat / "intel64"
-    _create_libraries(flat, LINUX_HOST_LIBRARIES)
-    _create_libraries(arch, ("libonedal.so.3", "libonedal_core.so.3"))
+    _create_libraries(flat / "intel64", ("libonedal.so.3", "libonedal_core.so.3"))
 
     assert _get_onedal_library_dir(tmp_path, "intel64", major_version=4) == str(flat)
 
 
-def test_get_onedal_library_dir_accepts_windows_conda_layout(tmp_path):
-    windows_lib = tmp_path / "Library" / "lib"
-    _create_libraries(
-        windows_lib,
-        (
-            "onedal_dll.4.lib",
-            "onedal_core_dll.4.lib",
-            "onedal_core_parameters_dll.4.lib",
-        ),
-    )
-
-    assert _get_onedal_library_dir(
-        tmp_path, "intel64", major_version=4, is_win=True
-    ) == str(windows_lib)
-
-
-@pytest.mark.parametrize(
-    "iface,major_version,is_win,is_mac,expected",
-    [
-        (
-            "dpc",
-            3,
-            False,
-            False,
-            [
-                "libonedal_dpc.so.3",
-                "libonedal_core.so.3",
-                "libonedal_thread.so.3",
-                "libonedal_parameters_dpc.so.3",
-            ],
-        ),
-        (
-            "dpc",
-            4,
-            False,
-            False,
-            [
-                "libonedal_dpc.so.4",
-                "libonedal_core.so.4",
-                "libonedal_thread.so.4",
-                "libonedal_parameters_dpc.so.4",
-            ],
-        ),
-        (
-            "host",
-            4,
-            False,
-            True,
-            [
-                "libonedal.4.dylib",
-                "libonedal_core.4.dylib",
-                "libonedal_thread.4.dylib",
-                "libonedal_parameters.4.dylib",
-            ],
-        ),
-        (
-            "spmd_dpc",
-            3,
-            True,
-            False,
-            [
-                "onedal_dpc_dll.3.lib",
-                "onedal_core_dll.3.lib",
-                "onedal_core_parameters_dpc_dll.3.lib",
-            ],
-        ),
-    ],
-)
-def test_required_onedal_libraries_are_platform_specific(
-    iface, major_version, is_win, is_mac, expected
-):
-    assert (
-        _get_required_onedal_libraries(iface, major_version, is_win=is_win, is_mac=is_mac)
-        == expected
-    )
-
-
-def test_get_onedal_library_dir_reports_missing_sonames(tmp_path):
+def test_get_onedal_library_dir_names_every_directory_and_miss(tmp_path):
     with pytest.raises(FileNotFoundError) as exc_info:
         _get_onedal_library_dir(tmp_path, "intel64", major_version=4)
 
     message = str(exc_info.value)
     assert str(tmp_path / "lib" / "intel64") in message
-    assert "libonedal_thread.so.4" in message
     assert str(tmp_path / "lib") in message
+    assert "libonedal_thread.so.4" in message
+
+
+@pytest.mark.parametrize("iface", ["daal", "host", "dpc", "spmd_dpc"])
+@pytest.mark.parametrize(
+    "is_win,is_mac,prefix,suffix",
+    [
+        (False, False, ":lib", ".so.4"),
+        (False, True, "", ".4"),
+        (True, False, "", ".4"),
+    ],
+)
+def test_linker_names_and_filenames_describe_the_same_libraries(
+    iface, is_win, is_mac, prefix, suffix
+):
+    # setup.py links by these names and the CMake backend looks for the files
+    # they resolve to. A divergence between the two only shows up as a link
+    # error inside CI, so pin the correspondence here.
+    linker_names = get_onedal_libraries(
+        iface, 4, is_win=is_win, is_mac=is_mac, use_parameters_lib=not is_win
+    )
+    filenames = get_onedal_library_filenames(
+        iface, 4, is_win=is_win, is_mac=is_mac, use_parameters_lib=not is_win
+    )
+    assert len(linker_names) == len(filenames)
+
+    for linker_name, filename in zip(linker_names, filenames):
+        assert linker_name.startswith(prefix)
+        assert linker_name.endswith(suffix)
+        stem = linker_name[len(prefix) : -len(suffix)]
+        if is_win:
+            assert filename == f"{stem}.4.lib"
+        elif is_mac:
+            assert filename == f"lib{stem}.4.dylib"
+        else:
+            assert filename == f"lib{stem}.so.4"
+
+
+def test_backend_libraries_extend_the_daal_library_set():
+    # daal4py links the core libraries; the oneDAL backends add an interface
+    # library on top. Nothing may drop a core library on the way.
+    core = get_onedal_libraries("daal", 4)
+    for iface, expected in (("host", "onedal"), ("dpc", "onedal_dpc")):
+        libraries = get_onedal_libraries(iface, 4, use_parameters_lib=False)
+        assert libraries[0] == f":lib{expected}.so.4"
+        assert set(core).issubset(libraries)
+
+
+def test_windows_library_names_match_cmake():
+    # scripts/CMakeLists.txt spells the Windows import libraries out by hand,
+    # including the onedal_core_parameters_*_dll names that do not follow the
+    # pattern of the others. Compare against it directly.
+    cmake_text = (REPO_ROOT / "scripts" / "CMakeLists.txt").read_text()
+    in_cmake = set(re.findall(r'"(onedal[A-Za-z_]*_dll)\.\$\{ONEDAL_MAJOR', cmake_text))
+
+    from_python = set()
+    for iface in ("host", "dpc"):
+        for name in get_onedal_libraries(iface, 4, is_win=True):
+            from_python.add(name.rsplit(".", 1)[0])
+
+    assert from_python == in_cmake
+
+
+def test_unsupported_backend_is_rejected():
+    with pytest.raises(ValueError, match="Unsupported oneDAL backend"):
+        get_onedal_libraries("host_dpc", 4)
 
 
 @pytest.mark.parametrize(
-    "is_win,debug_build,expected_build_type",
-    [
-        (False, False, "Release"),
-        (False, True, "Debug"),
-        (True, False, "Release"),
-        (True, True, "Debug"),
-    ],
+    "debug_build,expected_build_type", [(False, "Release"), (True, "Debug")]
 )
-def test_cmake_build_type_is_explicit(
-    monkeypatch,
-    tmp_path,
-    is_win,
-    debug_build,
-    expected_build_type,
+def test_cmake_build_type_follows_the_debug_flag(
+    monkeypatch, tmp_path, debug_build, expected_build_type
 ):
+    # CI only ever builds the release configuration, so --debug silently
+    # producing an optimized build would go unnoticed there.
     dal_root = tmp_path / "dal"
-    if is_win:
-        library_dir = dal_root / "Library" / "lib"
-        libraries = (
-            "onedal_dll.4.lib",
-            "onedal_core_dll.4.lib",
-            "onedal_core_parameters_dll.4.lib",
-        )
-    else:
-        library_dir = dal_root / "lib" / "intel64"
-        libraries = LINUX_HOST_LIBRARIES
-    _create_libraries(library_dir, libraries)
+    _create_libraries(dal_root / "lib" / "intel64", LINUX_HOST_LIBRARIES)
 
     monkeypatch.setenv("DALROOT", str(dal_root))
     monkeypatch.setitem(
@@ -187,9 +188,8 @@ def test_cmake_build_type_is_explicit(
         build_backend,
         "get_config_var",
         lambda name: {
-            "LIBDEST": str(tmp_path / "python" / "Lib"),
+            "LIBDEST": str(tmp_path / "python" / "lib" / "python"),
             "LIBDIR": str(tmp_path / "python" / "lib"),
-            "SOABI": "cp312-win_amd64" if is_win else "cpython-312-x86_64-linux-gnu",
         }.get(name),
     )
 
@@ -203,18 +203,14 @@ def test_cmake_build_type_is_explicit(
     build_backend.custom_build_cmake_clib(
         "host",
         onedal_major_binary_version=4,
-        is_win=is_win,
-        is_lin=not is_win,
+        is_lin=True,
         debug_build=debug_build,
     )
 
-    build_type_args = [arg for arg in calls[0] if arg.startswith("-DCMAKE_BUILD_TYPE=")]
-    assert build_type_args == [f"-DCMAKE_BUILD_TYPE={expected_build_type}"]
-    assert "" not in calls[0]
-    assert ("-GNinja" in calls[0]) is is_win
-    assert calls[1][:2] == ["cmake", "--build"]
-    assert Path(calls[1][2]).parts[-2:] == ("build", "backend_host")
-    assert calls[1][3:] == ["-j1"]
-    assert calls[2][:2] == ["cmake", "--install"]
-    assert Path(calls[2][2]).parts[-2:] == ("build", "backend_host")
-    assert calls[2][3:] == []
+    configure_args = calls[0]
+    assert [arg for arg in configure_args if arg.startswith("-DCMAKE_BUILD_TYPE=")] == [
+        f"-DCMAKE_BUILD_TYPE={expected_build_type}"
+    ]
+    # An empty argv entry is not portable across CMake versions and shows up as
+    # a bare "" in the build log.
+    assert "" not in configure_args

@@ -28,34 +28,83 @@ import numpy as np
 logger = logging.getLogger("sklearnex")
 
 
-def _get_required_onedal_libraries(
-    iface, major_version, use_parameters_lib=True, is_win=False, is_mac=False
-):
-    """Return the exact oneDAL libraries required by the selected backend."""
-    if iface not in ("host", "dpc", "spmd_dpc"):
+# Which oneDAL interface library each backend links against, on top of the core
+# libraries every backend needs. The daal4py extension links the core libraries
+# only, hence None.
+_ONEDAL_IFACE_LIBRARY = {
+    "daal": None,
+    "host": "onedal",
+    "dpc": "onedal_dpc",
+    "spmd_dpc": "onedal_dpc",
+}
+
+
+def _get_onedal_library_names(iface, use_parameters_lib=True, is_win=False):
+    """Return the oneDAL libraries a backend needs, in link order.
+
+    Names are the platform-independent stems; ``get_onedal_libraries`` and
+    ``get_onedal_library_filenames`` turn them into linker arguments and on-disk
+    file names respectively.
+    """
+    if iface not in _ONEDAL_IFACE_LIBRARY:
         raise ValueError(f"Unsupported oneDAL backend: {iface}")
 
-    is_dpc = iface in ("dpc", "spmd_dpc")
-    backend_name = "onedal_dpc" if is_dpc else "onedal"
-    library_names = [backend_name, "onedal_core"]
+    iface_library = _ONEDAL_IFACE_LIBRARY[iface]
+    library_names = []
+    if iface_library is not None:
+        library_names.append(iface_library)
+        if use_parameters_lib:
+            is_dpc = iface_library == "onedal_dpc"
+            if is_win:
+                # On Windows the parameters entry points ship in the core
+                # import library, so the name carries the core prefix. This is
+                # the spelling scripts/CMakeLists.txt links against.
+                library_names.append(
+                    "onedal_core_parameters_dpc_dll"
+                    if is_dpc
+                    else "onedal_core_parameters_dll"
+                )
+            else:
+                library_names.append(
+                    "onedal_parameters_dpc" if is_dpc else "onedal_parameters"
+                )
+    library_names.append("onedal_core")
     if not is_win:
+        # On Windows the threading layer is part of the core DLL.
         library_names.append("onedal_thread")
-    if use_parameters_lib:
-        if is_win:
-            parameter_name = (
-                "onedal_core_parameters_dpc_dll"
-                if is_dpc
-                else "onedal_core_parameters_dll"
-            )
-        else:
-            parameter_name = "onedal_parameters_dpc" if is_dpc else "onedal_parameters"
-        library_names.append(parameter_name)
+    return library_names
 
+
+def _to_windows_import_name(name):
+    return name if name.endswith("_dll") else f"{name}_dll"
+
+
+def get_onedal_libraries(
+    iface="daal", major_version=1, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return linker names for the oneDAL libraries the given backend needs."""
+    library_names = _get_onedal_library_names(iface, use_parameters_lib, is_win)
     if is_win:
-        library_names = [
-            name if name.endswith("_dll") else f"{name}_dll" for name in library_names
+        return [
+            f"{_to_windows_import_name(name)}.{major_version}" for name in library_names
         ]
-        return [f"{name}.{major_version}.lib" for name in library_names]
+    if is_mac:
+        return [f"{name}.{major_version}" for name in library_names]
+    # The ':' prefix asks the linker for this exact SONAME rather than for a
+    # development symlink, which the runtime packages do not ship.
+    return [f":lib{name}.so.{major_version}" for name in library_names]
+
+
+def get_onedal_library_filenames(
+    iface="daal", major_version=1, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return the on-disk names of the libraries ``get_onedal_libraries`` links."""
+    library_names = _get_onedal_library_names(iface, use_parameters_lib, is_win)
+    if is_win:
+        return [
+            f"{_to_windows_import_name(name)}.{major_version}.lib"
+            for name in library_names
+        ]
     if is_mac:
         return [f"lib{name}.{major_version}.dylib" for name in library_names]
     return [f"lib{name}.so.{major_version}" for name in library_names]
@@ -75,7 +124,7 @@ def _get_onedal_library_dir(
     if is_win:
         candidates.append(jp(dal_root, "Library", "lib"))
     candidates.append(jp(dal_root, "lib"))
-    required = _get_required_onedal_libraries(
+    required = get_onedal_library_filenames(
         iface,
         major_version,
         use_parameters_lib=use_parameters_lib,
