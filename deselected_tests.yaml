@@ -77,6 +77,14 @@ deselected_tests:
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
 
+  # PCA get_precision() inverts a rank-deficient covariance on the check's fixture; sklearn
+  # xfails these with "linalg.inv fails because input is singular" (gh-33205). The XPASS/XFAIL
+  # outcome is numerically unstable, so patched vs stock flip inconsistently.
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=CPU_DEVICE,dtype_name=float64)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,device_name=device1,dtype_name=float32)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=numpy,device_name=None,dtype_name=None)]
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_same_namespace(array_namespace=array_api_strict)]
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
@@ -180,8 +188,9 @@ deselected_tests:
   - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
 
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
-  # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
+  # Close https://github.com/uxlfoundation/scikit-learn-intelex/issues/69 and jira ticket upon completion
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
+  - preprocessing/tests/test_discretization.py::test_nonuniform_strategies[kmeans
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
   - cluster/tests/test_k_means.py::test_kmeans_convergence >=0.23
@@ -354,13 +363,24 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_matrix]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_array]
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
-  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False]
-  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False]
-  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-False-False]
-  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-True-False]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-False-False
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-True-False
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-False-False-newton-cg]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-False-True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-True-False-newton-cg]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-None-False-True-True-newton-cg]
 
   # Logistic regression array api compliance test fails on Windows only due to convergence issue
-  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-balanced-True-True-True]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-balanced-True-True-True >=1.9 win32
+
+  # Logistic regression CV array api compliance tests fail in preview mode.
+  # Unterminated ids keep the deselections compatible with evolving parameters.
+  - linear_model/tests/test_logistic.py::test_logistic_regression_cv_array_api_compliance[array_api_strict-CPU_DEVICE-float64
+  - linear_model/tests/test_logistic.py::test_logistic_regression_cv_array_api_compliance[array_api_strict-device1-float32
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
