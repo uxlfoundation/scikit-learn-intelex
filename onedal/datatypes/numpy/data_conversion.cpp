@@ -82,12 +82,13 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     // which is default on oneDAL side.
     const auto layout =
         array_is_behaved_C(np_data) ? dal::data_layout::row_major : dal::data_layout::column_major;
-    auto owner = make_python_owner(reinterpret_cast<PyObject *>(np_data));
+    // The table borrows the array's buffer, so the capture keeps the array alive
+    // for as long as any copy of the table exists.
     return dal::homogen_table(
         data_pointer,
         row_count,
         column_count,
-        [owner = std::move(owner)](const T *) {},
+        [owner = make_python_owner(reinterpret_cast<PyObject *>(np_data))](const T *) {},
         layout);
 }
 
@@ -125,9 +126,13 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     const T *data_pointer = static_cast<T *>(array_data(np_data));
     const std::int64_t data_count = static_cast<std::int64_t>(array_size(np_data, 0));
 
-    auto owner = make_python_owner(reinterpret_cast<PyObject *>(np_data));
+    // Only the data buffer is borrowed; the index arrays above were copied into
+    // freshly allocated dal::arrays when rebasing them to one-based indices.
     return csr_table_t(
-        dal::array<T>(data_pointer, data_count, [owner = std::move(owner)](const T *) {}),
+        dal::array<T>(
+            data_pointer,
+            data_count,
+            [owner = make_python_owner(reinterpret_cast<PyObject *>(np_data))](const T *) {}),
         column_indices_one_based,
         row_indices_one_based,
 #if ONEDAL_VERSION <= 20230100
@@ -220,18 +225,23 @@ dal::table convert_to_table(py::object inp_obj,
         }
         py::object np_data = py::reinterpret_steal<py::object>(
             PyArray_FROMANY(py_data.ptr(), array_type(py_data.ptr()), 0, 0, NPY_ARRAY_CARRAY));
+        // No ENSURECOPY on the index arrays: convert_to_csr_impl only reads them
+        // to build the one-based dal::arrays it allocates itself, so it never
+        // writes through these buffers and a shared view is safe. FORCECAST
+        // already copies whenever the input dtype is not uint64, which is the
+        // common case for scipy's int32/int64 index arrays.
         py::object np_column_indices = py::reinterpret_steal<py::object>(
             PyArray_FROMANY(py_column_indices.ptr(),
                             NPY_UINT64,
                             0,
                             0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
+                            NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST));
         py::object np_row_indices = py::reinterpret_steal<py::object>(
             PyArray_FROMANY(py_row_indices.ptr(),
                             NPY_UINT64,
                             0,
                             0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
+                            NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST));
 
         PyObject *np_row_count = PyTuple_GetItem(py_shape.ptr(), 0);
         PyObject *np_column_count = PyTuple_GetItem(py_shape.ptr(), 1);
