@@ -355,10 +355,8 @@ void mpi_transceiver::reduce_exscan(void * inout, transceiver_iface::type_type T
 // layout and the stored pointer needs no adjustment. Nothing in the type system
 // enforces that, so pin it here: a hierarchy change that breaks the assumption
 // must fail to compile rather than silently corrupt the control block.
-static_assert(std::is_base_of<transceiver_iface, mpi_transceiver>::value,
-              "mpi_transceiver must derive from transceiver_iface for the exported pointer cast");
-static_assert(sizeof(std::shared_ptr<mpi_transceiver>) == sizeof(std::shared_ptr<transceiver_iface>),
-              "shared_ptr layout must match between mpi_transceiver and transceiver_iface");
+static_assert(std::is_base_of<transceiver_iface, mpi_transceiver>::value, "mpi_transceiver must derive from transceiver_iface for the exported pointer cast");
+static_assert(sizeof(std::shared_ptr<mpi_transceiver>) == sizeof(std::shared_ptr<transceiver_iface>), "shared_ptr layout must match between mpi_transceiver and transceiver_iface");
 
 extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
 {
