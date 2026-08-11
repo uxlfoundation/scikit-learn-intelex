@@ -25,6 +25,11 @@ requested results, not merely that a string was split.
 The one exception is the separator test, which has to read the raw backend
 result: ``fit()`` can only unpack options that were joined with ``"|"``. See
 ``_compute_raw`` below.
+
+Testing through the estimators rather than through a standalone native binary is
+deliberate. It needs no extra build artifact or CI step, and it proves more: that
+the parsed tokens arrive as the requested results, not merely that a string was
+split into the expected pieces.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -123,9 +128,10 @@ def test_unrecognized_option_is_rejected(options, queue):
 def test_any_non_word_byte_separates_tokens(separator, queue):
     """Token boundaries are every byte outside [A-Za-z0-9_], matching ECMAScript \\w.
 
-    This covers the cases the standalone native test used to assert - embedded
-    NULs and bytes above 0x7f - through the public path. ``min`` and ``max`` are
-    both real options, so a correctly split string yields both results.
+    Embedded NULs and bytes above 0x7f are covered here, which is where the
+    hand-written scan differs most visibly from the ``std::regex`` it replaced.
+    ``min`` and ``max`` are both real options, so a correctly split string
+    yields both results.
 
     Note the ``é`` case is a multi-byte UTF-8 character, so this also pins down
     that a token is split on its lead byte rather than mangled.
@@ -139,8 +145,9 @@ def test_any_non_word_byte_separates_tokens(separator, queue):
 def test_concurrent_parsing_is_consistent():
     """The tokenizer holds no shared state, so concurrent callers must not interfere.
 
-    This is the property the native test asserted; it is kept here because it is
-    the reason the shared helper replaced a per-call std::regex.
+    This is the property that motivated the change: the ``std::regex`` it
+    replaced was imbued with the global locale, so the meaning of ``\\w``
+    depended on process-wide state another thread could mutate.
     """
     expected = np.asarray(_compute(["min", "max", "mean"]).mean_)
 
