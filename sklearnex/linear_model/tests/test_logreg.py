@@ -581,7 +581,10 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
 
     model = LogisticRegression(solver="newton-cg").fit(X, y)
     X_problem = 1e10 * _as_numpy(model.coef_).reshape((1, -1))
-    X_problem = np.vstack([X_problem, -X_problem])
+    # predict input must share fit's namespace/device when array_api_dispatch is on
+    X_problem = _convert_to_dataframe(
+        np.vstack([X_problem, -X_problem]), sycl_queue=queue, target_df=dataframe
+    )
 
     pred_log_proba = model.predict_log_proba(X_problem)
     pred_log_proba = _as_numpy(pred_log_proba)
