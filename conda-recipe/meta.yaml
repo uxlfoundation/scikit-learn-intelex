@@ -56,11 +56,11 @@ requirements:
   host:
     - python
     - setuptools
-    - cmake >=3.18
+    - cmake
     - clang-format
-    - cython >=3.1
+    - cython
     - jinja2
-    - pybind11 >=2.13
+    - pybind11
     - numpy >=2,<3
     # dal-devel pinning depends on the recipe location (repo or feedstock)
     - dal-devel
@@ -123,7 +123,10 @@ outputs:
         - .ci
         - setup.cfg
         - examples
+        # tests/test_build_backend.py imports the build driver and cross-checks
+        # the Windows library names against the CMake project.
         - scripts/build_backend.py
+        - scripts/CMakeLists.txt
         - tests
       script: run_test.sh  # [linux]
       script: run_test.bat  # [win]
