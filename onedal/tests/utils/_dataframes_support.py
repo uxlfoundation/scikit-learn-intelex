@@ -196,12 +196,14 @@ def mixed_device_params(include_host_df_y=False, include_weight=False, x_devices
         Restrict X to these device labels (e.g. ``("cpu",)`` for CPU-only
         estimators). ``None`` uses every device the namespace supports.
 
-    Yields
-    ------
-    pytest.param
+    Returns
+    -------
+    list of pytest.param
         ``(X_xp, X_device, y_xp, y_device)`` tuples, or with two extra weight
-        fields when ``include_weight``.
+        fields when ``include_weight``. A list rather than a generator because
+        pytest deprecates non-Collection iterables in ``parametrize``.
     """
+    params = []
     for xp, devices in _NAMESPACE_DEVICES.items():
         module = torch if xp == "torch" else dpnp
         x_dev_list = tuple(d for d in (x_devices or devices) if d in devices)
@@ -217,24 +219,29 @@ def mixed_device_params(include_host_df_y=False, include_weight=False, x_devices
         for x_device in x_dev_list:
             for y_xp, y_device, y_id in y_options:
                 if not include_weight:
-                    yield pytest.param(
-                        module,
-                        x_device,
-                        y_xp,
-                        y_device,
-                        id=f"{xp}-{x_device}-X-{y_id}-y",
+                    params.append(
+                        pytest.param(
+                            module,
+                            x_device,
+                            y_xp,
+                            y_device,
+                            id=f"{xp}-{x_device}-X-{y_id}-y",
+                        )
                     )
                     continue
                 for w_xp, w_device, w_id in w_options:
-                    yield pytest.param(
-                        module,
-                        x_device,
-                        y_xp,
-                        y_device,
-                        w_xp,
-                        w_device,
-                        id=f"{xp}-{x_device}-X-{y_id}-y-{w_id}-w",
+                    params.append(
+                        pytest.param(
+                            module,
+                            x_device,
+                            y_xp,
+                            y_device,
+                            w_xp,
+                            w_device,
+                            id=f"{xp}-{x_device}-X-{y_id}-y-{w_id}-w",
+                        )
                     )
+    return params
 
 
 def _as_numpy(obj, *args, **kwargs):
