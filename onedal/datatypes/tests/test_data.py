@@ -708,3 +708,31 @@ def test_nonwriteable_arrays():
     x_converted = np.asarray(x_converted).reshape(-1)
 
     np.testing.assert_array_equal(x_converted, x)
+
+
+@pytest.mark.parametrize("index_dtype", [np.int32, np.int64, np.uint64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_csr_conversion_does_not_modify_input(index_dtype, dtype):
+    """The conversion rebases indices to one-based in its own buffers.
+
+    It reads the caller's index arrays without copying them first, so this pins
+    down that it does not write through them - including for uint64 indices,
+    where no dtype cast forces a copy on the way in.
+    """
+    X = sp.random(64, 32, density=0.1, format="csr", dtype=dtype, random_state=0)
+    X.indices = X.indices.astype(index_dtype)
+    X.indptr = X.indptr.astype(index_dtype)
+    expected_indices = X.indices.copy()
+    expected_indptr = X.indptr.copy()
+    expected_data = X.data.copy()
+
+    X_table = to_table(X)
+
+    np.testing.assert_array_equal(X.indices, expected_indices)
+    np.testing.assert_array_equal(X.indptr, expected_indptr)
+    np.testing.assert_array_equal(X.data, expected_data)
+
+    # The data buffer is borrowed rather than copied, so the input must also
+    # survive the table outliving this statement.
+    del X_table
+    np.testing.assert_array_equal(X.data, expected_data)
