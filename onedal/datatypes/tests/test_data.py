@@ -37,6 +37,7 @@ if dpctl_available:
     )
 
 from daal4py.sklearn._utils import get_dtype
+from onedal.basic_statistics import BasicStatistics
 from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
@@ -710,7 +711,62 @@ def test_nonwriteable_arrays():
     np.testing.assert_array_equal(x_converted, x)
 
 
-@pytest.mark.parametrize("index_dtype", [np.int32, np.int64, np.uint64])
+CSR_INDEX_DTYPES = [np.int32, np.uint32, np.int64, np.uint64]
+
+
+def _reinterpret_index_array(indices, index_dtype, layout):
+    """Return the same index values in a different buffer representation."""
+    typed = indices.astype(index_dtype)
+    if layout == "contiguous":
+        return typed
+    if layout == "strided":
+        # A two-element step, so the elements are neither contiguous nor
+        # necessarily aligned for their own dtype.
+        view = np.repeat(typed, 2)[::2]
+        assert view.strides[0] == 2 * typed.itemsize
+        return view
+    if layout == "readonly":
+        typed.flags.writeable = False
+        return typed
+    if layout == "byteswapped":
+        return typed.astype(typed.dtype.newbyteorder("S"))
+    raise AssertionError(f"unhandled layout {layout}")
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+@pytest.mark.parametrize("layout", ["contiguous", "strided", "readonly", "byteswapped"])
+def test_csr_index_representations_are_equivalent(index_dtype, layout):
+    """Every index dtype, stride and byte order must convert to the same table.
+
+    The conversion reads the caller's index buffers in whatever integer dtype
+    and stride they arrive in, rather than casting them to a fixed dtype first,
+    so each parameter here selects a different code path: a widening loop per
+    width and signedness, a strided variant of each, and a fallback through
+    numpy's own cast for a byte order the loops will not read.
+
+    Per-column sums are the observable. They catch a misread of ``indices``
+    directly, and a misread of ``indptr`` too, because the row boundaries decide
+    which entries are visited at all.
+    """
+    X = sp.random(64, 16, density=0.2, format="csr", dtype=np.float64, random_state=0)
+    X.sort_indices()
+    expected = np.asarray(X.sum(axis=0)).reshape(-1)
+
+    reinterpreted = X.copy()
+    reinterpreted.indices = _reinterpret_index_array(X.indices, index_dtype, layout)
+    reinterpreted.indptr = _reinterpret_index_array(X.indptr, index_dtype, layout)
+    # The conversion asks scipy whether the indices are sorted, and scipy answers
+    # that by calling into its own C routines, which reject some of the dtypes
+    # under test here ("unsupported data types in input" for uint64). Assert the
+    # answer instead - the indices came from a sorted matrix above.
+    reinterpreted.has_sorted_indices = True
+
+    result = BasicStatistics(result_options="sum").fit(reinterpreted)
+
+    assert_allclose(result.sum_, expected, rtol=1e-12)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_csr_conversion_does_not_modify_input(index_dtype, dtype):
     """The conversion rebases indices to one-based in its own buffers.

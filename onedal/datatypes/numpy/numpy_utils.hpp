@@ -139,6 +139,7 @@
 #define array_numdims(a)   PyArray_NDIM((PyArrayObject *)a)
 #define array_data(a)      PyArray_DATA((PyArrayObject *)a)
 #define array_size(a, i)   PyArray_DIM((PyArrayObject *)a, i)
+#define array_stride(a, i) PyArray_STRIDE((PyArrayObject *)a, i)
 
 namespace oneapi::dal::python::numpy {
 
