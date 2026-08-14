@@ -30,6 +30,18 @@ Parallelism Specifics
   Note that the deprecated :doc:`daal4py <daal4py>` module uses a global configuration instead of per-object ``n_jobs`` arguments, 
   with the default also being all available threads.
 
+.. hint::
+    If serving estimators from the |sklearnex| in online services - e.g. through a REST framework like
+    `Flask <https://flask.palletsprojects.com>`__ - where requests might be parallelized through a
+    different tool, one might want to set ``n_jobs=1`` in estimators objects after fitting - e.g.
+
+    .. code-block:: python
+
+        estimator.fit(...)
+        estimator.set_params(n_jobs=1)
+
+    See also the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__.
+
 |sklearnex| follows the same rules as |sklearn| for
 the calculation of the :term:`n_jobs` parameter value.
 
@@ -38,6 +50,47 @@ When |sklearn|'s utilities with built-in parallelism are used
 |sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``.
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
 (usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
+
+Python threads and thread safety
+================================
+
+In general, accelerated computations offered by estimators from the |sklearnex|
+do not raise the Python GIL, thus they are not compatible with parallelization
+backends that rely on Python threads. Instead, process-based parallelism is
+recommended, which is the default mode in tools like :mod:`joblib` and by
+extension in metaestimators from |sklearn|. Note that builds of the |sklearnex| for
+free-threaded Python are not offered at this moment.
+
+Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
+usage in Python threads, even if running under the Python GIL:
+
+- Internally, the number of threads for calls to estimator methods from
+  the |sklearnex| is managed through global variables - thus, if multiple
+  calls to estimators with different ``n_jobs`` are performed in parallel
+  through **Python threads**, there might be threading races that override
+  one another's configuration, potentially leading to process-wide crashes.
+- The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
+  :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
+  suitable for parallel calls in Python threads regardless of the ``n_jobs``
+  parameter due to usage of other Python-level global state variables.
+  Attempting to fit multiple logistic regression estimator objects in parallel
+  might result in crashes and incorrect estimations.
+- While most estimators only set their attributes and internal state during
+  calls to ``.fit()`` and then use them without modifications in ``.predict()``
+  and similar, estimators based on K-nearest neighbors instead set their
+  attributes / state also during calls to methods like ``.transform()`` - hence,
+  when it comes to KNN-based classes, if calling methods on the **same** estimator
+  instance from multiple threads, they might override one another when setting
+  variables, leading to incorrect results and potential crashes. These classes
+  include:
+
+    - :obj:`sklearn.neighbors.NearestNeighbors`.
+    - :obj:`sklearn.neighbors.KNeighborsRegressor`.
+    - :obj:`sklearn.neighbors.KNeighborsClassifier`.
+    - :obj:`sklearn.neighbors.LocalOutlierFactor`.
+
+Other considerations
+====================
 
 .. note::
     Environment variables such as `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, and others used by
@@ -48,39 +101,19 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     ``n_jobs`` has no effect if computations are performed on GPU.
 
 .. note::
-    `threadpoolctl` context has no effect on |sklearnex| threading if `n_jobs` is specified and non-negative.
-    If `n_jobs` is equal to `0` or not specified then the number from `threadpoolctl` is propagated to |sklearnex|.
-    If `n_jobs` is negative then the `threadpoolctl`'s number will be `max(1, n_threadpoolctl + n_jobs + 1)`.
+    ``threadpoolctl`` context has no effect on |sklearnex| threading if ``n_jobs`` is specified and non-negative.
+    If ``n_jobs`` is equal to `0` or not specified then the number from ``threadpoolctl`` is propagated to |sklearnex|.
+    If ``n_jobs`` is negative then the ``threadpoolctl``'s number will be ``max(1, n_threadpoolctl + n_jobs + 1)``.
 
 .. note::
-    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or python threads.
+    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or Python threads.
 
 .. warning::
     If several instances of |sklearnex| algorithms are run sequentially and the ``n_jobs`` parameter for the first run
     is significantly greater than for subsequent ones, it may result in performance degradation due to a known issue
     with `oneTBB <https://github.com/uxlfoundation/oneTBB>`__.
 
-.. warning::
-    In general, accelerated computations offered by estimators from the |sklearnex|
-    do not raise the Python GIL, thus they are not compatible with multi-threading
-    backends that rely on Python threads.
 
-.. warning::
-    Internally, the number of threads for calls to estimator methods from
-    the |sklearnex| is managed through global variables - thus, if multiple
-    calls to estimators with different ``n_jobs`` are performed in parallel
-    through **Python threads**, there might be threading races that override
-    one another's configuration, potentially leading to process-wide crashes.
-    If concurrent calls are to be performed, process-based parallelism should
-    be used instead.
-
-.. warning::
-    The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
-    :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
-    suitable for parallel calls in Python threads regardless of the ``n_jobs`` parameter.
-    Attempting to fit multiple logistic regression estimator objects in parallel
-    might result in crashes and incorrect estimations.
-
-Setting the `DEBUG` :ref:`verbosity setting <verbose>` will produce logs
+Setting the ``DEBUG`` :ref:`verbosity setting <verbose>` will produce logs
 indicating when the number of threads used is different from the default
 (number of logical threads in the machine).

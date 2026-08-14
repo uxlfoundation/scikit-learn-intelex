@@ -20,26 +20,15 @@ from functools import lru_cache
 from types import ModuleType
 from typing import Optional, Union
 
-import sklearn.cluster as cluster_module
-import sklearn.decomposition as decomposition_module
-import sklearn.ensemble as ensemble_module
 import sklearn.linear_model as linear_model_module
 import sklearn.linear_model._logistic as logistic_module
 import sklearn.manifold as manifold_module
 import sklearn.neighbors as neighbors_module
-import sklearn.svm as svm_module
 from sklearn import metrics, model_selection
-from sklearn.cluster import DBSCAN as DBSCAN_sklearn
-from sklearn.cluster import KMeans as KMeans_sklearn
-from sklearn.decomposition import PCA as PCA_sklearn
-from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
-from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_sklearn
 from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
 from sklearn.linear_model import Lasso as Lasso_sklearn
-from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
 from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
 from sklearn.linear_model import LogisticRegressionCV as LogisticRegressionCV_sklearn
-from sklearn.linear_model import Ridge as Ridge_sklearn
 from sklearn.linear_model._logistic import (
     _logistic_regression_path as _logistic_regression_path_sklearn,
 )
@@ -50,20 +39,13 @@ from sklearn.model_selection import train_test_split as train_test_split_sklearn
 from sklearn.neighbors import KNeighborsClassifier as KNeighborsClassifier_sklearn
 from sklearn.neighbors import KNeighborsRegressor as KNeighborsRegressor_sklearn
 from sklearn.neighbors import NearestNeighbors as NearestNeighbors_sklearn
-from sklearn.svm import SVC as SVC_sklearn
 from sklearn.utils import validation
 from sklearn.utils.validation import _assert_all_finite as _assert_all_finite_sklearn
 
 from daal4py.sklearn._utils import set_idp_sklearn_verbose
 
-from ..cluster.dbscan import DBSCAN as DBSCAN_daal4py
-from ..cluster.k_means import KMeans as KMeans_daal4py
-from ..decomposition._pca import PCA as PCA_daal4py
-from ..ensemble._forest import RandomForestClassifier as RandomForestClassifier_daal4py
-from ..ensemble._forest import RandomForestRegressor as RandomForestRegressor_daal4py
 from ..linear_model.coordinate_descent import ElasticNet as ElasticNet_daal4py
 from ..linear_model.coordinate_descent import Lasso as Lasso_daal4py
-from ..linear_model.linear import LinearRegression as LinearRegression_daal4py
 from ..linear_model.logistic_path import LogisticRegression as LogisticRegression_daal4py
 from ..linear_model.logistic_path import (
     LogisticRegressionCV as LogisticRegressionCV_daal4py,
@@ -71,14 +53,12 @@ from ..linear_model.logistic_path import (
 from ..linear_model.logistic_path import (
     logistic_regression_path as daal_optimized_logistic_path,
 )
-from ..linear_model.ridge import Ridge as Ridge_daal4py
 from ..manifold import TSNE as TSNE_daal4py
 from ..metrics import pairwise_distances, roc_auc_score
 from ..model_selection import train_test_split
 from ..neighbors import KNeighborsClassifier as KNeighborsClassifier_daal4py
 from ..neighbors import KNeighborsRegressor as KNeighborsRegressor_daal4py
 from ..neighbors import NearestNeighbors as NearestNeighbors_daal4py
-from ..svm.svm import SVC as SVC_daal4py
 from ..utils.validation import _assert_all_finite
 
 # dict key: sklearn name
@@ -98,41 +78,11 @@ PatchMap = dict[str, tuple[ModuleType, str, object, Optional[object]]]
 @lru_cache(maxsize=None)
 def _get_map_of_algorithms() -> PatchMap:
     mapping = {
-        "sklearn.decomposition.PCA": (
-            decomposition_module,
-            "PCA",
-            PCA_daal4py,
-            PCA_sklearn,
-        ),
-        "sklearn.cluster.KMeans": (
-            cluster_module,
-            "KMeans",
-            KMeans_daal4py,
-            KMeans_sklearn,
-        ),
-        "sklearn.cluster.DBSCAN": (
-            cluster_module,
-            "DBSCAN",
-            DBSCAN_daal4py,
-            DBSCAN_sklearn,
-        ),
         "sklearn.metrics.pairwise_distances": (
             metrics,
             "pairwise_distances",
             pairwise_distances,
             pairwise_distances_sklearn,
-        ),
-        "sklearn.linear_model.LinearRegression": (
-            linear_model_module,
-            "LinearRegression",
-            LinearRegression_daal4py,
-            LinearRegression_sklearn,
-        ),
-        "sklearn.linear_model.Ridge": (
-            linear_model_module,
-            "Ridge",
-            Ridge_daal4py,
-            Ridge_sklearn,
         ),
         "sklearn.linear_model.ElasticNet": (
             linear_model_module,
@@ -146,7 +96,6 @@ def _get_map_of_algorithms() -> PatchMap:
             Lasso_daal4py,
             Lasso_sklearn,
         ),
-        "sklearn.svm.SVC": (svm_module, "SVC", SVC_daal4py, SVC_sklearn),
         "sklearn.linear_model._logistic._logistic_regression_path": (
             logistic_module,
             "_logistic_regression_path",
@@ -182,18 +131,6 @@ def _get_map_of_algorithms() -> PatchMap:
             "KNeighborsRegressor",
             KNeighborsRegressor_daal4py,
             KNeighborsRegressor_sklearn,
-        ),
-        "sklearn.ensemble.RandomForestClassifier": (
-            ensemble_module,
-            "RandomForestClassifier",
-            RandomForestClassifier_daal4py,
-            RandomForestClassifier_sklearn,
-        ),
-        "sklearn.ensemble.RandomForestRegressor": (
-            ensemble_module,
-            "RandomForestRegressor",
-            RandomForestRegressor_daal4py,
-            RandomForestRegressor_sklearn,
         ),
         "sklearn.model_selection.train_test_split": (
             model_selection,

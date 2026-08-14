@@ -31,7 +31,6 @@ pull_request_rules:
       request_reviews:
         users:
           - napetrov
-          - Alexsandruss
           - ethanglaser
   - name: Review assigment for renovate documentation requests
     conditions:
@@ -41,6 +40,3 @@ pull_request_rules:
     actions:
       label:
         add: [infra]
-      request_reviews:
-        users:
-          - aepanchi

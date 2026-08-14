@@ -16,6 +16,8 @@
 
 from sklearn.base import BaseEstimator
 from sklearn.utils import gen_batches
+from sklearn.utils._array_api import get_namespace
+from sklearn.utils._param_validation import Interval, StrOptions
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -26,18 +28,14 @@ from onedal.basic_statistics import (
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import _check_sample_weight, validate_data
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval, StrOptions
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (
         check_same_namespace,
         get_namespace_and_device,
         move_to,
-        _matching_numpy_dtype,
     )
 
 import numbers
@@ -136,28 +134,27 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "result_options": [
-                StrOptions(
-                    {
-                        "all",
-                        "min",
-                        "max",
-                        "sum",
-                        "mean",
-                        "variance",
-                        "variation",
-                        "sum_squares",
-                        "standard_deviation",
-                        "sum_squares_centered",
-                        "second_order_raw_moment",
-                    }
-                ),
-                list,
-            ],
-            "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
-        }
+    _parameter_constraints: dict = {
+        "result_options": [
+            StrOptions(
+                {
+                    "all",
+                    "min",
+                    "max",
+                    "sum",
+                    "mean",
+                    "variance",
+                    "variation",
+                    "sum_squares",
+                    "standard_deviation",
+                    "sum_squares_centered",
+                    "second_order_raw_moment",
+                }
+            ),
+            list,
+        ],
+        "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(self, result_options="all", batch_size=None):
         self.result_options = result_options
@@ -191,8 +188,13 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
             )
 
             if sample_weight is not None:
+                # SPMD ranks may hold an all-zero local weight block while the
+                # global aggregate is non-zero, so don't reject all-zero weights.
                 sample_weight = _check_sample_weight(
-                    sample_weight, X, dtype=[xp.float64, xp.float32]
+                    sample_weight,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    allow_all_zero_weights=True,
                 )
         else:
             xp = None
@@ -208,14 +210,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
                 result_options=self.result_options
             )
 
-        if sklearn_check_version("1.9"):
-            dtype = _matching_numpy_dtype(X, xp=xp)
-        else:
-            dtype = X.dtype
-
-        self._onedal_estimator.partial_fit(
-            X, dtype, sample_weight=sample_weight, queue=queue
-        )
+        self._onedal_estimator.partial_fit(X, sample_weight=sample_weight, queue=queue)
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
@@ -223,8 +218,13 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
         if sample_weight is not None:
+            # SPMD ranks may hold an all-zero local weight block while the
+            # global aggregate is non-zero, so don't reject all-zero weights.
             sample_weight = _check_sample_weight(
-                sample_weight, X, dtype=[xp.float64, xp.float32]
+                sample_weight,
+                X,
+                dtype=[xp.float64, xp.float32],
+                allow_all_zero_weights=True,
             )
 
         _, n_features = X.shape
@@ -286,7 +286,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self : IncrementalBasicStatistics
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
         dispatch(
             self,
@@ -321,8 +321,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self : IncrementalBasicStatistics
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         dispatch(
             self,
             "fit",

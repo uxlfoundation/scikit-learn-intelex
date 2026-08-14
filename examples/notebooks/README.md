@@ -14,9 +14,9 @@
   ~ limitations under the License.
 -->
 
-# :snake: Extension for Scikit-learn* notebooks
+# :snake: Extension for scikit-learn* notebooks
 
-This folder contains examples of python notebooks that use Extension for Scikit-learn for popular datasets.
+This folder contains examples of python notebooks that use Extension for scikit-learn for popular datasets.
 
 #### :rocket: Jupyter startup guide
 You can use python notebooks with the help of Jupyter* notebook to run the following files:
@@ -35,7 +35,7 @@ jupyter notebook --notebook-dir=./ --ip=* --no-browser
 
 #### :pencil: Table of contents
 
-| Algorithm               | Workload       | Task            | Notebook       | Scikit-learn estimator|
+| Algorithm               | Workload       | Task            | Notebook       | scikit-learn estimator|
 | :----------------------:| :------------: | :---------------:| :------------: | :-------------------:|
 |    LogisticRegression  |    CIFAR-100    |    Сlassification    | [View source on GitHub](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/notebooks/logistictic_regression_cifar.ipynb)    | [sklearn.linear_model.LogisticRegression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html) |
 |          SVC           |     Adult       |    Сlassification    | [View source on GitHub](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/notebooks/svc_adult.ipynb) | [sklearn.svm.SVC](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html) |

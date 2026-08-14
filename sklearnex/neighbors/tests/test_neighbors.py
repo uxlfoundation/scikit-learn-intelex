@@ -14,15 +14,23 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
+
 import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
 from sklearn import datasets
 from sklearn.base import is_regressor
 
-from daal4py.sklearn._utils import sklearn_check_version
+if hasattr(sp, "csr_array"):
+    CSR_CTOR = sp.csr_array
+else:
+    CSR_CTOR = sp.csr_matrix
+
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -188,11 +196,32 @@ def test_p_present_if_metric_is_minkowski():
     assert knn.effective_metric_params_["p"] == 3
 
 
+# This triggers a fallback on the call to 'predict' by passing
+# a sparse matrix, which is not supported by oneDAL. If this
+# changes, a fallback would need to be triggered in some other way.
+@pytest.mark.allow_sklearn_fallback
+def test_no_metric_args_warning_on_fallback():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+
+    X_sp = CSR_CTOR(X)
+
+    knn = KNeighborsRegressor(algorithm="brute").fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        _ = knn.predict(X_sp)
+
+
 # Note: this doesn't check 'kneighbors_graph', because that function
 # transfers the data to NumPy internally, so it will not necessarily
 # end up erroring out.
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"), reason="Functionality introduced in alter versions."
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("weights", ["uniform", "distance"])
 def test_error_on_incompatible_namespaces(weights, with_array_api):
@@ -219,6 +248,10 @@ def test_error_on_incompatible_namespaces(weights, with_array_api):
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])

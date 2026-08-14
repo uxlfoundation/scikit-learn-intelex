@@ -137,6 +137,8 @@ if(IFACE STREQUAL "host")
     endif()
 
     if(SKLEARNEX_GCOV)
+        # Disable precompile headers as this causes issues in header coverage generation
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
             if(WIN32)
                 set(CMAKE_CXX_FLAGS "/clang:--coverage ${CMAKE_CXX_FLAGS}")
@@ -202,6 +204,8 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
     endif()
 
     if(SKLEARNEX_GCOV)
+        # Disable precompile headers as this causes issues in header coverage generation
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND WIN32)
             set(CMAKE_CXX_FLAGS "/clang:-Xarch_host /clang:--coverage ${CMAKE_CXX_FLAGS}")
             list(APPEND ONEDAL_LIBRARIES "clang_rt.profile-x86_64.lib")
@@ -234,16 +238,20 @@ pybind11_add_module(${TARGET} ${sources})
 
 set(EXTERNAL_INCLUDE_DIRECTORIES
     ${PYTHON_ONEDAL}../
-    ${oneDAL_INCLUDE_DIRS}
     ${PYTHON_INCLUDE_DIR}
     ${NUMPY_INCLUDE_DIRS}
 )
 
+# SYSTEM include suppresses deprecation warnings from oneDAL's vendored SYCL headers being promoted to errors.
+set(ONEDAL_SYSTEM_INCLUDE_DIRECTORIES
+    ${oneDAL_INCLUDE_DIRS}
+)
+
 # TODO: remove this workaround when oneDAL CMake config is fixed
 if(WIN32)
-list(APPEND EXTERNAL_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
+list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
 else()
-list(APPEND EXTERNAL_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
+list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
 endif()
 
 set(EXTERNAL_LINK_DIRECTORIES ${PYTHON_LIBRARY_DIR} ${oneDAL_LIBRARY_DIR})
@@ -260,6 +268,7 @@ target_link_libraries(${TARGET} PUBLIC ${EXTERNAL_LINK_LIBRARIES})
 target_compile_definitions(${TARGET} PUBLIC ${COMPILE_DEFINITIONS})
 target_link_directories(${TARGET} PRIVATE ${EXTERNAL_LINK_DIRECTORIES})
 target_include_directories(${TARGET} PRIVATE ${EXTERNAL_INCLUDE_DIRECTORIES})
+target_include_directories(${TARGET} SYSTEM PRIVATE ${ONEDAL_SYSTEM_INCLUDE_DIRECTORIES})
 
 message(STATUS "NUMPY_INCLUDE_DIRS:" ${NUMPY_INCLUDE_DIRS})
 

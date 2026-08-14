@@ -22,6 +22,7 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.base import get_tags
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
@@ -31,7 +32,7 @@ from sklearn.datasets import (
 )
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
@@ -54,9 +55,6 @@ from sklearnex.tests.utils import (
     gen_models_info,
     sklearn_clone_dict,
 )
-
-if sklearn_check_version("1.6"):
-    from sklearn.base import get_tags
 
 # to reproduce errors even in CI
 d4p.daalinit(nthreads=100)
@@ -146,23 +144,23 @@ if daal_check_version((2024, "P", 700)):  # Test for > 2024.7.0
     )
 SPARSE_INSTANCES = sklearn_clone_dict({str(i): i for i in _sparse_instances})
 
-_stability_instances = [
-    KNeighborsClassifier(algorithm="brute", weights="distance"),
-    KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
-    KNeighborsClassifier(algorithm="kd_tree"),
-    KNeighborsRegressor(algorithm="brute", weights="distance"),
-    KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
-    KNeighborsRegressor(algorithm="kd_tree"),
-    NearestNeighbors(algorithm="kd_tree"),
-    DBSCAN(algorithm="brute"),
-    PCA(n_components=0.5, svd_solver="covariance_eigh"),
-    KMeans(init="random"),
-]
-if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
-    from sklearnex.cluster import HDBSCAN
-
-    _stability_instances.append(HDBSCAN())
-STABILITY_INSTANCES = sklearn_clone_dict({str(i): i for i in _stability_instances})
+STABILITY_INSTANCES = sklearn_clone_dict(
+    {
+        str(i): i
+        for i in [
+            KNeighborsClassifier(algorithm="brute", weights="distance"),
+            KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
+            KNeighborsClassifier(algorithm="kd_tree"),
+            KNeighborsRegressor(algorithm="brute", weights="distance"),
+            KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
+            KNeighborsRegressor(algorithm="kd_tree"),
+            NearestNeighbors(algorithm="kd_tree"),
+            DBSCAN(algorithm="brute"),
+            PCA(n_components=0.5, svd_solver="covariance_eigh"),
+            KMeans(init="random"),
+        ]
+    }
+)
 
 
 def _skip_neighbors(estimator, method):
@@ -208,7 +206,7 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if (
         estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
         and dataframe == "array_api"
-        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+        and not get_tags(est).array_api_support
     ):
         pytest.skip("Array API inputs not supported in estimator")
 

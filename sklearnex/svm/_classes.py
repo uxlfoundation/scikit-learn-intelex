@@ -15,10 +15,12 @@
 # ==============================================================================
 
 import numpy as np
+from scipy.sparse import issparse
 from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import NuSVR as _sklearn_NuSVR
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _deprecate_positional_args
 
@@ -31,7 +33,7 @@ from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ._base import BaseSVC, BaseSVR
 
 # array API support limited to sklearn 1.5 for regressors due to an incorrect array API
@@ -39,7 +41,7 @@ from ._base import BaseSVC, BaseSVR
 # sklearn 1.6.
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -47,8 +49,7 @@ class SVC(BaseSVC, _sklearn_SVC):
     __doc__ = _sklearn_SVC.__doc__
     _onedal_factory = onedal_SVC
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_SVC._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_SVC._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -89,19 +90,9 @@ class SVC(BaseSVC, _sklearn_SVC):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.C <= 0:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'C' must be strictly positive.")
+        self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -122,58 +113,82 @@ class SVC(BaseSVC, _sklearn_SVC):
             f"sklearn.svm.{class_name}.{method_name}"
         )
         X = data[0]
-        conditions = [
-            (
-                self.kernel in ["linear", "rbf"],
-                f'Kernel is "{self.kernel}" while '
-                'only "linear" and "rbf" are supported on GPU.',
-            ),
-            (not is_sparse(X), "Sparse input is not supported on GPU."),
-            (self.class_weight is None, "Class weight is not supported on GPU."),
-            (
-                len(data) < 2 or type_of_target(data[1]) == "binary",
-                "Multiclassification is not supported on GPU.",
-            ),
-            # TODO: remove this condition once scikit-learn gets array API
-            # support for CalibratedClassifierCV with the arguments used here.
-            (
-                not (
-                    hasattr(self, "probability")
-                    and self.probability
-                    and self.probability != "deprecated"
-                    and hasattr(X, "__dlpack__")
-                    and not isinstance(X, np.ndarray)
-                ),
-                "'probability=True' not supported with array API classes.",
-            ),
-        ]
-        if method_name == "fit":
-            xp, _ = get_namespace(*data)
-            _, _, sample_weight = data
-            conditions.append(
+        dal_ready = patching_status.and_conditions(
+            [
                 (
-                    sample_weight is None
-                    or (
-                        xp.all((sw := xp.asarray(sample_weight)) >= 0)
-                        and not xp.all(sw == 0)
+                    self.kernel in ["linear", "rbf"],
+                    f'Kernel is "{self.kernel}" while '
+                    'only "linear" and "rbf" are supported on GPU.',
+                ),
+                (not is_sparse(X), "Sparse input is not supported on GPU."),
+            ]
+        )
+        if not dal_ready:
+            return patching_status
+        if method_name == "fit":
+            _, _, sample_weight = data
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(sample_weight)
+            else:
+                xp, _ = get_namespace(*data)
+            patching_status.and_conditions(
+                [
+                    (self.class_weight is None, "Class weight is not supported on GPU."),
+                    (
+                        len(data) < 2 or type_of_target(data[1]) == "binary",
+                        "Multiclassification is not supported on GPU.",
                     ),
-                    "negative or all zero weights are not supported",
-                )
+                    (
+                        sample_weight is None
+                        or (
+                            xp.all((sw := xp.asarray(sample_weight)) >= 0)
+                            and not xp.all(sw == 0)
+                        ),
+                        "negative or all zero weights are not supported",
+                    ),
+                    # TODO: remove this condition once scikit-learn gets array API
+                    # support for CalibratedClassifierCV with the arguments used here.
+                    (
+                        not (
+                            hasattr(self, "probability")
+                            and self.probability
+                            and self.probability != "deprecated"
+                            and hasattr(X, "__dlpack__")
+                            and not isinstance(X, np.ndarray)
+                        ),
+                        "'probability=True' not supported with array API classes.",
+                    ),
+                ]
             )
         elif method_name in self._n_jobs_supported_onedal_methods:
-            conditions.append(
-                (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")
+            patching_status.and_conditions(
+                [
+                    # Note: this is to ensure that oneDAL branch is always used,
+                    # which will do namespace and device checks with a more
+                    # informative error.
+                    (
+                        not issparse(self.support_vectors_)
+                        or hasattr(self, "_onedal_estimator"),
+                        "Predictions on sparse support vectors are not supported",
+                    ),
+                    # This can be remove once oneDAL model creation from multi-class
+                    # arrays is fixed.
+                    (
+                        hasattr(self, "_onedal_estimator")
+                        or self._is_binary_classifier(),
+                        "oneDAL model was not trained and cannot be re-created",
+                    ),
+                ]
             )
         else:
             raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
-        patching_status.and_conditions(conditions)
         return patching_status
 
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -181,8 +196,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     __doc__ = _sklearn_NuSVC.__doc__
     _onedal_factory = onedal_NuSVC
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_NuSVC._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_NuSVC._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -223,19 +237,9 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.nu <= 0 or self.nu > 1:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'nu' must be in the range (0, 1].")
+        self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -278,14 +282,13 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
     _onedal_factory = onedal_SVR
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_SVR._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_SVR._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -318,19 +321,9 @@ class SVR(BaseSVR, _sklearn_SVR):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.C <= 0:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'C' must be strictly positive.")
+        self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -348,14 +341,13 @@ class SVR(BaseSVR, _sklearn_SVR):
     fit.__doc__ = _sklearn_SVR.fit.__doc__
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class NuSVR(BaseSVR, _sklearn_NuSVR):
     __doc__ = _sklearn_NuSVR.__doc__
     _onedal_factory = onedal_NuSVR
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_NuSVR._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_NuSVR._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -388,19 +380,9 @@ class NuSVR(BaseSVR, _sklearn_NuSVR):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.nu <= 0 or self.nu > 1:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'nu' must be in the range (0, 1].")
+        self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",

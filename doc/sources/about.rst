@@ -25,7 +25,7 @@ Unlike other libraries in the Python ecosystem, classes and functions in the |sk
 
 The |sklearnex| is regularly tested for API compatibility and for correctness against |sklearn|'s own test suite (see :ref:`conformance_tests` for more information), and can be easily swapped in place of the stock |sklearn| library by :doc:`patching <patching>` it.
 
-The |sklearnex| aims to be compatible with the last 3 minor releases of |sklearnex| available at any given time, in addition to the 1.0 release as a special case, and ensures this compatibility by offering different code routes according to the |sklearn| version encountered at runtime - for example, if a given attribute of a class is removed in version 1.x of |sklearn|, the |sklearnex| will not set that attribute when running with |sklearn| >=1.x, but will still do so when running with |sklearn| <1.x, in order to guarantee full API compatibility.
+The |sklearnex| aims to be compatible with the last 4 minor releases of |sklearn| available at any given time, typically covering a period of approximately 2 years of releases, and ensures this compatibility by offering different code routes according to the |sklearn| version encountered at runtime - for example, if a given attribute of a class is removed in version 1.x of |sklearn|, the |sklearnex| will not set that attribute when running with |sklearn| >=1.x, but will still do so when running with |sklearn| <1.x, in order to guarantee full API compatibility.
 
 Performance of the |sklearnex| is regularly measured and compared against that of other libraries using public and synthetic datasets through `sklbench <https://github.com/IntelPython/scikit-learn_bench>`__, which is also free and fully open-source.
 

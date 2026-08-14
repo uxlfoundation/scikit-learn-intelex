@@ -151,7 +151,6 @@ def test_incremental_covariance_partial_fit_spmd_gold(
     "dataframe,queue",
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_covariance_partial_fit_spmd_synthetic(
     n_samples,
@@ -161,7 +160,6 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.covariance import IncrementalEmpiricalCovariance
@@ -185,7 +183,7 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
             split_local_data[i], sycl_queue=queue, target_df=dataframe
         )
         # Configure array API dispatch status for spmd estimator
-        with config_context(array_api_dispatch=array_api_dispatch):
+        with config_context(array_api_dispatch=True):
             inccov_spmd.partial_fit(local_dpt_data)
 
     inccov.fit(dpt_data)

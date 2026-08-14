@@ -24,6 +24,7 @@ from scipy.special import expit
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+from sklearnex import config_context
 from sklearnex.spmd.linear_model import LogisticRegression
 
 
@@ -68,22 +69,25 @@ dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
 dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-model_spmd = LogisticRegression(solver="newton-cg")
-model_spmd.fit(dpnp_X_train, dpnp_y_train)
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    model_spmd = LogisticRegression(solver="newton-cg")
+    model_spmd.fit(dpnp_X_train, dpnp_y_train)
 
-y_predict = model_spmd.predict(dpnp_X_test)
+    y_predict = model_spmd.predict(dpnp_X_test)
 
-print("Distributed LogisticRegression results:")
-print("Coefficients on rank {}:\n{}:".format(rank, model_spmd.coef_))
-print("Intercept on rank {}:\n{}:".format(rank, model_spmd.intercept_))
-print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
-print(
-    "Classification results (first 5 observations on rank {}):\n{}".format(
-        rank, y_predict[:5]
+    print("Distributed LogisticRegression results:")
+    print("Coefficients on rank {}:\n{}:".format(rank, model_spmd.coef_))
+    print("Intercept on rank {}:\n{}:".format(rank, model_spmd.intercept_))
+    print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
+    print(
+        "Classification results (first 5 observations on rank {}):\n{}".format(
+            rank, y_predict[:5]
+        )
     )
-)
-print(
-    "Accuracy for entire rank {} (2 classes): {}\n".format(
-        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+    print(
+        "Accuracy for entire rank {} (2 classes): {}\n".format(
+            rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+        )
     )
-)

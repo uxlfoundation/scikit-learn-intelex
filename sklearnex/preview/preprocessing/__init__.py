@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2014 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from .svm import SVC
+from ._data import MaxAbsScaler
 
-__all__ = ["SVC"]
+__all__ = ["MaxAbsScaler"]

@@ -210,6 +210,9 @@ void init_train_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(model, result_t)
         .DEF_ONEDAL_PY_PROPERTY(support_vectors, result_t)
         .DEF_ONEDAL_PY_PROPERTY(support_indices, result_t)
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
+        .DEF_ONEDAL_PY_PROPERTY(iteration_counts, result_t)
+#endif
         .DEF_ONEDAL_PY_PROPERTY(coeffs, result_t)
         .DEF_ONEDAL_PY_PROPERTY(biases, result_t);
 }

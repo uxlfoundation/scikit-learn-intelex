@@ -21,6 +21,8 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import Ridge as _sklearn_Ridge
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
+from sklearn.utils._array_api import get_namespace
+from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -30,14 +32,18 @@ from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
 
 
-@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
@@ -107,14 +113,13 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "fit_intercept": ["boolean"],
-            "alpha": [Interval(numbers.Real, 0, None, closed="left")],
-            "copy_X": ["boolean"],
-            "n_jobs": [numbers.Integral, None],
-            "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
-        }
+    _parameter_constraints: dict = {
+        "fit_intercept": ["boolean"],
+        "alpha": [Interval(numbers.Real, 0, None, closed="left")],
+        "copy_X": ["boolean"],
+        "n_jobs": [numbers.Integral, None],
+        "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(
         self, fit_intercept=True, alpha=1.0, copy_X=True, n_jobs=None, batch_size=None
@@ -135,14 +140,16 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         xp, _ = get_namespace(X)
 
         X = validate_data(
             self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
         )
+
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="coef_", method="predict")
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
@@ -154,6 +161,9 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        if sklearn_check_version("1.9"):
+            xp, _, device_ = get_namespace_and_device(X)
+            y = move_to(y, xp=xp, device=device_)
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
@@ -162,7 +172,10 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
         if check_input:
-            xp, _ = get_namespace(X, y)
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(X)
+            else:
+                xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
                 X,
@@ -217,7 +230,10 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        xp, _ = get_namespace(X, y)
+        if sklearn_check_version("1.9"):
+            xp, _ = get_namespace(X)
+        else:
+            xp, _ = get_namespace(X, y)
 
         X, y = validate_data(
             self,
@@ -280,7 +296,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self : IncrementalRidge
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
 
         dispatch(
@@ -318,8 +334,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self : IncrementalRidge
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,

@@ -46,12 +46,18 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # ==============================================================================
 
+import logging
 import numbers
+
+# only for compliance with Sklearn
+import warnings
 
 import numpy as np
 from scipy import sparse as sp
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model._coordinate_descent import ElasticNet as ElasticNet_original
 from sklearn.linear_model._coordinate_descent import Lasso as Lasso_original
+from sklearn.preprocessing import normalize
 from sklearn.utils import check_array, check_X_y
 
 import daal4py
@@ -61,24 +67,10 @@ from daal4py.sklearn._utils import (
     get_patch_message,
     getFPType,
     make2d,
-    sklearn_check_version,
 )
 
 from .._n_jobs_support import control_n_jobs
 from ..utils.validation import check_feature_names
-
-if not sklearn_check_version("1.2"):
-    from sklearn.linear_model._base import _deprecate_normalize
-if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-    from sklearn.utils import check_scalar
-
-import logging
-
-# only for compliance with Sklearn
-import warnings
-
-from sklearn.exceptions import ConvergenceWarning
-from sklearn.preprocessing import normalize
 
 
 def _daal4py_check(self, X, y, check_input):
@@ -140,52 +132,22 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     penalty_L1 = penalty_L1.reshape((1, -1))
     penalty_L2 = penalty_L2.reshape((1, -1))
 
-    # normalizing and centering
+    # centering
     X_offset = np.zeros(X.shape[1], dtype=X.dtype)
-    X_scale = np.ones(X.shape[1], dtype=X.dtype)
-    if y.ndim == 1:
-        y_offset = X.dtype.type(0)
-    else:
-        y_offset = np.zeros(y.shape[1], dtype=X.dtype)
-
-    if sklearn_check_version("1.2"):
-        _normalize = False
-    else:
-        _normalize = self._normalize
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
-        if _normalize:
-            if self.copy_X:
-                X = np.copy(X) - X_offset
-            else:
-                X -= X_offset
-            X, X_scale = normalize(X, axis=0, copy=False, return_norm=True)
-            y_offset = np.average(y, axis=0)
-            y = y - y_offset
 
     # only for compliance with Sklearn
     if (
         isinstance(self.precompute, np.ndarray)
         and self.fit_intercept
-        and (
-            not np.allclose(X_offset, np.zeros(X.shape[1]))
-            or _normalize
-            and not np.allclose(X_scale, np.ones(X.shape[1]))
-        )
+        and not np.allclose(X_offset, np.zeros(X.shape[1]))
     ):
-        if sklearn_check_version("1.4"):
-            warnings.warn(
-                "Gram matrix was provided but X was centered"
-                " to fit intercept: recomputing Gram matrix.",
-                UserWarning,
-            )
-        else:
-            warnings.warn(
-                "Gram matrix was provided but X was centered"
-                " to fit intercept, "
-                "or X was normalized : recomputing Gram matrix.",
-                UserWarning,
-            )
+        warnings.warn(
+            "Gram matrix was provided but X was centered"
+            " to fit intercept: recomputing Gram matrix.",
+            UserWarning,
+        )
 
     mse_alg = daal4py.optimization_solver_mse(
         numberOfTerms=X.shape[0], fptype=_fptype, method="defaultDense"
@@ -212,9 +174,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
             inputArgument[i][0] = self.intercept_ if (n_rows == 1) else self.intercept_[i]
             inputArgument[i][1:] = self.coef_[:] if (n_rows == 1) else self.coef_[i, :]
         cd_solver.setup(inputArgument)
-    doUse_condition = self.copy_X is False or (
-        self.fit_intercept and _normalize and self.copy_X
-    )
+    doUse_condition = self.copy_X is False
     elastic_net_alg = daal4py.elastic_net_training(
         fptype=_fptype,
         method="defaultDense",
@@ -237,13 +197,6 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     # set coef_ and intersept_ results
     elastic_net_model = elastic_net_res.model
     self.daal_model_ = elastic_net_model
-
-    # update coefficients if normalizing and centering
-    if self.fit_intercept and _normalize:
-        elastic_net_model.Beta[:, 1:] = elastic_net_model.Beta[:, 1:] / X_scale
-        elastic_net_model.Beta[:, 0] = (
-            y_offset - np.dot(X_offset, elastic_net_model.Beta[:, 1:].T)
-        ).T
 
     coefs = elastic_net_model.Beta
 
@@ -310,43 +263,20 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     self.n_features_in_ = X.shape[1]
     self._y = y
 
-    # normalizing and centering
+    # centering
     X_offset = np.zeros(X.shape[1], dtype=X.dtype)
-    X_scale = np.ones(X.shape[1], dtype=X.dtype)
-    if y.ndim == 1:
-        y_offset = X.dtype.type(0)
-    else:
-        y_offset = np.zeros(y.shape[1], dtype=X.dtype)
-
-    if sklearn_check_version("1.2"):
-        _normalize = False
-    else:
-        _normalize = self._normalize
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
-        if _normalize:
-            if self.copy_X:
-                X = np.copy(X) - X_offset
-            else:
-                X -= X_offset
-            X, X_scale = normalize(X, axis=0, copy=False, return_norm=True)
-            y_offset = np.average(y, axis=0)
-            y = y - y_offset
 
     # only for compliance with Sklearn
     if (
         isinstance(self.precompute, np.ndarray)
         and self.fit_intercept
-        and (
-            not np.allclose(X_offset, np.zeros(X.shape[1]))
-            or _normalize
-            and not np.allclose(X_scale, np.ones(X.shape[1]))
-        )
+        and not np.allclose(X_offset, np.zeros(X.shape[1]))
     ):
         warnings.warn(
             "Gram matrix was provided but X was centered"
-            " to fit intercept, "
-            "or X was normalized : recomputing Gram matrix.",
+            " to fit intercept: recomputing Gram matrix.",
             UserWarning,
         )
 
@@ -379,9 +309,7 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
                 else self.coef_[i, :].copy(order="C")
             )
         cd_solver.setup(inputArgument)
-    doUse_condition = self.copy_X is False or (
-        self.fit_intercept and _normalize and self.copy_X
-    )
+    doUse_condition = self.copy_X is False
     lasso_alg = daal4py.lasso_regression_training(
         fptype=_fptype,
         method="defaultDense",
@@ -403,13 +331,6 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     # set coef_ and intersept_ results
     lasso_model = lasso_res.model
     self.daal_model_ = lasso_model
-
-    # update coefficients if normalizing and centering
-    if self.fit_intercept and _normalize:
-        lasso_model.Beta[:, 1:] = lasso_model.Beta[:, 1:] / X_scale
-        lasso_model.Beta[:, 0] = (
-            y_offset - np.dot(X_offset, lasso_model.Beta[:, 1:].T)
-        ).T
 
     coefs = lasso_model.Beta
 
@@ -465,39 +386,7 @@ def _daal4py_predict_lasso(self, X):
 
 def _fit(self, _X, _y, sample_weight=None, check_input=True):
     check_feature_names(self, _X, reset=True)
-    if sklearn_check_version("1.2"):
-        self._validate_params()
-    elif sklearn_check_version("1.1"):
-        check_scalar(
-            self.alpha,
-            "alpha",
-            target_type=numbers.Real,
-            min_val=0.0,
-        )
-        if self.alpha == 0:
-            warnings.warn(
-                "With alpha=0, this algorithm does not converge "
-                "well. You are advised to use the LinearRegression "
-                "estimator",
-                stacklevel=2,
-            )
-        if isinstance(self.precompute, str):
-            raise ValueError(
-                "precompute should be one of True, False or array-like. Got %r"
-                % self.precompute
-            )
-        check_scalar(
-            self.l1_ratio,
-            "l1_ratio",
-            target_type=numbers.Real,
-            min_val=0.0,
-            max_val=1.0,
-        )
-        if self.max_iter is not None:
-            check_scalar(
-                self.max_iter, "max_iter", target_type=numbers.Integral, min_val=1
-            )
-        check_scalar(self.tol, "tol", target_type=numbers.Real, min_val=0.0)
+    self._validate_params()
     # check X and y
     if check_input:
         X, y = check_X_y(
@@ -566,11 +455,6 @@ def _fit(self, _X, _y, sample_weight=None, check_input=True):
         if isinstance(X, np.ndarray) and X.flags["F_CONTIGUOUS"] is False:
             # print(X.flags)
             raise ValueError("ndarray is not Fortran contiguous")
-
-    if not sklearn_check_version("1.2"):
-        self._normalize = _deprecate_normalize(
-            self.normalize, default=False, estimator_name=class_name
-        )
 
     # only for pass tests
     # "check_estimators_fit_returns_self(readonly_memmap=True) and
@@ -656,68 +540,35 @@ def _dual_gap(self):
 class ElasticNet(ElasticNet_original):
     __doc__ = ElasticNet_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**ElasticNet_original._parameter_constraints}
+    _parameter_constraints: dict = {**ElasticNet_original._parameter_constraints}
 
-        def __init__(
-            self,
-            alpha=1.0,
-            l1_ratio=0.5,
-            fit_intercept=True,
-            precompute=False,
-            max_iter=1000,
-            copy_X=True,
-            tol=1e-4,
-            warm_start=False,
-            positive=False,
-            random_state=None,
-            selection="cyclic",
-        ):
-            super(ElasticNet, self).__init__(
-                alpha=alpha,
-                l1_ratio=l1_ratio,
-                fit_intercept=fit_intercept,
-                precompute=precompute,
-                max_iter=max_iter,
-                copy_X=copy_X,
-                tol=tol,
-                warm_start=warm_start,
-                positive=positive,
-                random_state=random_state,
-                selection=selection,
-            )
-
-    else:
-
-        def __init__(
-            self,
-            alpha=1.0,
-            l1_ratio=0.5,
-            fit_intercept=True,
-            normalize="deprecated",
-            precompute=False,
-            max_iter=1000,
-            copy_X=True,
-            tol=1e-4,
-            warm_start=False,
-            positive=False,
-            random_state=None,
-            selection="cyclic",
-        ):
-            super(ElasticNet, self).__init__(
-                alpha=alpha,
-                l1_ratio=l1_ratio,
-                fit_intercept=fit_intercept,
-                normalize=normalize,
-                precompute=precompute,
-                max_iter=max_iter,
-                copy_X=copy_X,
-                tol=tol,
-                warm_start=warm_start,
-                positive=positive,
-                random_state=random_state,
-                selection=selection,
-            )
+    def __init__(
+        self,
+        alpha=1.0,
+        l1_ratio=0.5,
+        fit_intercept=True,
+        precompute=False,
+        max_iter=1000,
+        copy_X=True,
+        tol=1e-4,
+        warm_start=False,
+        positive=False,
+        random_state=None,
+        selection="cyclic",
+    ):
+        super(ElasticNet, self).__init__(
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+            fit_intercept=fit_intercept,
+            precompute=precompute,
+            max_iter=max_iter,
+            copy_X=copy_X,
+            tol=tol,
+            warm_start=warm_start,
+            positive=positive,
+            random_state=random_state,
+            selection=selection,
+        )
 
     def fit(self, X, y, sample_weight=None, check_input=True):
         return _fit(self, X, y, sample_weight=sample_weight, check_input=check_input)
@@ -764,66 +615,34 @@ class ElasticNet(ElasticNet_original):
 class Lasso(Lasso_original):
     __doc__ = Lasso_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**Lasso_original._parameter_constraints}
+    _parameter_constraints: dict = {**Lasso_original._parameter_constraints}
 
-        def __init__(
-            self,
-            alpha=1.0,
-            fit_intercept=True,
-            precompute=False,
-            copy_X=True,
-            max_iter=1000,
-            tol=1e-4,
-            warm_start=False,
-            positive=False,
-            random_state=None,
-            selection="cyclic",
-        ):
-            self.l1_ratio = 1.0
-            super().__init__(
-                alpha=alpha,
-                fit_intercept=fit_intercept,
-                precompute=precompute,
-                copy_X=copy_X,
-                max_iter=max_iter,
-                tol=tol,
-                warm_start=warm_start,
-                positive=positive,
-                random_state=random_state,
-                selection=selection,
-            )
-
-    else:
-
-        def __init__(
-            self,
-            alpha=1.0,
-            fit_intercept=True,
-            normalize="deprecated",
-            precompute=False,
-            copy_X=True,
-            max_iter=1000,
-            tol=1e-4,
-            warm_start=False,
-            positive=False,
-            random_state=None,
-            selection="cyclic",
-        ):
-            self.l1_ratio = 1.0
-            super().__init__(
-                alpha=alpha,
-                fit_intercept=fit_intercept,
-                normalize=normalize,
-                precompute=precompute,
-                copy_X=copy_X,
-                max_iter=max_iter,
-                tol=tol,
-                warm_start=warm_start,
-                positive=positive,
-                random_state=random_state,
-                selection=selection,
-            )
+    def __init__(
+        self,
+        alpha=1.0,
+        fit_intercept=True,
+        precompute=False,
+        copy_X=True,
+        max_iter=1000,
+        tol=1e-4,
+        warm_start=False,
+        positive=False,
+        random_state=None,
+        selection="cyclic",
+    ):
+        self.l1_ratio = 1.0
+        super().__init__(
+            alpha=alpha,
+            fit_intercept=fit_intercept,
+            precompute=precompute,
+            copy_X=copy_X,
+            max_iter=max_iter,
+            tol=tol,
+            warm_start=warm_start,
+            positive=positive,
+            random_state=random_state,
+            selection=selection,
+        )
 
     def fit(self, X, y, sample_weight=None, check_input=True):
         return _fit(self, X, y, sample_weight, check_input)

@@ -82,6 +82,19 @@ For more details, see the `DPC++ requirements page <https://www.intel.com/conten
 
     If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
 
+User Permissions
+----------------
+
+On Linux*, non-root users might not have access to GPU devices by default. To give access to GPUs as computational resources, users must be added to either the ``render`` (compute-only) or the ``video`` (more general) user group, which can be done by executing the following commands on a terminal: ::
+
+    sudo usermod -a -G render "$(whoami)"
+    sudo usermod -a -G video "$(whoami)"
+
+BIOS Settings
+-------------
+
+For non-datacenter discrete GPU devices that have a video output, GPU support might require enabling the REBAR BIOS setting, which should be enabled by default in modern motherboards.
+
 Verifying GPU setup
 -------------------
 
@@ -181,6 +194,10 @@ GPU arrays through array API
 
 As another option, computations can also be performed on data that is already on a SYCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__ (see also the `PyTorch Intel GPU docs <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__).
 
+.. tip::
+    Internally, array API support in the |sklearnex| works by extracting memory pointers, devices and queues
+    from objects, without using the object's namespace for compute-heavy operations.
+
 This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
 
 See :doc:`array_api` for details, instructions, and limitations. Example:
@@ -248,31 +265,6 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API in estimators with :ref:`array API support <array_api_estimators>`, but note that using this alternative without array API enabled always involves data movement to host and back, thus not being the most efficient route in computational terms and **not recommended**.
-
-Example:
-
-.. code-block:: python
-
-    import numpy as np
-    import dpnp
-    from sklearnex import config_context
-    from sklearnex.linear_model import LinearRegression
-
-    rng = np.random.default_rng(seed=123)
-    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
-    y_np = rng.standard_normal(size=100, dtype=np.float32)
-
-    X = dpnp.array(X_np, device="gpu")
-    y = dpnp.array(y_np, device="gpu")
-
-    model = LinearRegression()
-    model.fit(X, y)
-
-
-Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SYCL queue contained by those objects.
-
-.. note::
-    All the input data for an algorithm must reside on the same device when not using array API.
+GPU arrays from |dpnp| are array-API-compliant and are used like any other array API framework: array API dispatch must be enabled through scikit-learn's ``config_context(array_api_dispatch=True)`` for the data to be consumed as-is on the device where it resides. Without array API enabled, |dpnp| arrays are treated as unsupported device inputs and moved to host for computation, with results returned as NumPy arrays.
 
 When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.

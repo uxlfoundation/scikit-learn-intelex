@@ -58,6 +58,7 @@ from sklearn.metrics._ranking import _binary_roc_auc_score
 from sklearn.metrics._ranking import _multiclass_roc_auc_score as multiclass_roc_auc_score
 from sklearn.preprocessing import label_binarize
 from sklearn.utils import check_array
+from sklearn.utils._param_validation import validate_params
 from sklearn.utils.multiclass import is_multilabel
 
 import daal4py as d4p
@@ -66,17 +67,8 @@ from .._utils import (
     PatchingConditionsChain,
     check_is_array_api,
     get_patch_message,
-    sklearn_check_version,
 )
 from ..utils.validation import _assert_all_finite
-
-if sklearn_check_version("1.3"):
-    from sklearn.utils._param_validation import (
-        Interval,
-        Real,
-        StrOptions,
-        validate_params,
-    )
 
 try:
     import pandas as pd
@@ -278,16 +270,7 @@ def roc_auc_score(
     )
 
 
-if sklearn_check_version("1.3"):
-    roc_auc_score = validate_params(
-        {
-            "y_true": ["array-like"],
-            "y_score": ["array-like"],
-            "average": [StrOptions({"micro", "macro", "samples", "weighted"}), None],
-            "sample_weight": ["array-like", None],
-            "max_fpr": [Interval(Real, 0.0, 1, closed="right"), None],
-            "multi_class": [StrOptions({"raise", "ovr", "ovo"})],
-            "labels": ["array-like", None],
-        },
-        prefer_skip_nested_validation=True,
-    )(roc_auc_score)
+roc_auc_score = validate_params(
+    _sklearn_roc_auc_score._skl_parameter_constraints,
+    prefer_skip_nested_validation=True,
+)(roc_auc_score)

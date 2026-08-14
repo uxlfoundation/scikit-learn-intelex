@@ -172,7 +172,9 @@ def logistic_regression_path_d4p(
         X = check_array(
             X,
             accept_sparse=False,
-            dtype=np.float64,
+            dtype=(
+                [np.float64, np.float32] if sklearn_check_version("1.9") else np.float64
+            ),
             accept_large_sparse=False,
         )
         y = check_array(y, ensure_2d=False, dtype=None)
@@ -187,30 +189,38 @@ def logistic_regression_path_d4p(
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
+
+    # sklearn 1.10 passes 'y' already label-encoded to 0..n_classes-1, while
+    # 'classes' stays the original labels, so both the positive class and the
+    # encoder have to be expressed in encoded space rather than label space.
+    y_classes = np.arange(n_classes) if sklearn_check_version("1.10") else classes
+
     if pos_class is None and multi_class != "multinomial":
         if classes.size > 2:
             raise ValueError("To fit OvR, use the pos_class argument")
         # np.unique(y) gives labels in sorted order.
-        pos_class = classes[1]
+        pos_class = y_classes[1]
 
-    le = LabelEncoder().fit(classes)
+    le = LabelEncoder().fit(y_classes)
 
+    # Note: the LBFGS solver from SciPy will always cast the input to float64
+    w0_dtype = X.dtype if solver != "lbfgs" else np.float64
     if sklearn_check_version("1.8"):
         if is_binary:
             y_bin = (y == pos_class).astype(X.dtype)
-            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=w0_dtype)
         else:
             Y_multi = le.transform(y).astype(X.dtype, copy=False)
-            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=w0_dtype)
     else:
         # For doing a ovr, we need to mask the labels first. for the
         # multinomial case this is not necessary.
         if multi_class == "ovr":
             y_bin = (y == pos_class).astype(X.dtype)
-            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=w0_dtype)
         else:
             Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
-            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=w0_dtype)
 
     # Adoption of https://github.com/scikit-learn/scikit-learn/pull/26721
     sw_sum = len(X)
@@ -380,6 +390,8 @@ def logistic_regression_path_d4p(
             w0, loss = opt_res.x, opt_res.fun
             if C_daal_multiplier == 2:
                 w0 /= 2
+            if w0.dtype != X.dtype and sklearn_check_version("1.9"):
+                w0 = w0.astype(X.dtype)
         elif solver == "newton-cg":
 
             def make_ncg_funcs(f, value=False, gradient=False, hessian=False):
@@ -456,8 +468,10 @@ def daal4py_fit(self, X, y, sample_weight=None):
     # 'control_n_jobs', which acts on the sklearnex side before calling these
     # daal4py functions for logistic regression, so setting 'n_jobs' in the estimator
     # objects at this point will have no effect on the value passed to oneDAL.
+    # Note: as of 2026-05-25, the 'version' attribute in sklearn is already set
+    # as '1.10.dev0', but this argument hasn't been removed.
     # TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
-    if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
+    if sklearn_check_version("1.8"):
         n_jobs = self.n_jobs
         if self.n_jobs is not None:
             self.n_jobs = None
@@ -467,7 +481,7 @@ def daal4py_fit(self, X, y, sample_weight=None):
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
-        if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
+        if sklearn_check_version("1.8"):
             self.n_jobs = n_jobs
     return clf
 
@@ -591,7 +605,109 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-if sklearn_check_version("1.8"):
+if sklearn_check_version("1.9"):
+
+    def logistic_regression_path(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,  # Not supported
+        estimator=None,  # Only used by 'callback_ctx'
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegression.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+    def logistic_regression_path_cv(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,
+        estimator=None,
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegressionCV.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+elif sklearn_check_version("1.8"):
 
     def logistic_regression_path(
         X,
@@ -849,7 +965,30 @@ def logistic_regression_path_dispatcher(
     )
     if not _dal_ready:
         _patching_status.write_log()
-        if sklearn_check_version("1.8"):
+        if sklearn_check_version("1.10"):
+            # 'class_weight' is folded into 'sample_weight' by the caller.
+            return lr_path_original(
+                X,
+                y,
+                classes=classes,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+                n_threads=n_threads,
+            )
+        elif sklearn_check_version("1.8"):
             return lr_path_original(
                 X,
                 y,
@@ -865,30 +1004,6 @@ def logistic_regression_path_dispatcher(
                 dual=dual,
                 penalty=penalty,
                 intercept_scaling=intercept_scaling,
-                random_state=random_state,
-                check_input=check_input,
-                max_squared_sum=max_squared_sum,
-                sample_weight=sample_weight,
-                l1_ratio=l1_ratio,
-                n_threads=n_threads,
-            )
-        elif sklearn_check_version("1.1"):
-            return lr_path_original(
-                X,
-                y,
-                pos_class=pos_class,
-                Cs=Cs,
-                fit_intercept=fit_intercept,
-                max_iter=max_iter,
-                tol=tol,
-                verbose=verbose,
-                solver=solver,
-                coef=coef,
-                class_weight=class_weight,
-                dual=dual,
-                penalty=penalty,
-                intercept_scaling=intercept_scaling,
-                multi_class=multi_class,
                 random_state=random_state,
                 check_input=check_input,
                 max_squared_sum=max_squared_sum,
@@ -918,6 +1033,7 @@ def logistic_regression_path_dispatcher(
                 max_squared_sum=max_squared_sum,
                 sample_weight=sample_weight,
                 l1_ratio=l1_ratio,
+                n_threads=n_threads,
             )
 
     res = logistic_regression_path_d4p(
@@ -955,10 +1071,7 @@ def logistic_regression_path_dispatcher(
 class LogisticRegression(LogisticRegression_original):
     __doc__ = LogisticRegression_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **LogisticRegression_original._parameter_constraints
-        }
+    _parameter_constraints: dict = {**LogisticRegression_original._parameter_constraints}
 
     def __init__(
         self,
@@ -996,8 +1109,7 @@ class LogisticRegression(LogisticRegression_original):
 
     def fit(self, X, y, sample_weight=None):
         check_feature_names(self, X, reset=True)
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         return daal4py_fit(self, X, y, sample_weight)
 
     def predict(self, X):
@@ -1020,15 +1132,8 @@ class LogisticRegression(LogisticRegression_original):
 )
 class LogisticRegressionCV(LogisticRegressionCV_original):
 
-    if sklearn_check_version("1.1"):
-
-        def fit(self, X, y, sample_weight=None, **params):
-            return daal4py_fit_cv(self, X, y, sample_weight, **params)
-
-    else:
-
-        def fit(self, X, y, sample_weight=None):
-            return daal4py_fit_cv(self, X, y, sample_weight)
+    def fit(self, X, y, sample_weight=None, **params):
+        return daal4py_fit_cv(self, X, y, sample_weight, **params)
 
     def predict(self, X):
         return daal4py_predict(self, X, "computeClassLabels")

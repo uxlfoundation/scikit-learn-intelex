@@ -37,6 +37,10 @@ the configuration contexts and global settings of the |sklearnex| will also affe
 option is supported by it - meaning: the same context manager or global option setter is used for
 both libraries.
 
+However, some of the configurable options offered by |sklearn| have no effect when accelerated
+routines from the |sklearnex| are used - see :ref:`config_unsupported` for details about which
+options are not supported.
+
 .. important::
 
     In order for configuration contexts from the |sklearnex| to work correctly with

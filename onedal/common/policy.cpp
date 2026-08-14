@@ -81,7 +81,6 @@ void instantiate_data_parallel_policy(py::module& m) {
     policy.def("get_device_name", [](const dp_policy_t& policy) {
         return get_device_name(policy);
     });
-    m.def("get_used_memory", &get_used_memory, py::return_value_policy::take_ownership);
 }
 #endif // ONEDAL_DATA_PARALLEL
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
