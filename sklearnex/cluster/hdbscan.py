@@ -16,7 +16,7 @@
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
-if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
+if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
 
     from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
