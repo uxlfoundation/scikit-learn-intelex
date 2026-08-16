@@ -166,7 +166,10 @@ cdef extern from "daal4py_cpp.h":
 
 def daalinit(nthreads: int = -1) -> None:
     '''
-    Set number of threads for daal4py
+    Set number of threads for daal4py.
+
+    This function does not initialize MPI or distributed mode. The distributed
+    transceiver is initialized lazily by the first distributed computation.
 
     This modifies the number of threads configured for daal4py, which is a
     global setting - meaning: it is applied to all subsequent calls to daal4py
@@ -183,19 +186,17 @@ def daalinit(nthreads: int = -1) -> None:
 
 def daalfini() -> None:
     '''
-    Finalize MPI environment
+    Release daal4py distributed resources.
 
-    When using distributed mode without ``mpi4py``, this function must be called after
-    the distributed computation calls before accessing the result object from the algorithm
-    that was executed in distributed mode. It has no effect when the python process is not
-    run through MPI (used for distributed mode).
+    Call this after distributed computations and before accessing their result
+    objects. It releases daal4py's distributed transceiver. When daal4py
+    initialized MPI itself, it also finalizes MPI; when MPI was already
+    initialized (for example by ``mpi4py``), it leaves MPI ownership and
+    finalization to that library.
 
-    This is a wrapper over ``MPI_Finalize``. It does not need to be called if ``mpi4py``
-    was imported before, as ``mpi4py`` calls this function upon process exit.
-
-    Note that software ``mpi4py`` calls this function automatically if it is imported, but
-    it only does so upon process exit, so this still needs to be called before accessing
-    the result objects in the process/rank that will use them.
+    This function is a no-op when no daal4py distributed transceiver is active.
+    ``daalinit`` only configures daal4py thread settings; it is not required to
+    initialize MPI before a distributed computation.
 
     :rtype: None
     '''

@@ -95,6 +95,11 @@ From the ``daal4py`` side, in order to use distributed mode, algorithm construct
 be passed argument ``distributed=True``, method ``.compute()`` should be passed the right
 subset of the data for each node, and after the distributed computations are finalized,
 function :obj:`daal4py.daalfini` must be called before accessing the results object.
+``daalinit`` only configures daal4py thread settings: distributed computations
+initialize their MPI transceiver lazily, so it is not needed to initialize MPI.
+``daalfini`` releases that transceiver and finalizes MPI only when daal4py
+initialized MPI itself. If ``mpi4py`` initialized MPI, it remains responsible
+for MPI finalization.
 
 Example:
 
@@ -114,7 +119,9 @@ Example:
     qr_algo = daal4py.qr(distributed=True)
     qr_result = qr_algo.compute(X_node)
 
-    daal4py.daalfini() # call before accessing the results
+    # Releases daal4py's transceiver before accessing the results. This does
+    # not finalize MPI when mpi4py or another library initialized it.
+    daal4py.daalfini()
 
     # Matrix R (shape=[ncols, ncols]) is common for all nodes
     np.testing.assert_almost_equal(
@@ -186,7 +193,8 @@ Same example calling MPI functionalities from ``mpi4py`` instead:
     qr_algo = daal4py.qr(distributed=True)
     qr_result = qr_algo.compute(X_node)
 
-    daal4py.daalfini() # call before accessing results
+    # Releases daal4py's transceiver; mpi4py retains ownership of MPI.
+    daal4py.daalfini()
 
     # Matrix R (shape=[ncols, ncols]) is common for all nodes
     np.testing.assert_almost_equal(

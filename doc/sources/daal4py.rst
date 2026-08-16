@@ -35,8 +35,11 @@ Documentation for functions that control the global thread settings in ``daal4py
 MPI helpers
 -----------
 
-Documentation for helper functions that can be used in distributed mode, particularly when using MPI without |mpi4py|.
-See :ref:`distributed_daal4py` for examples.
+Documentation for helper functions that can be used in distributed mode.
+See :ref:`distributed_daal4py` for examples. ``daalinit`` configures daal4py
+threads only; it does not initialize MPI. Distributed computations initialize
+their transceiver lazily. ``daalfini`` releases that transceiver after the
+computation, and finalizes MPI only when daal4py initialized MPI itself.
 
 .. autofunction:: daal4py.daalfini
 .. autofunction:: daal4py.num_procs
