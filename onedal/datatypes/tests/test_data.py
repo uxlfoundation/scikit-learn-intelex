@@ -763,7 +763,63 @@ def test_csr_index_representations_are_equivalent(index_dtype, layout):
 
     result = BasicStatistics(result_options="sum").fit(reinterpreted)
 
-    assert_allclose(result.sum_, expected, rtol=1e-12)
+    assert_allclose(result.sum_, expected, rtol=0, atol=1e-9)
+
+
+class csr_matrix(sp.csr_matrix):
+    """CSR matrix that exposes deliberately unaligned index arrays for conversion."""
+
+    def __getattribute__(self, name):
+        if name == "indices":
+            try:
+                return object.__getattribute__(self, "_conversion_indices")
+            except AttributeError:
+                pass
+        if name == "indptr":
+            try:
+                return object.__getattribute__(self, "_conversion_indptr")
+            except AttributeError:
+                pass
+        if name == "has_sorted_indices":
+            return True
+        return super().__getattribute__(name)
+
+
+def _unaligned_index_array(values, index_dtype):
+    storage = bytearray(1 + values.size * np.dtype(index_dtype).itemsize)
+    unaligned = np.frombuffer(storage, dtype=index_dtype, count=values.size, offset=1)
+    unaligned[:] = values
+    assert unaligned.strides == (unaligned.itemsize,)
+    assert unaligned.ctypes.data % unaligned.dtype.alignment != 0
+    return unaligned
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
+    """Unaligned, unit-stride CSR indices are read without a typed C++ dereference."""
+    X = csr_matrix(
+        (
+            np.array([1.0, 10.0, 100.0, 1000.0, 10000.0]),
+            np.array([0, 3, 1, 0, 2]),
+            np.array([0, 2, 3, 5]),
+        ),
+        shape=(3, 4),
+    )
+    X._conversion_indices = _unaligned_index_array(
+        sp.csr_matrix.__getattribute__(X, "indices"), index_dtype
+    )
+    X._conversion_indptr = _unaligned_index_array(
+        sp.csr_matrix.__getattribute__(X, "indptr"), index_dtype
+    )
+    original_indices = X.indices.copy()
+    original_indptr = X.indptr.copy()
+    assert X.has_sorted_indices
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [10001.0, 100.0, 10000.0, 10.0], rtol=0, atol=1e-9)
+    assert_array_equal(X.indices, original_indices)
+    assert_array_equal(X.indptr, original_indptr)
 
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)

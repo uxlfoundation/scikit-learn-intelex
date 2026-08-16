@@ -96,28 +96,19 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
 
 // Widen `count` base-0 indices of type Src into base-1 std::int64_t.
 //
-// The unit-stride case gets its own loop rather than folding into the general
-// one: it is what every scipy matrix hits, and a compile-time-known step is
-// what lets the compiler vectorize the widening.
+// Keep the source byte-addressed: NumPy permits both arbitrary strides and
+// unit-stride views whose first element is unaligned for Src. Fixed-size memcpy
+// avoids an unaligned or aliasing-unsafe Src* dereference; compilers recognize
+// and optimize this load for the common unit-stride case.
 template <typename Src>
-inline void rebase_indices_to_one(const char *source,
+inline void rebase_indices_to_one(const char *source_bytes,
                                   std::int64_t stride,
                                   std::int64_t *destination,
                                   std::int64_t count) {
-    if (stride == static_cast<std::int64_t>(sizeof(Src))) {
-        const Src *typed_source = reinterpret_cast<const Src *>(source);
-        for (std::int64_t i = 0; i < count; ++i) {
-            destination[i] = static_cast<std::int64_t>(typed_source[i]) + 1;
-        }
-    }
-    else {
-        // memcpy rather than a cast through Src *, because a strided array can
-        // also be unaligned for its element type.
-        for (std::int64_t i = 0; i < count; ++i) {
-            Src value;
-            std::memcpy(&value, source + i * stride, sizeof(Src));
-            destination[i] = static_cast<std::int64_t>(value) + 1;
-        }
+    for (std::int64_t i = 0; i < count; ++i) {
+        Src value;
+        std::memcpy(&value, source_bytes + i * stride, sizeof(Src));
+        destination[i] = static_cast<std::int64_t>(value) + 1;
     }
 }
 
