@@ -38,6 +38,7 @@ build_backend = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(build_backend)
 
 _get_onedal_library_dir = build_backend._get_onedal_library_dir
+get_onedal_arch_dir = build_backend.get_onedal_arch_dir
 get_onedal_libraries = build_backend.get_onedal_libraries
 get_onedal_library_filenames = build_backend.get_onedal_library_filenames
 
@@ -66,25 +67,34 @@ def _create_libraries(directory, names):
 
 
 @pytest.mark.parametrize(
-    "layout,is_win,libraries",
+    "layout,arch_dir,is_win,libraries",
     [
         # Classic oneDAL install; also the layout CI itself uses.
-        (("lib", "intel64"), False, LINUX_HOST_LIBRARIES),
+        (("lib", "intel64"), "intel64", False, LINUX_HOST_LIBRARIES),
+        # oneDAL names the potential Linux aarch64 directory `arm`.
+        (("lib", "arm"), "arm", False, LINUX_HOST_LIBRARIES),
         # Conda, pip and some source installs flatten the arch directory away.
-        (("lib",), False, LINUX_HOST_LIBRARIES),
+        (("lib",), "intel64", False, LINUX_HOST_LIBRARIES),
         # Windows conda packages put libraries under the Library prefix.
-        (("Library", "lib"), True, WINDOWS_HOST_LIBRARIES),
+        (("Library", "lib"), "intel64", True, WINDOWS_HOST_LIBRARIES),
     ],
 )
 def test_get_onedal_library_dir_accepts_supported_layouts(
-    tmp_path, layout, is_win, libraries
+    tmp_path, layout, arch_dir, is_win, libraries
 ):
     library_dir = tmp_path.joinpath(*layout)
     _create_libraries(library_dir, libraries)
 
     assert _get_onedal_library_dir(
-        tmp_path, "intel64", major_version=MAJOR_VERSION, is_win=is_win
+        tmp_path, arch_dir, major_version=MAJOR_VERSION, is_win=is_win
     ) == str(library_dir)
+
+
+@pytest.mark.parametrize(
+    "machine,arch_dir", [("x86_64", "intel64"), ("AMD64", "intel64"), ("aarch64", "arm")]
+)
+def test_get_onedal_arch_dir(machine, arch_dir):
+    assert get_onedal_arch_dir(machine) == arch_dir
 
 
 def test_get_onedal_library_dir_skips_incomplete_directory(tmp_path):

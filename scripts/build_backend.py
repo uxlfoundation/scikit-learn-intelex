@@ -79,6 +79,12 @@ def _to_windows_import_name(name):
     return name if name.endswith("_dll") else f"{name}_dll"
 
 
+def get_onedal_arch_dir(machine):
+    return {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}.get(
+        machine, machine
+    )
+
+
 def get_onedal_libraries(
     iface="daal", major_version=1, use_parameters_lib=True, is_win=False, is_mac=False
 ):
@@ -90,8 +96,7 @@ def get_onedal_libraries(
         ]
     if is_mac:
         return [f"{name}.{major_version}" for name in library_names]
-    # The ':' prefix asks the linker for this exact SONAME rather than for a
-    # development symlink, which the runtime packages do not ship.
+    # The ':' prefix asks the linker for this exact SONAME.
     return [f":lib{name}.so.{major_version}" for name in library_names]
 
 
@@ -205,9 +210,7 @@ def custom_build_cmake_clib(
         else:
             MPI_LIBS = "mpi"
 
-    arch_dir = plt.machine()
-    plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
-    arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
+    arch_dir = get_onedal_arch_dir(plt.machine())
     onedal_library_dir = _get_onedal_library_dir(
         os.environ["DALROOT"],
         arch_dir,
