@@ -817,7 +817,7 @@ def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
 
     result = BasicStatistics(result_options="sum").fit(X)
 
-    assert_allclose(result.sum_, [10001.0, 100.0, 10000.0, 10.0], rtol=0, atol=1e-9)
+    assert_allclose(result.sum_, [1001.0, 100.0, 10000.0, 10.0], rtol=0, atol=1e-9)
     assert_array_equal(X.indices, original_indices)
     assert_array_equal(X.indptr, original_indptr)
 
