@@ -32,7 +32,7 @@ from sklearn.datasets import (
 )
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
@@ -185,6 +185,13 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         and method == "mahalanobis"
     ):
         pytest.skip("allowed fallback to sklearn occurs")
+    if (
+        (estimator == "array_api")
+        and (estimator in ["IncrementalPCA", "PCA"])
+        and (method == "inverse_transform")
+        and not sklearn_check_version("1.8")
+    ):
+        pytest.skip("Array API support introduced in later sklearn versions.")
     if estimator == "DummyRegressor":
         pytest.skip("default parameters fall back to sklearn")
     if "LocalOutlierFactor" in estimator and method in [
