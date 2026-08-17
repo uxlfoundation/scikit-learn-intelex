@@ -23,10 +23,9 @@ if daal_check_version((2026, "P", 200)):
     from onedal._device_offload import supports_queue
 
     from ..common._backend import bind_default_backend
-    from ..common._mixin import ClusterMixin
     from ..datatypes import from_table, to_table
 
-    class HDBSCAN(ClusterMixin):
+    class HDBSCAN:
         def __init__(
             self,
             min_cluster_size=5,
