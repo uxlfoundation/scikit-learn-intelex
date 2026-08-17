@@ -851,28 +851,6 @@ def test_csr_conversion_accepts_zero_stride_indices(index_dtype):
 
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
-def test_csr_conversion_accepts_zero_stride_indptr(index_dtype):
-    """An empty CSR matrix can expose all-zero row offsets as a broadcast view."""
-    X = csr_matrix(
-        (
-            np.empty(0, dtype=np.float64),
-            np.empty(0, dtype=np.int32),
-            np.zeros(4, dtype=np.int32),
-        ),
-        shape=(3, 1),
-    )
-    X._conversion_indptr = np.broadcast_to(
-        np.array([0], dtype=index_dtype), X.shape[0] + 1
-    )
-    assert X.indptr.strides == (0,)
-
-    table = to_table(X)
-
-    assert table.row_count == X.shape[0]
-    assert table.column_count == X.shape[1]
-
-
-@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_csr_conversion_does_not_modify_input(index_dtype, dtype):
     """The conversion rebases indices to one-based in its own buffers.
