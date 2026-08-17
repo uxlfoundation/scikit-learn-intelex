@@ -14,11 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from .monkeypatch.dispatcher import _get_map_of_algorithms as sklearn_patch_map
-from .monkeypatch.dispatcher import _patch_names as sklearn_patch_names
-from .monkeypatch.dispatcher import disable as unpatch_sklearn
-from .monkeypatch.dispatcher import enable as patch_sklearn
-from .monkeypatch.dispatcher import patch_is_enabled as sklearn_is_patched
+from . import ensemble, linear_model, manifold, metrics, model_selection, neighbors, utils
 
 __all__ = [
     "ensemble",
@@ -27,10 +23,5 @@ __all__ = [
     "metrics",
     "model_selection",
     "neighbors",
-    "patch_sklearn",
-    "sklearn_is_patched",
-    "sklearn_patch_map",
-    "sklearn_patch_names",
-    "unpatch_sklearn",
     "utils",
 ]
