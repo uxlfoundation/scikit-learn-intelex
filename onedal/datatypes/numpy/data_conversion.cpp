@@ -99,12 +99,44 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
 // Keep the source byte-addressed: NumPy permits both arbitrary strides and
 // unit-stride views whose first element is unaligned for Src. Fixed-size memcpy
 // avoids an unaligned or aliasing-unsafe Src* dereference; compilers recognize
-// and optimize this load for the common unit-stride case.
+// and optimize this load for the common unit-stride case. The special cases
+// below still use memcpy: a contiguous byte walk avoids repeated stride
+// multiplication, while a zero-stride broadcast only needs one load.
 template <typename Src>
 inline void rebase_indices_to_one(const char *source_bytes,
                                   std::int64_t stride,
                                   std::int64_t *destination,
                                   std::int64_t count) {
+    if (stride == 0 && count > 0) {
+        Src value;
+        std::memcpy(&value, source_bytes, sizeof(Src));
+        const std::int64_t rebased = static_cast<std::int64_t>(value) + 1;
+        for (std::int64_t i = 0; i < count; ++i) {
+            destination[i] = rebased;
+        }
+        return;
+    }
+
+    if (stride == static_cast<std::int64_t>(sizeof(Src))) {
+        const char *source = source_bytes;
+        for (std::int64_t i = 0; i < count; ++i, source += sizeof(Src)) {
+            Src value;
+            std::memcpy(&value, source, sizeof(Src));
+            destination[i] = static_cast<std::int64_t>(value) + 1;
+        }
+        return;
+    }
+
+    if (stride > 0 && stride % static_cast<std::int64_t>(sizeof(Src)) == 0) {
+        const char *source = source_bytes;
+        for (std::int64_t i = 0; i < count; ++i, source += stride) {
+            Src value;
+            std::memcpy(&value, source, sizeof(Src));
+            destination[i] = static_cast<std::int64_t>(value) + 1;
+        }
+        return;
+    }
+
     for (std::int64_t i = 0; i < count; ++i) {
         Src value;
         std::memcpy(&value, source_bytes + i * stride, sizeof(Src));

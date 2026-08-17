@@ -725,6 +725,11 @@ def _reinterpret_index_array(indices, index_dtype, layout):
         view = np.repeat(typed, 2)[::2]
         assert view.strides[0] == 2 * typed.itemsize
         return view
+    if layout == "negative":
+        # Keep the logical order while presenting it through a negative stride.
+        view = typed[::-1].copy()[::-1]
+        assert view.strides[0] == -typed.itemsize
+        return view
     if layout == "readonly":
         typed.flags.writeable = False
         return typed
@@ -734,7 +739,9 @@ def _reinterpret_index_array(indices, index_dtype, layout):
 
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
-@pytest.mark.parametrize("layout", ["contiguous", "strided", "readonly", "byteswapped"])
+@pytest.mark.parametrize(
+    "layout", ["contiguous", "strided", "negative", "readonly", "byteswapped"]
+)
 def test_csr_index_representations_are_equivalent(index_dtype, layout):
     """Every index dtype, stride and byte order must convert to the same table.
 
@@ -820,6 +827,49 @@ def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
     assert_allclose(result.sum_, [1001.0, 100.0, 10000.0, 10.0], rtol=0, atol=1e-9)
     assert_array_equal(X.indices, original_indices)
     assert_array_equal(X.indptr, original_indptr)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_zero_stride_indices(index_dtype):
+    """Broadcast CSR indices are rebased after a single memcpy load."""
+    X = csr_matrix(
+        (
+            np.array([1.0, 10.0, 100.0]),
+            np.array([0, 0, 0]),
+            np.array([0, 1, 2, 3]),
+        ),
+        shape=(3, 1),
+    )
+    X._conversion_indices = np.broadcast_to(
+        np.array([0], dtype=index_dtype), X.nnz
+    )
+    assert X.indices.strides == (0,)
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [111.0], rtol=0, atol=1e-9)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_zero_stride_indptr(index_dtype):
+    """An empty CSR matrix can expose all-zero row offsets as a broadcast view."""
+    X = csr_matrix(
+        (
+            np.empty(0, dtype=np.float64),
+            np.empty(0, dtype=np.int32),
+            np.zeros(4, dtype=np.int32),
+        ),
+        shape=(3, 1),
+    )
+    X._conversion_indptr = np.broadcast_to(
+        np.array([0], dtype=index_dtype), X.shape[0] + 1
+    )
+    assert X.indptr.strides == (0,)
+
+    table = to_table(X)
+
+    assert table.row_count == X.shape[0]
+    assert table.column_count == X.shape[1]
 
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
