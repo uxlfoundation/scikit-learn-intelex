@@ -63,3 +63,13 @@ MPI.COMM_WORLD.Barrier()
 with ThreadPoolExecutor(max_workers=4) as executor:
     list(executor.map(lambda _: daal4py.daalfini(), range(8)))
 assert MPI.Is_finalized()
+
+# daalinit only configures threads and remains valid. The next lazy distributed
+# operation must fail because MPI cannot be initialized again after finalization.
+daal4py.daalinit()
+try:
+    daal4py.num_procs()
+except RuntimeError as error:
+    assert "MPI cannot be reinitialized after MPI_Finalize" in str(error)
+else:
+    raise AssertionError("distributed use unexpectedly reinitialized finalized MPI")

@@ -84,8 +84,8 @@ same algorithms to much larger problem sizes.
 Using distributed mode
 ----------------------
 
-In order to use distributed mode, the code to execute must be saved in a Python file,
-and this Python file must be executed through an MPI runner (``mpiexec`` / ``mpirun``).
+To run distributed code across multiple processes, save it in a Python file and
+execute that file through an MPI runner (``mpiexec`` / ``mpirun``).
 The MPI runner in turn is the software that handles aspects like which nodes to use,
 inter-node communication, and so on. The same Python code in the file will be executed
 on all nodes, so the Python code may contain some logic to load the right subset of the
@@ -95,11 +95,12 @@ From the ``daal4py`` side, in order to use distributed mode, algorithm construct
 be passed argument ``distributed=True``, method ``.compute()`` should be passed the right
 subset of the data for each node, and after the distributed computations are finalized,
 function :obj:`daal4py.daalfini` must be called before accessing the results object.
-``daalinit`` only configures daal4py thread settings: distributed computations
-initialize their MPI transceiver lazily, so it is not needed to initialize MPI.
-``daalfini`` releases that transceiver and finalizes MPI only when daal4py
-initialized MPI itself. If ``mpi4py`` initialized MPI, it remains responsible
-for MPI finalization.
+For this multi-process execution, user code does not need to call ``MPI_Init``
+or :obj:`daal4py.daalinit`: the first distributed operation initializes its
+transceiver lazily. If an MPI runtime was already initialized, for example by
+``mpi4py``, ``daal4py`` uses it and :obj:`daal4py.daalfini` leaves finalization
+to its initializer. Otherwise, ``daalfini`` finalizes the MPI runtime that
+``daal4py`` initialized.
 
 Example:
 

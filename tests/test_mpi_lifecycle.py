@@ -55,13 +55,27 @@ def test_mpi_is_externally_owned():
 
 def test_transceiver_does_not_finalize_mpi_it_does_not_own():
     """daalfini must leave externally owned MPI usable."""
+    comm = MPI.COMM_WORLD
     daal4py.daalinit()
+    assert daal4py.num_procs() == comm.Get_size()
+    assert daal4py.my_procid() == comm.Get_rank()
     daal4py.daalfini()
 
     assert not MPI.Is_finalized()
     # Not just "not finalized" - still actually usable by its owner.
-    comm = MPI.COMM_WORLD
     assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
+
+
+def test_externally_owned_mpi_can_recreate_transceiver():
+    """A zero-user teardown must not prevent a later lazy initialization."""
+    comm = MPI.COMM_WORLD
+
+    for _ in range(2):
+        assert daal4py.num_procs() == comm.Get_size()
+        assert daal4py.my_procid() == comm.Get_rank()
+        daal4py.daalfini()
+        assert not MPI.Is_finalized()
+        assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
 def test_external_mpi_survives_repeated_transceiver_lifecycle():

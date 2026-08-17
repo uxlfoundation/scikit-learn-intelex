@@ -168,9 +168,6 @@ def daalinit(nthreads: int = -1) -> None:
     '''
     Set number of threads for daal4py.
 
-    This function does not initialize MPI or distributed mode. The distributed
-    transceiver is initialized lazily by the first distributed computation.
-
     This modifies the number of threads configured for daal4py, which is a
     global setting - meaning: it is applied to all subsequent calls to daal4py
     functions / methods in the Python process.
@@ -180,6 +177,10 @@ def daalinit(nthreads: int = -1) -> None:
 
     :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
 
+    .. note:: This function configures thread settings only. It does not
+              initialize MPI or distributed mode; the transceiver is
+              initialized lazily by the first distributed operation.
+
     :rtype: None
     '''
     c_daalinit(nthreads)
@@ -188,15 +189,13 @@ def daalfini() -> None:
     '''
     Release daal4py distributed resources.
 
-    Call this after distributed computations and before accessing their result
-    objects. It releases daal4py's distributed transceiver. When daal4py
-    initialized MPI itself, it also finalizes MPI; when MPI was already
-    initialized (for example by ``mpi4py``), it leaves MPI ownership and
-    finalization to that library.
-
+    Call this after the last distributed computation and before accessing its
+    result objects. It releases daal4py's distributed transceiver. If daal4py
+    initialized MPI, releasing the last transceiver finalizes MPI and another
+    distributed operation cannot be started in the same process. If MPI was
+    initialized by another library, for example ``mpi4py``, it remains owned by
+    that library; later distributed operations can create a new transceiver.
     This function is a no-op when no daal4py distributed transceiver is active.
-    ``daalinit`` only configures daal4py thread settings; it is not required to
-    initialize MPI before a distributed computation.
 
     :rtype: None
     '''
