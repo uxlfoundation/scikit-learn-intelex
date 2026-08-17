@@ -26,8 +26,8 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 pytestmark = pytest.mark.skipif(
-    not (sklearn_check_version("1.3") and daal_check_version((2026, "P", 100))),
-    reason="HDBSCAN requires sklearn >= 1.3 and oneDAL >= 2026.1",
+    not (sklearn_check_version("1.3") and daal_check_version((2026, "P", 200))),
+    reason="HDBSCAN requires sklearn >= 1.3 and oneDAL >= 2026.2",
 )
 
 

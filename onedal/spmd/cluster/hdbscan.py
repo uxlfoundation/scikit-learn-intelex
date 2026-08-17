@@ -16,7 +16,7 @@
 
 from daal4py.sklearn._utils import daal_check_version
 
-if daal_check_version((2026, "P", 100)):
+if daal_check_version((2026, "P", 200)):
 
     from ...cluster import HDBSCAN as HDBSCAN_Batch
     from ...common._backend import bind_spmd_backend

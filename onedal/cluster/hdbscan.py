@@ -16,7 +16,7 @@
 
 from daal4py.sklearn._utils import daal_check_version
 
-if daal_check_version((2026, "P", 100)):
+if daal_check_version((2026, "P", 200)):
 
     import numpy as np
 

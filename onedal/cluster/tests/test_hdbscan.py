@@ -28,11 +28,11 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 pytestmark = pytest.mark.skipif(
-    not daal_check_version((2026, "P", 100)),
-    reason="HDBSCAN requires oneDAL >= 2026.1",
+    not daal_check_version((2026, "P", 200)),
+    reason="HDBSCAN requires oneDAL >= 2026.2",
 )
 
-if daal_check_version((2026, "P", 100)):
+if daal_check_version((2026, "P", 200)):
     from onedal.cluster import HDBSCAN
 
 

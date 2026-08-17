@@ -19,7 +19,7 @@ from .dbscan import DBSCAN
 
 __all__ = ["DBSCAN"]
 
-if onedal_check_version((2026, 2, 0)):
+if onedal_check_version(2026, 2, 0):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]
