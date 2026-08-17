@@ -21,6 +21,7 @@ from sklearn.metrics import adjusted_rand_score
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -56,7 +57,7 @@ def test_hdbscan_three_clusters(dataframe, queue):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
 
-    ari = adjusted_rand_score(y_true, hdbscan.labels_)
+    ari = adjusted_rand_score(y_true, _as_numpy(hdbscan.labels_))
     assert ari > 0.9, f"ARI too low: {ari}"
 
 
@@ -70,7 +71,7 @@ def test_hdbscan_labels_shape(dataframe, queue):
     hdbscan = HDBSCAN(min_cluster_size=10).fit(X)
 
     assert hasattr(hdbscan, "labels_")
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     assert labels.shape == (200,)
     assert hasattr(hdbscan, "probabilities_")
     assert hasattr(hdbscan, "n_features_in_")
@@ -101,7 +102,7 @@ def test_hdbscan_fit_predict(dataframe, queue):
     hdbscan2 = HDBSCAN(min_cluster_size=15, min_samples=5)
     labels_fp = hdbscan2.fit_predict(X)
 
-    ari = adjusted_rand_score(hdbscan1.labels_, labels_fp)
+    ari = adjusted_rand_score(_as_numpy(hdbscan1.labels_), _as_numpy(labels_fp))
     assert ari > 0.99, f"fit_predict labels differ from fit labels: ARI={ari}"
 
 
@@ -125,7 +126,9 @@ def test_hdbscan_vs_sklearn(dataframe, queue):
         X
     )
 
-    ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
+    ari = adjusted_rand_score(
+        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
+    )
     assert ari > 0.9, f"ARI vs sklearn: {ari}"
 
 
@@ -148,7 +151,9 @@ def test_hdbscan_vs_sklearn_various_sizes(dataframe, queue, n_samples, n_centers
         X
     )
 
-    ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
+    ari = adjusted_rand_score(
+        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
+    )
     assert ari > 0.85, f"ARI vs sklearn too low for n={n_samples}, k={n_centers}: {ari}"
 
 
@@ -169,7 +174,9 @@ def test_hdbscan_vs_sklearn_high_dim(dataframe, queue):
         X
     )
 
-    ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
+    ari = adjusted_rand_score(
+        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
+    )
     assert ari > 0.85, f"ARI vs sklearn on 10d data: {ari}"
 
 
@@ -191,7 +198,7 @@ def test_hdbscan_metrics(dataframe, queue, metric):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X)
 
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     assert n_clusters >= 2, f"Expected >=2 clusters with {metric}, got {n_clusters}"
 
@@ -207,7 +214,7 @@ def test_hdbscan_minkowski(dataframe, queue):
         min_cluster_size=15, min_samples=5, metric="minkowski", metric_params={"p": 3}
     ).fit(X)
 
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     assert n_clusters >= 2, f"Expected >=2 clusters with minkowski(p=3), got {n_clusters}"
 
@@ -228,7 +235,7 @@ def test_hdbscan_metric_vs_sklearn(dataframe, queue, metric):
         min_cluster_size=15, min_samples=5, metric=metric, copy=True
     ).fit(X)
 
-    ari = adjusted_rand_score(sklearnex_h.labels_, sklearn_h.labels_)
+    ari = adjusted_rand_score(_as_numpy(sklearnex_h.labels_), sklearn_h.labels_)
     assert ari > 0.85, f"ARI vs sklearn with {metric}: {ari}"
 
 
@@ -322,39 +329,49 @@ def test_hdbscan_supported_euclidean(dataframe, queue):
 
 
 # ============================================================================
-# Patching system tests
+# Fitted attribute tests
 # ============================================================================
 
 
-def test_patch_sklearn_hdbscan():
-    """Verify that patch_sklearn enables the sklearnex HDBSCAN."""
-    from sklearnex import patch_sklearn, unpatch_sklearn
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("store_centers", [None, "centroid", "medoid", "both"])
+def test_hdbscan_store_centers(dataframe, queue, store_centers):
+    """Centers are exposed with sklearn's shapes only when requested."""
+    from sklearnex.cluster import HDBSCAN
 
-    try:
-        patch_sklearn("sklearn.cluster.HDBSCAN")
-        from sklearn.cluster import HDBSCAN
+    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(
+        min_cluster_size=15, min_samples=5, store_centers=store_centers
+    ).fit(X)
 
-        X, _ = make_blobs(n_samples=100, centers=2, cluster_std=0.5, random_state=42)
-        h = HDBSCAN(min_cluster_size=10, min_samples=5).fit(X)
-        assert (
-            "sklearnex" in h.__module__
-        ), f"Expected sklearnex module, got {h.__module__}"
-    finally:
-        unpatch_sklearn("sklearn.cluster.HDBSCAN")
+    labels = _as_numpy(hdbscan.labels_)
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    for attr, requested in [
+        ("centroids_", store_centers in ("centroid", "both")),
+        ("medoids_", store_centers in ("medoid", "both")),
+    ]:
+        assert hasattr(hdbscan, attr) == requested, f"unexpected state of {attr}"
+        if requested:
+            assert _as_numpy(getattr(hdbscan, attr)).shape == (n_clusters, 2)
 
 
-def test_patch_unpatch_hdbscan():
-    """Verify that unpatch restores the original sklearn HDBSCAN."""
-    from sklearnex import patch_sklearn, sklearn_is_patched, unpatch_sklearn
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_hdbscan_probabilities(dataframe, queue):
+    """``probabilities_`` is not computed by oneDAL, but keeps namespace and device."""
+    from sklearnex.cluster import HDBSCAN
 
-    try:
-        patch_sklearn("sklearn.cluster.HDBSCAN")
-        assert sklearn_is_patched("sklearn.cluster.HDBSCAN")
+    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
 
-        unpatch_sklearn("sklearn.cluster.HDBSCAN")
-        assert not sklearn_is_patched("sklearn.cluster.HDBSCAN")
-    finally:
-        unpatch_sklearn("sklearn.cluster.HDBSCAN")
+    probabilities = hdbscan.probabilities_
+    assert probabilities.shape == hdbscan.labels_.shape
+    assert np.all(_as_numpy(probabilities) == 0)
+    if dataframe not in ("numpy", "pandas"):
+        assert type(probabilities) is type(hdbscan.labels_)
+        if hasattr(hdbscan.labels_, "device"):
+            assert probabilities.device == hdbscan.labels_.device
 
 
 # ============================================================================
@@ -373,7 +390,7 @@ def test_hdbscan_dtypes(dataframe, queue, dtype):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
 
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     assert n_clusters >= 2, f"Expected >=2 clusters with {dtype}, got {n_clusters}"
 
@@ -392,7 +409,7 @@ def test_hdbscan_noise_labels(dataframe, queue):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
 
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     assert -1 in labels, "Expected some noise points (label=-1)"
     n_clusters = len(set(labels)) - 1  # excluding -1
     assert n_clusters >= 2, f"Expected >=2 clusters, got {n_clusters}"
@@ -408,7 +425,7 @@ def test_hdbscan_large_min_cluster_size(dataframe, queue):
     # min_cluster_size bigger than any cluster
     hdbscan = HDBSCAN(min_cluster_size=40).fit(X)
 
-    labels = np.asarray(hdbscan.labels_)
+    labels = _as_numpy(hdbscan.labels_)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     assert n_clusters <= 1, f"Expected <=1 cluster with large mcs, got {n_clusters}"
 
@@ -428,8 +445,8 @@ def test_hdbscan_cluster_selection_epsilon(dataframe, queue):
         min_cluster_size=15, min_samples=5, cluster_selection_epsilon=100.0
     ).fit(X)
 
-    labels_no_eps = np.asarray(h_no_eps.labels_)
-    labels_eps = np.asarray(h_eps.labels_)
+    labels_no_eps = _as_numpy(h_no_eps.labels_)
+    labels_eps = _as_numpy(h_eps.labels_)
     n_no_eps = len(set(labels_no_eps)) - (1 if -1 in labels_no_eps else 0)
     n_eps = len(set(labels_eps)) - (1 if -1 in labels_eps else 0)
     assert n_eps <= n_no_eps, "Large epsilon should merge clusters"
@@ -480,5 +497,5 @@ def test_hdbscan_min_samples_default(dataframe, queue):
     h1 = HDBSCAN(min_cluster_size=15, min_samples=None).fit(X)
     h2 = HDBSCAN(min_cluster_size=15, min_samples=15).fit(X)
 
-    ari = adjusted_rand_score(h1.labels_, h2.labels_)
+    ari = adjusted_rand_score(_as_numpy(h1.labels_), _as_numpy(h2.labels_))
     assert ari == 1.0, f"min_samples=None should equal min_cluster_size: ARI={ari}"

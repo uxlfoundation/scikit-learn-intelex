@@ -18,17 +18,37 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
 
+    from functools import partial
+
     from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+    from sklearn.utils.validation import _num_samples, check_array
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse
     from onedal.cluster.hdbscan import HDBSCAN as onedal_HDBSCAN
+    from onedal.utils._array_api import _is_numpy_namespace
 
     from .._device_offload import dispatch
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
-    from ..utils.validation import validate_data
+    from ..utils.validation import assert_all_finite, validate_data
+
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import get_namespace_and_device
+
+    # lax conversion of the input for the finiteness check done while
+    # determining whether oneDAL can be used, the actual validation of
+    # the data happens in '_onedal_fit'
+    _check_array = partial(
+        check_array,
+        dtype=None,
+        ensure_2d=False,
+        ensure_min_samples=0,
+        ensure_min_features=0,
+        accept_sparse=False,
+        ensure_all_finite=False,
+    )
 
     @enable_array_api
     @control_n_jobs(decorated_methods=["fit"])
@@ -75,7 +95,11 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
         _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
 
         def _onedal_fit(self, X, y=None, queue=None):
-            xp, _ = get_namespace(X)
+            if sklearn_check_version("1.9"):
+                xp, _, device = get_namespace_and_device(X)
+            else:
+                xp, _ = get_namespace(X)
+                device = getattr(X, "device", None)
             X = validate_data(
                 self, X, accept_sparse=False, dtype=[xp.float64, xp.float32]
             )
@@ -107,13 +131,12 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
             if hasattr(self._onedal_estimator, "medoids_"):
                 self.medoids_ = self._onedal_estimator.medoids_
 
-            device_kwarg = {"device": X.device} if hasattr(X, "device") else {}
-
             # oneDAL does not compute probabilities; set uniform zeros
             # to match sklearn's interface
-            self.probabilities_ = xp.zeros(
-                self.labels_.shape[0], dtype=xp.float64, **device_kwarg
-            )
+            kwargs = {"dtype": xp.float64}  # always the same
+            if not _is_numpy_namespace(xp):
+                kwargs["device"] = device
+            self.probabilities_ = xp.zeros(self.labels_.shape[0], **kwargs)
 
         _onedal_supported_metrics = {
             "euclidean",
@@ -130,12 +153,24 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
             )
             if method_name == "fit":
                 X = data[0]
-                patching_status.and_conditions(
+                # sklearn takes 'min_cluster_size' as 'min_samples' when unset
+                min_samples = (
+                    self.min_cluster_size
+                    if self.min_samples is None
+                    else self.min_samples
+                )
+                dal_ready = patching_status.and_conditions(
                     [
                         (
                             self.metric in self._onedal_supported_metrics,
                             f"'{self.metric}' metric is not supported. "
                             f"Only {self._onedal_supported_metrics} are supported.",
+                        ),
+                        (
+                            self.metric != "cosine"
+                            or self.algorithm in ("auto", "brute", "brute_force"),
+                            "'cosine' metric is only supported by the 'auto' and "
+                            "'brute' algorithms.",
                         ),
                         (
                             self.cluster_selection_method in ("eom", "leaf"),
@@ -157,8 +192,23 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
                             "Only 'auto', 'brute', 'kd_tree', and 'ball_tree' are supported.",
                         ),
                         (not is_sparse(X), "X is sparse. Sparse input is not supported."),
+                        (
+                            min_samples <= _num_samples(X),
+                            "min_samples is larger than the number of samples in X.",
+                        ),
                     ]
                 )
+                if not dal_ready:
+                    return patching_status
+
+                # sklearn labels non-finite samples as special outliers, while
+                # oneDAL does not support them
+                try:
+                    assert_all_finite(_check_array(X))
+                except ValueError:
+                    patching_status.and_conditions(
+                        [(False, "Missing values and infinites are not supported.")]
+                    )
                 return patching_status
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"
