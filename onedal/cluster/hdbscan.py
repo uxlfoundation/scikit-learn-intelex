@@ -20,8 +20,7 @@ if daal_check_version((2026, "P", 200)):
 
     import numpy as np
 
-    from onedal._device_offload import supports_queue
-
+    from .._device_offload import supports_queue
     from ..common._backend import bind_default_backend
     from ..datatypes import from_table, to_table
 
