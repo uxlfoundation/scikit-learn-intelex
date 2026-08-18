@@ -422,12 +422,17 @@ def get_onedal_py_libs():
     ext_suffix = get_config_vars("EXT_SUFFIX")[0]
     libs = [f"_onedal_py_host{ext_suffix}", f"_onedal_py_dpc{ext_suffix}"]
     if build_distributed:
-        libs += [f"_onedal_py_spmd_dpc{ext_suffix}"]
+        # _onedal_spmd_mpi is the standalone MPI communicator module built
+        # alongside the SPMD algorithm module (see scripts/CMakeLists.txt).
+        libs += [f"_onedal_py_spmd_dpc{ext_suffix}", f"_onedal_spmd_mpi{ext_suffix}"]
     if IS_WIN:
         ext_suffix_lib = ext_suffix.replace(".dll", ".lib")
         libs += [f"_onedal_py_host{ext_suffix_lib}", f"_onedal_py_dpc{ext_suffix_lib}"]
         if build_distributed:
-            libs += [f"_onedal_py_spmd_dpc{ext_suffix_lib}"]
+            libs += [
+                f"_onedal_py_spmd_dpc{ext_suffix_lib}",
+                f"_onedal_spmd_mpi{ext_suffix_lib}",
+            ]
     return libs
 
 

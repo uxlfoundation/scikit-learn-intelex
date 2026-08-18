@@ -337,7 +337,8 @@ ONEDAL_PY_INIT_MODULE(linear_model) {
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
-    ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_spmd, task_list);
+    // finalize_train has no host SPMD export in oneDAL; keep it dpc-only.
+    ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_spmd_dpc, task_list);
 #else // ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);

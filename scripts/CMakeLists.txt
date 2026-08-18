@@ -79,6 +79,12 @@ file(GLOB_RECURSE sources
     ${PYTHON_ONEDAL}/*.cpp
 )
 
+# The SPMD communicator plugins (MPI now, CCL later) each define their own
+# PYBIND11_MODULE and are built as standalone targets below. They must not be
+# compiled into the main algorithm module, or the module-init symbols collide.
+set(SPMD_COMM_SOURCES ${PYTHON_ONEDAL}/spmd/mpi_communicator.cpp)
+list(REMOVE_ITEM sources ${SPMD_COMM_SOURCES})
+
 message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # find_package(oneDAL REQUIRED)
@@ -257,11 +263,9 @@ endif()
 set(EXTERNAL_LINK_DIRECTORIES ${PYTHON_LIBRARY_DIR} ${oneDAL_LIBRARY_DIR})
 set(EXTERNAL_LINK_LIBRARIES ${ONEDAL_LIBRARIES})
 
-if(IFACE_IS_SPMD_DPC)
-list(APPEND EXTERNAL_LINK_LIBRARIES ${MPI_LIBRARY})
-list(APPEND EXTERNAL_LINK_DIRECTORIES ${MPI_LIBRARY_DIR})
-list(APPEND EXTERNAL_INCLUDE_DIRECTORIES ${MPI_INCLUDE_DIRS})
-endif()
+# NOTE: MPI is intentionally NOT linked into the main SPMD algorithm module.
+# Communicator creation (the only MPI-dependent code) lives in the standalone
+# _onedal_spmd_mpi module built below, which is the sole owner of the MPI link.
 
 target_link_options(${TARGET} PRIVATE ${ONEDAL_PY_LINK_OPTIONS})
 target_link_libraries(${TARGET} PUBLIC ${EXTERNAL_LINK_LIBRARIES})
@@ -278,3 +282,39 @@ install(
   ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}
   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
+
+# -----------------------------------------------------------------------------
+# Standalone SPMD communicator module(s). Built only for the SPMD interface.
+# These are the only targets that depend on a transport library (MPI here; a
+# CCL twin can be added with the same recipe). They register the communicator
+# types and expose create_communicator(); the algorithm module consumes the
+# resulting objects via pybind11 cross-module type sharing.
+# -----------------------------------------------------------------------------
+if(IFACE_IS_SPMD_DPC)
+    pybind11_add_module(_onedal_spmd_mpi ${SPMD_COMM_SOURCES})
+
+    # The communicator module only needs ONEDAL_DATA_PARALLEL (to expose the
+    # device communicator alongside the host one). It deliberately omits
+    # ONEDAL_DATA_PARALLEL_SPMD, which drives the algorithm module's policy/dal
+    # branching and is irrelevant here.
+    set(SPMD_COMM_DEFINITIONS
+        "ONEDAL_DATA_PARALLEL"
+        "NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION")
+
+    target_link_options(_onedal_spmd_mpi PRIVATE ${ONEDAL_PY_LINK_OPTIONS})
+    target_link_libraries(_onedal_spmd_mpi PUBLIC ${ONEDAL_LIBRARIES} ${MPI_LIBRARY})
+    target_compile_definitions(_onedal_spmd_mpi PUBLIC ${SPMD_COMM_DEFINITIONS})
+    target_link_directories(_onedal_spmd_mpi PRIVATE
+        ${EXTERNAL_LINK_DIRECTORIES} ${MPI_LIBRARY_DIR})
+    target_include_directories(_onedal_spmd_mpi PRIVATE
+        ${EXTERNAL_INCLUDE_DIRECTORIES} ${MPI_INCLUDE_DIRS})
+    target_include_directories(_onedal_spmd_mpi SYSTEM PRIVATE
+        ${ONEDAL_SYSTEM_INCLUDE_DIRECTORIES})
+
+    install(
+      TARGETS _onedal_spmd_mpi
+      LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
+    )
+endif()

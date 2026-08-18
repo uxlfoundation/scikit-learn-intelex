@@ -56,6 +56,37 @@ class Backend:
     def __getattr__(self, name):
         return getattr(self.backend, name)
 
+    def get_policy(self, queue):
+        """Construct the oneDAL policy appropriate for this backend.
+
+        For host/dpc backends this delegates to the pybind11 ``get_policy``
+        factory. For the SPMD backend a communicator is required, so this pulls
+        one from the communicator manager (created by the standalone
+        ``_onedal_spmd_mpi`` module) and builds the matching SPMD policy:
+        ``spmd_host_policy(comm)`` when there is no queue, or
+        ``spmd_data_parallel_policy(queue, comm)`` for device execution.
+
+        Parameters
+        ----------
+        queue : SyclQueue or None
+            SYCL queue for device execution, or None for host execution.
+
+        Returns
+        -------
+        policy : oneDAL policy object
+        """
+        if not self.is_spmd:
+            return self.backend.get_policy(queue)
+
+        # Imported here to avoid a circular import at module load time
+        # (the manager imports _spmd_mpi_backend from this module).
+        from .utils import _spmd_communicator_manager as CM
+
+        comm = CM.get_global_communicator(queue)
+        if queue is None:
+            return self.backend.spmd_host_policy(comm)
+        return self.backend.spmd_data_parallel_policy(queue, comm)
+
     def __repr__(self) -> str:
         return f"Backend({self.backend}, is_dpc={self.is_dpc}, is_spmd={self.is_spmd})"
 
@@ -110,9 +141,11 @@ if "Windows" in platform.system():
 # not installed — in that case "No module named X" is not informative.
 _dpc_load_error: str = ""
 _spmd_load_error: str = ""
+_spmd_mpi_load_error: str = ""
 
 _dpc_file_present = _backend_binary_present("_onedal_py_dpc")
 _spmd_file_present = _backend_binary_present("_onedal_py_spmd_dpc")
+_spmd_mpi_file_present = _backend_binary_present("_onedal_spmd_mpi")
 
 try:
     # use dpc backend if available
@@ -141,6 +174,20 @@ except ImportError as _spmd_import_err:
     _spmd_backend = None
     if _spmd_file_present:
         _spmd_load_error = str(_spmd_import_err)
+
+try:
+    # also load the standalone MPI communicator module if available. This module
+    # is the sole owner of the MPI dependency and registers the communicator
+    # types consumed by the SPMD policy constructors; it must be imported before
+    # any SPMD policy is created so pybind11 can resolve those types across
+    # modules.
+    from . import _onedal_spmd_mpi
+
+    _spmd_mpi_backend = _onedal_spmd_mpi
+except ImportError as _spmd_mpi_import_err:
+    _spmd_mpi_backend = None
+    if _spmd_mpi_file_present:
+        _spmd_mpi_load_error = str(_spmd_mpi_import_err)
 
 # if/elif/else layout required for pylint to realize _default_backend cannot be None
 if _dpc_backend is not None:
@@ -225,6 +272,7 @@ __all__ = [
     "_default_backend",
     "_dpc_backend",
     "_spmd_backend",
+    "_spmd_mpi_backend",
     "covariance",
     "decomposition",
     "dummy",

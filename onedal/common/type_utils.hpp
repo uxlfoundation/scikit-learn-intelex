@@ -50,8 +50,18 @@ template <typename T>
 struct type_to_str;
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
+ONEDAL_PY_TYPE2STR(dal::detail::spmd_policy<dal::detail::host_policy>, "");
 ONEDAL_PY_TYPE2STR(dal::detail::spmd_policy<dal::detail::data_parallel_policy>, "");
-using policy_spmd = types<dal::detail::spmd_policy<dal::detail::data_parallel_policy>>;
+// ``policy_spmd`` covers algorithms that oneDAL exports for BOTH the host and
+// data-parallel SPMD policies, so a single MPI backend can dispatch CPU- and
+// GPU-distributed work without duplicating the module.
+using policy_spmd = types<dal::detail::spmd_policy<dal::detail::host_policy>,
+                          dal::detail::spmd_policy<dal::detail::data_parallel_policy>>;
+// ``policy_spmd_dpc`` is for algorithms whose SPMD path oneDAL only exports for
+// the data-parallel policy (e.g. logistic_regression, the ``finalize_*`` and
+// kmeans ``infer`` ops). Instantiating these for the host policy would fail to
+// link against the oneDAL binaries.
+using policy_spmd_dpc = types<dal::detail::spmd_policy<dal::detail::data_parallel_policy>>;
 #else
 ONEDAL_PY_TYPE2STR(dal::detail::host_policy, "");
 #ifdef ONEDAL_DATA_PARALLEL

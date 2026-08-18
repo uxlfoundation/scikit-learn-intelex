@@ -210,7 +210,8 @@ ONEDAL_PY_INIT_MODULE(covariance) {
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_spmd, task::compute);
-    ONEDAL_PY_INSTANTIATE(init_finalize_compute_ops, sub, policy_spmd, task::compute);
+    // finalize_compute has no host SPMD export in oneDAL; keep it dpc-only.
+    ONEDAL_PY_INSTANTIATE(init_finalize_compute_ops, sub, policy_spmd_dpc, task::compute);
 #else
     ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_list, task::compute);
     ONEDAL_PY_INSTANTIATE(init_partial_compute_ops, sub, policy_list, task::compute);

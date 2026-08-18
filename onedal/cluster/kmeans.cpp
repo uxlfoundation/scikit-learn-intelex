@@ -180,7 +180,8 @@ ONEDAL_PY_INIT_MODULE(kmeans) {
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
-    ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
+    // kmeans infer has no host SPMD export in oneDAL; keep it dpc-only.
+    ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd_dpc, task_list);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 #else // ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
