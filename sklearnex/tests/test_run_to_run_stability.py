@@ -186,7 +186,7 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     ):
         pytest.skip("allowed fallback to sklearn occurs")
     if (
-        (estimator == "array_api")
+        (dataframe == "array_api")
         and (estimator in ["IncrementalPCA", "PCA"])
         and (method == "inverse_transform")
         and not sklearn_check_version("1.8")
