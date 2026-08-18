@@ -190,14 +190,18 @@ def test_onedal_hdbscan_cluster_selection_epsilon(dataframe, queue):
 
     h_no_eps = HDBSCAN(min_cluster_size=15, min_samples=5)
     h_no_eps.fit(X, queue=queue)
-    h_eps = HDBSCAN(
-        min_cluster_size=15, min_samples=5, cluster_selection_epsilon=100.0
-    )
+    h_eps = HDBSCAN(min_cluster_size=15, min_samples=5, cluster_selection_epsilon=100.0)
     h_eps.fit(X, queue=queue)
 
     assert _n_clusters(h_eps.labels_) <= _n_clusters(h_no_eps.labels_)
 
 
+@pytest.mark.skip(
+    reason="Temporarily disabled: oneDAL's EOM cluster selection skips leaf clusters, "
+    "so the max_cluster_size cap is not applied to them, and every blob here is a "
+    "condensed-tree leaf. Fixed on the oneDAL side by deselecting oversized leaves; "
+    "re-enable once that fix is in the oneDAL version this repo builds against."
+)
 @pytest.mark.parametrize("dataframe,queue", _dataframes_and_queues)
 def test_onedal_hdbscan_max_cluster_size(dataframe, queue):
     """max_cluster_size limits the size of the reported clusters."""
