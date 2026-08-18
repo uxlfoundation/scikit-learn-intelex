@@ -50,6 +50,27 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
         ensure_all_finite=False,
     )
 
+    def _all_finite(X) -> bool:
+        """Check the finiteness of the input without moving device data to host.
+
+        ``check_array`` and scikit-learn's finiteness checks convert the input
+        into a numpy array when array API dispatch is disabled, which is not
+        possible for data located on a device (e.g. dpnp arrays with a SYCL
+        queue). Namespaces of non-numpy origin are therefore checked using their
+        own array API primitives.
+        """
+        xp = getattr(X, "__array_namespace__", lambda: None)()
+        if xp is not None and not _is_numpy_namespace(xp):
+            if not xp.isdtype(X.dtype, ("real floating", "complex floating")):
+                # integer and boolean data cannot contain NaN or infinity
+                return True
+            return bool(xp.all(xp.isfinite(X)))
+        try:
+            assert_all_finite(_check_array(X))
+        except ValueError:
+            return False
+        return True
+
     @enable_array_api
     @control_n_jobs(decorated_methods=["fit"])
     class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
@@ -203,12 +224,9 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
 
                 # sklearn labels non-finite samples as special outliers, while
                 # oneDAL does not support them
-                try:
-                    assert_all_finite(_check_array(X))
-                except ValueError:
-                    patching_status.and_conditions(
-                        [(False, "Missing values and infinites are not supported.")]
-                    )
+                patching_status.and_conditions(
+                    [(_all_finite(X), "Missing values and infinites are not supported.")]
+                )
                 return patching_status
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"

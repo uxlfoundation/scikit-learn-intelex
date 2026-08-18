@@ -257,6 +257,19 @@ def test_hdbscan_fallback_unsupported_metric(dataframe, queue):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_hdbscan_fallback_non_finite(dataframe, queue):
+    """Non-finite values should not be supported by oneDAL."""
+    from sklearnex.cluster import HDBSCAN
+
+    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
+    X[0, 0] = np.nan
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(min_cluster_size=10)
+    status = hdbscan._onedal_supported("fit", X)
+    assert not status.get_status()
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_hdbscan_supported_leaf_method(dataframe, queue):
     """cluster_selection_method='leaf' should be supported by oneDAL."""
     from sklearnex.cluster import HDBSCAN
