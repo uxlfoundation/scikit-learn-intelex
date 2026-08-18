@@ -188,7 +188,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # NOTE: This covers up a numerical accuracy issue in oneDAL online PCA.
         # It is not updated in-place here because the array can be read-only.
         self.singular_values_ = xp.where(
-            xp.isnan(self.singular_values_), 0, self.singular_values_
+            xp.isnan(self.singular_values_),
+            xp.zeros_like(self.singular_values_),
+            self.singular_values_,
         )
 
         self._onedal_estimator.singular_values_ = self.singular_values_
