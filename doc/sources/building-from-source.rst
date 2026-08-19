@@ -346,9 +346,10 @@ Building with ASan
 
 In order to use AddressSanitizer (ASan) together with the |sklearnex|, it's necessary to:
 
-- Build both the |onedal| and the |sklearnex| with ASan and with debugging symbols (otherwise error traces will not be very informative).
+- Build both the |onedal| and the |sklearnex| with ASan and with debugging symbols (otherwise error traces will not be very informative). Note that adding debug symbols to the Python modules requires passing argument ``--debug`` to ``setup.py``.
 - Preload the ASan runtime when executing the Python process that imports ``sklearnex`` or ``daal4py``.
 - Optionally, configure Python to use ``malloc`` as default allocator to reduce the number of false-positive leak reports.
+- Optionally, set compilation flag ``-O0`` or ``-Og`` for better debuggability.
 
 See the `instructions on the oneDAL repository <https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md>`__ for building the library from source with ASAN enabled.
 
@@ -358,12 +359,20 @@ The compiler and flags to build with both ASan and debug symbols can be controll
 
 .. code-block:: bash
 
-    export CC="icx -fsanitize=address -g"
-    export CXX="icpx -fsanitize=address -g"
+    export CC="icx -fsanitize=address -g -O0"
+    export CXX="icpx -fsanitize=address -g -O0"
 
-.. hint:: The Cython module ``daal4py`` that gets built through ``build_ext`` does not do incremental compilation, so one might want to add ``ccache`` into the compiler call for development purposes - e.g. ``CXX="ccache icx -fsanitize=address -g"``.
+or, if building with GCC (remember to add ``NO_DPC=1`` and ``NO_DIST=1``):
 
-The ASan runtime used by ICX is the same as the one by Clang, but they might expect different file names depending on versions. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from ICX / Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+.. code-block:: bash
+
+    export CC="gcc -fsanitize=address -g -O0"
+    export CXX="g++ -fsanitize=address -g -O0"
+
+
+.. hint:: The Cython module ``daal4py`` that gets built through ``build_ext`` does not do incremental compilation, so one might want to add ``ccache`` into the compiler call for development purposes - e.g. ``CXX="ccache icx -fsanitize=address -g -O0"``.
+
+The ASan runtime used by ICX is the same as the one by Clang, but they might expect different file names depending on versions. It's possible to preload the ASan runtime from GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from ICX / Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
 
 .. code-block:: bash
 
@@ -385,11 +394,26 @@ Putting it all together, the earlier examples building the library in-place and 
 .. code-block:: bash
 
     source <path to ASan-enabled oneDAL env.sh>
-    CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" \
-        python setup.py build_ext --inplace --force --abs-rpath
-    CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" \
-        python setup.py build --abs-rpath
-    LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" \
+    CC="ccache icx -fsanitize=address -g -O0" CXX="ccache icpx -fsanitize=address -g -O0" \
+        python setup.py build_ext --inplace --force --debug --abs-rpath
+    CC="icx -fsanitize=address -g -O0" CXX="icpx -fsanitize=address -g -O0" \
+        python setup.py build --debug --abs-rpath
+    LD_PRELOAD="$(icx -print-file-name=libclang_rt.asan.so)" \
+    PYTHONMALLOC=malloc PYTHONPATH=$(pwd) \
+        python <python file.py>
+
+Or with GCC:
+
+.. code-block:: bash
+
+    source <path to ASan-enabled oneDAL env.sh>
+    CC="ccache gcc -fsanitize=address -g -O0" CXX="ccache g++ -fsanitize=address -g -O0" \
+    NO_DPC=1 NO_DIST=1 \
+        python setup.py build_ext --inplace --force --debug --abs-rpath
+    CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" \
+    NO_DPC=1 NO_DIST=1 \
+        python setup.py build --debug --abs-rpath
+    LD_PRELOAD="$(gcc -print-file-name=libasan.so)" \
     PYTHONMALLOC=malloc PYTHONPATH=$(pwd) \
         python <python file.py>
 
