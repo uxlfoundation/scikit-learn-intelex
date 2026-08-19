@@ -382,6 +382,8 @@ The ASan runtime used by ICX is the same as the one by Clang, but they might exp
 
 .. note:: For ICX, this requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
 
+.. note:: For GCC, if installed from conda-forge (``conda install gcc gxx`` or ``conda install c-compiler cxx-compiler``), this requires additionally installing package ``libsanitizer``. If installed from other sources such as Linux package managers, might require ``libasan``, which is usually a transitive dependency of compiler toolkits.
+
 Then, the Python memory allocator can be set to ``malloc`` like this:
 
 .. code-block:: bash
