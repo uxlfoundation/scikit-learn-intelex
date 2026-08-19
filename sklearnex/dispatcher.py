@@ -430,8 +430,8 @@ def do_unpatch(name: str, map: PatchMap) -> None:
 
 
 def enable(
-    name: Optional[str] = None,
-    map: Optional[PatchMap] = None,
+    name: Optional[str],
+    map: PatchMap,
 ):
     if name is not None:
         do_patch(name, map=map)
@@ -440,7 +440,7 @@ def enable(
             do_patch(key, map=map)
 
 
-def disable(name: Optional[str] = None, map: Optional[PatchMap] = None):
+def disable(name: Optional[str], map: PatchMap):
     if name is not None:
         do_unpatch(name, map=map)
     else:
