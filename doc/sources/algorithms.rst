@@ -201,13 +201,14 @@ Clustering
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
@@ -217,20 +218,29 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
+     - No limitations
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
+     - No limitations
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
-       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data without missing or infinite values is supported
+     - Only dense data is supported
+     - The following method is not accelerated by |sklearnex| and will fall back
+       to |sklearn| on CPU, returning NumPy arrays when using array API inputs:
+       :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering`.
+
+       The ``probabilities_`` attribute does not hold the membership strengths
+       that |sklearn| computes: oneDAL does not return the lambda values they
+       are derived from, so the samples assigned to a cluster are reported as
+       ``1`` and the noise points as ``0``.
 
 Dimensionality Reduction
 ************************
@@ -513,13 +523,14 @@ Clustering
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
@@ -530,20 +541,29 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
+     - No limitations
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
+     - No limitations
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
-       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data without missing or infinite values is supported
+     - Only dense data is supported
+     - The following method is not accelerated by |sklearnex| and will fall back
+       to |sklearn| on CPU, returning NumPy arrays when using array API inputs:
+       :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering`.
+
+       The ``probabilities_`` attribute does not hold the membership strengths
+       that |sklearn| computes: oneDAL does not return the lambda values they
+       are derived from, so the samples assigned to a cluster are reported as
+       ``1`` and the noise points as ``0``.
 
 Dimensionality Reduction
 ************************
@@ -791,9 +811,8 @@ Clustering
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
-       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data without missing or infinite values is supported
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************

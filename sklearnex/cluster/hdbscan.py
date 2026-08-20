@@ -20,18 +20,14 @@ from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 from sklearn.utils.validation import _num_samples, check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse, sklearn_check_version
+from daal4py.sklearn._utils import is_sparse
 from onedal.cluster import HDBSCAN as onedal_HDBSCAN
-from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import assert_all_finite, validate_data
-
-if sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import get_namespace_and_device
 
 # lax conversion of the input for the finiteness check done while
 # determining whether oneDAL can be used, the actual validation of
@@ -48,20 +44,12 @@ _check_array = partial(
 
 
 def _all_finite(X) -> bool:
-    """Check the finiteness of the input without moving device data to host.
+    """Check the finiteness of the input.
 
-    ``check_array`` and scikit-learn's finiteness checks convert the input
-    into a numpy array when array API dispatch is disabled, which is not
-    possible for data located on a device (e.g. dpnp arrays with a SYCL
-    queue). Namespaces of non-numpy origin are therefore checked using their
-    own array API primitives.
+    scikit-learn labels non-finite samples as special outliers, which oneDAL
+    does not do, hence the need to know whether they are present before
+    deciding to offload.
     """
-    xp = getattr(X, "__array_namespace__", lambda: None)()
-    if xp is not None and not _is_numpy_namespace(xp):
-        if not xp.isdtype(X.dtype, ("real floating", "complex floating")):
-            # integer and boolean data cannot contain NaN or infinity
-            return True
-        return bool(xp.all(xp.isfinite(X)))
     try:
         assert_all_finite(_check_array(X))
     except ValueError:
@@ -77,34 +65,44 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
     # copied to keep 'control_n_jobs' from modifying scikit-learn's own constraints
     _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
 
-    # scikit-learn's '__init__' is used as is, all of its parameters are
+    # scikit-learn's '__init__' is used as-is, all of its parameters are
     # forwarded to the onedal estimator or checked for oneDAL support
 
     _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
 
+    def _onedal_method(self) -> str:
+        """Translate scikit-learn's 'algorithm' into the oneDAL method."""
+        if self.algorithm == "auto":
+            # the kd-tree based neighbors search is the fastest option, but
+            # oneDAL only implements it for a subset of the distances
+            return "kd_tree" if self.metric in self._kd_tree_metrics else "brute_force"
+        if self.algorithm == "brute":
+            return "brute_force"
+        # 'kd_tree' and 'ball_tree' are named the same way in oneDAL
+        return self.algorithm
+
     def _onedal_fit(self, X, queue=None):
-        if sklearn_check_version("1.9"):
-            xp, _, device = get_namespace_and_device(X)
-        else:
-            xp, _ = get_namespace(X)
-            device = getattr(X, "device", None)
+        xp, _ = get_namespace(X)
         X = validate_data(self, X, accept_sparse=False, dtype=[xp.float64, xp.float32])
 
+        metric_params = self.metric_params or {}
         onedal_params = {
+            # sklearn takes 'min_cluster_size' as 'min_samples' when unset
             "min_cluster_size": self.min_cluster_size,
-            "min_samples": self.min_samples,
+            "min_samples": (
+                self.min_cluster_size if self.min_samples is None else self.min_samples
+            ),
             "metric": self.metric,
-            "metric_params": self.metric_params,
+            "degree": metric_params.get("p", 2.0),
             "alpha": self.alpha,
-            "algorithm": self.algorithm,
+            "method": self._onedal_method(),
             "leaf_size": self.leaf_size,
-            "n_jobs": self.n_jobs,
-            "cluster_selection_method": self.cluster_selection_method,
+            "cluster_selection": self.cluster_selection_method,
             "allow_single_cluster": self.allow_single_cluster,
             "cluster_selection_epsilon": self.cluster_selection_epsilon,
-            "max_cluster_size": self.max_cluster_size,
-            "store_centers": self.store_centers,
-            "copy": self.copy,
+            # oneDAL takes zero as 'no limit on the size of a cluster'
+            "max_cluster_size": self.max_cluster_size or 0,
+            "store_centers": self.store_centers or "none",
         }
         self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
 
@@ -112,20 +110,21 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         self.labels_ = self._onedal_estimator.labels_
         self.n_features_in_ = X.shape[1]
 
-        if hasattr(self._onedal_estimator, "centroids_"):
-            self.centroids_ = self._onedal_estimator.centroids_
-        if hasattr(self._onedal_estimator, "medoids_"):
-            self.medoids_ = self._onedal_estimator.medoids_
+        # oneDAL leaves the centers out when it does not find any cluster,
+        # while scikit-learn returns them empty
+        if self.store_centers in ("centroid", "both"):
+            self.centroids_ = getattr(self._onedal_estimator, "centroids_", X[:0, :])
+        if self.store_centers in ("medoid", "both"):
+            self.medoids_ = getattr(self._onedal_estimator, "medoids_", X[:0, :])
 
-        # oneDAL does not compute probabilities; set uniform zeros
-        # to match sklearn's interface
-        kwargs = {"dtype": xp.float64}  # always the same
-        if not _is_numpy_namespace(xp):
-            kwargs["device"] = device
-        self.probabilities_ = xp.zeros(self.labels_.shape[0], **kwargs)
+        # scikit-learn derives the membership strengths from the lambda values
+        # of the condensed tree, which oneDAL does not return, so the degree to
+        # which a sample persists in its cluster is unknown. Noise is reported
+        # as zero, as scikit-learn does, and the members of a cluster as one
+        self.probabilities_ = xp.astype(self.labels_ != -1, xp.float64)
 
-    # metrics and algorithms as named by scikit-learn, mapping onto oneDAL's
-    # distances and methods happens in the onedal estimator
+    # metrics as named by scikit-learn, mapping onto oneDAL's distances
+    # happens in '_onedal_fit'
     _onedal_supported_metrics = (
         "euclidean",
         "manhattan",
@@ -133,7 +132,8 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         "chebyshev",
         "cosine",
     )
-    _onedal_supported_algorithms = ("auto", "brute", "kd_tree", "ball_tree")
+    # distances for which oneDAL implements a kd-tree based neighbors search
+    _kd_tree_metrics = ("euclidean", "manhattan", "minkowski", "chebyshev")
     # oneDAL computes the cosine distance only in its brute force method
     _cosine_algorithms = ("auto", "brute")
 
@@ -157,20 +157,10 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                         "supported.",
                     ),
                     (
-                        self.algorithm in self._onedal_supported_algorithms,
-                        f"'{self.algorithm}' algorithm is not supported. Only 'auto', "
-                        "'brute', 'kd_tree' and 'ball_tree' are supported.",
-                    ),
-                    (
                         self.metric != "cosine"
                         or self.algorithm in self._cosine_algorithms,
                         "'cosine' metric is only supported by the 'auto' and 'brute' "
                         "algorithms.",
-                    ),
-                    (
-                        self.cluster_selection_method in ("eom", "leaf"),
-                        f"'{self.cluster_selection_method}' cluster selection "
-                        "method is not supported. Only 'eom' and 'leaf' are supported.",
                     ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (

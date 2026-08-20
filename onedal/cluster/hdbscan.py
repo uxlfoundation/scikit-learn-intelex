@@ -20,87 +20,68 @@ from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 
-# metrics for which oneDAL can use its kd-tree based neighbors search
-_kd_tree_metrics = ("euclidean", "manhattan", "minkowski", "chebyshev")
-
 
 class HDBSCAN:
+    # all parameters follow oneDAL's naming and semantics, the translation of
+    # scikit-learn's parameters happens in the sklearnex estimator
     def __init__(
         self,
         min_cluster_size=5,
         *,
-        min_samples=None,
+        min_samples=5,
         metric="euclidean",
-        metric_params=None,
+        degree=2.0,
         alpha=1.0,
-        algorithm="auto",
+        method="by_default",
         leaf_size=40,
-        n_jobs=None,
-        cluster_selection_method="eom",
+        cluster_selection="eom",
         allow_single_cluster=False,
         cluster_selection_epsilon=0.0,
-        max_cluster_size=None,
-        store_centers=None,
-        copy=False,
+        max_cluster_size=0,
+        store_centers="none",
     ):
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self.metric = metric
-        self.metric_params = metric_params
+        self.degree = degree
         self.alpha = alpha
-        self.algorithm = algorithm
+        self.method = method
         self.leaf_size = leaf_size
-        self.n_jobs = n_jobs
-        self.cluster_selection_method = cluster_selection_method
+        self.cluster_selection = cluster_selection
         self.allow_single_cluster = allow_single_cluster
         self.cluster_selection_epsilon = cluster_selection_epsilon
         self.max_cluster_size = max_cluster_size
         self.store_centers = store_centers
-        self.copy = copy
 
     @bind_default_backend("hdbscan.clustering")
     def compute(self, params, data_table): ...
 
     def _get_onedal_params(self, dtype=np.float32):
-        min_samples = (
-            self.min_samples if self.min_samples is not None else self.min_cluster_size
-        )
-
-        # map scikit-learn's 'algorithm' onto the oneDAL method
-        if self.algorithm == "auto":
-            method = "kd_tree" if self.metric in _kd_tree_metrics else "brute_force"
-        elif self.algorithm == "brute":
-            method = "brute_force"
-        else:
-            # 'kd_tree' and 'ball_tree' are named the same way in oneDAL
-            method = self.algorithm
+        result_options = "responses"
+        if self.store_centers in ("centroid", "both"):
+            result_options += "|cluster_centers"
+        if self.store_centers in ("medoid", "both"):
+            result_options += "|medoid_centers"
 
         params = {
             "fptype": dtype,
-            "method": method,
+            "method": self.method,
             "min_cluster_size": int(self.min_cluster_size),
-            "min_samples": int(min_samples),
+            "min_samples": int(self.min_samples),
             "metric": self.metric,
-            "result_options": "responses",
-            "cluster_selection": self.cluster_selection_method,
+            "result_options": result_options,
+            "cluster_selection": self.cluster_selection,
             "allow_single_cluster": bool(self.allow_single_cluster),
             "cluster_selection_epsilon": float(self.cluster_selection_epsilon),
-            "max_cluster_size": (
-                int(self.max_cluster_size) if self.max_cluster_size is not None else 0
-            ),
+            "max_cluster_size": int(self.max_cluster_size),
             "alpha": float(self.alpha),
             "leaf_size": int(self.leaf_size),
-            "store_centers": (
-                self.store_centers if self.store_centers is not None else "none"
-            ),
+            "store_centers": self.store_centers,
         }
 
-        # Set degree for Minkowski metric
+        # the degree is only meaningful for the Minkowski distance
         if self.metric == "minkowski":
-            p = 2.0  # default
-            if self.metric_params is not None and "p" in self.metric_params:
-                p = float(self.metric_params["p"])
-            params["degree"] = p
+            params["degree"] = float(self.degree)
 
         return params
 
@@ -109,22 +90,16 @@ class HDBSCAN:
         X_table = to_table(X, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
-
-        store_centers = self.store_centers
-        if store_centers is not None:
-            if store_centers in ("centroid", "both"):
-                params["result_options"] += "|cluster_centers"
-            if store_centers in ("medoid", "both"):
-                params["result_options"] += "|medoid_centers"
-
         result = self.compute(params, X_table)
 
         self.labels_ = from_table(result.responses, like=X)[:, 0]
         self.n_clusters_ = int(result.cluster_count)
 
-        if store_centers in ("centroid", "both"):
-            self.centroids_ = from_table(result.cluster_centers, like=X)
-        if store_centers in ("medoid", "both"):
-            self.medoids_ = from_table(result.medoid_centers, like=X)
+        # the centers are left empty by oneDAL when it does not find any cluster
+        if self.n_clusters_ > 0:
+            if self.store_centers in ("centroid", "both"):
+                self.centroids_ = from_table(result.cluster_centers, like=X)
+            if self.store_centers in ("medoid", "both"):
+                self.medoids_ = from_table(result.medoid_centers, like=X)
 
         return self

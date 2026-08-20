@@ -21,8 +21,6 @@
 
 #include "oneapi/dal/algo/hdbscan.hpp"
 
-#include <regex>
-
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
@@ -53,42 +51,29 @@ static auto get_hdbscan_result_options(const py::dict& params) {
     auto result_options_str = params["result_options"].cast<std::string>();
     result_option_id onedal_options;
 
-    try {
-        std::regex re("\\w+");
-        const std::sregex_iterator last{};
-        const std::sregex_iterator first( //
-            result_options_str.begin(),
-            result_options_str.end(),
-            re);
-
-        for (std::sregex_iterator it = first; it != last; ++it) {
-            std::smatch match = *it;
-            if (match.str() == "responses") {
-                onedal_options = onedal_options | result_options::responses;
-            }
-            else if (match.str() == "core_observation_indices") {
-                onedal_options = onedal_options | result_options::core_observation_indices;
-            }
-            else if (match.str() == "core_observations") {
-                onedal_options = onedal_options | result_options::core_observations;
-            }
-            else if (match.str() == "core_flags") {
-                onedal_options = onedal_options | result_options::core_flags;
-            }
-            else if (match.str() == "cluster_centers") {
-                onedal_options = onedal_options | result_options::cluster_centers;
-            }
-            else if (match.str() == "medoid_centers") {
-                onedal_options = onedal_options | result_options::medoid_centers;
-            }
-            else
-                ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
+    result_option_detail::for_each_result_option(result_options_str, [&](std::string_view option) {
+        if (option == "responses") {
+            onedal_options = onedal_options | result_options::responses;
         }
-    }
-    catch (std::regex_error& e) {
-        (void)e;
-        ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
-    }
+        else if (option == "core_observation_indices") {
+            onedal_options = onedal_options | result_options::core_observation_indices;
+        }
+        else if (option == "core_observations") {
+            onedal_options = onedal_options | result_options::core_observations;
+        }
+        else if (option == "core_flags") {
+            onedal_options = onedal_options | result_options::core_flags;
+        }
+        else if (option == "cluster_centers") {
+            onedal_options = onedal_options | result_options::cluster_centers;
+        }
+        else if (option == "medoid_centers") {
+            onedal_options = onedal_options | result_options::medoid_centers;
+        }
+        else {
+            ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
+        }
+    });
 
     return onedal_options;
 }

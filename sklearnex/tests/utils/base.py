@@ -37,6 +37,7 @@ from sklearn.datasets import load_diabetes, load_iris
 from sklearn.neighbors._base import KNeighborsMixin
 from sklearn.utils.validation import check_is_fitted
 
+from daal4py.sklearn._utils import daal_check_version
 from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _as_numpy, _convert_to_dataframe
 from sklearnex import (
@@ -133,23 +134,27 @@ class sklearn_clone_dict(dict):
 # could be because of supported non-default parameters, blocked support via sklearn's
 # 'available_if' decorator, or not being a native sklearn estimator (i.e. those not in
 # the default PATCHED_MODELS dictionary)
-SPECIAL_INSTANCES = sklearn_clone_dict(
-    {
-        str(i): i
-        for i in [
-            LocalOutlierFactor(novelty=True),
-            SVC(probability=True),
-            NuSVC(probability=True),
-            KNeighborsClassifier(algorithm="brute"),
-            KNeighborsRegressor(algorithm="brute"),
-            NearestNeighbors(algorithm="brute"),
-            LogisticRegression(solver="newton-cg"),
-            BasicStatistics(),
-            IncrementalBasicStatistics(),
-            DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
-        ]
-    }
-)
+_special_instances = [
+    LocalOutlierFactor(novelty=True),
+    SVC(probability=True),
+    NuSVC(probability=True),
+    KNeighborsClassifier(algorithm="brute"),
+    KNeighborsRegressor(algorithm="brute"),
+    NearestNeighbors(algorithm="brute"),
+    LogisticRegression(solver="newton-cg"),
+    BasicStatistics(),
+    IncrementalBasicStatistics(),
+    DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
+]
+
+# HDBSCAN was added to oneDAL in 2026.2
+if daal_check_version((2026, "P", 200)):
+    from sklearnex.cluster import HDBSCAN
+
+    # the centers are only computed by oneDAL when asked for
+    _special_instances += [HDBSCAN(store_centers="both")]
+
+SPECIAL_INSTANCES = sklearn_clone_dict({str(i): i for i in _special_instances})
 
 
 # Some estimators have methods that are dynamically defined through '@available_if'
