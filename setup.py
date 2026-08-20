@@ -320,7 +320,9 @@ def getpyexts():
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
         mpi_depens = glob.glob(jp(os.path.abspath("src"), "*.h"))
-        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in MPI_LIBDIRS]
+        # the MPI runtime is a dependency of the built package, so $ORIGIN covers it
+        mpi_rpaths = [] if NO_ABS_RPATH else MPI_LIBDIRS
+        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in mpi_rpaths]
         exts.append(
             Extension(
                 "daal4py.mpi_transceiver",
@@ -344,15 +346,18 @@ for key, value in get_config_vars().items():
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "").replace("-DNDEBUG", "")
 
 if IS_LIN and NO_ABS_RPATH:
-    # conda's LDSHARED carries -Wl,-rpath,<prefix>/lib and setuptools links with it
-    # verbatim, so the build environment's path lands in every extension it builds
+    # conda's link commands carry -Wl,-rpath,<prefix>/lib and setuptools links with them
+    # verbatim, so the build environment's path lands in every extension it builds.
+    # LDCXXSHARED is the one that matters here (the extensions are all language="c++"),
+    # but both are filtered since either can be the effective linker.
     for holder in (os.environ, cfg_vars):
-        if "LDSHARED" in holder:
-            holder["LDSHARED"] = " ".join(
-                flag
-                for flag in holder["LDSHARED"].split()
-                if not flag.startswith("-Wl,-rpath,")
-            )
+        for var in ("LDSHARED", "LDCXXSHARED"):
+            if var in holder:
+                holder[var] = " ".join(
+                    flag
+                    for flag in holder[var].split()
+                    if not flag.startswith("-Wl,-rpath,")
+                )
 
 
 def gen_pyx(odir):
