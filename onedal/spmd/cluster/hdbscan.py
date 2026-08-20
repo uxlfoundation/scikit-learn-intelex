@@ -14,13 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from daal4py.sklearn._utils import daal_check_version
+from ...cluster import HDBSCAN as HDBSCAN_Batch
+from ...common._backend import bind_spmd_backend
 
-if daal_check_version((2026, "P", 200)):
 
-    from ...cluster import HDBSCAN as HDBSCAN_Batch
-    from ...common._backend import bind_spmd_backend
-
-    class HDBSCAN(HDBSCAN_Batch):
-        @bind_spmd_backend("hdbscan.clustering")
-        def compute(self, params, data_table): ...
+class HDBSCAN(HDBSCAN_Batch):
+    @bind_spmd_backend("hdbscan.clustering")
+    def compute(self, params, data_table): ...

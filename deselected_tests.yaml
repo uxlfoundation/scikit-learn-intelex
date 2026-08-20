@@ -334,6 +334,15 @@ deselected_tests:
   # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
   - cluster/tests/test_dbscan.py::test_dbscan_params_validation
 
+  # HDBSCAN in oneDAL builds neither the single-linkage nor the condensed tree that
+  # scikit-learn exposes as private fitted attributes ('_single_linkage_tree_'), it
+  # only returns the resulting labels.
+  - cluster/tests/test_hdbscan.py::test_labelling_distinct
+  # Compares the labels of dense data (clustered by oneDAL) against the labels of the
+  # same data in sparse format (a fallback to scikit-learn). Both find the same
+  # clusters, but the two implementations number them differently.
+  - cluster/tests/test_hdbscan.py::test_hdbscan_sparse
+
   # Failing tests since sklearn 1.6
   - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]

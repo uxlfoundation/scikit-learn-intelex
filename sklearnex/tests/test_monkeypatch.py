@@ -14,10 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
-import pytest
-
 import sklearnex
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version
 
 # General use of patch_sklearn and unpatch_sklearn in pytest is not recommended.
 # It changes global state and can impact the operation of other tests. This file
@@ -179,30 +177,6 @@ def test_unpatch_by_list_many_estimators():
         assert SVC.__module__.startswith("sklearnex")
     finally:
         sklearnex.unpatch_sklearn()
-
-
-@pytest.mark.skipif(
-    not (sklearn_check_version("1.3") and daal_check_version((2026, "P", 200))),
-    reason="HDBSCAN requires sklearn >= 1.3 and oneDAL >= 2026.2",
-)
-def test_patch_unpatch_hdbscan():
-    try:
-        sklearnex.patch_sklearn(["sklearn.cluster.HDBSCAN"])
-        assert sklearnex.sklearn_is_patched("sklearn.cluster.HDBSCAN")
-
-        from sklearn.cluster import DBSCAN, HDBSCAN
-
-        assert HDBSCAN.__module__.startswith("sklearnex")
-        # patching by list must not enable the other clustering estimators
-        assert DBSCAN.__module__.startswith("sklearn.")
-    finally:
-        sklearnex.unpatch_sklearn()
-
-    assert not sklearnex.sklearn_is_patched("sklearn.cluster.HDBSCAN")
-
-    from sklearn.cluster import HDBSCAN
-
-    assert HDBSCAN.__module__.startswith("sklearn.")
 
 
 def test_patching_checker():

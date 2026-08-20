@@ -14,14 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal.spmd.cluster import HDBSCAN as onedal_HDBSCAN
 
-if sklearn_check_version("1.3") and daal_check_version((2026, "P", 200)):
+from ...cluster import HDBSCAN as HDBSCAN_Batch
 
-    from onedal.spmd.cluster import HDBSCAN as onedal_HDBSCAN
 
-    from ...cluster import HDBSCAN as HDBSCAN_Batch
-
-    class HDBSCAN(HDBSCAN_Batch):
-        __doc__ = HDBSCAN_Batch.__doc__
-        _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
+class HDBSCAN(HDBSCAN_Batch):
+    __doc__ = HDBSCAN_Batch.__doc__
+    _onedal_hdbscan = staticmethod(onedal_HDBSCAN)

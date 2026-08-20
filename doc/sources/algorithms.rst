@@ -226,9 +226,11 @@ Clustering
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
-     - Only dense data is supported
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+     - Only dense data without missing or infinite values is supported
 
 Dimensionality Reduction
 ************************
@@ -537,9 +539,11 @@ Clustering
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
-     - Only dense data is supported
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+     - Only dense data without missing or infinite values is supported
 
 Dimensionality Reduction
 ************************
@@ -558,7 +562,7 @@ Dimensionality Reduction
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
-     -
+     - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
      - 
      - Sparse data is not supported
@@ -785,9 +789,11 @@ Clustering
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
-     - Only dense data is supported
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``cluster_selection_method`` not in [`'eom'`, `'leaf'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+     - Only dense data without missing or infinite values is supported
 
 Dimensionality Reduction
 ************************
@@ -806,7 +812,7 @@ Dimensionality Reduction
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
-     -
+     - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
      - All parameters are supported except:
 

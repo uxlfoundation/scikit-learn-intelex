@@ -125,9 +125,7 @@ def test_onedal_hdbscan_dtypes(dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize("dataframe,queue", _dataframes_and_queues)
-@pytest.mark.parametrize(
-    "algorithm", ["auto", "brute", "brute_force", "kd_tree", "ball_tree"]
-)
+@pytest.mark.parametrize("algorithm", ["auto", "brute", "kd_tree", "ball_tree"])
 def test_onedal_hdbscan_algorithms(dataframe, queue, algorithm):
     """All algorithms mapped onto oneDAL methods give the same clustering."""
     X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)

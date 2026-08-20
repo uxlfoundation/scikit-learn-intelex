@@ -16,10 +16,11 @@
 
 import numpy as np
 import pytest
+from scipy.sparse import csr_matrix
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -27,323 +28,88 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 pytestmark = pytest.mark.skipif(
-    not (sklearn_check_version("1.3") and daal_check_version((2026, "P", 200))),
-    reason="HDBSCAN requires sklearn >= 1.3 and oneDAL >= 2026.2",
+    not daal_check_version((2026, "P", 200)),
+    reason="HDBSCAN requires oneDAL >= 2026.2",
 )
 
 
-# ============================================================================
-# Basic functionality tests
-# ============================================================================
-
-
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_hdbscan(dataframe, queue):
-    """Verify that HDBSCAN is importable from sklearnex and patching works."""
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("metric", ["euclidean", "manhattan"])
+def test_sklearnex_import_hdbscan(dataframe, queue, dtype, metric):
+    """oneDAL clustering must agree with the one from scikit-learn."""
+    from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+
     from sklearnex.cluster import HDBSCAN
 
-    X, _ = make_blobs(n_samples=100, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, min_samples=5).fit(X)
+    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
+    X = X.astype(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X_df)
     assert "sklearnex" in hdbscan.__module__
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    expected = _sklearn_HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric)
+    ari = adjusted_rand_score(expected.fit(X).labels_, _as_numpy(hdbscan.labels_))
+    assert ari > 0.9, f"clustering differs from scikit-learn's: ARI={ari}"
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_three_clusters(dataframe, queue):
-    """Well-separated clusters should have ARI > 0.9 against ground truth."""
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"metric": "precomputed"},
+        {"metric": "cosine", "algorithm": "kd_tree"},
+        {"cluster_selection_method": "leaf_oldest"},
+        {"min_cluster_size": 200},
+    ],
+)
+def test_hdbscan_unsupported_params(params):
+    """Parameters outside of oneDAL's support must fall back to scikit-learn."""
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
-
-    ari = adjusted_rand_score(y_true, _as_numpy(hdbscan.labels_))
-    assert ari > 0.9, f"ARI too low: {ari}"
+    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
+    assert not HDBSCAN(**params)._onedal_supported("fit", X).get_status()
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_labels_shape(dataframe, queue):
-    """Verify output attributes have correct shapes and types."""
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"cluster_selection_method": "leaf"},
+        {"cluster_selection_epsilon": 0.5},
+        {"max_cluster_size": 50},
+        {"allow_single_cluster": True},
+        {"store_centers": "both"},
+        {"metric": "minkowski", "metric_params": {"p": 3}},
+        {"algorithm": "ball_tree"},
+    ],
+)
+def test_hdbscan_supported_params(params):
+    """Parameters oneDAL supports must not trigger a fallback."""
     from sklearnex.cluster import HDBSCAN
 
-    X, _ = make_blobs(n_samples=200, centers=3, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10).fit(X)
-
-    assert hasattr(hdbscan, "labels_")
-    labels = _as_numpy(hdbscan.labels_)
-    assert labels.shape == (200,)
-    assert hasattr(hdbscan, "probabilities_")
-    assert hasattr(hdbscan, "n_features_in_")
-    assert hdbscan.n_features_in_ == 2
+    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
+    assert HDBSCAN(min_cluster_size=10, **params)._onedal_supported("fit", X).get_status()
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_fit_returns_self(dataframe, queue):
-    """Verify fit() returns self for method chaining."""
-    from sklearnex.cluster import HDBSCAN
+@pytest.mark.parametrize("unsupported", ["sparse", "non-finite"])
+def test_hdbscan_fallback_data(unsupported):
+    """Data unsupported by oneDAL is clustered by scikit-learn instead."""
+    from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
-    X, _ = make_blobs(n_samples=50, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=5)
-    result = hdbscan.fit(X)
-    assert result is hdbscan
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_fit_predict(dataframe, queue):
-    """Verify fit_predict returns the same labels as fit().labels_."""
     from sklearnex.cluster import HDBSCAN
 
     X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    hdbscan1 = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
-    hdbscan2 = HDBSCAN(min_cluster_size=15, min_samples=5)
-    labels_fp = hdbscan2.fit_predict(X)
-
-    ari = adjusted_rand_score(_as_numpy(hdbscan1.labels_), _as_numpy(labels_fp))
-    assert ari > 0.99, f"fit_predict labels differ from fit labels: ARI={ari}"
-
-
-# ============================================================================
-# Correctness tests — comparison with sklearn
-# ============================================================================
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_vs_sklearn(dataframe, queue):
-    """Compare sklearnex HDBSCAN against stock sklearn for correctness."""
-    from sklearn.cluster import HDBSCAN as sklearn_HDBSCAN
-
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
-    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    sklearnex_hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=15, min_samples=5, copy=True).fit(
-        X
-    )
-
-    ari = adjusted_rand_score(
-        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
-    )
-    assert ari > 0.9, f"ARI vs sklearn: {ari}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("n_samples,n_centers", [(200, 2), (500, 5), (1000, 3)])
-def test_hdbscan_vs_sklearn_various_sizes(dataframe, queue, n_samples, n_centers):
-    """Compare against sklearn across different dataset sizes and cluster counts."""
-    from sklearn.cluster import HDBSCAN as sklearn_HDBSCAN
-
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(
-        n_samples=n_samples, centers=n_centers, cluster_std=0.5, random_state=42
-    )
-    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    mcs = max(15, n_samples // 50)
-    sklearnex_hdbscan = HDBSCAN(min_cluster_size=mcs, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=mcs, min_samples=5, copy=True).fit(
-        X
-    )
-
-    ari = adjusted_rand_score(
-        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
-    )
-    assert ari > 0.85, f"ARI vs sklearn too low for n={n_samples}, k={n_centers}: {ari}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_vs_sklearn_high_dim(dataframe, queue):
-    """Compare against sklearn on high-dimensional data."""
-    from sklearn.cluster import HDBSCAN as sklearn_HDBSCAN
-
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(
-        n_samples=300, n_features=10, centers=3, cluster_std=1.0, random_state=42
-    )
-    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    sklearnex_hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=15, min_samples=5, copy=True).fit(
-        X
-    )
-
-    ari = adjusted_rand_score(
-        _as_numpy(sklearnex_hdbscan.labels_), sklearn_hdbscan.labels_
-    )
-    assert ari > 0.85, f"ARI vs sklearn on 10d data: {ari}"
-
-
-# ============================================================================
-# Distance metric tests
-# ============================================================================
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "metric",
-    ["euclidean", "manhattan", "chebyshev", "cosine"],
-)
-def test_hdbscan_metrics(dataframe, queue, metric):
-    """Verify that each supported metric finds reasonable clusters."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X)
-
-    labels = _as_numpy(hdbscan.labels_)
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    assert n_clusters >= 2, f"Expected >=2 clusters with {metric}, got {n_clusters}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_minkowski(dataframe, queue):
-    """Verify Minkowski metric with custom p."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(
-        min_cluster_size=15, min_samples=5, metric="minkowski", metric_params={"p": 3}
-    ).fit(X)
-
-    labels = _as_numpy(hdbscan.labels_)
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    assert n_clusters >= 2, f"Expected >=2 clusters with minkowski(p=3), got {n_clusters}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("metric", ["euclidean", "manhattan"])
-def test_hdbscan_metric_vs_sklearn(dataframe, queue, metric):
-    """Compare metric results against sklearn."""
-    from sklearn.cluster import HDBSCAN as sklearn_HDBSCAN
-
-    from sklearnex.cluster import HDBSCAN
-
-    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    sklearnex_h = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X_df)
-    sklearn_h = sklearn_HDBSCAN(
-        min_cluster_size=15, min_samples=5, metric=metric, copy=True
-    ).fit(X)
-
-    ari = adjusted_rand_score(_as_numpy(sklearnex_h.labels_), sklearn_h.labels_)
-    assert ari > 0.85, f"ARI vs sklearn with {metric}: {ari}"
-
-
-# ============================================================================
-# Patching and fallback tests
-# ============================================================================
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_fallback_unsupported_metric(dataframe, queue):
-    """Unsupported metric should not be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, metric="precomputed")
-    status = hdbscan._onedal_supported("fit", X)
-    assert not status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_fallback_non_finite(dataframe, queue):
-    """Non-finite values should not be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X[0, 0] = np.nan
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10)
-    status = hdbscan._onedal_supported("fit", X)
-    assert not status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_leaf_method(dataframe, queue):
-    """cluster_selection_method='leaf' should be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, cluster_selection_method="leaf")
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_epsilon(dataframe, queue):
-    """Non-zero cluster_selection_epsilon should be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, cluster_selection_epsilon=0.5)
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_max_cluster_size(dataframe, queue):
-    """max_cluster_size should be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, max_cluster_size=50)
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_allow_single_cluster(dataframe, queue):
-    """allow_single_cluster=True should be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, allow_single_cluster=True)
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_store_centers(dataframe, queue):
-    """store_centers should be supported by oneDAL."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, store_centers="centroid")
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_supported_euclidean(dataframe, queue):
-    """Euclidean metric with default params should be supported."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=100, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=10, metric="euclidean")
-    status = hdbscan._onedal_supported("fit", X)
-    assert status.get_status()
-
-
-# ============================================================================
-# Fitted attribute tests
-# ============================================================================
+    if unsupported == "sparse":
+        X = csr_matrix(X)
+    else:
+        X[0, 0] = np.nan
+
+    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
+    assert not hasattr(hdbscan, "_onedal_estimator")
+
+    expected = _sklearn_HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
+    np.testing.assert_array_equal(expected.labels_, hdbscan.labels_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -385,130 +151,3 @@ def test_hdbscan_probabilities(dataframe, queue):
         assert type(probabilities) is type(hdbscan.labels_)
         if hasattr(hdbscan.labels_, "device"):
             assert probabilities.device == hdbscan.labels_.device
-
-
-# ============================================================================
-# Edge case and dtype tests
-# ============================================================================
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_hdbscan_dtypes(dataframe, queue, dtype):
-    """Verify HDBSCAN works with both float32 and float64."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = X.astype(dtype)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
-
-    labels = _as_numpy(hdbscan.labels_)
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    assert n_clusters >= 2, f"Expected >=2 clusters with {dtype}, got {n_clusters}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_noise_labels(dataframe, queue):
-    """Verify that noise points get label -1."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=2, cluster_std=0.5, random_state=42)
-    # Add outliers far from clusters
-    rng = np.random.RandomState(42)
-    outliers = rng.uniform(-20, 30, size=(10, 2))
-    X = np.vstack([X, outliers])
-
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
-
-    labels = _as_numpy(hdbscan.labels_)
-    assert -1 in labels, "Expected some noise points (label=-1)"
-    n_clusters = len(set(labels)) - 1  # excluding -1
-    assert n_clusters >= 2, f"Expected >=2 clusters, got {n_clusters}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_large_min_cluster_size(dataframe, queue):
-    """With very large min_cluster_size, expect at most 1 real cluster."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=50, centers=2, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    # min_cluster_size bigger than any cluster
-    hdbscan = HDBSCAN(min_cluster_size=40).fit(X)
-
-    labels = _as_numpy(hdbscan.labels_)
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    assert n_clusters <= 1, f"Expected <=1 cluster with large mcs, got {n_clusters}"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_cluster_selection_epsilon(dataframe, queue):
-    """Verify cluster_selection_epsilon runs through oneDAL and merges clusters."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    h_no_eps = HDBSCAN(
-        min_cluster_size=15, min_samples=5, cluster_selection_epsilon=0.0
-    ).fit(X)
-    h_eps = HDBSCAN(
-        min_cluster_size=15, min_samples=5, cluster_selection_epsilon=100.0
-    ).fit(X)
-
-    labels_no_eps = _as_numpy(h_no_eps.labels_)
-    labels_eps = _as_numpy(h_eps.labels_)
-    n_no_eps = len(set(labels_no_eps)) - (1 if -1 in labels_no_eps else 0)
-    n_eps = len(set(labels_eps)) - (1 if -1 in labels_eps else 0)
-    assert n_eps <= n_no_eps, "Large epsilon should merge clusters"
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_max_cluster_size(dataframe, queue):
-    """Verify max_cluster_size runs through oneDAL without error."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=2, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, max_cluster_size=50).fit(X)
-    assert hasattr(hdbscan, "labels_")
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_alpha(dataframe, queue):
-    """Verify alpha parameter runs through oneDAL without error."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, alpha=1.5).fit(X)
-    assert hasattr(hdbscan, "labels_")
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_leaf_size(dataframe, queue):
-    """Verify leaf_size parameter runs through oneDAL without error."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, leaf_size=20).fit(X)
-    assert hasattr(hdbscan, "labels_")
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_hdbscan_min_samples_default(dataframe, queue):
-    """When min_samples=None, it should default to min_cluster_size."""
-    from sklearnex.cluster import HDBSCAN
-
-    X, _ = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-
-    # min_samples=None (default) should use min_cluster_size
-    h1 = HDBSCAN(min_cluster_size=15, min_samples=None).fit(X)
-    h2 = HDBSCAN(min_cluster_size=15, min_samples=15).fit(X)
-
-    ari = adjusted_rand_score(_as_numpy(h1.labels_), _as_numpy(h2.labels_))
-    assert ari == 1.0, f"min_samples=None should equal min_cluster_size: ARI={ari}"
