@@ -233,9 +233,9 @@ Clustering
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
      - Only dense data is supported
-     - The following method is not accelerated by |sklearnex| and will fall back
-       to |sklearn| on CPU, returning NumPy arrays when using array API inputs:
-       :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering`.
+     - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
+       supported after a fit that was offloaded to oneDAL: it requires the
+       single-linkage tree, which oneDAL does not return.
 
        The ``probabilities_`` attribute does not hold the membership strengths
        that |sklearn| computes: oneDAL does not return the lambda values they
@@ -556,9 +556,9 @@ Clustering
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
      - Only dense data is supported
-     - The following method is not accelerated by |sklearnex| and will fall back
-       to |sklearn| on CPU, returning NumPy arrays when using array API inputs:
-       :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering`.
+     - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
+       supported after a fit that was offloaded to oneDAL: it requires the
+       single-linkage tree, which oneDAL does not return.
 
        The ``probabilities_`` attribute does not hold the membership strengths
        that |sklearn| computes: oneDAL does not return the lambda values they
