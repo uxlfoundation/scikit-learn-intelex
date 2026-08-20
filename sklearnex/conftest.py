@@ -61,16 +61,21 @@ def pytest_runtest_call(item):
 
 @pytest.fixture(autouse=True)
 def _array_api_dispatch_for_device_frameworks(request):
-    # Non-numpy array API inputs (dpnp, array_api) are only supported on-device
-    # under array_api_dispatch; without it they silently host-transfer, leaving the
-    # on-device paths untested. Enable dispatch whenever a test is parametrized with
-    # such a dataframe so these inputs exercise the real array API path. Tests marked
-    # allow_sklearn_fallback intentionally cover host paths and are left untouched.
+    # Non-numpy array API inputs (dpnp, array_api, torch) are only supported
+    # on-device under array_api_dispatch; without it they silently host-transfer,
+    # leaving the on-device paths untested. torch additionally cannot be restored to
+    # its own namespace on the host path, since ``Tensor`` has no
+    # ``__array_namespace__``, so undispatched torch inputs come back as numpy.
+    # Enable dispatch whenever a test is parametrized with such a dataframe so these
+    # inputs exercise the real array API path. Tests marked allow_sklearn_fallback
+    # intentionally cover host paths and are left untouched.
     dataframe = getattr(request.node, "callspec", None)
     dataframe = dataframe.params.get("dataframe") if dataframe else None
-    if dataframe in ("dpnp", "array_api") and not request.node.get_closest_marker(
-        "allow_sklearn_fallback"
-    ):
+    if dataframe in (
+        "dpnp",
+        "array_api",
+        "torch",
+    ) and not request.node.get_closest_marker("allow_sklearn_fallback"):
         with config_context(array_api_dispatch=True):
             yield
     else:

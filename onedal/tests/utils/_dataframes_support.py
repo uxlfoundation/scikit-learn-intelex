@@ -14,7 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 import os
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import scipy.sparse as sp
@@ -291,6 +291,20 @@ def _device_key(obj: Any) -> Any:
     return getattr(obj, "device", obj)
 
 
+def _torch_device_type(device: Any) -> Optional[str]:
+    """Expected ``torch.Tensor.device.type`` for a queue, tensor, or torch device.
+
+    Mirrors the queue-to-device mapping :func:`_convert_to_dataframe` applies when
+    building torch inputs, so a result can be checked against the same expectation.
+    Returns None when ``device`` carries no torch-comparable identity.
+    """
+    sycl_device = getattr(device, "sycl_device", None)
+    if sycl_device is not None:
+        return "xpu" if getattr(sycl_device, "is_gpu", False) else "cpu"
+    device_type = getattr(getattr(device, "device", device), "type", None)
+    return device_type if isinstance(device_type, str) else None
+
+
 def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
     """Assert ``obj`` belongs to the array namespace implied by ``dataframe``.
 
@@ -306,9 +320,9 @@ def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
     dataframe : str
         The dataframe name the input was created with, as returned by
         :func:`get_dataframes_and_queues` (e.g. ``"numpy"``, ``"dpnp"``,
-        ``"array_api"``). Only array API namespaces (``"dpnp"`` and entries of
-        ``array_api_modules``) trigger an assertion; other values are treated as
-        numpy and pass through unchecked.
+        ``"array_api"``, ``"torch"``). Only array API namespaces (``"dpnp"``,
+        ``"torch"`` and entries of ``array_api_modules``) trigger an assertion;
+        other values are treated as numpy and pass through unchecked.
     device : object, default=None
         Optional expected device, compared against the device of ``obj``. Pass
         the test's ``queue``, or the ``device`` of another array. When None, only
@@ -320,7 +334,21 @@ def _assert_in_namespace(obj: Any, dataframe: str, device: Any = None) -> None:
         Nothing is returned; an ``AssertionError`` is raised when ``obj`` is not
         in the expected namespace or not on the expected device.
     """
-    if np.isscalar(obj) or dataframe not in _expected_namespaces:
+    if np.isscalar(obj):
+        return
+    if dataframe == "torch":
+        # torch is reached through array_api_compat and does not implement
+        # ``__array_namespace__`` on Tensor, so identity is the tensor type.
+        assert torch_available and isinstance(
+            obj, torch.Tensor
+        ), f"expected torch output, got {type(obj)}"
+        expected = _torch_device_type(device) if device is not None else None
+        if expected is not None:
+            assert (
+                obj.device.type == expected
+            ), f"expected output on torch {expected}, got {obj.device}"
+        return
+    if dataframe not in _expected_namespaces:
         return
     xp = _expected_namespaces[dataframe]
     assert (
