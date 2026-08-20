@@ -252,7 +252,7 @@ The following environment variables can be used to control setup aspects:
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
 - ``NO_DPC``: set to '1', 'yes' or alike to build without support of the |onedal| DPC++ interfaces (GPU). Note that building the DPC++ component (default) of this library requires also the DPC++ components of the |onedal| (packages ``dal-gpu`` / ``daal-gpu`` if installing it from ``conda`` or ``pip``).
 - ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
-- ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to stop ``conda-recipe/build.sh`` from adding ``--abs-rpath`` when ``$DALROOT`` points outside of the active conda environment. Intended for builds whose artifacts are redistributed, where the absolute ``$DALROOT`` path only exists on the build machine. Has no effect on direct calls to ``setup.py``.
+- ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to cancel the ``--abs-rpath`` option, leaving only relative (``$ORIGIN``-based) entries in the rpath of the resulting shared objects. On Linux* it additionally drops the ``-Wl,-rpath`` entry that ``conda`` interpreters carry in ``LDSHARED``, which would otherwise add the build environment's ``lib`` folder. Intended for builds whose artifacts are redistributed, where absolute paths from the build machine do not exist on the target.
 
 .. note:: The ``-j`` flag in the ``MAKEFLAGS`` environment variable is superseded in ``setup.py`` modes which support the ``--parallel`` and ``-j`` command line flags.
 

@@ -48,7 +48,8 @@ def check_for_build_arg(arg: str) -> bool:
     return False
 
 
-USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath")
+NO_ABS_RPATH: bool = bool(os.environ.get("SKLEARNEX_NO_ABS_RPATH"))
+USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath") and not NO_ABS_RPATH
 DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
 
@@ -341,6 +342,17 @@ cfg_vars = get_config_vars()
 for key, value in get_config_vars().items():
     if isinstance(value, str):
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "").replace("-DNDEBUG", "")
+
+if IS_LIN and NO_ABS_RPATH:
+    # conda's LDSHARED carries -Wl,-rpath,<prefix>/lib and setuptools links with it
+    # verbatim, so the build environment's path lands in every extension it builds
+    for holder in (os.environ, cfg_vars):
+        if "LDSHARED" in holder:
+            holder["LDSHARED"] = " ".join(
+                flag
+                for flag in holder["LDSHARED"].split()
+                if not flag.startswith("-Wl,-rpath,")
+            )
 
 
 def gen_pyx(odir):
