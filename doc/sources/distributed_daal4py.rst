@@ -84,7 +84,7 @@ same algorithms to much larger problem sizes.
 Using distributed mode
 ----------------------
 
-To run distributed code across multiple processes, save it in a Python file and
+To run distributed code across multiple processes, store the code in a Python file and
 execute that file through an MPI runner (``mpiexec`` / ``mpirun``).
 The MPI runner in turn is the software that handles aspects like which nodes to use,
 inter-node communication, and so on. The same Python code in the file will be executed
@@ -98,9 +98,11 @@ function :obj:`daal4py.daalfini` must be called before accessing the results obj
 For this multi-process execution, user code does not need to call ``MPI_Init``
 or :obj:`daal4py.daalinit`: the first distributed operation initializes its
 transceiver lazily. If an MPI runtime was already initialized, for example by
-``mpi4py``, ``daal4py`` uses it and :obj:`daal4py.daalfini` leaves finalization
-to its initializer. Otherwise, ``daalfini`` finalizes the MPI runtime that
-``daal4py`` initialized.
+|mpi4py|, ``daal4py`` uses it and :obj:`daal4py.daalfini` leaves finalization
+to its initializer. Otherwise, :obj:`daal4py.daalfini` finalizes the MPI runtime that
+``daal4py`` initialized. No particular communicator has to be set up for this:
+``daal4py`` only checks whether MPI has been initialized at all, and runs its
+own collectives on ``MPI_COMM_WORLD``.
 
 Example:
 
@@ -194,7 +196,7 @@ Same example calling MPI functionalities from ``mpi4py`` instead:
     qr_algo = daal4py.qr(distributed=True)
     qr_result = qr_algo.compute(X_node)
 
-    # Releases daal4py's transceiver; mpi4py retains ownership of MPI.
+    # Releases daal4py's transceiver, mpi4py retains ownership of MPI.
     daal4py.daalfini()
 
     # Matrix R (shape=[ncols, ncols]) is common for all nodes

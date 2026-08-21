@@ -178,7 +178,7 @@ def daalinit(nthreads: int = -1) -> None:
     :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
 
     .. note:: This function configures thread settings only. It does not
-              initialize MPI or distributed mode; the transceiver is
+              initialize MPI or distributed mode, the transceiver is
               initialized lazily by the first distributed operation.
 
     :rtype: None
@@ -193,8 +193,11 @@ def daalfini() -> None:
     result objects. It releases daal4py's distributed transceiver. If daal4py
     initialized MPI, releasing the last transceiver finalizes MPI and another
     distributed operation cannot be started in the same process. If MPI was
-    initialized by another library, for example ``mpi4py``, it remains owned by
-    that library; later distributed operations can create a new transceiver.
+    initialized by another library, for example |mpi4py|, it remains owned by
+    that library, and later distributed operations can create a new transceiver.
+    There is no function that creates one: as before, the next call to a
+    ``.compute()`` of an algorithm constructed with ``distributed=True`` creates
+    it lazily.
     This function is a no-op when no daal4py distributed transceiver is active.
 
     :rtype: None
