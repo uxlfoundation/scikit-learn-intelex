@@ -42,7 +42,7 @@ _ONEDAL_IFACE_LIBRARY = {
 def _get_onedal_library_names(iface, use_parameters_lib=True, is_win=False):
     """Return the oneDAL libraries a backend needs, in link order.
 
-    Names are the platform-independent stems; ``get_onedal_libraries`` and
+    Names are the platform-independent stems, ``get_onedal_libraries`` and
     ``get_onedal_library_filenames`` turn them into linker arguments and on-disk
     file names respectively.
     """
@@ -56,7 +56,7 @@ def _get_onedal_library_names(iface, use_parameters_lib=True, is_win=False):
         if use_parameters_lib:
             is_dpc = iface_library == "onedal_dpc"
             if is_win:
-                # On Windows the parameters entry points ship in the core
+                # On Windows, the parameters library entry points come from the core
                 # import library, so the name carries the core prefix. This is
                 # the spelling scripts/CMakeLists.txt links against.
                 library_names.append(
@@ -81,14 +81,19 @@ def _to_windows_import_name(name):
 
 def get_onedal_arch_dir(machine):
     # Keyed by what ``platform.machine()`` reports, which is not the same string
-    # for the same hardware on every platform: on Windows it goes through
-    # ``_get_machine_win32()`` and answers ``AMD64``, while on Linux and macOS it
-    # answers ``x86_64``. Both have to select ``intel64``, and both spellings
-    # reach here - at build time from ``plt.machine()`` below, and at import time
-    # from the same call in ``onedal/__init__.py`` and ``daal4py/__init__.py``.
-    return {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}.get(
-        machine, machine
-    )
+    # for the same hardware on every platform. On Windows it goes through
+    # ``_get_machine_win32()``, which reads the WMI CPU architecture and answers
+    # ``AMD64`` or ``ARM64``; on Linux and macOS the same call answers ``x86_64``
+    # or ``aarch64``. Both spellings of each architecture have to select the same
+    # oneDAL directory, and both reach here - at build time from ``plt.machine()``
+    # below, and at import time from the same call in ``onedal/__init__.py`` and
+    # ``daal4py/__init__.py``.
+    return {
+        "x86_64": "intel64",
+        "AMD64": "intel64",
+        "aarch64": "arm",
+        "ARM64": "arm",
+    }.get(machine, machine)
 
 
 def get_onedal_libraries(

@@ -16,6 +16,7 @@
 # ==============================================================================
 
 import argparse
+import importlib.util
 import os
 import platform as plt
 import struct
@@ -23,6 +24,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from os.path import join as jp
+from pathlib import Path
 from time import gmtime, strftime
 
 from daal4py import __has_dist__
@@ -60,9 +62,17 @@ elif sys.platform in ["win32", "cygwin"]:
 else:
     assert False, sys.platform + " not supported"
 
-arch_dir = plt.machine()
-plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
-arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
+# Load the mapping from the build driver rather than repeating it. It used to be
+# duplicated here, which is how the two copies could drift - the build would look
+# in one oneDAL directory and this runner in another.
+_BUILD_BACKEND_PATH = Path(__file__).parents[1] / "scripts" / "build_backend.py"
+_SPEC = importlib.util.spec_from_file_location(
+    "sklearnex_build_backend", _BUILD_BACKEND_PATH
+)
+_build_backend = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_build_backend)
+
+arch_dir = _build_backend.get_onedal_arch_dir(plt.machine())
 assert 8 * struct.calcsize("P") in [32, 64]
 
 if 8 * struct.calcsize("P") == 32:

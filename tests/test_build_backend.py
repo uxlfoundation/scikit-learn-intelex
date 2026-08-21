@@ -91,7 +91,15 @@ def test_get_onedal_library_dir_accepts_supported_layouts(
 
 
 @pytest.mark.parametrize(
-    "machine,arch_dir", [("x86_64", "intel64"), ("AMD64", "intel64"), ("aarch64", "arm")]
+    "machine,arch_dir",
+    [
+        # platform.machine() spells the same architecture differently per OS:
+        # x86_64/aarch64 on Linux and macOS, AMD64/ARM64 on Windows.
+        ("x86_64", "intel64"),
+        ("AMD64", "intel64"),
+        ("aarch64", "arm"),
+        ("ARM64", "arm"),
+    ],
 )
 def test_get_onedal_arch_dir(machine, arch_dir):
     assert get_onedal_arch_dir(machine) == arch_dir
