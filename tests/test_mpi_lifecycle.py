@@ -41,6 +41,10 @@ import daal4py
 
 pytest.importorskip("daal4py.mpi_transceiver", exc_type=ImportError)
 
+# Everything in this module drives MPI, so it is selectable and skippable as a
+# unit the same way the SPMD suites are.
+pytestmark = pytest.mark.mpi
+
 
 def test_mpi_is_externally_owned():
     """Guard the premise of this module: mpi4py, not daal4py, initialized MPI.
@@ -76,6 +80,39 @@ def test_externally_owned_mpi_can_recreate_transceiver():
         daal4py.daalfini()
         assert not MPI.Is_finalized()
         assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
+
+
+def test_distributed_compute_works_again_after_daalfini():
+    """A second distributed computation must succeed across an intervening daalfini.
+
+    The other tests here reach the transceiver through the topology calls, which
+    is enough to cover its lifecycle but not to show that a real distributed
+    algorithm can be run twice. This drives ``.compute()`` on both sides of a
+    ``daalfini()``: because mpi4py owns MPI, that call releases only daal4py's
+    transceiver, so the second ``.compute()`` creates a new one and succeeds. On
+    the daal4py-owned path the same sequence must fail instead, which is what
+    ``tests/mpi_lifecycle_smoke.py`` asserts.
+
+    Both runs get identical input, so their R factors must agree regardless of how
+    many ranks take part. Signs are not unique in a QR factorization, hence the
+    comparison on absolute values.
+    """
+    comm = MPI.COMM_WORLD
+    rng = np.random.RandomState(seed=0)
+    data = rng.standard_normal(size=(16, 4))
+
+    first = daal4py.qr(distributed=True).compute(data)
+    daal4py.daalfini()
+    assert not MPI.Is_finalized()
+
+    second = daal4py.qr(distributed=True).compute(data)
+    daal4py.daalfini()
+
+    np.testing.assert_allclose(
+        np.abs(first.matrixR), np.abs(second.matrixR), rtol=0, atol=1e-10
+    )
+    assert not MPI.Is_finalized()
+    assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
 def test_external_mpi_survives_repeated_transceiver_lifecycle():
