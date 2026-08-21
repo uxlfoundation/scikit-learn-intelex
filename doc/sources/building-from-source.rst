@@ -252,6 +252,7 @@ The following environment variables can be used to control setup aspects:
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
 - ``NO_DPC``: set to '1', 'yes' or alike to build without support of the |onedal| DPC++ interfaces (GPU). Note that building the DPC++ component (default) of this library requires also the DPC++ components of the |onedal| (packages ``dal-gpu`` / ``daal-gpu`` if installing it from ``conda`` or ``pip``).
 - ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
+- ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to stop ``conda-recipe/build.sh`` from adding ``--abs-rpath`` when ``$DALROOT`` points outside of the active conda environment. Intended for builds whose artifacts are redistributed, where the absolute ``$DALROOT`` path only exists on the build machine. Has no effect on direct calls to ``setup.py``.
 
 .. note:: The ``-j`` flag in the ``MAKEFLAGS`` environment variable is superseded in ``setup.py`` modes which support the ``--parallel`` and ``-j`` command line flags.
 
@@ -346,30 +347,43 @@ Building with ASan
 
 In order to use AddressSanitizer (ASan) together with the |sklearnex|, it's necessary to:
 
-- Build both the |onedal| and the |sklearnex| with ASan and with debugging symbols (otherwise error traces will not be very informative).
+- Build both the |onedal| and the |sklearnex| with ASan and with debugging symbols (otherwise error traces will not be very informative). Note that adding debug symbols to the Python modules requires passing argument ``--debug`` to ``setup.py``.
 - Preload the ASan runtime when executing the Python process that imports ``sklearnex`` or ``daal4py``.
 - Optionally, configure Python to use ``malloc`` as default allocator to reduce the number of false-positive leak reports.
+- Optionally, set compilation flag ``-O0`` or ``-Og`` for better debuggability.
 
 See the `instructions on the oneDAL repository <https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md>`__ for building the library from source with ASAN enabled.
 
-When building this library, the system's default compiler is used unless specified otherwise through variables such as ``$CXX``. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if the |onedal| was built with ICX (the default for it).
+When building this library, the system's default compiler is used unless specified otherwise through variables such as ``$CXX``. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if the |onedal| was built with ICX (the default for it), or otherwise use the same compiler to build both libraries.
 
 The compiler and flags to build with both ASan and debug symbols can be controlled through environment variables - **assuming a Linux\* system** (ASan on Windows* has not been tested):
 
 .. code-block:: bash
 
-    export CC="icx -fsanitize=address -g"
-    export CXX="icpx -fsanitize=address -g"
+    export CC="icx -fsanitize=address -g -O0"
+    export CXX="icpx -fsanitize=address -g -O0"
 
-.. hint:: The Cython module ``daal4py`` that gets built through ``build_ext`` does not do incremental compilation, so one might want to add ``ccache`` into the compiler call for development purposes - e.g. ``CXX="ccache icx -fsanitize=address -g"``.
-
-The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+or, if building with GCC (remember to add ``NO_DPC=1`` and ``NO_DIST=1``):
 
 .. code-block:: bash
 
-    export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
+    export CC="gcc -fsanitize=address -g -O0"
+    export CXX="g++ -fsanitize=address -g -O0"
 
-.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
+
+.. hint:: The Cython module ``daal4py`` that gets built through ``build_ext`` does not do incremental compilation, so one might want to add ``ccache`` into the compiler call for development purposes - e.g. ``CXX="ccache icx -fsanitize=address -g -O0"``.
+
+The ASan runtime used by ICX is the same as the one by Clang, but they might expect different file names depending on versions. It's possible to preload the ASan runtime from GNU if that's the system's default through e.g. ``$LD_PRELOAD=libasan.so`` or similar. However, one might need to specifically pass the paths from ICX / Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+
+.. code-block:: bash
+
+    export LD_PRELOAD="$(icx -print-file-name=libclang_rt.asan.so)" # if using ICX
+    export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" # if using CLANG
+    export LD_PRELOAD="$(gcc -print-file-name=libasan.so)".so # if using GCC
+
+.. note:: For ICX, this requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
+
+.. note:: For GCC, if installed from conda-forge (``conda install gcc gxx`` or ``conda install c-compiler cxx-compiler``), this requires additionally installing package ``libsanitizer``. If installed from other sources such as Linux package managers, might require ``libasan``, which is usually a transitive dependency of compiler toolkits.
 
 Then, the Python memory allocator can be set to ``malloc`` like this:
 
@@ -383,11 +397,26 @@ Putting it all together, the earlier examples building the library in-place and 
 .. code-block:: bash
 
     source <path to ASan-enabled oneDAL env.sh>
-    CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" \
-        python setup.py build_ext --inplace --force --abs-rpath
-    CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" \
-        python setup.py build --abs-rpath
-    LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" \
+    CC="ccache icx -fsanitize=address -g -O0" CXX="ccache icpx -fsanitize=address -g -O0" \
+        python setup.py build_ext --inplace --force --debug --abs-rpath
+    CC="icx -fsanitize=address -g -O0" CXX="icpx -fsanitize=address -g -O0" \
+        python setup.py build --debug --abs-rpath
+    LD_PRELOAD="$(icx -print-file-name=libclang_rt.asan.so)" \
+    PYTHONMALLOC=malloc PYTHONPATH=$(pwd) \
+        python <python file.py>
+
+Or with GCC:
+
+.. code-block:: bash
+
+    source <path to ASan-enabled oneDAL env.sh>
+    CC="ccache gcc -fsanitize=address -g -O0" CXX="ccache g++ -fsanitize=address -g -O0" \
+    NO_DPC=1 NO_DIST=1 \
+        python setup.py build_ext --inplace --force --debug --abs-rpath
+    CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" \
+    NO_DPC=1 NO_DIST=1 \
+        python setup.py build --debug --abs-rpath
+    LD_PRELOAD="$(gcc -print-file-name=libasan.so)" \
     PYTHONMALLOC=malloc PYTHONPATH=$(pwd) \
         python <python file.py>
 
