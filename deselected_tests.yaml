@@ -336,12 +336,18 @@ deselected_tests:
 
   # HDBSCAN in oneDAL builds neither the single-linkage nor the condensed tree that
   # scikit-learn exposes as private fitted attributes ('_single_linkage_tree_'), it
-  # only returns the resulting labels.
+  # only returns the resulting labels. 'dbscan_clustering' is derived from that tree,
+  # so it is unavailable after a fit that was offloaded.
   - cluster/tests/test_hdbscan.py::test_labelling_distinct
+  - cluster/tests/test_hdbscan.py::test_dbscan_clustering
   # Compares the labels of dense data (clustered by oneDAL) against the labels of the
   # same data in sparse format (a fallback to scikit-learn). Both find the same
   # clusters, but the two implementations number them differently.
   - cluster/tests/test_hdbscan.py::test_hdbscan_sparse
+  # With 'allow_single_cluster' and unstructured data, oneDAL keeps every sample in the
+  # root cluster where scikit-learn leaves the samples that fall out of it before the
+  # cluster's own birth as noise.
+  - cluster/tests/test_hdbscan.py::test_hdbscan_allow_single_cluster_with_epsilon
 
   # Failing tests since sklearn 1.6
   - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]

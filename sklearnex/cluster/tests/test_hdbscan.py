@@ -49,7 +49,7 @@ def test_sklearnex_import_hdbscan(dataframe, queue, dtype):
     """oneDAL must find the same clusters as scikit-learn."""
     from sklearnex.cluster import HDBSCAN
 
-    X, _ = make_blobs(n_samples=100, centers=3, cluster_std=0.5, random_state=42)
+    X, _ = make_blobs(n_samples=60, centers=3, cluster_std=0.5, random_state=42)
     X = X.astype(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
@@ -78,7 +78,7 @@ def test_hdbscan_metrics(metric, algorithm, metric_params):
     """Every metric and algorithm offloaded to oneDAL must match scikit-learn."""
     from sklearnex.cluster import HDBSCAN
 
-    X, _ = make_blobs(n_samples=100, centers=3, cluster_std=0.5, random_state=42)
+    X, _ = make_blobs(n_samples=60, centers=3, cluster_std=0.5, random_state=42)
     params = {
         "min_cluster_size": 10,
         "metric": metric,

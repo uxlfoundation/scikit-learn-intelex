@@ -144,28 +144,27 @@ if daal_check_version((2024, "P", 700)):  # Test for > 2024.7.0
     )
 SPARSE_INSTANCES = sklearn_clone_dict({str(i): i for i in _sparse_instances})
 
-STABILITY_INSTANCES = sklearn_clone_dict(
-    {
-        str(i): i
-        for i in [
-            KNeighborsClassifier(algorithm="brute", weights="distance"),
-            KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
-            KNeighborsClassifier(algorithm="kd_tree"),
-            KNeighborsRegressor(algorithm="brute", weights="distance"),
-            KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
-            KNeighborsRegressor(algorithm="kd_tree"),
-            NearestNeighbors(algorithm="kd_tree"),
-            DBSCAN(algorithm="brute"),
-            PCA(n_components=0.5, svd_solver="covariance_eigh"),
-            KMeans(init="random"),
-        ]
-    }
-)
-if daal_check_version((2026, "P", 200)):
+_stability_instances = [
+    KNeighborsClassifier(algorithm="brute", weights="distance"),
+    KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
+    KNeighborsClassifier(algorithm="kd_tree"),
+    KNeighborsRegressor(algorithm="brute", weights="distance"),
+    KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
+    KNeighborsRegressor(algorithm="kd_tree"),
+    NearestNeighbors(algorithm="kd_tree"),
+    DBSCAN(algorithm="brute"),
+    PCA(n_components=0.5, svd_solver="covariance_eigh"),
+    KMeans(init="random"),
+]
+if daal_check_version((2026, "P", 200)):  # Test for >= 2026.2.0
     from sklearnex.cluster import HDBSCAN
 
-    _hdbscan = HDBSCAN(cluster_selection_method="leaf", store_centers="both")
-    STABILITY_INSTANCES[str(_hdbscan)] = _hdbscan
+    # 'cluster_selection_method' and the centers are the parameters of HDBSCAN
+    # which are not covered by the default instance in 'PATCHED_MODELS'
+    _stability_instances.append(
+        HDBSCAN(cluster_selection_method="leaf", store_centers="both")
+    )
+STABILITY_INSTANCES = sklearn_clone_dict({str(i): i for i in _stability_instances})
 
 
 def _skip_neighbors(estimator, method):

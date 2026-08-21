@@ -14,13 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
 from functools import partial
 
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 from sklearn.utils.validation import _num_samples, check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 
 from .._device_offload import dispatch
@@ -41,20 +42,6 @@ _check_array = partial(
     accept_sparse=False,
     ensure_all_finite=False,
 )
-
-
-def _all_finite(X) -> bool:
-    """Check the finiteness of the input.
-
-    scikit-learn labels non-finite samples as special outliers, which oneDAL
-    does not do, hence the need to know whether they are present before
-    deciding to offload.
-    """
-    try:
-        assert_all_finite(_check_array(X))
-    except ValueError:
-        return False
-    return True
 
 
 @enable_array_api
@@ -82,6 +69,20 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         return self.algorithm
 
     def _onedal_fit(self, X, queue=None):
+        # oneDAL never writes into the data, so 'copy' has no effect here, but the
+        # deprecation of its default has to be repeated for the offloaded path
+        # TODO(sklearn 1.10): remove, the parameter loses its "warn" default
+        if (
+            sklearn_check_version("1.8")
+            and not sklearn_check_version("1.10")
+            and self.copy == "warn"
+        ):
+            warnings.warn(
+                "The default value of `copy` will change from False to True in 1.10."
+                " Explicitly set a value for `copy` to silence this warning.",
+                FutureWarning,
+            )
+
         xp, _ = get_namespace(X)
         X = validate_data(self, X, accept_sparse=False, dtype=[xp.float64, xp.float32])
 
@@ -174,9 +175,12 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
 
             # sklearn labels non-finite samples as special outliers, while
             # oneDAL does not support them
-            patching_status.and_conditions(
-                [(_all_finite(X), "Missing values and infinites are not supported.")]
-            )
+            try:
+                assert_all_finite(_check_array(X))
+            except ValueError:
+                patching_status.and_conditions(
+                    [(False, "Missing values and infinites are not supported.")]
+                )
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {self.__class__.__name__}")
 

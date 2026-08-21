@@ -218,21 +218,21 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
-     - No limitations
+     -
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
-     - No limitations
+     -
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported
+     - Only dense data is supported.
      - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
        supported after a fit that was offloaded to oneDAL: it requires the
        single-linkage tree, which oneDAL does not return.
@@ -541,21 +541,21 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
-     - No limitations
+     -
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
-     - No limitations
+     -
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported
+     - Only dense data is supported.
      - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
        supported after a fit that was offloaded to oneDAL: it requires the
        single-linkage tree, which oneDAL does not return.
@@ -812,7 +812,7 @@ Clustering
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported
+     - Only dense data is supported.
 
 Dimensionality Reduction
 ************************
