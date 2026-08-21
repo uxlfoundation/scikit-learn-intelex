@@ -19,7 +19,7 @@ import pytest
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 from sklearn.datasets import make_blobs
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_build_date, daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -27,7 +27,7 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 pytestmark = pytest.mark.skipif(
-    not daal_check_version((2026, "P", 200)),
+    not (daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814)),
     reason="HDBSCAN requires oneDAL >= 2026.2",
 )
 

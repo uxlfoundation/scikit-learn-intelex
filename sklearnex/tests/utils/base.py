@@ -37,7 +37,7 @@ from sklearn.datasets import load_diabetes, load_iris
 from sklearn.neighbors._base import KNeighborsMixin
 from sklearn.utils.validation import check_is_fitted
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_build_date, daal_check_version
 from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _as_numpy, _convert_to_dataframe
 from sklearnex import (
@@ -149,7 +149,7 @@ _special_instances = [
 
 # oneDAL computes the cluster centers only when it is asked to, so 'centroids_'
 # and 'medoids_' are not covered by the default instance in 'PATCHED_MODELS'
-if daal_check_version((2026, "P", 200)):
+if daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814):
     from sklearnex.cluster import HDBSCAN
 
     _special_instances.append(HDBSCAN(store_centers="both"))

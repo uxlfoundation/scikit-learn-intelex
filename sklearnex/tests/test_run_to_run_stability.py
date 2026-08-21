@@ -32,7 +32,7 @@ from sklearn.datasets import (
 )
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_build_date, daal_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
@@ -156,7 +156,8 @@ _stability_instances = [
     PCA(n_components=0.5, svd_solver="covariance_eigh"),
     KMeans(init="random"),
 ]
-if daal_check_version((2026, "P", 200)):  # Test for >= 2026.2.0
+# Test for >= 2026.2.0
+if daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814):
     from sklearnex.cluster import HDBSCAN
 
     # 'cluster_selection_method' and the centers are the parameters of HDBSCAN

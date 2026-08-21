@@ -14,12 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 
+from daal4py.sklearn._utils import daal_check_build_date
+
 from ... import onedal_check_version
 from .dbscan import DBSCAN
 
 __all__ = ["DBSCAN"]
 
-if onedal_check_version(2026, 2, 0):
+# HDBSCAN was added to oneDAL in 2026.2, mid-cycle, hence the build date check
+if onedal_check_version(2026, 2, 0) and daal_check_build_date(20260814):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]

@@ -20,7 +20,7 @@ import sys
 from functools import lru_cache
 from typing import Optional, Union
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_build_date, daal_check_version
 from daal4py.sklearn.monkeypatch.dispatcher import PatchMap
 
 
@@ -384,8 +384,8 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             None,
         )
 
-    # HDBSCAN was added to oneDAL in 2026.2
-    if daal_check_version((2026, "P", 200)):
+    # HDBSCAN was added to oneDAL in 2026.2, mid-cycle, hence the build date check
+    if daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814):
         from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
 
         from .cluster import HDBSCAN as HDBSCAN_sklearnex

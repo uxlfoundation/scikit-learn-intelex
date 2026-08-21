@@ -65,6 +65,26 @@ def get_daal_version() -> DaalVersionTuple:
     return int(dv()[0:4]), str(dv()[10:11]), int(dv()[4:8])
 
 
+def get_daal_build_date() -> int:
+    """Build date of the oneDAL that was used at compile time, as YYYYMMDD."""
+    return int(dv().split("_")[-1])
+
+
+def daal_check_build_date(
+    required_build_date: int, build_date: int = get_daal_build_date()
+) -> bool:
+    """Check that oneDAL was built no earlier than a given date (as YYYYMMDD).
+
+    TEMPORARY: this is only needed for functionality that was added to oneDAL in the
+    middle of a release cycle. Every oneDAL build of that cycle reports the same
+    version, so 'daal_check_version' alone cannot tell whether the functionality is
+    present, and building against such a oneDAL fails. Prefer 'daal_check_version'
+    and remove the corresponding build date checks once the release that contains
+    the functionality is out.
+    """
+    return build_date >= required_build_date
+
+
 @functools.lru_cache(maxsize=256, typed=False)
 def daal_check_version(
     required_version: Tuple[Any, ...],

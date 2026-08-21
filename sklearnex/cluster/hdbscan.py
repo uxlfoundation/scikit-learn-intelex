@@ -14,14 +14,19 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    daal_check_build_date,
+    daal_check_version,
+    sklearn_check_version,
+)
 
-# HDBSCAN was added to oneDAL in 2026.2. The whole module is gated, rather than
-# just the 'onedal' import, so that it stays importable with an older oneDAL:
-# 'sklearn.utils.all_estimators' imports every sklearnex module directly, so a
-# module-level 'raise ImportError' or an unguarded 'onedal.cluster' import would
-# break the estimator discovery that 'sklearnex/tests/test_common.py' relies on.
-if daal_check_version((2026, "P", 200)):
+# HDBSCAN was added to oneDAL in 2026.2, mid-cycle, hence the build date check. The
+# whole module is gated, rather than just the 'onedal' import, so that it stays
+# importable with an older oneDAL: 'sklearn.utils.all_estimators' imports every
+# sklearnex module directly, so a module-level 'raise ImportError' or an unguarded
+# 'onedal.cluster' import would break the estimator discovery that
+# 'sklearnex/tests/test_common.py' relies on.
+if daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814):
     import warnings
     from functools import partial
 
