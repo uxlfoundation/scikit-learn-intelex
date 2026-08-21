@@ -521,7 +521,6 @@ packages_with_tests = [
     "daal4py.sklearn.manifold",
     "daal4py.sklearn.metrics",
     "daal4py.sklearn.neighbors",
-    "daal4py.sklearn.monkeypatch",
     "daal4py.sklearn.utils",
     "daal4py.sklearn.model_selection",
     "onedal",
