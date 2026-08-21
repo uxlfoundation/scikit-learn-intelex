@@ -80,6 +80,12 @@ def _to_windows_import_name(name):
 
 
 def get_onedal_arch_dir(machine):
+    # Keyed by what ``platform.machine()`` reports, which is not the same string
+    # for the same hardware on every platform: on Windows it goes through
+    # ``_get_machine_win32()`` and answers ``AMD64``, while on Linux and macOS it
+    # answers ``x86_64``. Both have to select ``intel64``, and both spellings
+    # reach here - at build time from ``plt.machine()`` below, and at import time
+    # from the same call in ``onedal/__init__.py`` and ``daal4py/__init__.py``.
     return {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}.get(
         machine, machine
     )
