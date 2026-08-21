@@ -94,53 +94,76 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
         layout);
 }
 
-// Widen `count` base-0 indices of type Src into base-1 std::int64_t.
+// Widen `count` base-0 indices of type Src into base-1 std::int64_t, reading the
+// source as Src directly.
 //
-// Keep the source byte-addressed: NumPy permits both arbitrary strides and
-// unit-stride views whose first element is unaligned for Src. Fixed-size memcpy
-// avoids an unaligned or aliasing-unsafe Src* dereference; compilers recognize
-// and optimize this load for the common unit-stride case. The special cases
-// below still use memcpy: a contiguous byte walk avoids repeated stride
-// multiplication, while a zero-stride broadcast only needs one load.
+// The caller guarantees every element is aligned for Src - see the dispatch in
+// make_one_based_indices() - so `stride` arrives here already divided by
+// sizeof(Src) and can be negative or zero. A dedicated unit-stride loop is worth
+// keeping: it is the case scipy produces, and it is the only one the vectorizer
+// can widen, because the general loop's step is a runtime value.
 template <typename Src>
-inline void rebase_indices_to_one(const char *source_bytes,
-                                  std::int64_t stride,
+inline void rebase_indices_to_one(const Src *source,
+                                  std::int64_t element_stride,
                                   std::int64_t *destination,
                                   std::int64_t count) {
-    if (stride == 0 && count > 0) {
-        Src value;
-        std::memcpy(&value, source_bytes, sizeof(Src));
-        const std::int64_t rebased = static_cast<std::int64_t>(value) + 1;
+    if (element_stride == 0) {
+        // A broadcast view repeats one element, so load it once.
+        if (count > 0) {
+            const std::int64_t rebased = static_cast<std::int64_t>(*source) + 1;
+            for (std::int64_t i = 0; i < count; ++i) {
+                destination[i] = rebased;
+            }
+        }
+        return;
+    }
+
+    if (element_stride == 1) {
         for (std::int64_t i = 0; i < count; ++i) {
-            destination[i] = rebased;
-        }
-        return;
-    }
-
-    if (stride == static_cast<std::int64_t>(sizeof(Src))) {
-        const char *source = source_bytes;
-        for (std::int64_t i = 0; i < count; ++i, source += sizeof(Src)) {
-            Src value;
-            std::memcpy(&value, source, sizeof(Src));
-            destination[i] = static_cast<std::int64_t>(value) + 1;
-        }
-        return;
-    }
-
-    if (stride > 0 && stride % static_cast<std::int64_t>(sizeof(Src)) == 0) {
-        const char *source = source_bytes;
-        for (std::int64_t i = 0; i < count; ++i, source += stride) {
-            Src value;
-            std::memcpy(&value, source, sizeof(Src));
-            destination[i] = static_cast<std::int64_t>(value) + 1;
+            destination[i] = static_cast<std::int64_t>(source[i]) + 1;
         }
         return;
     }
 
     for (std::int64_t i = 0; i < count; ++i) {
+        destination[i] = static_cast<std::int64_t>(source[i * element_stride]) + 1;
+    }
+}
+
+// The same widening for a buffer whose elements are not aligned for Src, which
+// NumPy permits: a view can be unit-stride and still start at an odd byte. A
+// typed dereference would be undefined there, so this walks bytes and copies
+// each element out with a fixed-size memcpy. It is the cold path - scipy does
+// not produce such a buffer - so it is kept simple rather than specialized.
+template <typename Src>
+inline void rebase_indices_to_one_unaligned(const char *source_bytes,
+                                            std::int64_t stride,
+                                            std::int64_t *destination,
+                                            std::int64_t count) {
+    for (std::int64_t i = 0; i < count; ++i) {
         Src value;
         std::memcpy(&value, source_bytes + i * stride, sizeof(Src));
         destination[i] = static_cast<std::int64_t>(value) + 1;
+    }
+}
+
+// Pick between the two loops above for one source dtype. `stride` is in bytes;
+// the typed loop wants it in elements, which is exact only when the caller has
+// established that, hence the flag rather than a second test here.
+template <typename Src>
+inline void rebase_indices(const char *source,
+                           std::int64_t stride,
+                           bool readable_as_source,
+                           std::int64_t *destination,
+                           std::int64_t count) {
+    if (readable_as_source) {
+        rebase_indices_to_one<Src>(reinterpret_cast<const Src *>(source),
+                                   stride / static_cast<std::int64_t>(sizeof(Src)),
+                                   destination,
+                                   count);
+    }
+    else {
+        rebase_indices_to_one_unaligned<Src>(source, stride, destination, count);
     }
 }
 
@@ -183,9 +206,8 @@ static dal::array<std::int64_t> make_one_based_indices(PyObject *py_indices) {
     // numpy's own cast and then takes the fast path on the result, which is
     // native, contiguous int64 by construction. Recursion is therefore one
     // level deep.
-    const index_kind kind =
-        classify_index_type(static_cast<int>(array_type(np_indices)),
-                            static_cast<std::int64_t>(array_type_sizeof(np_indices)));
+    const std::int64_t itemsize = static_cast<std::int64_t>(array_type_sizeof(np_indices));
+    const index_kind kind = classify_index_type(static_cast<int>(array_type(np_indices)), itemsize);
     if (!array_is_native(np_indices) || kind == index_kind::unsupported) {
         // No WRITEABLE in the flags: these buffers are only ever read, and
         // asking for writeability copies a read-only input for nothing.
@@ -208,19 +230,28 @@ static dal::array<std::int64_t> make_one_based_indices(PyObject *py_indices) {
     const char *const source = static_cast<const char *>(array_data(np_indices));
     const std::int64_t stride = static_cast<std::int64_t>(array_stride(np_indices, 0));
 
+    // Whether the elements can be read as the source dtype rather than byte by
+    // byte. NumPy's ALIGNED flag is computed over the data pointer and the
+    // strides, so it is what makes a typed dereference well defined for every
+    // element; the stride test is what makes `stride / itemsize` below exact,
+    // which NumPy does not guarantee on its own for arrays of one element or
+    // fewer. `itemsize` is 4 or 8 past the guard above, so it cannot be zero
+    // here - but the guard has to stay ahead of the division for that to hold.
+    const bool readable_as_source = array_is_aligned(np_indices) && stride % itemsize == 0;
+
     switch (kind) {
         case index_kind::int32:
-            rebase_indices_to_one<std::int32_t>(source, stride, destination, count);
+            rebase_indices<std::int32_t>(source, stride, readable_as_source, destination, count);
             break;
         case index_kind::uint32:
-            rebase_indices_to_one<std::uint32_t>(source, stride, destination, count);
+            rebase_indices<std::uint32_t>(source, stride, readable_as_source, destination, count);
             break;
         case index_kind::int64:
-            rebase_indices_to_one<std::int64_t>(source, stride, destination, count);
+            rebase_indices<std::int64_t>(source, stride, readable_as_source, destination, count);
             break;
         default:
             // classify_index_type() admits nothing else past the guard above.
-            rebase_indices_to_one<std::uint64_t>(source, stride, destination, count);
+            rebase_indices<std::uint64_t>(source, stride, readable_as_source, destination, count);
             break;
     }
     return one_based;

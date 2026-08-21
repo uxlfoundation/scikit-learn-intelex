@@ -720,15 +720,21 @@ def _reinterpret_index_array(indices, index_dtype, layout):
     if layout == "contiguous":
         return typed
     if layout == "strided":
-        # A two-element step, so the elements are neither contiguous nor
-        # necessarily aligned for their own dtype.
+        # A two-element step. The elements stay aligned for their own dtype, so
+        # this exercises the general typed loop rather than the byte-wise one.
         view = np.repeat(typed, 2)[::2]
         assert view.strides[0] == 2 * typed.itemsize
+        assert view.flags.aligned
         return view
     if layout == "negative":
-        # Keep the logical order while presenting it through a negative stride.
+        # A negative stride is representable because the conversion carries the
+        # stride as a signed integer, but it still selects a different loop from
+        # the unit-stride case, so it needs its own coverage. Reversing twice is
+        # what keeps the oracle valid: a plain ``typed[::-1]`` would reverse the
+        # index values too, and the per-column sums below would no longer match.
         view = typed[::-1].copy()[::-1]
         assert view.strides[0] == -typed.itemsize
+        assert view.flags.aligned
         return view
     if layout == "readonly":
         typed.flags.writeable = False
@@ -803,7 +809,13 @@ def _unaligned_index_array(values, index_dtype):
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
 def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
-    """Unaligned, unit-stride CSR indices are read without a typed C++ dereference."""
+    """Unaligned, unit-stride CSR indices are read without a typed C++ dereference.
+
+    NumPy allows a unit-stride view to start at an odd byte, where reading
+    through a pointer to the element type would be undefined. Such a buffer must
+    therefore take the byte-wise fallback rather than the typed loops, and still
+    convert correctly and without writing through the caller's arrays.
+    """
     X = csr_matrix(
         (
             np.array([1.0, 10.0, 100.0, 1000.0, 10000.0]),
@@ -831,7 +843,7 @@ def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
 def test_csr_conversion_accepts_zero_stride_indices(index_dtype):
-    """Broadcast CSR indices are rebased after a single memcpy load."""
+    """Broadcast CSR indices are rebased after a single load."""
     X = csr_matrix(
         (
             np.array([1.0, 10.0, 100.0]),
@@ -840,14 +852,40 @@ def test_csr_conversion_accepts_zero_stride_indices(index_dtype):
         ),
         shape=(3, 1),
     )
-    X._conversion_indices = np.broadcast_to(
-        np.array([0], dtype=index_dtype), X.nnz
-    )
+    X._conversion_indices = np.broadcast_to(np.array([0], dtype=index_dtype), X.nnz)
     assert X.indices.strides == (0,)
+    assert X.indices.flags.aligned
 
     result = BasicStatistics(result_options="sum").fit(X)
 
     assert_allclose(result.sum_, [111.0], rtol=0, atol=1e-9)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_single_element_indices_with_odd_stride(index_dtype):
+    """A one-element index array may carry a stride that is not a whole element.
+
+    NumPy only folds the strides of dimensions holding more than one element into
+    its alignment flag, so a one-element view reports itself as aligned while its
+    stride is an arbitrary byte count. Only element zero is ever read, at the base
+    pointer, but the conversion must not assume the byte stride divides the item
+    size when it decides how to read the buffer.
+    """
+    itemsize = np.dtype(index_dtype).itemsize
+    X = csr_matrix(
+        (np.array([5.0]), np.array([0]), np.array([0, 1])),
+        shape=(1, 1),
+    )
+    X._conversion_indices = np.lib.stride_tricks.as_strided(
+        np.zeros(2, dtype=index_dtype), shape=(1,), strides=(itemsize + 1,)
+    )
+    assert X.indices.shape == (1,)
+    assert X.indices.strides[0] % itemsize != 0
+    assert X.indices.flags.aligned
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [5.0], rtol=0, atol=1e-9)
 
 
 @pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
