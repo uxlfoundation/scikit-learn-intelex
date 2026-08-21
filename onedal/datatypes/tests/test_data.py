@@ -727,14 +727,22 @@ def _reinterpret_index_array(indices, index_dtype, layout):
         assert view.flags.aligned
         return view
     if layout == "negative":
-        # A negative stride is representable because the conversion carries the
-        # stride as a signed integer, but it still selects a different loop from
-        # the unit-stride case, so it needs its own coverage. Reversing twice is
-        # what keeps the oracle valid: a plain ``typed[::-1]`` would reverse the
-        # index values too, and the per-column sums below would no longer match.
-        view = typed[::-1].copy()[::-1]
+        # A negative stride, which selects a different loop from the unit-stride
+        # case and so needs its own coverage.
+        #
+        # The two reversals are not about the conversion, which walks a negative
+        # stride perfectly well - they are about handing it the *same* index
+        # sequence as every other layout here. A plain ``typed[::-1]`` is also a
+        # negative-stride view, but of the values in reverse order, which is a
+        # different matrix: the per-column sums this asserts against would no
+        # longer match, and reversed ``indptr`` is not even a valid CSR structure.
+        # Storing the values backwards and then stepping backwards over them
+        # cancels out, leaving the original order behind a negative stride.
+        stored_backwards = typed[::-1].copy()
+        view = stored_backwards[::-1]
         assert view.strides[0] == -typed.itemsize
         assert view.flags.aligned
+        assert_array_equal(view, typed)
         return view
     if layout == "readonly":
         typed.flags.writeable = False
