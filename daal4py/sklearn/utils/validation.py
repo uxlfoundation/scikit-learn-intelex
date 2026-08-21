@@ -46,6 +46,7 @@ import daal4py as d4p
 
 from .._utils import (
     PatchingConditionsChain,
+    check_can_modify_docstrings,
     get_dtype,
     get_number_of_types,
     is_DataFrame,
@@ -710,12 +711,13 @@ def add_dispatcher_docstring(original_function):
         def new_function(*args, **kwargs):
             return dispatcher_function(*args, **kwargs)
 
-        new_function.__doc__ = (
-            f"Sklearnex dispatcher for '{original_function.__qualname__}' "
-            f"from '{original_function.__module__}' module supporting "
-            "it's multiple implementations from different scikit-learn versions.\n\n"
-            + original_function.__doc__
-        )
+        if check_can_modify_docstrings():
+            new_function.__doc__ = (
+                f"Sklearnex dispatcher for '{original_function.__qualname__}' "
+                f"from '{original_function.__module__}' module supporting "
+                "it's multiple implementations from different scikit-learn versions.\n\n"
+                + original_function.__doc__
+            )
 
         return new_function
 

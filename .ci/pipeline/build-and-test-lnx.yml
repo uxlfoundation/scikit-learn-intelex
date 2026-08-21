@@ -79,6 +79,12 @@ steps:
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
+      # Before all tests, ensure that the library can be imported under
+      # different python optimization flags
+      PYTHONOPTIMIZE=0 python -c "import sklearnex"
+      PYTHONOPTIMIZE=1 python -c "import sklearnex"
+      PYTHONOPTIMIZE=2 python -c "import sklearnex"
+      # Then run the tests
       ./s/conda-recipe/run_test.sh --json-report
     env:
       TBBROOT: ${{ variables.TBBROOT }}

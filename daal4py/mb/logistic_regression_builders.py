@@ -22,13 +22,24 @@ from .. import (
     logistic_regression_prediction,
 )
 
+
+# Note: this function is redefined here in order to aboid circular imports
+# from the daal4py.sklearn module, which then imports this module.
+def check_can_modify_docstrings() -> bool:
+    return sys.flags.optimize < 2
+
+
 _docstring_X = """Parameters
 ----------
 X : array-like(n_samples, n_features)
     The features / covariates for each row. Can be passed as either a NumPy array
     or as a sparse CSR array/matrix from SciPy. For faster results, use the same
     dtype as what this object was built for."""
-if (sys.version_info.major == 3) and (sys.version_info.minor <= 12):
+if (
+    (sys.version_info.major == 3)
+    and (sys.version_info.minor <= 12)
+    and check_can_modify_docstrings()
+):
     _docstring_X = re.sub("^", " " * 8, _docstring_X, flags=re.MULTILINE).strip()
 
 
@@ -132,7 +143,8 @@ class LogisticDAALModel:
             .astype(int)
         )
 
-    predict.__doc__ = predict.__doc__.replace(r"%docstring_X%", _docstring_X)
+    if check_can_modify_docstrings():
+        predict.__doc__ = predict.__doc__.replace(r"%docstring_X%", _docstring_X)
 
     def predict_proba(self, X) -> np.ndarray:
         """
@@ -149,7 +161,10 @@ class LogisticDAALModel:
             X, "computeClassProbabilities"
         ).probabilities
 
-    predict_proba.__doc__ = predict_proba.__doc__.replace(r"%docstring_X%", _docstring_X)
+    if check_can_modify_docstrings():
+        predict_proba.__doc__ = predict_proba.__doc__.replace(
+            r"%docstring_X%", _docstring_X
+        )
 
     def predict_log_proba(self, X) -> np.ndarray:
         """
@@ -166,9 +181,10 @@ class LogisticDAALModel:
             X, "computeClassLogProbabilities"
         ).logProbabilities
 
-    predict_log_proba.__doc__ = predict_log_proba.__doc__.replace(
-        r"%docstring_X%", _docstring_X
-    )
+    if check_can_modify_docstrings():
+        predict_log_proba.__doc__ = predict_log_proba.__doc__.replace(
+            r"%docstring_X%", _docstring_X
+        )
 
     def predict_multiple(
         self, X, classes: bool = True, proba: bool = True, log_proba: bool = True
@@ -206,6 +222,7 @@ class LogisticDAALModel:
             )
         return self._logistic_regression_prediction(X, pred_request)
 
-    predict_multiple.__doc__ = predict_multiple.__doc__.replace(
-        r"%docstring_X%", _docstring_X
-    )
+    if check_can_modify_docstrings():
+        predict_multiple.__doc__ = predict_multiple.__doc__.replace(
+            r"%docstring_X%", _docstring_X
+        )
