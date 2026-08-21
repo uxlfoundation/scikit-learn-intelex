@@ -48,10 +48,19 @@ jobs:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
-          WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${{ env.ONEDAL_REPO }} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
-          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
+          WF_FILE="nightly-build.yml"
+          # Query the API directly instead of using 'gh run list': the latter only
+          # inspects a limited, client-side-filtered window of runs, which has been
+          # observed to select a months-old nightly and break the build against
+          # current sources. The API returns the runs newest first, so the first
+          # match is the most recent one.
+          JQ_QUERY='first(.workflow_runs[] | select(.event == "schedule" or .event == "workflow_dispatch") | .id)'
+          RUN_ID=`gh api "repos/${{ env.ONEDAL_REPO }}/actions/workflows/${WF_FILE}/runs?status=success&per_page=100" --jq "${JQ_QUERY}"`
+          if [ -z "${RUN_ID}" ]; then
+              echo "Unable to find a successful nightly run of ${WF_FILE}"
+              exit 1
+          fi
+          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_FILE}"
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
