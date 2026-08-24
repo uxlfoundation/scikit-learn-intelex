@@ -150,7 +150,7 @@ def test_linreg_mixed_array_namespaces(
 @pytest.mark.parametrize("estimator_class", all_estimators)
 @pytest.mark.parametrize("use_partial_fit", [False, True])
 def test_error_on_incompatible_namespaces(
-    estimator_class, use_partial_fit, with_array_api
+    estimator_class, use_partial_fit, with_array_api, with_preview_mode
 ):
     if use_partial_fit and estimator_class in non_incremental_estimators:
         pytest.skip("partial_fit only for incremental estimators")
@@ -190,7 +190,14 @@ def test_error_on_incompatible_namespaces(
 @pytest.mark.parametrize("estimator_class", all_estimators)
 @pytest.mark.parametrize("use_partial_fit", [False, True])
 def test_linreg_mixed_devices(
-    X_xp, y_xp, X_device, y_device, estimator_class, use_partial_fit, with_array_api
+    X_xp,
+    y_xp,
+    X_device,
+    y_device,
+    estimator_class,
+    use_partial_fit,
+    with_array_api,
+    with_preview_mode,
 ):
     if use_partial_fit and estimator_class in non_incremental_estimators:
         pytest.skip("partial_fit only for incremental estimators")
