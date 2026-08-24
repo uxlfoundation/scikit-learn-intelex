@@ -439,7 +439,7 @@ class onedal_build:
         self.onedal_post_build()
         if hasattr(self, "build_lib"):
             # swap out __version__ before install
-            for p in ["onedal", "sklearnex"]:
+            for p in ["sklearnex"]:
                 loc = os.sep.join((self.build_lib, p, "__init__.py"))
                 if os.path.isfile(loc):
                     with open(loc, "r+") as f:
