@@ -30,6 +30,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # PREVIEW EXPERIMENT: every test-executing step in this tree runs with preview
+  # estimators patched in. Because this also covers the sklearn conformance suite,
+  # the separate "Sklearn testing [preview]" steps are redundant and were removed.
+  SKLEARNEX_PREVIEW: "YES"
   DPCTL_VERSION: 0.22.1
   DPNP_VERSION: 0.20.0
   DPCTL_PY_VERSIONS: '3.10\|3.14'
@@ -166,13 +170,6 @@ jobs:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
             *_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-      - name: Sklearn testing [preview]
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh
-          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
-          export SKLEARNEX_PREVIEW='YES'
-          bash .ci/scripts/run_sklearn_tests.sh $CPU
 
   sklearn_win:
     needs: onedal_nightly
@@ -306,14 +303,6 @@ jobs:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
              *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-      - name: Sklearn testing [preview]
-        shell: cmd
-        run: |
-          call .\venv\Scripts\activate.bat
-          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
-          if "${{ steps.set-env.outputs.DPCFLAG }}"=="" set CPU=cpu
-          set SKLEARNEX_PREVIEW=YES
-          bash .ci/scripts/run_sklearn_tests.sh %CPU%
 
   build_uxl:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
@@ -484,8 +473,3 @@ jobs:
           name: coverage_uxl_lnx_${{ matrix.DEVICE }}
           path: |
             *uxl_lnx_${{ matrix.DEVICE }}.info
-      - name: Sklearn testing [preview]
-        run: |
-          source .github/scripts/activate_components.sh
-          export SKLEARNEX_PREVIEW='YES'
-          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
