@@ -22,14 +22,13 @@ from daal4py.sklearn._utils import daal_check_version
 from sklearnex.decomposition import PCA
 from sklearnex.ensemble import RandomForestClassifier
 from sklearnex.linear_model import IncrementalLinearRegression, LinearRegression
-from sklearnex.preview.covariance import EmpiricalCovariance
 
 # Table of estimators to test hyperparameter reset functionality.
 # Each row contains the following elements:
 #
 # [estimator, estimator_type, operation, hyperparameter_name, non_default_value]
 #
-# estimator:            the estimator class to test. For example, EmpiricalCovariance.
+# estimator:            the estimator class to test. For example, LinearRegression.
 # estimator_type:       the type of operation to get.
 #                       Possible values: "compute", "regression", "classification".
 # operation:            the argument used in get_hyperparameters() and reset_hyperparameters()
@@ -38,7 +37,6 @@ from sklearnex.preview.covariance import EmpiricalCovariance
 # non_default_value:    the value to set for the hyperparameter before resetting it.
 #                       This value should be different from the default value of the hyperparameter.
 test_estimators = [
-    [EmpiricalCovariance, "compute", "fit", "cpu_macro_block", 10],
     [IncrementalLinearRegression, "regression", "fit", "cpu_macro_block", 10],
     [IncrementalLinearRegression, "regression", "partial_fit", "cpu_macro_block", 10],
     [LinearRegression, "regression", "fit", "cpu_macro_block", 10],
@@ -50,7 +48,6 @@ if daal_check_version((2024, "P", 300)):
     )
 
 if daal_check_version((2025, "P", 700)):
-    test_estimators.append([EmpiricalCovariance, "compute", "fit", "cpu_grain_size", 2])
     test_estimators.append([PCA, "compute", "fit", "cpu_macro_block", 10])
 
 

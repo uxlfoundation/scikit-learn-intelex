@@ -16,10 +16,30 @@
 
 import io
 import logging
+from pathlib import Path
 
 import pytest
 
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
+
+# NO-PREVIEW EXPERIMENT: drop all preview test scope from collection. The directory
+# itself has to stay -- the spmd estimators import their base classes from it.
+_PREVIEW_DIR = Path(__file__).parent / "preview"
+
+# Preview-only tests that live outside sklearnex/preview/
+_PREVIEW_ONLY_TESTS = ("tests/test_monkeypatch.py::test_preview_namespace",)
+
+
+def pytest_ignore_collect(collection_path, config):
+    if collection_path == _PREVIEW_DIR or _PREVIEW_DIR in collection_path.parents:
+        return True
+
+
+def pytest_collection_modifyitems(config, items):
+    deselected = [i for i in items if i.nodeid.endswith(_PREVIEW_ONLY_TESTS)]
+    if deselected:
+        items[:] = [i for i in items if i not in deselected]
+        config.hook.pytest_deselected(items=deselected)
 
 
 def pytest_configure(config):

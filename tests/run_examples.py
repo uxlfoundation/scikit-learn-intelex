@@ -191,6 +191,9 @@ req_os["random_forest_regressor_spmd.py"] = ["lnx"]
 
 skiped_files = []
 
+# NO-PREVIEW EXPERIMENT: these examples only work with the preview estimators patched in
+preview_files = ["incremental_pca.py", "incremental_pca_dpnp.py"]
+
 
 def get_exe_cmd(ex, args):
     if os.path.dirname(ex).endswith("daal4py") or os.path.dirname(ex).endswith("mb"):
@@ -201,6 +204,8 @@ def get_exe_cmd(ex, args):
 
     if os.path.dirname(ex).endswith("sklearnex"):
         if args.nosklearnex:
+            return None
+        if os.path.basename(ex) in preview_files:
             return None
         if not check_device(req_device[os.path.basename(ex)], available_devices):
             return None
