@@ -20,6 +20,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 if daal_check_version((2024, "P", 600)):
     import numbers
+    import os
 
     import numpy as np
     from sklearn.linear_model import Ridge as _sklearn_Ridge
@@ -35,6 +36,7 @@ if daal_check_version((2024, "P", 600)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
+    from ..dispatcher import _is_preview_enabled
     from ..utils._array_api import enable_array_api
     from ..utils.validation import validate_data
     from ._base_linear_model import _BaseLinearModel
@@ -160,6 +162,10 @@ if daal_check_version((2024, "P", 600)):
                     (
                         isinstance(self.alpha, numbers.Real),
                         "Non-scalar alpha is not supported yet.",
+                    ),
+                    (
+                        (X.shape[0] <= X.shape[1]) or _is_preview_enabled(),
+                        "Fitting to data with more columns than rows is under preview mode.",
                     ),
                 ]
             )
