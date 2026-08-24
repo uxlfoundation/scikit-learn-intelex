@@ -23,7 +23,7 @@ from .. import (
 )
 
 
-# Note: this function is redefined here in order to aboid circular imports
+# Note: this function is redefined here in order to avoid circular imports
 # from the daal4py.sklearn module, which then imports this module.
 def check_can_modify_docstrings() -> bool:
     return sys.flags.optimize < 2
