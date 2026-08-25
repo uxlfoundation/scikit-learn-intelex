@@ -231,3 +231,22 @@ def test_underdetermined_positive_alpha_ridge(dataframe, queue, with_preview_mod
 
     assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
     assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+
+
+def test_ridge_works_on_list_X():
+    from sklearnex.linear_model import Ridge
+
+    X = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+        [3, 4, 5],
+    ]
+    y = [2, 3, 2, 3]
+    coefs_list = Ridge().fit(X, y).coef_
+
+    X_arr = np.array(X)
+    y_arr = np.array(y)
+    coefs_arr = Ridge().fit(X_arr, y_arr).coef_
+
+    np.testing.assert_almost_equal(coefs_list, coefs_arr)

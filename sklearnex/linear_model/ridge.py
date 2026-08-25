@@ -38,7 +38,7 @@ if daal_check_version((2024, "P", 600)):
     from ..base import oneDALEstimator
     from ..dispatcher import _is_preview_enabled
     from ..utils._array_api import enable_array_api
-    from ..utils.validation import validate_data
+    from ..utils.validation import check_array, validate_data
     from ._base_linear_model import _BaseLinearModel
 
     if sklearn_check_version("1.9"):
@@ -142,7 +142,7 @@ if daal_check_version((2024, "P", 600)):
             )
             positive_is_set = hasattr(self, "positive") and self.positive
 
-            patching_status.and_conditions(
+            dal_ready = patching_status.and_conditions(
                 [
                     (
                         self.solver == "auto",
@@ -163,6 +163,17 @@ if daal_check_version((2024, "P", 600)):
                         isinstance(self.alpha, numbers.Real),
                         "Non-scalar alpha is not supported yet.",
                     ),
+                ]
+            )
+            if not dal_ready:
+                return patching_status
+
+            if not hasattr(X, "shape"):
+                X = check_array(
+                    X, dtype=None, accept_sparse=False, ensure_all_finite=False
+                )
+            patching_status.and_conditions(
+                [
                     (
                         (X.shape[1] <= X.shape[0]) or _is_preview_enabled(),
                         "Fitting to data with more columns than rows is under preview mode.",
