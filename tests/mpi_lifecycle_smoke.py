@@ -104,3 +104,11 @@ except RuntimeError as error:
     assert "MPI cannot be reinitialized after MPI_Finalize" in str(error)
 else:
     raise AssertionError("distributed use unexpectedly reinitialized finalized MPI")
+
+# Everything above asserts silently, which in CI is indistinguishable from a step
+# that never ran the script. Say what was covered.
+print(
+    f"rank {rank} of {size}: daal4py-owned MPI initialized, used from threads, "
+    "torn down once, and confirmed unusable afterwards",
+    flush=True,
+)
