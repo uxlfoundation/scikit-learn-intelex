@@ -69,10 +69,11 @@ if NOT "%NO_DIST%"=="1" (
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
-    rem Launched directly rather than through the helper above: this one covers
-    rem the daal4py-owned MPI path, which requires that nothing - mpi4py
-    rem included - has initialized MPI before daal4py does. It needs more than
-    rem one rank, hence the explicit launcher.
+    rem Not a pytest module, so there is nothing for the helper above to launch,
+    rem and it could not be one: this covers the daal4py-owned MPI path, which
+    rem requires that nothing has initialized MPI before daal4py does, while the
+    rem helper and pytest-mpi both import mpi4py, which initializes it. It also
+    rem needs more than one rank, hence the explicit launcher.
     mpiexec -n 2 %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
     if !errorlevel! NEQ 0 (
         set exitcode=1

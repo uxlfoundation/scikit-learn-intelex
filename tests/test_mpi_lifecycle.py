@@ -22,10 +22,11 @@ transceiver must adopt the existing MPI, and ``daalfini`` must never call
 ``MPI_Finalize`` on something it did not initialize. The import order below is
 therefore load-bearing and not merely stylistic.
 
-The mirror case - daal4py itself calling ``MPI_Init_thread`` - cannot be a
-pytest module, because it requires that nothing has touched MPI beforehand and
-MPI cannot be reinitialized after ``MPI_Finalize``, so the whole lifecycle has
-to fit in one process. It lives in ``tests/mpi_lifecycle_smoke.py``.
+The mirror case - daal4py itself calling ``MPI_Init_thread`` - cannot be a pytest
+module: it requires that nothing has touched MPI beforehand, while ``pytest-mpi``
+imports ``mpi4py`` in ``pytest_runtest_setup`` before the body of an ``mpi``-marked
+test runs. MPI also cannot be reinitialized after ``MPI_Finalize``, so that whole
+lifecycle has to fit in one process. It lives in ``tests/mpi_lifecycle_smoke.py``.
 """
 
 from concurrent.futures import ThreadPoolExecutor
