@@ -164,7 +164,7 @@ if daal_check_version((2024, "P", 600)):
                         "Non-scalar alpha is not supported yet.",
                     ),
                     (
-                        (X.shape[0] <= X.shape[1]) or _is_preview_enabled(),
+                        (X.shape[1] <= X.shape[0]) or _is_preview_enabled(),
                         "Fitting to data with more columns than rows is under preview mode.",
                     ),
                 ]

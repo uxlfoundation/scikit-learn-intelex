@@ -85,7 +85,7 @@ def _compute_ridge_coefficients(X, y, alpha, fit_intercept):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_ridge(dataframe, queue, with_preview_mode):
+def test_sklearnex_import_ridge(dataframe, queue):
     from sklearnex.linear_model import Ridge
 
     X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
@@ -106,7 +106,7 @@ def test_sklearnex_import_ridge(dataframe, queue, with_preview_mode):
 @pytest.mark.parametrize("alpha", [0.1, 0.5, 1.0])
 @pytest.mark.parametrize("fit_intercept", [True, False])
 def test_ridge_coefficients(
-    dataframe, queue, sample_size, feature_size, alpha, fit_intercept, with_preview_mode
+    dataframe, queue, sample_size, feature_size, alpha, fit_intercept
 ):
     from sklearnex.linear_model import Ridge
 
@@ -195,9 +195,7 @@ def test_ridge_overdetermined_system(
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("alpha", [0.1, 0.5, 1.0])
-def test_multivariate_ridge_scalar_alpha(
-    dataframe, queue, fit_intercept, alpha, with_preview_mode
-):
+def test_multivariate_ridge_scalar_alpha(dataframe, queue, fit_intercept, alpha):
     from sklearn.datasets import make_regression
 
     from sklearnex.linear_model import Ridge
@@ -218,7 +216,7 @@ def test_multivariate_ridge_scalar_alpha(
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_underdetermined_positive_alpha_ridge(dataframe, queue):
+def test_underdetermined_positive_alpha_ridge(dataframe, queue, with_preview_mode):
     from sklearn.datasets import make_regression
 
     from sklearnex.linear_model import Ridge
