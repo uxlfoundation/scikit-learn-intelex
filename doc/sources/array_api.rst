@@ -100,7 +100,7 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearnex.basic_statistics.BasicStatistics`
 - :obj:`sklearnex.basic_statistics.IncrementalBasicStatistics`
 - :obj:`sklearn.cluster.DBSCAN`
-- :obj:`sklearn.cluster.HDBSCAN`
+- :obj:`sklearn.cluster.HDBSCAN` (in :doc:`preview mode <preview>` only)
 - :obj:`sklearn.cluster.KMeans`
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`

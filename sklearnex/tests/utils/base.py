@@ -37,7 +37,7 @@ from sklearn.datasets import load_diabetes, load_iris
 from sklearn.neighbors._base import KNeighborsMixin
 from sklearn.utils.validation import check_is_fitted
 
-from daal4py.sklearn._utils import daal_check_build_date, daal_check_version
+from daal4py.sklearn._utils import daal_check_version
 from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _as_numpy, _convert_to_dataframe
 from sklearnex import (
@@ -147,10 +147,11 @@ _special_instances = [
     DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
 ]
 
-# oneDAL computes the cluster centers only when it is asked to, so 'centroids_'
-# and 'medoids_' are not covered by the default instance in 'PATCHED_MODELS'
-if daal_check_version((2026, "P", 200)) and daal_check_build_date(20260814):
-    from sklearnex.cluster import HDBSCAN
+# HDBSCAN is a preview estimator, so it is only in 'PATCHED_MODELS' when preview mode
+# is enabled. oneDAL also computes the cluster centers only when it is asked to, so
+# 'centroids_' and 'medoids_' would not be covered by a default instance either
+if daal_check_version((2026, "P", 200)):
+    from sklearnex.preview.cluster import HDBSCAN
 
     _special_instances.append(HDBSCAN(store_centers="both"))
 

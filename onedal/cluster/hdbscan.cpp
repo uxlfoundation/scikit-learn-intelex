@@ -17,7 +17,7 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 
-#if ONEDAL_HDBSCAN_SUPPORTED
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260200
 
 #include "oneapi/dal/algo/hdbscan.hpp"
 
@@ -26,8 +26,8 @@ namespace py = pybind11;
 namespace oneapi::dal::python {
 
 template <typename Task, typename Ops>
-struct hdbscan_method2t {
-    hdbscan_method2t(const Task& task, const Ops& ops) : ops(ops) {}
+struct method2t {
+    method2t(const Task& task, const Ops& ops) : ops(ops) {}
 
     template <typename Float>
     auto operator()(const py::dict& params) {
@@ -45,7 +45,7 @@ struct hdbscan_method2t {
     Ops ops;
 };
 
-static auto get_hdbscan_result_options(const py::dict& params) {
+static auto get_onedal_result_options(const py::dict& params) {
     using namespace dal::hdbscan;
 
     auto result_options_str = params["result_options"].cast<std::string>();
@@ -93,7 +93,7 @@ static hdbscan::distance_metric parse_metric(const std::string& metric) {
     throw std::runtime_error("Invalid value for parameter <metric>: " + metric);
 }
 
-struct hdbscan_params2desc {
+struct params2desc {
     template <typename Float, typename Method, typename Task>
     auto operator()(const pybind11::dict& params) {
         using namespace dal::hdbscan;
@@ -101,7 +101,7 @@ struct hdbscan_params2desc {
         const auto min_cluster_size = params["min_cluster_size"].cast<std::int64_t>();
         const auto min_samples = params["min_samples"].cast<std::int64_t>();
         auto desc = descriptor<Float, Method, Task>(min_cluster_size, min_samples);
-        desc.set_result_options(get_hdbscan_result_options(params));
+        desc.set_result_options(get_onedal_result_options(params));
 
         if (params.contains("metric")) {
             desc.set_metric(parse_metric(params["metric"].cast<std::string>()));
@@ -148,18 +148,18 @@ struct hdbscan_params2desc {
 };
 
 template <typename Policy, typename Task>
-void init_hdbscan_compute_ops(py::module_& m) {
+void init_compute_ops(py::module_& m) {
     m.def("compute", [](const Policy& policy, const py::dict& params, const table& data) {
         using namespace hdbscan;
         using input_t = compute_input<Task>;
 
-        compute_ops ops(policy, input_t{ data }, hdbscan_params2desc{});
-        return fptype2t{ hdbscan_method2t{ Task{}, ops } }(params);
+        compute_ops ops(policy, input_t{ data }, params2desc{});
+        return fptype2t{ method2t{ Task{}, ops } }(params);
     });
 }
 
 template <typename Task>
-void init_hdbscan_compute_result(py::module_& m) {
+void init_compute_result(py::module_& m) {
     using namespace hdbscan;
     using result_t = compute_result<Task>;
 
@@ -177,8 +177,8 @@ void init_hdbscan_compute_result(py::module_& m) {
 
 ONEDAL_PY_TYPE2STR(hdbscan::task::clustering, "clustering");
 
-ONEDAL_PY_DECLARE_INSTANTIATOR(init_hdbscan_compute_ops);
-ONEDAL_PY_DECLARE_INSTANTIATOR(init_hdbscan_compute_result);
+ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_ops);
+ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_result);
 
 ONEDAL_PY_INIT_MODULE(hdbscan) {
     using namespace dal::detail;
@@ -189,13 +189,13 @@ ONEDAL_PY_INIT_MODULE(hdbscan) {
     auto sub = m.def_submodule("hdbscan");
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
-    ONEDAL_PY_INSTANTIATE(init_hdbscan_compute_ops, sub, policy_spmd, task_list);
+    ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_spmd, task_list);
 #else // ONEDAL_DATA_PARALLEL_SPMD
-    ONEDAL_PY_INSTANTIATE(init_hdbscan_compute_ops, sub, policy_list, task_list);
-    ONEDAL_PY_INSTANTIATE(init_hdbscan_compute_result, sub, task_list);
+    ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_list, task_list);
+    ONEDAL_PY_INSTANTIATE(init_compute_result, sub, task_list);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 }
 
 } // namespace oneapi::dal::python
 
-#endif // ONEDAL_HDBSCAN_SUPPORTED
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260200

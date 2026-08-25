@@ -16,7 +16,7 @@
 
 from onedal.spmd.cluster import HDBSCAN as onedal_HDBSCAN
 
-from ...cluster import HDBSCAN as HDBSCAN_Batch
+from ...preview.cluster import HDBSCAN as HDBSCAN_Batch
 
 
 class HDBSCAN(HDBSCAN_Batch):

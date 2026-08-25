@@ -233,7 +233,9 @@ Clustering
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
      - Only dense data is supported.
-     - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
+
+       The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
        supported after a fit that was offloaded to oneDAL: it requires the
        single-linkage tree, which oneDAL does not return.
 
@@ -556,7 +558,9 @@ Clustering
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
      - Only dense data is supported.
-     - The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
+
+       The :meth:`~sklearn.cluster.HDBSCAN.dbscan_clustering` method is not
        supported after a fit that was offloaded to oneDAL: it requires the
        single-linkage tree, which oneDAL does not return.
 

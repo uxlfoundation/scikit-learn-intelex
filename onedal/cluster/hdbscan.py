@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
@@ -56,7 +54,7 @@ class HDBSCAN:
     @bind_default_backend("hdbscan.clustering")
     def compute(self, params, data_table): ...
 
-    def _get_onedal_params(self, dtype=np.float32):
+    def _get_onedal_params(self, data):
         result_options = "responses"
         if self.store_centers in ("centroid", "both"):
             result_options += "|cluster_centers"
@@ -64,7 +62,7 @@ class HDBSCAN:
             result_options += "|medoid_centers"
 
         params = {
-            "fptype": dtype,
+            "fptype": data.dtype,
             "method": self.method,
             "min_cluster_size": int(self.min_cluster_size),
             "min_samples": int(self.min_samples),
@@ -89,7 +87,7 @@ class HDBSCAN:
     def fit(self, X, y=None, queue=None):
         X_table = to_table(X, queue=queue)
 
-        params = self._get_onedal_params(X_table.dtype)
+        params = self._get_onedal_params(X_table)
         result = self.compute(params, X_table)
 
         self.labels_ = from_table(result.responses, like=X)[:, 0]
