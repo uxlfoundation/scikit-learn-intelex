@@ -711,7 +711,14 @@ def test_nonwriteable_arrays():
     np.testing.assert_array_equal(x_converted, x)
 
 
+# The widths the conversion reads in place, as a widening loop per width and
+# signedness.
 CSR_INDEX_DTYPES = [np.int32, np.uint32, np.int64, np.uint64]
+
+# Narrower index dtypes, which scipy does not produce on construction but does
+# permit afterwards, since `indices` and `indptr` are plain attributes. These take
+# the cast fallback instead of a loop of their own.
+CSR_CAST_INDEX_DTYPES = [np.int16, np.uint16]
 
 
 def _reinterpret_index_array(indices, index_dtype, layout):
@@ -752,7 +759,7 @@ def _reinterpret_index_array(indices, index_dtype, layout):
     raise AssertionError(f"unhandled layout {layout}")
 
 
-@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES + CSR_CAST_INDEX_DTYPES)
 @pytest.mark.parametrize(
     "layout", ["contiguous", "strided", "negative", "readonly", "byteswapped"]
 )
@@ -763,7 +770,8 @@ def test_csr_index_representations_are_equivalent(index_dtype, layout):
     and stride they arrive in, rather than casting them to a fixed dtype first,
     so each parameter here selects a different code path: a widening loop per
     width and signedness, a strided variant of each, and a fallback through
-    numpy's own cast for a byte order the loops will not read.
+    numpy's own cast for the cases the loops will not read - a byte order they
+    cannot load, or a width narrower than the ones they implement.
 
     Per-column sums are the observable. They catch a misread of ``indices``
     directly, and a misread of ``indptr`` too, because the row boundaries decide
@@ -922,3 +930,30 @@ def test_csr_conversion_does_not_modify_input(index_dtype, dtype):
     # survive the table outliving this statement.
     del X_table
     np.testing.assert_array_equal(X.data, expected_data)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_CAST_INDEX_DTYPES)
+def test_csr_indices_retyped_after_construction(index_dtype):
+    """Index dtypes scipy accepts only after construction must convert correctly.
+
+    ``scipy.sparse`` builds ``indices`` and ``indptr`` as int32 or int64, but they
+    are plain attributes, so a caller can replace them with a narrower dtype
+    afterwards and scipy keeps operating on the matrix. Such widths have no loop
+    of their own here - they take the cast fallback - so this checks the values
+    that come out, against scipy computing on the same retyped matrix.
+    """
+    X = sp.random(100, 50, density=0.1, format="csr", dtype=np.float64, random_state=0)
+    X.sort_indices()
+    expected = np.asarray(X.sum(axis=0)).reshape(-1)
+
+    X.indices = X.indices.astype(index_dtype)
+    X.indptr = X.indptr.astype(index_dtype)
+    assert X.indices.dtype == index_dtype
+    assert X.indptr.dtype == index_dtype
+    # scipy answers this by calling into routines that reject narrow index
+    # dtypes, and the matrix came from a sorted one above.
+    X.has_sorted_indices = True
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, expected, rtol=0, atol=1e-9)
