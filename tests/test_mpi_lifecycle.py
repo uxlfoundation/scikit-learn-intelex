@@ -41,11 +41,11 @@ import daal4py
 
 pytest.importorskip("daal4py.mpi_transceiver", exc_type=ImportError)
 
-# Everything in this module drives MPI, so it is selectable and skippable as a
-# unit the same way the SPMD suites are.
-pytestmark = pytest.mark.mpi
 
-
+# Every test here drives MPI, so each one carries the mark explicitly - a
+# module-level `pytestmark` would select and skip the same way, but would not be
+# greppable per test.
+@pytest.mark.mpi
 def test_mpi_is_externally_owned():
     """Guard the premise of this module: mpi4py, not daal4py, initialized MPI.
 
@@ -57,6 +57,7 @@ def test_mpi_is_externally_owned():
     assert not MPI.Is_finalized()
 
 
+@pytest.mark.mpi
 def test_transceiver_does_not_finalize_mpi_it_does_not_own():
     """daalfini must leave externally owned MPI usable."""
     comm = MPI.COMM_WORLD
@@ -70,6 +71,7 @@ def test_transceiver_does_not_finalize_mpi_it_does_not_own():
     assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
+@pytest.mark.mpi
 def test_externally_owned_mpi_can_recreate_transceiver():
     """A zero-user teardown must not prevent a later lazy initialization."""
     comm = MPI.COMM_WORLD
@@ -82,6 +84,7 @@ def test_externally_owned_mpi_can_recreate_transceiver():
         assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
+@pytest.mark.mpi
 def test_distributed_compute_works_again_after_daalfini():
     """A second distributed computation must succeed across an intervening daalfini.
 
@@ -115,6 +118,7 @@ def test_distributed_compute_works_again_after_daalfini():
     assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
+@pytest.mark.mpi
 def test_external_mpi_survives_repeated_transceiver_lifecycle():
     """daalfini must release daal4py users, not MPI owned by mpi4py."""
     comm = MPI.COMM_WORLD
@@ -138,6 +142,7 @@ def test_external_mpi_survives_repeated_transceiver_lifecycle():
     assert not MPI.Is_finalized()
 
 
+@pytest.mark.mpi
 def test_lazy_init_does_not_invert_gil_and_lifecycle_mutex():
     """A GIL-holding num_procs waiter must not block distributed lazy init."""
     comm = MPI.COMM_WORLD

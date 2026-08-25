@@ -44,7 +44,9 @@ args_json_report = [
     arg for arg in sys.argv[1:] if ("--json-report" in arg) and (arg != "pytest")
 ]
 
+# Propagate pytest's status: without this the script always exits zero, so an MPI
+# rank that fails its tests reports success to the launcher and to the caller.
 if is_rank_zero:
-    pytest.main(args_base + args_json_report)
+    sys.exit(pytest.main(args_base + args_json_report))
 else:
-    pytest.main(args_base)
+    sys.exit(pytest.main(args_base))

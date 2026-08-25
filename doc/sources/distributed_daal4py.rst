@@ -217,6 +217,33 @@ Can be executed the same way as before: ::
     mpirun -n 2 python distributed_qr_mpi4py.py
 
 
+Selecting the communication backend
+-----------------------------------
+
+Communication between nodes is performed by a 'transceiver', which ``daal4py``
+creates when the first distributed operation runs. By default it is the MPI
+transceiver built into the package, ``daal4py.mpi_transceiver``.
+
+Environment variable ``D4P_TRANSCEIVER`` overrides that choice with the name of
+another importable Python module, which lets a different communication backend be
+used without rebuilding ``daal4py``: ::
+
+    D4P_TRANSCEIVER=my_package.my_transceiver mpirun -n 2 python my_script.py
+
+Such a module must expose an attribute named ``transceiver``, holding an integer
+that is the address of a ``std::shared_ptr<transceiver_iface>`` owned by that
+module, where ``transceiver_iface`` is the C++ interface declared in
+``src/transceiver.h``. The module is imported, and the attribute read, once per
+transceiver creation.
+
+.. warning::
+    This is an advanced, unsupported extension point aimed at out-of-tree
+    backends - no module implementing it is distributed with |sklearnex|. The type
+    that has to be exported is a C++ implementation detail rather than a stable
+    interface, and it is expected to change: see
+    `issue #3375 <https://github.com/uxlfoundation/scikit-learn-intelex/issues/3375>`__.
+
+
 Supported algorithms
 --------------------
 

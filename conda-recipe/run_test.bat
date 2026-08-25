@@ -64,6 +64,19 @@ if NOT "%NO_DIST%"=="1" (
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
+    %PYTHON% "%1tests\helper_mpi_tests.py"^
+        pytest --with-mpi %PYTEST_CONFIG% -s "%1tests\test_mpi_lifecycle.py" %PYTEST_ARGS:FILENAME=mpi_lifecycle%
+    if !errorlevel! NEQ 0 (
+        set exitcode=1
+    )
+    rem Launched directly rather than through the helper above: this one covers
+    rem the daal4py-owned MPI path, which requires that nothing - mpi4py
+    rem included - has initialized MPI before daal4py does. It needs more than
+    rem one rank, hence the explicit launcher.
+    mpiexec -n 2 %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
+    if !errorlevel! NEQ 0 (
+        set exitcode=1
+    )
 )
 if "%~2"=="--json-report" (
     if NOT EXIST .pytest_reports\legacy_report.json (

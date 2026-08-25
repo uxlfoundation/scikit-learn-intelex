@@ -14,13 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Two-rank check of daal4py-owned MPI initialization and teardown.
+"""Multi-rank check of daal4py-owned MPI initialization and teardown.
 
 This has to be a standalone script rather than a pytest module: it covers the
 case where daal4py - not mpi4py - calls MPI_Init_thread, which requires that
 nothing has touched MPI beforehand, and MPI cannot be initialized again after
 MPI_Finalize, so the entire lifecycle has to fit in exactly one process. Run it
-as ``mpiexec -n 2 python tests/mpi_lifecycle_smoke.py``.
+as ``mpiexec -n <ranks> python tests/mpi_lifecycle_smoke.py``; any rank count of
+two or more works, since the launchers differ on how many they permit.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -29,32 +30,33 @@ from concurrent.futures import ThreadPoolExecutor
 import daal4py
 
 assert daal4py.__has_dist__
-assert daal4py.num_procs() == 2
+size = daal4py.num_procs()
+assert size > 1, "this smoke test needs at least two ranks"
 rank = daal4py.my_procid()
-assert rank in (0, 1)
+assert 0 <= rank < size
 
 from mpi4py import MPI
 
 assert MPI.Is_initialized()
 assert not MPI.Is_finalized()
 assert MPI.Query_thread() == MPI.THREAD_MULTIPLE
-assert MPI.COMM_WORLD.Get_size() == 2
+assert MPI.COMM_WORLD.Get_size() == size
 assert MPI.COMM_WORLD.Get_rank() == rank
-assert MPI.COMM_WORLD.allreduce(rank, op=MPI.SUM) == 1
+assert MPI.COMM_WORLD.allreduce(rank, op=MPI.SUM) == size * (size - 1) // 2
 
 
 def query_topology(_):
-    assert daal4py.num_procs() == 2
+    assert daal4py.num_procs() == size
     assert daal4py.my_procid() == rank
     return daal4py.num_procs(), daal4py.my_procid()
 
 
 # Keep daal4py-owned MPI alive while native topology calls overlap. MPI cannot
 # be initialized again after MPI_Finalize, so teardown is tested only after all
-# users and both ranks have synchronized.
+# users and all ranks have synchronized.
 with ThreadPoolExecutor(max_workers=4) as executor:
     topology = list(executor.map(query_topology, range(64)))
-assert topology == [(2, rank)] * 64
+assert topology == [(size, rank)] * 64
 assert not MPI.Is_finalized()
 MPI.COMM_WORLD.Barrier()
 
