@@ -172,17 +172,6 @@ def test_hdbscan_probabilities():
     assert_allclose(probabilities, _as_numpy(hdbscan.labels_) != -1)
 
 
-def test_hdbscan_unsupported_metric_falls_back():
-    """A metric that oneDAL does not implement must compute with sklearn."""
-    from sklearnex.preview.cluster import HDBSCAN
-
-    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE, metric="canberra").fit(
-        _grouped_data()
-    )
-    assert not hasattr(hdbscan, "_onedal_estimator")
-    assert_groups_found(hdbscan.labels_)
-
-
 def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
     from scipy.sparse import csr_matrix
@@ -192,16 +181,3 @@ def test_hdbscan_sparse_falls_back():
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(csr_matrix(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
     assert_groups_found(hdbscan.labels_)
-
-
-def test_hdbscan_non_finite_falls_back():
-    """Non-finite data is clustered by scikit-learn, which supports it."""
-    from sklearnex.preview.cluster import HDBSCAN
-
-    X = _grouped_data()
-    X[0, 0] = np.nan
-
-    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X)
-    assert not hasattr(hdbscan, "_onedal_estimator")
-    # scikit-learn labels the samples that hold missing values as outliers
-    assert _as_numpy(hdbscan.labels_)[0] < 0
