@@ -46,6 +46,17 @@ if "%~2"=="--json-report" (
     del /q .pytest_reports\*.json
 )
 
+rem Distributed tests on Windows require PYTHON to carry an MPI launcher, as in
+rem set "PYTHON=mpiexec -n 2 python" (see doc/sources/tests.rst). The check above
+rem only recognizes the literal string "python", so any other bare interpreter -
+rem conda-build passes %PREFIX%\python.exe - reached the block below and ran the
+rem MPI steps single-rank with no MPI stack installed at all, since meta.yaml
+rem marks mpi, mpi4py and pytest-mpi as "# [not win]". That looked like a pass
+rem rather than an error: pytest rejects --with-mpi as an unknown argument when
+rem pytest-mpi is missing, and helper_mpi_tests.py used to discard its status.
+echo %PYTHON% | findstr /i /c:"mpiexec" /c:"mpirun" >nul
+if errorlevel 1 set NO_DIST=1
+
 echo "NO_DIST=%NO_DIST%"
 setlocal enabledelayedexpansion
 pytest %PYTEST_CONFIG% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
@@ -72,9 +83,10 @@ if NOT "%NO_DIST%"=="1" (
     rem Not a pytest module, so there is nothing for the helper above to launch,
     rem and it could not be one: this covers the daal4py-owned MPI path, which
     rem requires that nothing has initialized MPI before daal4py does, while the
-    rem helper and pytest-mpi both import mpi4py, which initializes it. It also
-    rem needs more than one rank, hence the explicit launcher.
-    mpiexec -n 2 %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
+    rem helper and pytest-mpi both import mpi4py, which initializes it. PYTHON
+    rem carries the launcher here, as it does for the steps above, so it also
+    rem supplies the more than one rank this needs.
+    %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
