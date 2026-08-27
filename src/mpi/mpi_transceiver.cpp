@@ -53,8 +53,9 @@ int mpi_count(size_t value, const char * name)
 
 // Report a teardown failure without throwing. fini() runs from a destructor and
 // from interpreter shutdown, so there is no caller left to catch an exception -
-// but staying silent hides a real fault, so surface it as a Python warning when
-// the interpreter can still take one, and on stderr when it cannot.
+// but staying silent hides a real fault. Warn through Python while the interpreter
+// can still take one; past that point sys.stderr is gone too, so fall back to the
+// process's own stderr, which is a different stream and the only one left.
 void report_teardown_failure(const std::string & reason) noexcept
 {
     const std::string message = "daal4py could not shut MPI down cleanly: " + reason;
@@ -349,12 +350,11 @@ void mpi_transceiver::reduce_exscan(void * inout, transceiver_iface::type_type T
 
 // The exported pointer is a std::shared_ptr<mpi_transceiver> *, which
 // create_transceiver() in src/transceiver.cpp reinterprets as a
-// std::shared_ptr<transceiver_iface> *. That only works because
-// transceiver_iface is a non-virtual base of mpi_transceiver reached through
-// single public inheritance, so the two shared_ptr instantiations have the same
-// layout and the stored pointer needs no adjustment. Nothing in the type system
-// enforces that, so pin it here: a hierarchy change that breaks the assumption
-// must fail to compile rather than silently corrupt the control block.
+// std::shared_ptr<transceiver_iface> *. That is only valid because
+// transceiver_iface is a non-virtual base reached through single public
+// inheritance, so both instantiations have the same layout and the stored pointer
+// needs no adjustment. The asserts pin that down, so a hierarchy change which
+// breaks it fails to compile rather than corrupting the control block.
 static_assert(std::is_base_of<transceiver_iface, mpi_transceiver>::value, "mpi_transceiver must derive from transceiver_iface for the exported pointer cast");
 static_assert(sizeof(std::shared_ptr<mpi_transceiver>) == sizeof(std::shared_ptr<transceiver_iface>), "shared_ptr layout must match between mpi_transceiver and transceiver_iface");
 
