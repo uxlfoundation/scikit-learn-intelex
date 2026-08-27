@@ -102,10 +102,8 @@ if [[ ! $NO_DIST ]]; then
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
         pytest --with-mpi ${PYTEST_CONFIG} -s "${sklex_root}/tests/test_mpi_lifecycle.py" $@ $(generate_pytest_args mpi_lifecycle)
     return_code=$(($return_code + $?))
-    # Not a pytest module, so there is nothing for the helper above to launch, and
-    # it could not be one: this covers the daal4py-owned MPI path, which requires
-    # that nothing has initialized MPI before daal4py does, while the helper and
-    # pytest-mpi both import mpi4py, which initializes it.
+    # Run directly rather than through the helper: this covers the daal4py-owned
+    # MPI path, and the helper imports mpi4py, which would take that ownership away.
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/mpi_lifecycle_smoke.py"
     return_code=$(($return_code + $?))
 fi

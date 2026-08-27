@@ -46,14 +46,11 @@ if "%~2"=="--json-report" (
     del /q .pytest_reports\*.json
 )
 
-rem Distributed tests on Windows require PYTHON to carry an MPI launcher, as in
-rem set "PYTHON=mpiexec -n 2 python" (see doc/sources/tests.rst). The check above
-rem only recognizes the literal string "python", so any other bare interpreter -
-rem conda-build passes %PREFIX%\python.exe - reached the block below and ran the
-rem MPI steps single-rank with no MPI stack installed at all, since meta.yaml
-rem marks mpi, mpi4py and pytest-mpi as "# [not win]". That looked like a pass
-rem rather than an error: pytest rejects --with-mpi as an unknown argument when
-rem pytest-mpi is missing, and helper_mpi_tests.py used to discard its status.
+rem Distributed tests on Windows need PYTHON to carry an MPI launcher, as in
+rem set "PYTHON=mpiexec -n 2 python" (see doc/sources/tests.rst). Skip them when it
+rem does not, which is also the case under conda-build: PYTHON is a plain
+rem interpreter there and the recipe installs no MPI stack on Windows, since
+rem meta.yaml marks mpi, mpi4py and pytest-mpi as "# [not win]".
 echo %PYTHON% | findstr /i /c:"mpiexec" /c:"mpirun" >nul
 if errorlevel 1 set NO_DIST=1
 
@@ -80,12 +77,9 @@ if NOT "%NO_DIST%"=="1" (
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
-    rem Not a pytest module, so there is nothing for the helper above to launch,
-    rem and it could not be one: this covers the daal4py-owned MPI path, which
-    rem requires that nothing has initialized MPI before daal4py does, while the
-    rem helper and pytest-mpi both import mpi4py, which initializes it. PYTHON
-    rem carries the launcher here, as it does for the steps above, so it also
-    rem supplies the more than one rank this needs.
+    rem Run directly rather than through the helper: this covers the
+    rem daal4py-owned MPI path, and the helper imports mpi4py, which would take
+    rem that ownership away.
     %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
     if !errorlevel! NEQ 0 (
         set exitcode=1

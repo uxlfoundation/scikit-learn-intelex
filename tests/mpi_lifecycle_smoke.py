@@ -105,12 +105,8 @@ except RuntimeError as error:
 else:
     raise AssertionError("distributed use unexpectedly reinitialized finalized MPI")
 
-# Everything above asserts silently, which in CI is indistinguishable from a step
-# that never ran the script. Say what was covered, from a single rank: the ranks
-# write to the same captured stream in no defined order, and one line is enough.
-# It can speak for all of them because the distributed computation above is a
-# collective - no rank reaches this point unless every rank took part - and a rank
-# that failed anywhere would fail the launcher regardless of what is printed here.
+# The assertions above are silent, so say what was covered. One rank does it,
+# since the ranks share the captured stream in no defined order.
 if rank == 0:
     print(
         f"{size} ranks: daal4py-owned MPI initialized, used from threads, "
