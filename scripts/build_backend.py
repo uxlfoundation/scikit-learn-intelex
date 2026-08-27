@@ -28,6 +28,138 @@ import numpy as np
 logger = logging.getLogger("sklearnex")
 
 
+# Which oneDAL interface library each backend links against, on top of the core
+# libraries every backend needs. The daal4py extension links the core libraries
+# only, hence None.
+_ONEDAL_IFACE_LIBRARY = {
+    "daal": None,
+    "host": "onedal",
+    "dpc": "onedal_dpc",
+    "spmd_dpc": "onedal_dpc",
+}
+
+
+def _get_onedal_library_names(iface, use_parameters_lib=True, is_win=False):
+    """Return the oneDAL libraries a backend needs, in link order.
+
+    Names are the platform-independent stems, ``get_onedal_libraries`` and
+    ``get_onedal_library_filenames`` turn them into linker arguments and on-disk
+    file names respectively.
+    """
+    if iface not in _ONEDAL_IFACE_LIBRARY:
+        raise ValueError(f"Unsupported oneDAL backend: {iface}")
+
+    iface_library = _ONEDAL_IFACE_LIBRARY[iface]
+    library_names = []
+    if iface_library is not None:
+        library_names.append(iface_library)
+        if use_parameters_lib:
+            is_dpc = iface_library == "onedal_dpc"
+            if is_win:
+                # On Windows, the parameters library entry points come from the core
+                # import library, so the name carries the core prefix. This is
+                # the spelling scripts/CMakeLists.txt links against.
+                library_names.append(
+                    "onedal_core_parameters_dpc_dll"
+                    if is_dpc
+                    else "onedal_core_parameters_dll"
+                )
+            else:
+                library_names.append(
+                    "onedal_parameters_dpc" if is_dpc else "onedal_parameters"
+                )
+    library_names.append("onedal_core")
+    if not is_win:
+        # On Windows the threading layer is part of the core DLL.
+        library_names.append("onedal_thread")
+    return library_names
+
+
+def _to_windows_import_name(name):
+    return name if name.endswith("_dll") else f"{name}_dll"
+
+
+def get_onedal_arch_dir(machine):
+    # Keyed by what ``platform.machine()`` reports, which is not the same string
+    # for the same hardware on every platform. On Windows it goes through
+    # ``_get_machine_win32()``, which reads the WMI CPU architecture and answers
+    # ``AMD64`` or ``ARM64``; on Linux and macOS the same call answers ``x86_64``
+    # or ``aarch64``. Both spellings of each architecture have to select the same
+    # oneDAL directory, and both reach here - at build time from ``plt.machine()``
+    # below, and at import time from the same call in ``onedal/__init__.py`` and
+    # ``daal4py/__init__.py``.
+    return {
+        "x86_64": "intel64",
+        "AMD64": "intel64",
+        "aarch64": "arm",
+        "ARM64": "arm",
+    }.get(machine, machine)
+
+
+def get_onedal_libraries(
+    iface="daal", major_version=1, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return linker names for the oneDAL libraries the given backend needs."""
+    library_names = _get_onedal_library_names(iface, use_parameters_lib, is_win)
+    if is_win:
+        return [
+            f"{_to_windows_import_name(name)}.{major_version}" for name in library_names
+        ]
+    if is_mac:
+        return [f"{name}.{major_version}" for name in library_names]
+    # The ':' prefix asks the linker for this exact SONAME.
+    return [f":lib{name}.so.{major_version}" for name in library_names]
+
+
+def get_onedal_library_filenames(
+    iface="daal", major_version=1, use_parameters_lib=True, is_win=False, is_mac=False
+):
+    """Return the on-disk names of the libraries ``get_onedal_libraries`` links."""
+    library_names = _get_onedal_library_names(iface, use_parameters_lib, is_win)
+    if is_win:
+        return [
+            f"{_to_windows_import_name(name)}.{major_version}.lib"
+            for name in library_names
+        ]
+    if is_mac:
+        return [f"lib{name}.{major_version}.dylib" for name in library_names]
+    return [f"lib{name}.so.{major_version}" for name in library_names]
+
+
+def _get_onedal_library_dir(
+    dal_root,
+    arch_dir,
+    iface="host",
+    major_version=1,
+    use_parameters_lib=True,
+    is_win=False,
+    is_mac=False,
+):
+    """Find a complete oneDAL library directory in packaged and classic layouts."""
+    candidates = [jp(dal_root, "lib", arch_dir)]
+    if is_win:
+        candidates.append(jp(dal_root, "Library", "lib"))
+    candidates.append(jp(dal_root, "lib"))
+    required = get_onedal_library_filenames(
+        iface,
+        major_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=is_mac,
+    )
+
+    checked = []
+    for candidate in candidates:
+        missing = [name for name in required if not os.path.isfile(jp(candidate, name))]
+        if not missing:
+            return candidate
+        checked.append(f"{candidate} (missing: {', '.join(missing)})")
+
+    raise FileNotFoundError(
+        "Could not find a complete oneDAL library set: " + "; ".join(checked)
+    )
+
+
 def custom_build_cmake_clib(
     iface,
     onedal_major_binary_version=1,
@@ -77,7 +209,7 @@ def custom_build_cmake_clib(
     if build_distribute:
         MPI_INCDIRS = jp(mpi_root, "include")
         MPI_LIBDIRS = jp(mpi_root, "lib")
-        MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+        MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
         if MPI_LIBNAME:
             MPI_LIBS = MPI_LIBNAME
         elif is_win:
@@ -89,9 +221,17 @@ def custom_build_cmake_clib(
         else:
             MPI_LIBS = "mpi"
 
-    arch_dir = plt.machine()
-    plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
-    arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
+    arch_dir = get_onedal_arch_dir(plt.machine())
+    onedal_library_dir = _get_onedal_library_dir(
+        os.environ["DALROOT"],
+        arch_dir,
+        iface=iface,
+        major_version=onedal_major_binary_version,
+        use_parameters_lib=use_parameters_lib,
+        is_win=is_win,
+        is_mac=plt.system() == "Darwin",
+    )
+    logger.info(f"oneDAL library directory: {onedal_library_dir}")
     use_parameters_arg = "yes" if use_parameters_lib else "no"
     logger.info(f"Build using parameters library: {use_parameters_arg}")
 
@@ -102,9 +242,12 @@ def custom_build_cmake_clib(
     env_build = dict(os.environ)
     if cxx:
         env_build["CXX"] = cxx
-    cmake_args = [
-        "cmake",
-        cmake_generator,
+    build_type = "Debug" if debug_build else "Release"
+
+    cmake_args = ["cmake"]
+    if cmake_generator:
+        cmake_args.append(cmake_generator)
+    cmake_args += [
         "-S" + builder_directory,
         "-B" + abs_build_temp_path,
         "-DCMAKE_INSTALL_PREFIX=" + install_directory,
@@ -115,14 +258,12 @@ def custom_build_cmake_clib(
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
         "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
         "-DoneDAL_INCLUDE_DIRS=" + jp(os.environ["DALROOT"], "include"),
-        "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
+        "-DoneDAL_LIBRARY_DIR=" + onedal_library_dir,
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
+        f"-DCMAKE_BUILD_TYPE={build_type}",
     ]
-
-    if debug_build:
-        cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]
 
     if build_distribute:
         cmake_args += [
