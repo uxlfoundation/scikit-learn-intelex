@@ -19,6 +19,7 @@ import logging
 
 import pytest
 
+from onedal.tests.utils._dataframes_support import array_api_frameworks
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
 
 
@@ -61,21 +62,16 @@ def pytest_runtest_call(item):
 
 @pytest.fixture(autouse=True)
 def _array_api_dispatch_for_device_frameworks(request):
-    # Non-numpy array API inputs (dpnp, array_api, torch) are only supported
-    # on-device under array_api_dispatch; without it they silently host-transfer,
-    # leaving the on-device paths untested. torch additionally cannot be restored to
-    # its own namespace on the host path, since ``Tensor`` has no
-    # ``__array_namespace__``, so undispatched torch inputs come back as numpy.
-    # Enable dispatch whenever a test is parametrized with such a dataframe so these
-    # inputs exercise the real array API path. Tests marked allow_sklearn_fallback
-    # intentionally cover host paths and are left untouched.
+    # Without array_api_dispatch, ``_device_offload.dispatch`` host-transfers these
+    # inputs and ``support_input_format``/``wrap_output_data`` restore the namespace
+    # via ``__array_namespace__``, which torch lacks -- so the on-device paths go
+    # untested and torch results come back as numpy. Force dispatch to exercise the
+    # real array API path; allow_sklearn_fallback tests cover host paths on purpose.
     dataframe = getattr(request.node, "callspec", None)
     dataframe = dataframe.params.get("dataframe") if dataframe else None
-    if dataframe in (
-        "dpnp",
-        "array_api",
-        "torch",
-    ) and not request.node.get_closest_marker("allow_sklearn_fallback"):
+    if dataframe in array_api_frameworks and not request.node.get_closest_marker(
+        "allow_sklearn_fallback"
+    ):
         with config_context(array_api_dispatch=True):
             yield
     else:

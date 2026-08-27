@@ -68,6 +68,11 @@ test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
 
+# Frameworks whose arrays only reach oneDAL in their own namespace under
+# array_api_dispatch; numpy and pandas are host-native and unaffected. Consumed by
+# the autouse dispatch fixture in ``sklearnex/conftest.py``.
+array_api_frameworks = ("dpnp", "array_api", "torch")
+
 # Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
 host_df_modules = (pd, pl)
 
