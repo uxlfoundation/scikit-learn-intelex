@@ -28,7 +28,9 @@ if [ -z "${DALROOT}" ]; then
 elif [ "${DALROOT}" != "${CONDA_PREFIX}" ] && [ ! -z "${CONDA_PREFIX}" ]; then
     # source oneDAL if DALROOT is set outside of conda-build
     source ${DALROOT}/env/vars.sh
-    export DALRPATH=--abs-rpath
+    if [ -z "${SKLEARNEX_NO_ABS_RPATH}" ]; then
+        export DALRPATH=--abs-rpath
+    fi
 fi
 
 if [ -z "${MPIROOT}" ] && [ -z "${NO_DIST}" ]; then

@@ -18,7 +18,7 @@ import os
 import pytest
 import scipy.sparse as sp
 
-from sklearnex import get_config
+from sklearnex import config_context, get_config
 
 try:
     import dpnp
@@ -56,13 +56,41 @@ except (ImportError, KeyError):
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
-    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api"
+    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api,torch"
 )
+
+# Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
+host_df_modules = (pd, pl)
+
+# ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
+# but only for the exceptions it catches; torch signals this case with
+# ``AssertionError``, which escapes instead. Namespaces raising a caught
+# exception (e.g. array_api_strict) convert such inputs fine. Any host dataframe
+# is affected, not just pandas (polars fails identically), so the pandas probe
+# below is representative.
+# See https://github.com/scikit-learn/scikit-learn/issues/34046.
+host_df_to_torch_working = False
+if torch_available:
+    try:
+        # ``move_to`` does not exist before sklearn 1.8, so importing it inside
+        # the probe doubles as the version gate.
+        from sklearn.utils._array_api import get_namespace_and_device, move_to
+
+        with config_context(array_api_dispatch=True):
+            # ``xp`` must be the array-api-wrapped torch namespace, not the
+            # ``torch`` module itself, which lacks ``__array_namespace_info__``.
+            # The failure is device-independent, so a host tensor suffices.
+            xp, _, device = get_namespace_and_device(torch.empty(0))
+            _ = move_to(pd.Series([1, 2, 3]), xp=xp, device=device)
+        host_df_to_torch_working = True
+    except Exception:
+        pass
 
 
 def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
@@ -127,14 +155,103 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
         or array_api_enabled()
     ):
         dataframes_and_queues.append(pytest.param("array_api", None, id="array_api"))
+    if torch_available and "torch" in dataframe_filter_:
+        dataframes_and_queues.extend(get_df_and_q("torch"))
 
     return dataframes_and_queues
+
+
+# Device labels a namespace supports for the mixed-device tests. GPU-capable
+# array-API frameworks may hold data on host ("cpu") or device; torch names its
+# device "xpu", dpnp names it "gpu".
+_NAMESPACE_DEVICES = {}
+if torch_xpu_available:
+    _NAMESPACE_DEVICES["torch"] = ("xpu", "cpu")
+if dpnp_available:
+    _NAMESPACE_DEVICES["gpu-dpnp"] = ("gpu", "cpu")
+
+
+def mixed_device_params(include_host_df_y=False, include_weight=False, x_devices=None):
+    """Parameterize the "same namespace, inputs on possibly different devices"
+    tests the array-API-dispatch way.
+
+    Everything follows ``X``: an estimator moves ``y`` and sample weights to
+    ``X``'s namespace and device. Only devices vary within one namespace here --
+    cross-namespace ``X``/``y`` (e.g. torch + dpnp) is supported from sklearn 1.9
+    on but needs both frameworks installed, so it is left to
+    ``test_*_mixed_array_namespaces``. A host data frame ``y``/weight is
+    optionally allowed since it is namespace-neutral (host targets alongside an
+    array-API ``X``).
+
+    Parameters
+    ----------
+    include_host_df_y : bool, default=False
+        Also emit combinations with a host data frame ``y``/weight, one per
+        library in ``host_df_modules`` (pandas, polars).
+    include_weight : bool, default=False
+        Add a sample-weight column; each row becomes
+        ``(X_xp, X_device, y_xp, y_device, w_xp, w_device)`` and the weight
+        ranges over the same namespace's devices plus ``None`` (no weight).
+    x_devices : tuple of str or None, default=None
+        Restrict X to these device labels (e.g. ``("cpu",)`` for CPU-only
+        estimators). ``None`` uses every device the namespace supports.
+
+    Returns
+    -------
+    list of pytest.param
+        ``(X_xp, X_device, y_xp, y_device)`` tuples, or with two extra weight
+        fields when ``include_weight``. A list rather than a generator because
+        pytest deprecates non-Collection iterables in ``parametrize``.
+    """
+    params = []
+    for xp, devices in _NAMESPACE_DEVICES.items():
+        module = torch if xp == "torch" else dpnp
+        x_dev_list = tuple(d for d in (x_devices or devices) if d in devices)
+        host_df_options = (
+            [(m, None, m.__name__) for m in host_df_modules] if include_host_df_y else []
+        )
+        y_options = [(module, d, f"{xp}-{d}") for d in devices] + host_df_options
+        w_options = [(None, None, "no")] + (
+            [(module, d, f"{xp}-{d}") for d in devices] + host_df_options
+            if include_weight
+            else []
+        )
+        for x_device in x_dev_list:
+            for y_xp, y_device, y_id in y_options:
+                if not include_weight:
+                    params.append(
+                        pytest.param(
+                            module,
+                            x_device,
+                            y_xp,
+                            y_device,
+                            id=f"{xp}-{x_device}-X-{y_id}-y",
+                        )
+                    )
+                    continue
+                for w_xp, w_device, w_id in w_options:
+                    params.append(
+                        pytest.param(
+                            module,
+                            x_device,
+                            y_xp,
+                            y_device,
+                            w_xp,
+                            w_device,
+                            id=f"{xp}-{x_device}-X-{y_id}-y-{w_id}-w",
+                        )
+                    )
+    return params
 
 
 def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
+    if torch_available and isinstance(obj, torch.Tensor):
+        # ``Tensor.numpy()`` takes no dtype/order/copy args, so apply them after
+        # the host transfer to match the other branches' behavior.
+        return np.asarray(obj.cpu().detach().numpy(), *args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
@@ -180,5 +297,18 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
 
         xp = array_api_modules[target_df]
         return xp.asarray(obj)
+    elif target_df == "torch":
+        if "dtype" in kwargs:
+            kwargs["dtype"] = torch.from_numpy(np.empty(0, dtype=kwargs["dtype"])).dtype
+        # Mirror the requested sycl_queue's device so torch tensors don't land on
+        # xpu for CPU-queue cases (dpnp honors sycl_queue; torch must too).
+        is_gpu = sycl_queue is not None and getattr(
+            sycl_queue.sycl_device, "is_gpu", False
+        )
+        if is_gpu and hasattr(torch, "xpu") and torch.xpu.is_available():
+            device = "xpu"
+        else:
+            device = "cpu"
+        return torch.as_tensor(obj, device=device, *args, **kwargs)
 
     raise RuntimeError("Unsupported dataframe conversion")

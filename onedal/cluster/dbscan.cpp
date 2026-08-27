@@ -19,8 +19,6 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 
-#include <regex>
-
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
@@ -49,36 +47,23 @@ auto get_onedal_result_options(const py::dict& params) {
     auto result_options = params["result_options"].cast<std::string>();
     result_option_id onedal_options;
 
-    try {
-        std::regex re("\\w+");
-        const std::sregex_iterator last{};
-        const std::sregex_iterator first( //
-            result_options.begin(),
-            result_options.end(),
-            re);
-
-        for (std::sregex_iterator it = first; it != last; ++it) {
-            std::smatch match = *it;
-            if (match.str() == "responses") {
-                onedal_options = onedal_options | result_options::responses;
-            }
-            else if (match.str() == "core_observation_indices") {
-                onedal_options = onedal_options | result_options::core_observation_indices;
-            }
-            else if (match.str() == "core_observations") {
-                onedal_options = onedal_options | result_options::core_observations;
-            }
-            else if (match.str() == "core_flags") {
-                onedal_options = onedal_options | result_options::core_flags;
-            }
-            else
-                ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
+    result_option_detail::for_each_result_option(result_options, [&](std::string_view option) {
+        if (option == "responses") {
+            onedal_options = onedal_options | result_options::responses;
         }
-    }
-    catch (std::regex_error& e) {
-        (void)e;
-        ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
-    }
+        else if (option == "core_observation_indices") {
+            onedal_options = onedal_options | result_options::core_observation_indices;
+        }
+        else if (option == "core_observations") {
+            onedal_options = onedal_options | result_options::core_observations;
+        }
+        else if (option == "core_flags") {
+            onedal_options = onedal_options | result_options::core_flags;
+        }
+        else {
+            ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
+        }
+    });
 
     return onedal_options;
 }

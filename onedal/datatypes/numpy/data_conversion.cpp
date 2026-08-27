@@ -16,6 +16,9 @@
 
 #define NO_IMPORT_ARRAY
 
+#include <cstdint>
+#include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -41,6 +44,26 @@ typedef oneapi::dal::detail::csr_table csr_table_t;
 typedef oneapi::dal::csr_table csr_table_t;
 #endif
 
+static std::shared_ptr<PyObject> make_python_owner(PyObject *obj) {
+    Py_INCREF(obj);
+    return std::shared_ptr<PyObject>(obj, [](PyObject *owner) {
+        // Attaching a thread during interpreter shutdown can hang indefinitely.
+        // Leaking this final reference is preferable to entering the runtime after
+        // finalization has started; the process is already tearing down.
+        if (!Py_IsInitialized()) {
+            return;
+        }
+#if PY_VERSION_HEX >= 0x030D0000
+        if (Py_IsFinalizing()) {
+            return;
+        }
+#endif
+        const PyGILState_STATE state = PyGILState_Ensure();
+        Py_DECREF(owner);
+        PyGILState_Release(state);
+    });
+}
+
 template <typename T>
 inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     std::int64_t column_count = 1;
@@ -61,18 +84,177 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     // which is default on oneDAL side.
     const auto layout =
         array_is_behaved_C(np_data) ? dal::data_layout::row_major : dal::data_layout::column_major;
-    auto res_table = dal::homogen_table(
+    // The table borrows the array's buffer, so the capture keeps the array alive
+    // for as long as any copy of the table exists.
+    return dal::homogen_table(
         data_pointer,
         row_count,
         column_count,
-        [np_data](const T *data) {
-            Py_DECREF(np_data);
-        },
+        [owner = make_python_owner(reinterpret_cast<PyObject *>(np_data))](const T *) {},
         layout);
+}
 
-    // we need to increment the ref-count as we use the input array in-place
-    Py_INCREF(np_data);
-    return res_table;
+// Widen `count` base-0 indices of type Src into base-1 std::int64_t, reading the
+// source as Src directly.
+//
+// The caller guarantees every element is aligned for Src - see the dispatch in
+// make_one_based_indices() - so `stride` arrives here already divided by
+// sizeof(Src) and can be negative or zero. A dedicated unit-stride loop is worth
+// keeping: it is the case scipy produces, and it is the only one the vectorizer
+// can widen, because the general loop's step is a runtime value.
+template <typename Src>
+inline void rebase_indices_to_one(const Src *source,
+                                  std::int64_t element_stride,
+                                  std::int64_t *destination,
+                                  std::int64_t count) {
+    if (element_stride == 0) {
+        // A broadcast view repeats one element, so load it once.
+        if (count > 0) {
+            const std::int64_t rebased = static_cast<std::int64_t>(*source) + 1;
+            for (std::int64_t i = 0; i < count; ++i) {
+                destination[i] = rebased;
+            }
+        }
+        return;
+    }
+
+    if (element_stride == 1) {
+        for (std::int64_t i = 0; i < count; ++i) {
+            destination[i] = static_cast<std::int64_t>(source[i]) + 1;
+        }
+        return;
+    }
+
+    for (std::int64_t i = 0; i < count; ++i) {
+        destination[i] = static_cast<std::int64_t>(source[i * element_stride]) + 1;
+    }
+}
+
+// The same widening for a buffer whose elements are not aligned for Src, which
+// NumPy permits: a view can be unit-stride and still start at an odd byte. A
+// typed dereference would be undefined there, so this walks bytes and copies
+// each element out with a fixed-size memcpy. It is the cold path - scipy does
+// not produce such a buffer - so it is kept simple rather than specialized.
+template <typename Src>
+inline void rebase_indices_to_one_unaligned(const char *source_bytes,
+                                            std::int64_t stride,
+                                            std::int64_t *destination,
+                                            std::int64_t count) {
+    for (std::int64_t i = 0; i < count; ++i) {
+        Src value;
+        std::memcpy(&value, source_bytes + i * stride, sizeof(Src));
+        destination[i] = static_cast<std::int64_t>(value) + 1;
+    }
+}
+
+// Pick between the two loops above for one source dtype. `stride` is in bytes;
+// the typed loop wants it in elements, which is exact only when the caller has
+// established that, hence the flag rather than a second test here.
+template <typename Src>
+inline void rebase_indices(const char *source,
+                           std::int64_t stride,
+                           bool readable_as_source,
+                           std::int64_t *destination,
+                           std::int64_t count) {
+    if (readable_as_source) {
+        rebase_indices_to_one<Src>(reinterpret_cast<const Src *>(source),
+                                   stride / static_cast<std::int64_t>(sizeof(Src)),
+                                   destination,
+                                   count);
+    }
+    else {
+        rebase_indices_to_one_unaligned<Src>(source, stride, destination, count);
+    }
+}
+
+enum class index_kind { unsupported, int32, uint32, int64, uint64 };
+
+// Classify by width and signedness rather than by NumPy type number, because
+// NPY_INT32 and NPY_INT64 are aliases whose targets differ per platform: an
+// int64 array is NPY_LONG on Linux and NPY_LONGLONG on Windows, and a caller
+// can hand over either spelling on either platform.
+static index_kind classify_index_type(int npy_type, std::int64_t itemsize) {
+    const bool is_signed = npy_type == NPY_INT || npy_type == NPY_LONG || npy_type == NPY_LONGLONG;
+    const bool is_unsigned =
+        npy_type == NPY_UINT || npy_type == NPY_ULONG || npy_type == NPY_ULONGLONG;
+    if (itemsize == 4) {
+        return is_signed ? index_kind::int32
+                         : (is_unsigned ? index_kind::uint32 : index_kind::unsupported);
+    }
+    if (itemsize == 8) {
+        return is_signed ? index_kind::int64
+                         : (is_unsigned ? index_kind::uint64 : index_kind::unsupported);
+    }
+    return index_kind::unsupported;
+}
+
+// Build the base-1 index array oneDAL's csr_table expects, reading the caller's
+// buffer in whatever integer dtype and stride it arrives in.
+//
+// Casting to a fixed dtype first - which is what this used to do - allocates
+// twice per index array: once for the cast array, whose only purpose is to be
+// read once and discarded, and once for the dal::array that outlives the call.
+// scipy stores `indices` and `indptr` as int32 whenever the matrix fits in 32
+// bits, so that was the common path, not a corner case: for nnz non-zeros it
+// cost an extra 8*nnz bytes of peak allocation and two extra passes over them.
+static dal::array<std::int64_t> make_one_based_indices(PyObject *py_indices) {
+    PyArrayObject *np_indices = reinterpret_cast<PyArrayObject *>(py_indices);
+
+    // The loops below read the source dtype directly, so they need native byte
+    // order and a width they can widen. Anything else - a byte-swapped array,
+    // or an index dtype scipy does not produce, such as int16 - goes through
+    // numpy's own cast and then takes the fast path on the result, which is
+    // native, contiguous int64 by construction. Recursion is therefore one
+    // level deep.
+    const std::int64_t itemsize = static_cast<std::int64_t>(array_type_sizeof(np_indices));
+    const index_kind kind = classify_index_type(static_cast<int>(array_type(np_indices)), itemsize);
+    if (!array_is_native(np_indices) || kind == index_kind::unsupported) {
+        // No WRITEABLE in the flags: these buffers are only ever read, and
+        // asking for writeability copies a read-only input for nothing.
+        py::object cast_indices = py::reinterpret_steal<py::object>(
+            PyArray_FROMANY(py_indices,
+                            NPY_INT64,
+                            0,
+                            0,
+                            NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED | NPY_ARRAY_FORCECAST));
+        if (!cast_indices) {
+            throw std::invalid_argument(
+                "[convert_to_table] Could not convert csr_matrix indices to 64-bit integers.");
+        }
+        return make_one_based_indices(cast_indices.ptr());
+    }
+
+    const std::int64_t count = static_cast<std::int64_t>(array_size(np_indices, 0));
+    auto one_based = dal::array<std::int64_t>::empty(count);
+    std::int64_t *const destination = one_based.get_mutable_data();
+    const char *const source = static_cast<const char *>(array_data(np_indices));
+    const std::int64_t stride = static_cast<std::int64_t>(array_stride(np_indices, 0));
+
+    // Whether the elements can be read as the source dtype rather than byte by
+    // byte. NumPy's ALIGNED flag is computed over the data pointer and the
+    // strides, so it is what makes a typed dereference well defined for every
+    // element; the stride test is what makes `stride / itemsize` below exact,
+    // which NumPy does not guarantee on its own for arrays of one element or
+    // fewer. `itemsize` is 4 or 8 past the guard above, so it cannot be zero
+    // here - but the guard has to stay ahead of the division for that to hold.
+    const bool readable_as_source = array_is_aligned(np_indices) && stride % itemsize == 0;
+
+    switch (kind) {
+        case index_kind::int32:
+            rebase_indices<std::int32_t>(source, stride, readable_as_source, destination, count);
+            break;
+        case index_kind::uint32:
+            rebase_indices<std::uint32_t>(source, stride, readable_as_source, destination, count);
+            break;
+        case index_kind::int64:
+            rebase_indices<std::int64_t>(source, stride, readable_as_source, destination, count);
+            break;
+        default:
+            // classify_index_type() admits nothing else past the guard above.
+            rebase_indices<std::uint64_t>(source, stride, readable_as_source, destination, count);
+            break;
+    }
+    return one_based;
 }
 
 template <typename T>
@@ -82,39 +264,20 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
                                        std::int64_t row_count,
                                        std::int64_t column_count) {
     PyArrayObject *np_data = reinterpret_cast<PyArrayObject *>(py_data);
-    PyArrayObject *np_column_indices = reinterpret_cast<PyArrayObject *>(py_column_indices);
-    PyArrayObject *np_row_indices = reinterpret_cast<PyArrayObject *>(py_row_indices);
 
-    const std::int64_t *row_indices_zero_based =
-        static_cast<std::int64_t *>(array_data(np_row_indices));
-    const std::int64_t row_indices_count = static_cast<std::int64_t>(array_size(np_row_indices, 0));
-
-    auto row_indices_one_based = dal::array<std::int64_t>::empty(row_indices_count);
-    auto row_indices_one_based_data = row_indices_one_based.get_mutable_data();
-
-    for (std::int64_t i = 0; i < row_indices_count; ++i)
-        row_indices_one_based_data[i] = row_indices_zero_based[i] + 1;
-
-    const std::int64_t *column_indices_zero_based =
-        static_cast<std::int64_t *>(array_data(np_column_indices));
-    const std::int64_t column_indices_count =
-        static_cast<std::int64_t>(array_size(np_column_indices, 0));
-
-    auto column_indices_one_based = dal::array<std::int64_t>::empty(column_indices_count);
-    auto column_indices_one_based_data = column_indices_one_based.get_mutable_data();
-
-    for (std::int64_t i = 0; i < column_indices_count; ++i)
-        column_indices_one_based_data[i] = column_indices_zero_based[i] + 1;
+    auto row_indices_one_based = make_one_based_indices(py_row_indices);
+    auto column_indices_one_based = make_one_based_indices(py_column_indices);
 
     const T *data_pointer = static_cast<T *>(array_data(np_data));
     const std::int64_t data_count = static_cast<std::int64_t>(array_size(np_data, 0));
 
-    auto res_table = csr_table_t(
-        dal::array<T>(data_pointer,
-                      data_count,
-                      [np_data](const T *) {
-                          Py_DECREF(np_data);
-                      }),
+    // Only the data buffer is borrowed; make_one_based_indices() rebased the
+    // index arrays into dal::arrays it allocated itself.
+    return csr_table_t(
+        dal::array<T>(
+            data_pointer,
+            data_count,
+            [owner = make_python_owner(reinterpret_cast<PyObject *>(np_data))](const T *) {}),
         column_indices_one_based,
         row_indices_one_based,
 #if ONEDAL_VERSION <= 20230100
@@ -122,10 +285,6 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
         row_count,
 #endif
         column_count);
-
-    // we need to increment the ref-count as we use the input array in-place
-    Py_INCREF(np_data);
-    return res_table;
 }
 
 dal::table convert_to_table(py::object inp_obj,
@@ -196,33 +355,29 @@ dal::table convert_to_table(py::object inp_obj,
                 py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
             }
         }
-        PyObject *py_data = PyObject_GetAttrString(obj, "data");
-        PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
-        PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");
-
-        PyObject *py_shape = PyObject_GetAttrString(obj, "shape");
-        if (!(is_array(py_data) && is_array(py_column_indices) && is_array(py_row_indices) &&
-              array_numdims(py_data) == 1 && array_numdims(py_column_indices) == 1 &&
-              array_numdims(py_row_indices) == 1)) {
+        // py::getattr returns an owning py::object and raises Python's own
+        // AttributeError if the lookup fails, so no reference bookkeeping or
+        // null check is needed here.
+        py::object py_data = py::getattr(obj, "data");
+        py::object py_column_indices = py::getattr(obj, "indices");
+        py::object py_row_indices = py::getattr(obj, "indptr");
+        py::object py_shape = py::getattr(obj, "shape");
+        if (!(is_array(py_data.ptr()) && is_array(py_column_indices.ptr()) &&
+              is_array(py_row_indices.ptr()) && array_numdims(py_data.ptr()) == 1 &&
+              array_numdims(py_column_indices.ptr()) == 1 &&
+              array_numdims(py_row_indices.ptr()) == 1)) {
             throw std::invalid_argument("[convert_to_table] Got invalid csr_matrix object.");
         }
-        PyObject *np_data = PyArray_FROMANY(py_data, array_type(py_data), 0, 0, NPY_ARRAY_CARRAY);
-        PyObject *np_column_indices =
-            PyArray_FROMANY(py_column_indices,
-                            NPY_UINT64,
-                            0,
-                            0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
-        PyObject *np_row_indices =
-            PyArray_FROMANY(py_row_indices,
-                            NPY_UINT64,
-                            0,
-                            0,
-                            NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
+        py::object np_data = py::reinterpret_steal<py::object>(
+            PyArray_FROMANY(py_data.ptr(), array_type(py_data.ptr()), 0, 0, NPY_ARRAY_CARRAY));
+        // The index arrays are handed over as they are. make_one_based_indices()
+        // reads whatever integer dtype and stride they carry straight into the
+        // base-1 dal::array it allocates, so there is no cast array to create
+        // here and immediately throw away.
 
-        PyObject *np_row_count = PyTuple_GetItem(py_shape, 0);
-        PyObject *np_column_count = PyTuple_GetItem(py_shape, 1);
-        if (!(np_data && np_column_indices && np_row_indices && np_row_count && np_column_count)) {
+        PyObject *np_row_count = PyTuple_GetItem(py_shape.ptr(), 0);
+        PyObject *np_column_count = PyTuple_GetItem(py_shape.ptr(), 1);
+        if (!(np_data && np_row_count && np_column_count)) {
             throw std::invalid_argument(
                 "[convert_to_table] Failed accessing csr data when converting csr_matrix.\n");
         }
@@ -231,19 +386,17 @@ dal::table convert_to_table(py::object inp_obj,
         const std::int64_t column_count =
             static_cast<std::int64_t>(PyLong_AsSsize_t(np_column_count));
 
-#define MAKE_CSR_TABLE(CType)                           \
-    res = convert_to_csr_impl<CType>(np_data,           \
-                                     np_column_indices, \
-                                     np_row_indices,    \
-                                     row_count,         \
+#define MAKE_CSR_TABLE(CType)                                 \
+    res = convert_to_csr_impl<CType>(np_data.ptr(),           \
+                                     py_column_indices.ptr(), \
+                                     py_row_indices.ptr(),    \
+                                     row_count,               \
                                      column_count);
-        SET_NPY_FEATURE(array_type(np_data),
-                        array_type_sizeof(np_data),
+        SET_NPY_FEATURE(array_type(np_data.ptr()),
+                        array_type_sizeof(np_data.ptr()),
                         MAKE_CSR_TABLE,
                         throw py::type_error("Found unsupported data type in csr_matrix"));
 #undef MAKE_CSR_TABLE
-        Py_DECREF(np_column_indices);
-        Py_DECREF(np_row_indices);
     }
     else {
         throw std::invalid_argument(
