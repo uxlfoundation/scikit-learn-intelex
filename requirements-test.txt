@@ -16,9 +16,10 @@ catboost==1.2.10
 shap==0.49.1 ; python_version <= '3.10'
 shap==0.51.0 ; python_version == '3.11'
 shap==0.52.0 ; python_version >= '3.12'
-treelite==4.7.0
+treelite==4.7.0 ; python_version <= '3.10'
+treelite==4.7.1 ; python_version >= '3.11'
 array-api-compat==1.15.0
 array-api-strict==2.5
-polars==1.43.2
+polars==1.44.1
 packaging==26.3
 pyyaml==6.0.3
