@@ -345,20 +345,6 @@ for key, value in get_config_vars().items():
     if isinstance(value, str):
         cfg_vars[key] = value.replace("-Wstrict-prototypes", "").replace("-DNDEBUG", "")
 
-if IS_LIN and NO_ABS_RPATH:
-    # conda's link commands carry -Wl,-rpath,<prefix>/lib and setuptools links with them
-    # verbatim, so the build environment's path lands in every extension it builds.
-    # LDCXXSHARED is the one that matters here (the extensions are all language="c++"),
-    # but both are filtered since either can be the effective linker.
-    for holder in (os.environ, cfg_vars):
-        for var in ("LDSHARED", "LDCXXSHARED"):
-            if var in holder:
-                holder[var] = " ".join(
-                    flag
-                    for flag in holder[var].split()
-                    if not flag.startswith("-Wl,-rpath,")
-                )
-
 
 def gen_pyx(odir):
     gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + ["./setup.py"]
