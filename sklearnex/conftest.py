@@ -16,6 +16,7 @@
 
 import io
 import logging
+import os
 
 import pytest
 
@@ -76,3 +77,15 @@ def with_array_api():
 def without_allow_sklearn_after_onedal():
     with config_context(allow_sklearn_after_onedal=False):
         yield
+
+
+@pytest.fixture
+def with_preview_mode():
+    preview_was_enabled = "SKLEARNEX_PREVIEW" in os.environ
+    try:
+        if not preview_was_enabled:
+            os.environ["SKLEARNEX_PREVIEW"] = "1"
+        yield
+    finally:
+        if not preview_was_enabled:
+            del os.environ["SKLEARNEX_PREVIEW"]

@@ -185,7 +185,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
-     - Only dense data is supported.
+     - Only dense data is supported. Fitting to data with more columns than rows is only supported when :doc:`preview mode <preview>` is enabled.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
