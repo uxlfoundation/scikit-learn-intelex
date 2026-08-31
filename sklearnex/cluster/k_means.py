@@ -261,6 +261,18 @@ if daal_check_version((2023, "P", 200)):
 
             self._save_attributes()
 
+            # This mimics a warning issued by scikit-learn.
+            # Added for compatibility.
+            n_distinct_cluisters = xp.unique_values(self.labels_).shape[0]
+            if n_distinct_cluisters != self.cluster_centers_.shape[0]:
+                warnings.warn(
+                    "Number of distinct clusters ({}) found smaller than "
+                    "n_clusters ({}). Possibly due to duplicate points "
+                    "in X.".format(n_distinct_cluisters, self.n_clusters),
+                    ConvergenceWarning,
+                    stacklevel=2,
+                )
+
         def _validate_sample_weight(self, sample_weight, X):
             """Check if sample_weight is acceptable for oneDAL.
 
