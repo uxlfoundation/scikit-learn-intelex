@@ -64,6 +64,8 @@ function generate_pytest_args {
 
 PYTEST_CONFIG="-c ${sklex_root}/setup.cfg"
 
+export PYTHON="LD_PRELOAD=$(gcc -print-file-name=libasan.so) ${PYTHON}"
+
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
