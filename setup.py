@@ -48,7 +48,8 @@ def check_for_build_arg(arg: str) -> bool:
     return False
 
 
-USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath")
+NO_ABS_RPATH: bool = bool(os.environ.get("SKLEARNEX_NO_ABS_RPATH"))
+USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath") and not NO_ABS_RPATH
 DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
 
@@ -319,7 +320,9 @@ def getpyexts():
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
         mpi_depens = glob.glob(jp(os.path.abspath("src"), "*.h"))
-        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in MPI_LIBDIRS]
+        # the MPI runtime is a dependency of the built package, so $ORIGIN covers it
+        mpi_rpaths = [] if NO_ABS_RPATH else MPI_LIBDIRS
+        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in mpi_rpaths]
         exts.append(
             Extension(
                 "daal4py.mpi_transceiver",
