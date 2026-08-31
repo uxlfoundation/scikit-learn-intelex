@@ -53,13 +53,13 @@ if [ -n "${SRC_DIR}" ]; then
     export SKLEARNEX_STAGE="${SRC_DIR}/__sklearnex_stage"
     rm -rf "${SKLEARNEX_STAGE}"
     mkdir -p "${SKLEARNEX_STAGE}"
-    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
+    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" CFLAGS="$(echo $CFLAGS | sed s/O2/O0/g)" CXXFLAGS="$(echo $CXXFLAGS | sed s/O2/O0/g)" ${PYTHON} setup.py install --debug \
         --single-version-externally-managed \
         --record "${SKLEARNEX_STAGE}/record.txt" \
         --root "${SKLEARNEX_STAGE}" \
         ${DALRPATH}
 else
-    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
+    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" CFLAGS="$(echo $CFLAGS | sed s/O2/O0/g)" CXXFLAGS="$(echo $CXXFLAGS | sed s/O2/O0/g)" ${PYTHON} setup.py install --debug \
         --single-version-externally-managed \
         --record record.txt \
         ${DALRPATH}

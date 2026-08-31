@@ -68,24 +68,22 @@ if [ ! -z "$(command -v conda)" ]; then
     conda install -y gcc gxx libsanitizer cxx-compiler compilers
 fi
 
-export PYTHON="LD_PRELOAD=$(gcc -print-file-name=libasan.so) ${PYTHON}"
-
-${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_CONFIG} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" pytest ${PYTEST_CONFIG} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_CONFIG} --pyargs daal4py $@ $(generate_pytest_args daal4py)
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" pytest ${PYTEST_CONFIG} --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_CONFIG} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" pytest ${PYTEST_CONFIG} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_CONFIG} --pyargs onedal $@ $(generate_pytest_args onedal)
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" pytest ${PYTEST_CONFIG} --pyargs onedal $@ $(generate_pytest_args onedal)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_CONFIG} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
+LD_PRELOAD="$(gcc -print-file-name=libasan.so)" pytest ${PYTEST_CONFIG} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
 return_code=$(($return_code + $?))
 
 echo "NO_DIST=$NO_DIST"
