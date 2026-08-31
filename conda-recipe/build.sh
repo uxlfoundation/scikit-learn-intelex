@@ -46,6 +46,7 @@ if [ ! -z "${DPCPPROOT}" ]; then
     source ${DPCPPROOT}/env/vars.sh
 fi
 
+conda install -y gcc gxx libsanitizer cxx-compiler compilers
 # Inside conda-build $SRC_DIR is set: stage files for pack.sh to split into
 # per-output packages. Direct invocation (build-and-test-*.yml): install in-place.
 if [ -n "${SRC_DIR}" ]; then

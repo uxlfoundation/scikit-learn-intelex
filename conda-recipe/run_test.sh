@@ -64,6 +64,10 @@ function generate_pytest_args {
 
 PYTEST_CONFIG="-c ${sklex_root}/setup.cfg"
 
+if [ ! -z "$(command -v conda)" ]; then
+    conda install -y gcc gxx libsanitizer cxx-compiler compilers
+fi
+
 export PYTHON="LD_PRELOAD=$(gcc -print-file-name=libasan.so) ${PYTHON}"
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
