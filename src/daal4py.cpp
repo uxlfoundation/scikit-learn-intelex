@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
-#include <memory>
 #include <Python.h>
 #include "daal4py.h"
 #include "npy4daal.h"
@@ -49,37 +48,25 @@
 class NumpyDeleter : public daal::services::DeleterIface
 {
 public:
-    // Keep a strong owner before exposing the raw NumPy buffer to oneDAL. Copies of
-    // this deleter share the owner, so constructor failure cannot run a callback
-    // against a borrowed reference.
-    explicit NumpyDeleter(PyArrayObject * a) : _ndarray(make_owner(a)) {}
-    NumpyDeleter(const NumpyDeleter &) = default;
-
-    // oneDAL owns only the buffer lifetime; the shared owner releases the Python
-    // reference when the final deleter copy is destroyed.
-    void operator()(const void *) override {}
+    // constructor to initialize with ndarray
+    NumpyDeleter(PyArrayObject * a) : _ndarray(a) {}
+    // DeleterIface must be copy-constructible
+    NumpyDeleter(const NumpyDeleter & o) : _ndarray(o._ndarray) {}
+    // ref-count reached 0 -> decref reference to python object
+    void operator()(const void * ptr) override
+    {
+        // We need to protect calls to python API
+        // Note: at termination time, even when no threads are running, this breaks without the protection
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        assert(static_cast<void *>(array_data(_ndarray)) == ptr);
+        Py_DECREF(_ndarray);
+        PyGILState_Release(gstate);
+    }
+    // We don't want this to be copied
     NumpyDeleter & operator=(const NumpyDeleter &) = delete;
 
 private:
-    static std::shared_ptr<PyArrayObject> make_owner(PyArrayObject * a)
-    {
-        // Symmetric with the deleter below. Every current caller reaches this from
-        // a Python-facing conversion and so already holds the GIL, which makes the
-        // Ensure a cheap no-op recursive acquisition; the deleter genuinely needs
-        // it, because oneDAL can drop the last table reference on a worker thread.
-        // Guarding both sides means neither depends on the other's caller.
-        PyGILState_STATE state = PyGILState_Ensure();
-        Py_INCREF(a);
-        PyGILState_Release(state);
-        return std::shared_ptr<PyArrayObject>(a, [](PyArrayObject * array) {
-            if (!can_decref_python_object()) return;
-            PyGILState_STATE state = PyGILState_Ensure();
-            Py_DECREF(array);
-            PyGILState_Release(state);
-        });
-    }
-
-    std::shared_ptr<PyArrayObject> _ndarray;
+    PyArrayObject * _ndarray;
 };
 
 inline void py_err_check()
@@ -89,30 +76,6 @@ inline void py_err_check()
         PyErr_Print();
         throw std::runtime_error("Python error");
     }
-}
-
-class PyOwnedRef
-{
-public:
-    explicit PyOwnedRef(PyObject * obj = nullptr) : _obj(obj) {}
-    ~PyOwnedRef() { Py_XDECREF(_obj); }
-    PyOwnedRef(const PyOwnedRef &)             = delete;
-    PyOwnedRef & operator=(const PyOwnedRef &) = delete;
-    PyObject * get() const { return _obj; }
-
-private:
-    PyObject * _obj;
-};
-
-static PyObject * list_get_item_ref(PyObject * list, Py_ssize_t index)
-{
-#if PY_VERSION_HEX >= 0x030D0000
-    return PyList_GetItemRef(list, index);
-#else
-    PyObject * item = PyList_GetItem(list, index);
-    Py_XINCREF(item);
-    return item;
-#endif
 }
 
 // *****************************************************************************
@@ -326,6 +289,9 @@ static daal::data_management::NumericTablePtr _make_hnt(PyObject * nda)
     {
         // we provide the SharedPtr with a deleter which decrements the pyref
         ptr = daal::data_management::HomogenNumericTable<T>::create(daal::services::SharedPtr<T>(reinterpret_cast<T *>(array_data(array)), NumpyDeleter(array)), static_cast<size_t>(array_size(array, 1)), static_cast<size_t>(array_size(array, 0)));
+        // we need it increment the ref-count if we use the input array in-place
+        // if we copied/converted it we already own our own reference
+        if (reinterpret_cast<PyObject *>(array) == nda) Py_INCREF(array);
     }
     else
     {
@@ -382,23 +348,6 @@ static daal::data_management::NumericTablePtr _make_npynt(PyObject * nda)
 // * list of arrays, heterogen -> oneDAL SOANumericTable
 // * scipy csr_matrix -> oneDAL CSRNumericTable
 //   As long as oneDAL CSR is only 0-based we need to copy indices/offsets
-static constexpr const char * numeric_table_capsule_name = "daal4py.NumericTablePtr";
-
-static void delete_numeric_table_capsule(PyObject * capsule)
-{
-    const char * name = PyCapsule_GetName(capsule);
-    if (PyErr_Occurred())
-    {
-        PyErr_Clear();
-        return;
-    }
-    auto ptr = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule, name));
-    if (ptr)
-        delete ptr;
-    else
-        PyErr_Clear();
-}
-
 daal::data_management::NumericTablePtr make_nt(PyObject * obj)
 {
     if (PyErr_Occurred())
@@ -408,26 +357,24 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
     }
     if (obj && obj != Py_None)
     {
-        const int has_protocol = PyObject_HasAttrString(obj, "__2daalnt__");
-        if (has_protocol < 0) py_err_check();
-        if (has_protocol)
+        if (PyObject_HasAttrString(obj, "__2daalnt__"))
         {
-            // __2daalnt__ transfers one heap-allocated NumericTablePtr through a
-            // typed capsule. Disable its destructor only after validation, then
-            // consume and delete the transferred pointer exactly once.
-            PyOwnedRef capsule(PyObject_CallMethod(obj, "__2daalnt__", NULL));
-            py_err_check();
-            if (!PyCapsule_CheckExact(capsule.get())) throw std::invalid_argument("__2daalnt__ must return a capsule");
-            const char * capsule_name = PyCapsule_GetName(capsule.get());
-            py_err_check();
-            if (capsule_name && std::strcmp(capsule_name, numeric_table_capsule_name) != 0) throw std::invalid_argument("__2daalnt__ returned a capsule with an unsupported name");
-            // Keep accepting the legacy unnamed capsule while producers migrate
-            // to the typed protocol.
-            auto nt = reinterpret_cast<daal::data_management::NumericTablePtr *>(PyCapsule_GetPointer(capsule.get(), capsule_name));
-            py_err_check();
-            auto ntptr = *nt;
-            if (PyCapsule_SetDestructor(capsule.get(), nullptr) < 0) py_err_check();
-            delete nt;
+            static daal::data_management::NumericTablePtr ntptr;
+            if (true || !ntptr)
+            {
+                // special protocol assumes that python objects implement __2daalnt__
+                // returning a pointer to a NumericTablePtr, we have to delete the shared-pointer
+                PyObject * _obj = PyObject_CallMethod(obj, "__2daalnt__", NULL);
+                py_err_check();
+                void * _ptr = PyCapsule_GetPointer(_obj, NULL);
+                py_err_check();
+                Py_DECREF(_obj);
+                auto nt = reinterpret_cast<daal::data_management::NumericTablePtr *>(_ptr);
+                ntptr   = *nt;
+                delete nt; // we delete the shared pointer-pointer
+                nt = NULL;
+            }
+
             return ntptr;
         }
         daal::data_management::NumericTablePtr ptr;
@@ -467,13 +414,8 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
                     for (npy_intp i = 0; PyArray_ITER_NOTDONE(it); ++i)
                     {
                         PyArrayObject * slice = reinterpret_cast<PyArrayObject *>(PyArray_SimpleNewFromData(1, &column_len, ary_numtype, static_cast<void *>(PyArray_ITER_DATA(it))));
-                        if (!slice) throw std::runtime_error("Creating NumPy column view failed");
+                        PyArray_SetBaseObject(slice, reinterpret_cast<PyObject *>(ary));
                         Py_INCREF(ary);
-                        if (PyArray_SetBaseObject(slice, reinterpret_cast<PyObject *>(ary)) < 0)
-                        {
-                            Py_DECREF(slice);
-                            throw std::runtime_error("Setting NumPy column owner failed");
-                        }
 #define SETARRAY_(_T)                                                                                         \
     {                                                                                                         \
         daal::services::SharedPtr<_T> _tmp(reinterpret_cast<_T *>(PyArray_DATA(slice)), NumpyDeleter(slice)); \
@@ -481,7 +423,6 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
     }
                         SET_NPY_FEATURE(PyArray_DESCR(ary)->type, SETARRAY_, throw std::invalid_argument("Found unsupported array type"));
 #undef SETARRAY_
-                        Py_DECREF(slice);
                         PyArray_ITER_NEXT(it);
                     }
                     Py_DECREF(it);
@@ -500,19 +441,18 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
         }
         else if (PyList_Check(obj) && PyList_Size(obj) > 0)
         { // a list of arrays for SOA?
-            PyOwnedRef first(list_get_item_ref(obj, 0));
+            PyObject * first = PyList_GetItem(obj, 0);
             py_err_check();
 
-            if (is_array(first.get()))
+            if (is_array(first))
             { // can handle only list of 1d arrays
                 auto N = PyList_Size(obj);
                 daal::data_management::SOANumericTablePtr soatbl;
 
                 for (auto i = 0; i < N; i++)
                 {
-                    PyOwnedRef item(list_get_item_ref(obj, i));
+                    PyArrayObject * ary = reinterpret_cast<PyArrayObject *>(PyList_GetItem(obj, i));
                     py_err_check();
-                    PyArrayObject * ary = reinterpret_cast<PyArrayObject *>(item.get());
                     if (i == 0) soatbl = daal::data_management::SOANumericTable::create(N, PyArray_DIM(ary, 0));
                     if (PyArray_NDIM(ary) != 1)
                     {
@@ -531,6 +471,7 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
     }
                     SET_NPY_FEATURE(PyArray_DESCR(ary)->type, SETARRAY_, throw std::invalid_argument("Found unsupported array type"));
 #undef SETARRAY_
+                    Py_INCREF(ary);
                 }
                 if (soatbl->getNumberOfColumns() != N)
                 {
@@ -542,41 +483,41 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
         if (!ptr && ((strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0) || (strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0)))
         {
             daal::services::SharedPtr<daal::data_management::CSRNumericTable> ret;
-            PyOwnedRef vals(PyObject_GetAttrString(obj, "data"));
+            PyObject * vals = PyObject_GetAttrString(obj, "data");
             py_err_check();
-            PyOwnedRef indcs(PyObject_GetAttrString(obj, "indices"));
+            PyObject * indcs = PyObject_GetAttrString(obj, "indices");
             py_err_check();
-            PyOwnedRef roffs(PyObject_GetAttrString(obj, "indptr"));
+            PyObject * roffs = PyObject_GetAttrString(obj, "indptr");
             py_err_check();
-            PyOwnedRef shape(PyObject_GetAttrString(obj, "shape"));
+            PyObject * shape = PyObject_GetAttrString(obj, "shape");
             py_err_check();
 
-            if (shape.get() && PyTuple_Check(shape.get()) && is_array(vals.get()) && is_array(indcs.get()) && is_array(roffs.get()) && array_numdims(vals.get()) == 1 && array_numdims(indcs.get()) == 1 && array_numdims(roffs.get()) == 1)
+            if (shape && PyTuple_Check(shape) && is_array(vals) && is_array(indcs) && is_array(roffs) && array_numdims(vals) == 1 && array_numdims(indcs) == 1 && array_numdims(roffs) == 1)
             {
                 py_err_check();
 
                 // As long as oneDAL does not support 0-based indexing we have to copy the indices and add 1 to each
-                PyOwnedRef np_indcs(PyArray_FROMANY(indcs.get(), NPY_UINT64, 0, 0, NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
+                PyObject * np_indcs = PyArray_FROMANY(indcs, NPY_UINT64, 0, 0, NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
                 py_err_check();
-                PyOwnedRef np_roffs(PyArray_FROMANY(roffs.get(), NPY_UINT64, 0, 0, NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST));
+                PyObject * np_roffs = PyArray_FROMANY(roffs, NPY_UINT64, 0, 0, NPY_ARRAY_CARRAY | NPY_ARRAY_ENSURECOPY | NPY_ARRAY_FORCECAST);
                 py_err_check();
-                PyOwnedRef np_vals(PyArray_FROMANY(vals.get(), array_type(vals.get()), 0, 0, NPY_ARRAY_CARRAY));
-                py_err_check();
-
-                PyObject * nr = PyTuple_GetItem(shape.get(), 0);
-                py_err_check();
-                PyObject * nc = PyTuple_GetItem(shape.get(), 1);
+                PyObject * np_vals = PyArray_FROMANY(vals, array_type(vals), 0, 0, NPY_ARRAY_CARRAY);
                 py_err_check();
 
-                if (np_indcs.get() && np_roffs.get() && np_vals.get() && nr && nc)
+                PyObject * nr = PyTuple_GetItem(shape, 0);
+                py_err_check();
+                PyObject * nc = PyTuple_GetItem(shape, 1);
+                py_err_check();
+
+                if (np_indcs && np_roffs && np_vals && nr && nc)
                 {
-                    size_t * c_indcs           = static_cast<size_t *>(array_data(np_indcs.get()));
-                    size_t n                   = array_size(np_indcs.get(), 0);
+                    size_t * c_indcs           = static_cast<size_t *>(array_data(np_indcs));
+                    size_t n                   = array_size(np_indcs, 0);
                     size_t * c_indcs_one_based = static_cast<size_t *>(daal::services::daal_malloc(n * sizeof(size_t)));
                     DAAL4PY_CHECK_MALLOC(c_indcs_one_based);
                     for (size_t i = 0; i < n; ++i) c_indcs_one_based[i] = c_indcs[i] + 1;
-                    size_t * c_roffs           = static_cast<size_t *>(array_data(np_roffs.get()));
-                    n                          = array_size(np_roffs.get(), 0);
+                    size_t * c_roffs           = static_cast<size_t *>(array_data(np_roffs));
+                    n                          = array_size(np_roffs, 0);
                     size_t * c_roffs_one_based = static_cast<size_t *>(daal::services::daal_malloc((n + 1) * sizeof(size_t)));
                     DAAL4PY_CHECK_MALLOC(c_roffs_one_based);
                     for (size_t i = 0; i < n; ++i) c_roffs_one_based[i] = c_roffs[i] + 1;
@@ -584,36 +525,27 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
                     py_err_check();
                     size_t c_nr = static_cast<size_t>(PyInt_AsSsize_t(nr));
                     py_err_check();
-#define MKCSR_(_T) ret = daal::data_management::CSRNumericTable::create(daal::services::SharedPtr<_T>(reinterpret_cast<_T *>(array_data(np_vals.get())), NumpyDeleter(reinterpret_cast<PyArrayObject *>(np_vals.get()))), daal::services::SharedPtr<size_t>(c_indcs_one_based, daal::services::ServiceDeleter()), daal::services::SharedPtr<size_t>(c_roffs_one_based, daal::services::ServiceDeleter()), c_nc, c_nr)
-                    SET_NPY_FEATURE(array_type(np_vals.get()), MKCSR_, throw std::invalid_argument(std::string("Found unsupported data type in ") + Py_TYPE(obj)->tp_name + "\n"));
+#define MKCSR_(_T) ret = daal::data_management::CSRNumericTable::create(daal::services::SharedPtr<_T>(reinterpret_cast<_T *>(array_data(np_vals)), NumpyDeleter(reinterpret_cast<PyArrayObject *>(np_vals))), daal::services::SharedPtr<size_t>(c_indcs_one_based, daal::services::ServiceDeleter()), daal::services::SharedPtr<size_t>(c_roffs_one_based, daal::services::ServiceDeleter()), c_nc, c_nr)
+                    SET_NPY_FEATURE(array_type(np_vals), MKCSR_, throw std::invalid_argument(std::string("Found unsupported data type in ") + Py_TYPE(obj)->tp_name + "\n"));
 #undef MKCSR_
                 }
                 else
                     throw std::invalid_argument(std::string("Failed accessing csr data when converting ") + Py_TYPE(obj)->tp_name + "\n");
+                Py_DECREF(np_indcs);
+                Py_DECREF(np_roffs);
             }
             else
                 throw std::invalid_argument("Got invalid csr_matrix or csr_array.\n");
+            Py_DECREF(shape);
+            Py_DECREF(roffs);
+            Py_DECREF(indcs);
+            Py_DECREF(vals);
             return daal::data_management::NumericTablePtr(ret);
         }
         return ptr;
     }
 
     return daal::data_management::NumericTablePtr();
-}
-
-PyObject * make_nt_capsule_for_testing(PyObject * obj, bool legacy)
-{
-    auto ptr           = std::make_unique<daal::data_management::NumericTablePtr>(make_nt(obj));
-    PyObject * capsule = PyCapsule_New(ptr.get(), legacy ? nullptr : numeric_table_capsule_name, delete_numeric_table_capsule);
-    if (!capsule) throw std::runtime_error("Creating NumericTablePtr capsule failed");
-    ptr.release();
-    return capsule;
-}
-
-PyObject * roundtrip_nt_for_testing(PyObject * obj)
-{
-    auto ptr = make_nt(obj);
-    return make_nda(&ptr);
 }
 
 extern daal::data_management::KeyValueDataCollectionPtr make_dnt(PyObject * dict, str2i_map_t & str2id)
@@ -733,13 +665,13 @@ daal::data_management::DataCollectionPtr make_datacoll(PyObject * input)
         res->resize(n);
         for (auto i = 0; i < n; i++)
         {
-            PyOwnedRef obj(list_get_item_ref(input, i));
+            PyObject * obj = PyList_GetItem(input, i);
             py_err_check();
-            auto tmp = make_nt(obj.get());
+            auto tmp = make_nt(obj);
             if (tmp)
                 res->push_back(tmp);
             else
-                throw std::runtime_error(std::string("Unexpected object '") + Py_TYPE(obj.get())->tp_name + "' found in list, expected an array");
+                throw std::runtime_error(std::string("Unexpected object '") + Py_TYPE(obj)->tp_name + "' found in list, expected an array");
         }
         return daal::data_management::DataCollectionPtr(res);
     }
