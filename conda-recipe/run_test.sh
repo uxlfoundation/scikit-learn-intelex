@@ -15,6 +15,7 @@
 # limitations under the License.
 #===============================================================================
 
+set +e
 sklex_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 count=3
 while [[ count -ne 0 ]]; do
