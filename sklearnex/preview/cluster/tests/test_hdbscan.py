@@ -172,6 +172,7 @@ def test_hdbscan_probabilities():
     assert_allclose(probabilities, _as_numpy(hdbscan.labels_) != -1)
 
 
+@pytest.mark.allow_sklearn_fallback
 def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
     from scipy.sparse import csr_matrix
