@@ -61,7 +61,7 @@ class HDBSCAN:
         if self.store_centers in ("medoid", "both"):
             result_options += "|medoid_centers"
 
-        params = {
+        return {
             "fptype": data.dtype,
             "method": self.method,
             "min_cluster_size": int(self.min_cluster_size),
@@ -73,15 +73,10 @@ class HDBSCAN:
             "cluster_selection_epsilon": float(self.cluster_selection_epsilon),
             "max_cluster_size": int(self.max_cluster_size),
             "alpha": float(self.alpha),
+            "degree": float(self.degree),
             "leaf_size": int(self.leaf_size),
             "store_centers": self.store_centers,
         }
-
-        # the degree is only meaningful for the Minkowski distance
-        if self.metric == "minkowski":
-            params["degree"] = float(self.degree)
-
-        return params
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
@@ -90,10 +85,14 @@ class HDBSCAN:
         params = self._get_onedal_params(X_table)
         result = self.compute(params, X_table)
 
+        # 2d table but only 1d of information
         self.labels_ = from_table(result.responses, like=X)[:, 0]
         self.n_clusters_ = int(result.cluster_count)
 
-        # the centers are left empty by oneDAL when it does not find any cluster
+        # oneDAL computes the centers only when it is asked to, and leaves them
+        # empty when it does not find any cluster, 'None' marks both absences
+        self.centroids_ = None
+        self.medoids_ = None
         if self.n_clusters_ > 0:
             if self.store_centers in ("centroid", "both"):
                 self.centroids_ = from_table(result.cluster_centers, like=X)

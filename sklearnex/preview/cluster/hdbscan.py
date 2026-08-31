@@ -99,7 +99,11 @@ if daal_check_version((2026, "P", 200)):
                     else self.min_samples
                 ),
                 "metric": self.metric,
-                "degree": metric_params.get("p", 2.0),
+                # oneDAL validates the degree whatever the metric is, so
+                # scikit-learn's 'p' is only taken where it has a meaning
+                "degree": (
+                    metric_params.get("p", 2.0) if self.metric == "minkowski" else 2.0
+                ),
                 "alpha": self.alpha,
                 "method": method,
                 "leaf_size": self.leaf_size,
@@ -115,12 +119,14 @@ if daal_check_version((2026, "P", 200)):
             self._onedal_estimator.fit(X, queue=queue)
             self.labels_ = self._onedal_estimator.labels_
 
-            # oneDAL leaves the centers out when it does not find any cluster,
-            # while scikit-learn returns them empty
+            # oneDAL reports no centers when it does not find any cluster, while
+            # scikit-learn returns them empty
             if self.store_centers in ("centroid", "both"):
-                self.centroids_ = getattr(self._onedal_estimator, "centroids_", X[:0, :])
+                centroids = self._onedal_estimator.centroids_
+                self.centroids_ = X[:0, :] if centroids is None else centroids
             if self.store_centers in ("medoid", "both"):
-                self.medoids_ = getattr(self._onedal_estimator, "medoids_", X[:0, :])
+                medoids = self._onedal_estimator.medoids_
+                self.medoids_ = X[:0, :] if medoids is None else medoids
 
             # scikit-learn derives the membership strengths from the lambda values
             # of the condensed tree, which oneDAL does not return, so the degree to

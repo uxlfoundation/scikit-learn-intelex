@@ -78,8 +78,11 @@ static auto get_onedal_result_options(const py::dict& params) {
     return onedal_options;
 }
 
-static hdbscan::distance_metric parse_metric(const std::string& metric) {
-    using namespace hdbscan;
+static hdbscan::distance_metric get_onedal_metric(const py::dict& params) {
+    using namespace dal::hdbscan;
+
+    const auto metric = params["metric"].cast<std::string>();
+
     if (metric == "euclidean")
         return distance_metric::euclidean;
     if (metric == "manhattan")
@@ -90,7 +93,35 @@ static hdbscan::distance_metric parse_metric(const std::string& metric) {
         return distance_metric::chebyshev;
     if (metric == "cosine")
         return distance_metric::cosine;
-    throw std::runtime_error("Invalid value for parameter <metric>: " + metric);
+    ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(metric);
+}
+
+static hdbscan::cluster_selection_method get_onedal_cluster_selection(const py::dict& params) {
+    using namespace dal::hdbscan;
+
+    const auto cluster_selection = params["cluster_selection"].cast<std::string>();
+
+    if (cluster_selection == "eom")
+        return cluster_selection_method::eom;
+    if (cluster_selection == "leaf")
+        return cluster_selection_method::leaf;
+    ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(cluster_selection);
+}
+
+static hdbscan::store_centers_method get_onedal_store_centers(const py::dict& params) {
+    using namespace dal::hdbscan;
+
+    const auto store_centers = params["store_centers"].cast<std::string>();
+
+    if (store_centers == "none")
+        return store_centers_method::none;
+    if (store_centers == "centroid")
+        return store_centers_method::centroid;
+    if (store_centers == "medoid")
+        return store_centers_method::medoid;
+    if (store_centers == "both")
+        return store_centers_method::both;
+    ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(store_centers);
 }
 
 struct params2desc {
@@ -102,46 +133,15 @@ struct params2desc {
         const auto min_samples = params["min_samples"].cast<std::int64_t>();
         auto desc = descriptor<Float, Method, Task>(min_cluster_size, min_samples);
         desc.set_result_options(get_onedal_result_options(params));
-
-        if (params.contains("metric")) {
-            desc.set_metric(parse_metric(params["metric"].cast<std::string>()));
-        }
-        if (params.contains("degree")) {
-            desc.set_degree(params["degree"].cast<double>());
-        }
-        if (params.contains("cluster_selection")) {
-            const auto cs = params["cluster_selection"].cast<std::string>();
-            if (cs == "leaf")
-                desc.set_cluster_selection(cluster_selection_method::leaf);
-            else
-                desc.set_cluster_selection(cluster_selection_method::eom);
-        }
-        if (params.contains("allow_single_cluster")) {
-            desc.set_allow_single_cluster(params["allow_single_cluster"].cast<bool>());
-        }
-        if (params.contains("cluster_selection_epsilon")) {
-            desc.set_cluster_selection_epsilon(params["cluster_selection_epsilon"].cast<double>());
-        }
-        if (params.contains("max_cluster_size")) {
-            desc.set_max_cluster_size(params["max_cluster_size"].cast<std::int64_t>());
-        }
-        if (params.contains("alpha")) {
-            desc.set_alpha(params["alpha"].cast<double>());
-        }
-        if (params.contains("leaf_size")) {
-            desc.set_leaf_size(params["leaf_size"].cast<std::int64_t>());
-        }
-        if (params.contains("store_centers")) {
-            const auto sc = params["store_centers"].cast<std::string>();
-            if (sc == "centroid")
-                desc.set_store_centers(store_centers_method::centroid);
-            else if (sc == "medoid")
-                desc.set_store_centers(store_centers_method::medoid);
-            else if (sc == "both")
-                desc.set_store_centers(store_centers_method::both);
-            else
-                desc.set_store_centers(store_centers_method::none);
-        }
+        desc.set_metric(get_onedal_metric(params));
+        desc.set_cluster_selection(get_onedal_cluster_selection(params));
+        desc.set_store_centers(get_onedal_store_centers(params));
+        desc.set_alpha(params["alpha"].cast<double>());
+        desc.set_degree(params["degree"].cast<double>());
+        desc.set_leaf_size(params["leaf_size"].cast<std::int64_t>());
+        desc.set_allow_single_cluster(params["allow_single_cluster"].cast<bool>());
+        desc.set_cluster_selection_epsilon(params["cluster_selection_epsilon"].cast<double>());
+        desc.set_max_cluster_size(params["max_cluster_size"].cast<std::int64_t>());
 
         return desc;
     }
