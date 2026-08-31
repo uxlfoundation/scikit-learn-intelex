@@ -1,4 +1,4 @@
-#===============================================================================
+# ==============================================================================
 # Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#===============================================================================
-steps:
-  - script: |
-      python -m pip install --upgrade pip pre-commit==4.6.2
-      pre-commit install
-      pre-commit run --all-files --show-diff-on-failure
-    displayName: 'Linting'
+# ==============================================================================
+
+import os
+import subprocess
+import sys
+
+import pytest
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+@pytest.mark.parametrize("module", ["daal4py", "onedal", "sklearnex"])
+def test_import_under_different_opt_levels(level, module):
+    subprocess.run(
+        [sys.executable, "-c", f"import {module}"],
+        check=True,
+        env=os.environ | {"PYTHONOPTIMIZE": str(level)},
+    )
