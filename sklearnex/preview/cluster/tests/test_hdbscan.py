@@ -158,6 +158,21 @@ def test_hdbscan_centers(cluster_selection_method, store_centers):
         assert not hasattr(hdbscan, "medoids_")
 
 
+def test_hdbscan_centers_all_noise():
+    """No cluster means no center, reported as scikit-learn reports it."""
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = _grouped_data()
+    # a cluster has to hold every sample to be kept, which none of the groups does
+    hdbscan = HDBSCAN(min_cluster_size=len(X), store_centers="both").fit(X)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    assert (_as_numpy(hdbscan.labels_) == -1).all()
+
+    # oneDAL reports no centers at all here, while scikit-learn returns them empty
+    for centers in (hdbscan.centroids_, hdbscan.medoids_):
+        assert _as_numpy(centers).shape == (0, X.shape[1])
+
+
 def test_hdbscan_probabilities():
     """'probabilities_' must stay a probability."""
     from sklearnex.preview.cluster import HDBSCAN
