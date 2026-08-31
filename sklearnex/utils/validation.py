@@ -21,11 +21,7 @@ from collections.abc import Sequence
 import scipy.sparse as sp
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
-from sklearn.utils.validation import (
-    _num_samples,
-    check_array,
-    check_non_negative,
-)
+from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
