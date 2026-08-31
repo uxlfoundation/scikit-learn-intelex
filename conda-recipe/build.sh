@@ -52,13 +52,13 @@ if [ -n "${SRC_DIR}" ]; then
     export SKLEARNEX_STAGE="${SRC_DIR}/__sklearnex_stage"
     rm -rf "${SKLEARNEX_STAGE}"
     mkdir -p "${SKLEARNEX_STAGE}"
-    CFLAGS="-fsanitize=address -g -O0" CXXFLAGS="-fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
+    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
         --single-version-externally-managed \
         --record "${SKLEARNEX_STAGE}/record.txt" \
         --root "${SKLEARNEX_STAGE}" \
         ${DALRPATH}
 else
-    CFLAGS="-fsanitize=address -g -O0" CXXFLAGS="-fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
+    NO_DPC=1 NO_DIST=1 CC="gcc -fsanitize=address -g -O0" CXX="g++ -fsanitize=address -g -O0" ${PYTHON} setup.py install --debug \
         --single-version-externally-managed \
         --record record.txt \
         ${DALRPATH}
