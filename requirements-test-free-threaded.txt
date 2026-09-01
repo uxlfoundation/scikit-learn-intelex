@@ -1,14 +1,21 @@
 # Test requirements for free-threaded CPython builds.
 #
-# This mirrors requirements-test.txt minus the packages that do not publish a
-# free-threaded (cp3XXt) wheel: catboost, shap and polars. PEP 508 has no
-# environment marker for the free-threaded build, so the split cannot be
-# expressed as a marker in requirements-test.txt itself.
+# This mirrors requirements-test.txt minus catboost, shap and polars, none of
+# which are installable on a free-threaded interpreter on the platform this is
+# tested on (Linux x86-64):
+#   - catboost publishes no cp3XXt wheel at all.
+#   - shap publishes cp314t wheels for some platforms, but not manylinux x86-64.
+#   - polars publishes abi3 wheels only, and an abi3 wheel built against the
+#     limited API is not usable from a free-threaded build.
+# PEP 508 has no environment marker for the free-threaded build, so the split
+# cannot be expressed as a marker in requirements-test.txt itself.
 #
-# The tests that need those packages skip when they are absent, so the only
+# The tests that need these packages skip when they are absent, so the only
 # effect is reduced coverage of the optional integrations - see
-# doc/sources/unsupported.rst. Revisit whenever one of them starts shipping a
-# free-threaded wheel.
+# doc/sources/unsupported.rst. For polars that requires the imports to be
+# optional in the shared test helpers as well, not only in the test modules,
+# since a hard import there stops collection for every module that pulls it in.
+# Revisit whenever one of them starts shipping a usable wheel.
 pytest==9.1.1
 pytest-json-report==1.5.0
 pytest-cov==7.1.0
