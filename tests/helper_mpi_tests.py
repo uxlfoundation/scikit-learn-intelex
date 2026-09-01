@@ -44,7 +44,9 @@ args_json_report = [
     arg for arg in sys.argv[1:] if ("--json-report" in arg) and (arg != "pytest")
 ]
 
+# Exit with pytest's status, so that a rank whose tests fail fails the launcher
+# and the caller along with it.
 if is_rank_zero:
-    pytest.main(args_base + args_json_report)
+    sys.exit(pytest.main(args_base + args_json_report))
 else:
-    pytest.main(args_base)
+    sys.exit(pytest.main(args_base))
