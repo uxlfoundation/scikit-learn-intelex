@@ -68,6 +68,14 @@ those come from global state in the |sklearnex| and in the |onedal| rather than
 from the GIL. If anything, they become easier to hit, as Python threads then
 execute concurrently instead of being serialized by the interpreter.
 
+What is supported, on both build flavors, is concurrent use of **separate**
+estimator instances - each one constructed, fitted and used within a single
+thread - subject to the exceptions listed below. Instances that are not shared
+hold no Python state in common, and the underlying |onedal| computations they
+dispatch are themselves thread-safe. On a GIL-enabled build this arrangement
+still yields no parallelism for the computation itself, since the GIL is held
+throughout it; on a free-threaded build the computations do overlap.
+
 Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
 usage in Python threads, even if running under the Python GIL:
 
@@ -87,6 +95,16 @@ usage in Python threads, even if running under the Python GIL:
   parameter due to usage of other Python-level global state variables.
   Attempting to fit multiple logistic regression estimator objects in parallel
   might result in crashes and incorrect estimations.
+- A single estimator instance must not be **modified** from more than one
+  thread, nor read from one thread while another modifies it. This covers
+  ``.fit()``, ``.set_params()`` and direct attribute assignment, and equally
+  restoring state into an existing object - for example through
+  ``__setstate__()``. None of those are atomic: two threads writing can leave
+  the instance holding a mixture of both states, and a thread reading
+  concurrently can observe it part-way through a write, including a fitted
+  attribute that no longer matches the model behind it. Fit each instance in one
+  thread and treat it as read-only from then on; to fit several models at once,
+  give each thread its own instance.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
