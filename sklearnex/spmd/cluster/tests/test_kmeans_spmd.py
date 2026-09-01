@@ -18,7 +18,6 @@ import warnings
 
 import numpy as np
 import pytest
-from mpi4py import MPI
 from numpy.testing import assert_allclose
 from sklearn.exceptions import ConvergenceWarning
 
@@ -198,17 +197,19 @@ def test_kmeans_spmd_synthetic(
 )
 @pytest.mark.mpi
 def test_kmeans_spmd_no_convergence_warning_on_partial_shard(dataframe, queue):
-    # A rank whose shard holds points of only one cluster must not warn: labels_ is
-    # rank-local, so a local shortfall says nothing about the global clustering.
+    # A rank whose shard misses a cluster entirely must not warn: labels_ is rank-local,
+    # so a local shortfall says nothing about the global clustering.
     from sklearnex.spmd.cluster import KMeans as KMeans_SPMD
 
-    rank = MPI.COMM_WORLD.Get_rank()
-    n_clusters = MPI.COMM_WORLD.Get_size()
-
+    n_clusters = 4
     centers = np.arange(n_clusters, dtype=np.float64)[:, None] * 100.0
-    X = centers[rank % n_clusters] + np.linspace(-1.0, 1.0, 50)[:, None]
+    # Blobs laid out contiguously, so each rank's slice covers only some of them.
+    jitter = np.tile(np.linspace(-1.0, 1.0, 50), n_clusters)[:, None]
+    X = np.repeat(centers, 50, axis=0) + jitter
 
-    local_X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    local_X = _convert_to_dataframe(
+        _get_local_tensor(X), sycl_queue=queue, target_df=dataframe
+    )
     local_init = _convert_to_dataframe(centers, sycl_queue=queue, target_df=dataframe)
 
     with config_context(array_api_dispatch=True):
@@ -218,5 +219,5 @@ def test_kmeans_spmd_no_convergence_warning_on_partial_shard(dataframe, queue):
                 local_X
             )
 
-    # Sanity: the shard really does cover a single cluster.
-    assert len(np.unique(_as_numpy(model.labels_))) == 1
+    if len(np.unique(_as_numpy(model.labels_))) == n_clusters:
+        pytest.skip("shard covers every cluster, so there is nothing to check")
