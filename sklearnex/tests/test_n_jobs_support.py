@@ -16,7 +16,6 @@
 
 import inspect
 import logging
-import os
 from multiprocessing import cpu_count
 
 import pytest
@@ -25,6 +24,7 @@ from sklearn.exceptions import NotFittedError
 
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
+    PREVIEW_ENABLED,
     SPECIAL_INSTANCES,
     call_method,
     gen_dataset,
@@ -81,7 +81,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
     if (
         (estimator == "LogisticRegression(solver='newton-cg')")
         or (hasattr(estimator, "solver") and estimator.solver == "newton-cg")
-    ) and not ("SKLEARNEX_PREVIEW" in os.environ):
+    ) and not PREVIEW_ENABLED:
         pytest.skip("Functionality in preview mode")
 
     est = _get_estimator_instance(estimator)

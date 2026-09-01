@@ -45,12 +45,12 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from sklearnex import config_context, is_patched_instance
-from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
     DTYPES,
     PATCHED_FUNCTIONS,
     PATCHED_MODELS,
+    PREVIEW_ENABLED,
     SPECIAL_INSTANCES,
     UNPATCHED_FUNCTIONS,
     UNPATCHED_MODELS,
@@ -733,9 +733,10 @@ def test_patched_function_signatures(function):
 
 
 def test_patch_map_match():
-    # This rule applies to functions and classes which are out of preview.
-    # Items listed in a matching submodule's __all__ attribute should be
-    # in get_patch_map. There should not be any missing or additional elements.
+    # Items listed in a matching submodule's __all__ attribute should be in
+    # get_patch_map. There should not be any missing or additional elements.
+    # In preview mode the mirrored 'sklearnex.preview' submodules are searched
+    # as well, since that is where the added patch map entries come from.
 
     def list_all_attr(string):
         try:
@@ -752,12 +753,15 @@ def test_patch_map_match():
         )
         return modules
 
-    if _is_preview_enabled():
-        pytest.skip("preview sklearnex has been activated")
     patched = {**PATCHED_MODELS, **PATCHED_FUNCTIONS}
 
     sklearnex__all__ = list_all_attr("sklearnex")
     sklearn__all__ = list_all_attr("sklearn")
+
+    if PREVIEW_ENABLED:
+        # preview submodules mirror the sklearn layout but are not re-exported
+        # by 'sklearnex.__all__'
+        sklearnex__all__ |= list_all_attr("sklearnex.preview")
 
     module_map = {i: i for i in sklearnex__all__.intersection(sklearn__all__)}
 
@@ -769,6 +773,10 @@ def test_patch_map_match():
     for module in module_map:
         sklearn_module__all__ = list_all_attr("sklearn." + module_map[module])
         sklearnex_module__all__ = list_all_attr("sklearnex." + module)
+        if PREVIEW_ENABLED:
+            sklearnex_module__all__ |= list_all_attr("sklearnex.preview." + module) - {
+                None
+            }
         intersect = sklearnex_module__all__.intersection(sklearn_module__all__)
 
         for i in intersect:

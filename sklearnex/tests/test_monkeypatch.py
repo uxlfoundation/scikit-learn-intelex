@@ -203,7 +203,7 @@ def test_patching_checker():
         assert not status
 
 
-def test_preview_namespace():
+def test_preview_namespace(monkeypatch):
     def get_estimators():
         from sklearn.cluster import DBSCAN
         from sklearn.decomposition import PCA
@@ -220,6 +220,11 @@ def test_preview_namespace():
         )
 
     from sklearnex.dispatcher import _is_preview_enabled
+
+    # unpatch_sklearn deletes SKLEARNEX_PREVIEW once patch_sklearn(preview=True) has
+    # written it, so an externally set value has to be taken out of the way here or it
+    # would be destroyed for every test collected after this one.
+    monkeypatch.delenv("SKLEARNEX_PREVIEW", raising=False)
 
     try:
         sklearnex.patch_sklearn(preview=True)
