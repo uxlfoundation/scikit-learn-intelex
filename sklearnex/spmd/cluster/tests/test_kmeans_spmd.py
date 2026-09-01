@@ -14,9 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import warnings
+
 import numpy as np
 import pytest
+from mpi4py import MPI
 from numpy.testing import assert_allclose
+from sklearn.exceptions import ConvergenceWarning
 
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
@@ -182,3 +186,37 @@ def test_kmeans_spmd_synthetic(
         batch_model.cluster_centers_,
         atol=atol,
     )
+
+
+@pytest.mark.skipif(
+    not _mpi_libs_and_gpu_available,
+    reason="GPU device and MPI libs required for test",
+)
+@pytest.mark.parametrize(
+    "dataframe,queue",
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
+)
+@pytest.mark.mpi
+def test_kmeans_spmd_no_convergence_warning_on_partial_shard(dataframe, queue):
+    # A rank whose shard holds points of only one cluster must not warn: labels_ is
+    # rank-local, so a local shortfall says nothing about the global clustering.
+    from sklearnex.spmd.cluster import KMeans as KMeans_SPMD
+
+    rank = MPI.COMM_WORLD.Get_rank()
+    n_clusters = MPI.COMM_WORLD.Get_size()
+
+    centers = np.arange(n_clusters, dtype=np.float64)[:, None] * 100.0
+    X = centers[rank % n_clusters] + np.linspace(-1.0, 1.0, 50)[:, None]
+
+    local_X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    local_init = _convert_to_dataframe(centers, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", ConvergenceWarning)
+            model = KMeans_SPMD(n_clusters=n_clusters, init=local_init, n_init=1).fit(
+                local_X
+            )
+
+    # Sanity: the shard really does cover a single cluster.
+    assert len(np.unique(_as_numpy(model.labels_))) == 1
