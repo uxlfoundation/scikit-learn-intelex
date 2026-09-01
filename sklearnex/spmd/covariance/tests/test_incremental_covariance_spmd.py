@@ -16,11 +16,11 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -78,8 +78,15 @@ def test_incremental_covariance_fit_spmd_gold(dataframe, queue, assume_centered,
         dpt_data
     )
 
-    assert_allclose(spmd_result.covariance_, non_spmd_result.covariance_)
-    assert_allclose(spmd_result.location_, non_spmd_result.location_)
+    _assert_in_namespace(spmd_result.covariance_, dataframe)
+    assert_allclose_numpy(
+        spmd_result.covariance_,
+        non_spmd_result.covariance_,
+    )
+    assert_allclose_numpy(
+        spmd_result.location_,
+        non_spmd_result.location_,
+    )
 
 
 @pytest.mark.skipif(
@@ -134,8 +141,15 @@ def test_incremental_covariance_partial_fit_spmd_gold(
 
     inccov.fit(dpt_data)
 
-    assert_allclose(inccov_spmd.covariance_, inccov.covariance_)
-    assert_allclose(inccov_spmd.location_, inccov.location_)
+    _assert_in_namespace(inccov_spmd.covariance_, dataframe)
+    assert_allclose_numpy(
+        inccov_spmd.covariance_,
+        inccov.covariance_,
+    )
+    assert_allclose_numpy(
+        inccov_spmd.location_,
+        inccov.location_,
+    )
 
 
 @pytest.mark.skipif(
@@ -190,9 +204,5 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
 
     tol = 1e-7
 
-    assert_allclose(
-        _as_numpy(inccov_spmd.covariance_), _as_numpy(inccov.covariance_), atol=tol
-    )
-    assert_allclose(
-        _as_numpy(inccov_spmd.location_), _as_numpy(inccov.location_), atol=tol
-    )
+    assert_allclose_numpy(inccov_spmd.covariance_, inccov.covariance_, atol=tol)
+    assert_allclose_numpy(inccov_spmd.location_, inccov.location_, atol=tol)
