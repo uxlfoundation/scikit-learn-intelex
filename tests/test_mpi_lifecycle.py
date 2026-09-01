@@ -22,10 +22,11 @@ transceiver must adopt the existing MPI, and ``daalfini`` must never call
 ``MPI_Finalize`` on something it did not initialize. The import order below is
 therefore load-bearing and not merely stylistic.
 
-The mirror case - daal4py itself calling ``MPI_Init_thread`` - cannot be a
-pytest module, because it requires that nothing has touched MPI beforehand and
-MPI cannot be reinitialized after ``MPI_Finalize``, so the whole lifecycle has
-to fit in one process. It lives in ``tests/mpi_lifecycle_smoke.py``.
+The mirror case - daal4py itself calling ``MPI_Init_thread`` - cannot be a pytest
+module: it requires that nothing has touched MPI beforehand, while ``pytest-mpi``
+imports ``mpi4py`` in ``pytest_runtest_setup`` before the body of an ``mpi``-marked
+test runs. MPI also cannot be reinitialized after ``MPI_Finalize``, so that whole
+lifecycle has to fit in one process. It lives in ``tests/mpi_lifecycle_smoke.py``.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -42,6 +43,10 @@ import daal4py
 pytest.importorskip("daal4py.mpi_transceiver", exc_type=ImportError)
 
 
+# Every test here drives MPI, so each one carries the mark explicitly - a
+# module-level `pytestmark` would select and skip the same way, but would not be
+# greppable per test.
+@pytest.mark.mpi
 def test_mpi_is_externally_owned():
     """Guard the premise of this module: mpi4py, not daal4py, initialized MPI.
 
@@ -53,17 +58,68 @@ def test_mpi_is_externally_owned():
     assert not MPI.Is_finalized()
 
 
+@pytest.mark.mpi
 def test_transceiver_does_not_finalize_mpi_it_does_not_own():
     """daalfini must leave externally owned MPI usable."""
+    comm = MPI.COMM_WORLD
     daal4py.daalinit()
+    assert daal4py.num_procs() == comm.Get_size()
+    assert daal4py.my_procid() == comm.Get_rank()
     daal4py.daalfini()
 
     assert not MPI.Is_finalized()
     # Not just "not finalized" - still actually usable by its owner.
-    comm = MPI.COMM_WORLD
     assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
 
 
+@pytest.mark.mpi
+def test_externally_owned_mpi_can_recreate_transceiver():
+    """A zero-user teardown must not prevent a later lazy initialization."""
+    comm = MPI.COMM_WORLD
+
+    for _ in range(2):
+        assert daal4py.num_procs() == comm.Get_size()
+        assert daal4py.my_procid() == comm.Get_rank()
+        daal4py.daalfini()
+        assert not MPI.Is_finalized()
+        assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
+
+
+@pytest.mark.mpi
+def test_distributed_compute_works_again_after_daalfini():
+    """A second distributed computation must succeed across an intervening daalfini.
+
+    The other tests here reach the transceiver through the topology calls, which
+    is enough to cover its lifecycle but not to show that a real distributed
+    algorithm can be run twice. This drives ``.compute()`` on both sides of a
+    ``daalfini()``: because mpi4py owns MPI, that call releases only daal4py's
+    transceiver, so the second ``.compute()`` creates a new one and succeeds. On
+    the daal4py-owned path the same sequence must fail instead, which is what
+    ``tests/mpi_lifecycle_smoke.py`` asserts.
+
+    Both runs get identical input, so their R factors must agree regardless of how
+    many ranks take part. Signs are not unique in a QR factorization, hence the
+    comparison on absolute values.
+    """
+    comm = MPI.COMM_WORLD
+    rng = np.random.RandomState(seed=0)
+    data = rng.standard_normal(size=(16, 4))
+
+    first = daal4py.qr(distributed=True).compute(data)
+    daal4py.daalfini()
+    assert not MPI.Is_finalized()
+
+    second = daal4py.qr(distributed=True).compute(data)
+    daal4py.daalfini()
+
+    np.testing.assert_allclose(
+        np.abs(first.matrixR), np.abs(second.matrixR), rtol=0, atol=1e-10
+    )
+    assert not MPI.Is_finalized()
+    assert comm.allreduce(1, op=MPI.SUM) == comm.Get_size()
+
+
+@pytest.mark.mpi
 def test_external_mpi_survives_repeated_transceiver_lifecycle():
     """daalfini must release daal4py users, not MPI owned by mpi4py."""
     comm = MPI.COMM_WORLD
@@ -87,6 +143,7 @@ def test_external_mpi_survives_repeated_transceiver_lifecycle():
     assert not MPI.Is_finalized()
 
 
+@pytest.mark.mpi
 def test_lazy_init_does_not_invert_gil_and_lifecycle_mutex():
     """A GIL-holding num_procs waiter must not block distributed lazy init."""
     comm = MPI.COMM_WORLD

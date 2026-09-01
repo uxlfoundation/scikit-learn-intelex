@@ -19,7 +19,7 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 #include "oneapi/dal/table/common.hpp"
-#include "oneapi/dal/table/detail/homogen_utils.hpp"
+#include "oneapi/dal/table/row_accessor.hpp"
 #include "oneapi/dal/train.hpp"
 #include "oneapi/dal/infer.hpp"
 #include "oneapi/dal/detail/policy.hpp"
@@ -212,6 +212,23 @@ dal::homogen_table create_full_table(const data_parallel_policy& ctx,
 }
 #endif
 
+// Table data must always be read through an accessor. Dereferencing the
+// table's pointer directly is undefined behavior when it is device USM,
+// which is the case whenever the fitted attribute came from a framework
+// that allocates on device (e.g. a torch xpu tensor).
+template <typename float_t>
+float_t read_first_element(const host_policy& ctx, const dal::table& tbl) {
+    return dal::row_accessor<const float_t>{ tbl }.pull({ 0, 1 })[0];
+}
+
+#ifdef ONEDAL_DATA_PARALLEL
+template <typename float_t>
+float_t read_first_element(const data_parallel_policy& ctx, const dal::table& tbl) {
+    auto queue = ctx.get_queue();
+    return dal::row_accessor<const float_t>{ tbl }.pull(queue, { 0, 1 }, sycl::usm::alloc::host)[0];
+}
+#endif
+
 ////////////////////////////// train_ops.hpp //////////////////////////////
 namespace dummy {
 namespace detail {
@@ -270,33 +287,10 @@ struct infer_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
         auto col_c = input.constant.get_column_count();
-        assert(input.constant.get_kind() == dal::homogen_table::kind());
         result_t result;
-        const byte_t* ptr =
-            dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
-                .get_data();
-
-        float_t inp;
-        // only switch those types which can be converted from python to dal tables
-        switch (input.constant.get_metadata().get_data_type(0)) {
-            case dal::data_type::float32: {
-                inp = static_cast<float_t>(*reinterpret_cast<const float*>(ptr));
-                break;
-            }
-            case dal::data_type::float64: {
-                inp = static_cast<float_t>(*reinterpret_cast<const double*>(ptr));
-                break;
-            }
-            case dal::data_type::int32: {
-                inp = static_cast<float_t>(*reinterpret_cast<const std::int32_t*>(ptr));
-                break;
-            }
-            case dal::data_type::int64: {
-                inp = static_cast<float_t>(*reinterpret_cast<const std::int64_t*>(ptr));
-                break;
-                default: throw std::runtime_error("incompatible input type");
-            }
-        }
+        // The accessor converts from the table's own data type, so no dispatch
+        // over 'get_metadata().get_data_type(0)' is needed here.
+        const float_t inp = read_first_element<float_t>(ctx, input.constant);
         result.set_data(create_full_table<float_t>(ctx, row_c, col_c, inp));
         return result;
     }

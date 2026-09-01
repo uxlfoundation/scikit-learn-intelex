@@ -50,6 +50,16 @@ using pyobject_ptr = std::unique_ptr<PyObject, pyobject_deleter>;
     throw std::runtime_error(message);
 }
 
+// Import the transceiver module and adopt the instance it exports.
+//
+// The caller must hold the GIL: everything here is Python C API. get_transceiver()
+// below is the only caller and takes it before calling in.
+//
+// D4P_TRANSCEIVER names the module to import, defaulting to the MPI one built with
+// daal4py. It is a hook for swapping in an out-of-tree communication backend -
+// anything that exports a `transceiver` attribute holding the address of a
+// std::shared_ptr<transceiver_iface> - without rebuilding daal4py. Nothing in this
+// repository sets it; it is honored here so that such a build keeps working.
 std::shared_ptr<transceiver> create_transceiver()
 {
     const char * modname = std::getenv("D4P_TRANSCEIVER");
