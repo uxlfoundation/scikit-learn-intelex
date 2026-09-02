@@ -16,11 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -38,7 +39,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_logistic_spmd_gold(dataframe, queue):
@@ -91,8 +92,17 @@ def test_logistic_spmd_gold(dataframe, queue):
         dpt_X_train, dpt_y_train
     )
 
-    assert_allclose(spmd_model.coef_, batch_model.coef_, rtol=1e-2)
-    assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=1e-2)
+    _assert_in_namespace(spmd_model.coef_, dataframe)
+    assert_allclose_numpy(
+        spmd_model.coef_,
+        batch_model.coef_,
+        rtol=1e-2,
+    )
+    assert_allclose_numpy(
+        spmd_model.intercept_,
+        batch_model.intercept_,
+        rtol=1e-2,
+    )
 
     # Ensure predictions of batch algo match spmd
     spmd_result = spmd_model.predict(local_dpt_X_test)
@@ -112,7 +122,7 @@ def test_logistic_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("tol", [1e-2, 1e-4])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
@@ -154,12 +164,10 @@ def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue
 
     # TODO: Logistic Regression coefficients do not align
     tol = 1e-2
-    assert_allclose(
-        _as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_), rtol=tol, atol=tol
-    )
-    assert_allclose(
-        _as_numpy(spmd_model.intercept_),
-        _as_numpy(batch_model.intercept_),
+    assert_allclose_numpy(spmd_model.coef_, batch_model.coef_, rtol=tol, atol=tol)
+    assert_allclose_numpy(
+        spmd_model.intercept_,
+        batch_model.intercept_,
         rtol=tol,
         atol=tol,
     )

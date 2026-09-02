@@ -16,12 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -38,7 +38,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -91,7 +91,8 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(
+        _assert_in_namespace(getattr(incbs_spmd, attr), dataframe)
+        assert_allclose_numpy(
             getattr(incbs_spmd, attr),
             getattr(incbs, attr),
             err_msg=f"Result for {option} is incorrect",
@@ -104,7 +105,7 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -165,7 +166,8 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(
+        _assert_in_namespace(getattr(incbs_spmd, attr), dataframe)
+        assert_allclose_numpy(
             getattr(incbs_spmd, attr),
             getattr(incbs, attr),
             err_msg=f"Result for {option} is incorrect",
@@ -178,7 +180,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -238,7 +240,11 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 
     incbs.fit(dpt_data, sample_weight=dpt_weights if weighted else None)
     attr = option + "_"
-    assert_allclose(getattr(incbs_spmd, attr), getattr(incbs, attr))
+    _assert_in_namespace(getattr(incbs_spmd, attr), dataframe)
+    assert_allclose_numpy(
+        getattr(incbs_spmd, attr),
+        getattr(incbs, attr),
+    )
 
 
 @pytest.mark.skipif(
@@ -247,7 +253,7 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -311,9 +317,9 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(
-            _as_numpy(getattr(incbs_spmd, attr)),
-            _as_numpy(getattr(incbs, attr)),
+        assert_allclose_numpy(
+            getattr(incbs_spmd, attr),
+            getattr(incbs, attr),
             atol=tol,
             err_msg=f"Result for {option} is incorrect",
         )

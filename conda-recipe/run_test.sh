@@ -99,6 +99,13 @@ if [[ ! $NO_DIST ]]; then
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
         pytest ${PYTEST_CONFIG} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
     return_code=$(($return_code + $?))
+    mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
+        pytest --with-mpi ${PYTEST_CONFIG} -s "${sklex_root}/tests/test_mpi_lifecycle.py" $@ $(generate_pytest_args mpi_lifecycle)
+    return_code=$(($return_code + $?))
+    # Run directly rather than through the helper: this covers the daal4py-owned
+    # MPI path, and the helper imports mpi4py, which would take that ownership away.
+    mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/mpi_lifecycle_smoke.py"
+    return_code=$(($return_code + $?))
 fi
 
 if [[ "$*" == *"--json-report"* ]] && ! [ -f .pytest_reports/legacy_report.json ]; then

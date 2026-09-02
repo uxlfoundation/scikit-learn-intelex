@@ -30,17 +30,11 @@ from daal4py.sklearn._utils import (
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
-    dpnp_available,
     get_dataframes_and_queues,
-    torch_available,
-    torch_xpu_available,
+    host_df_modules,
+    mixed_device_params,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
-
-if dpnp_available:
-    import dpnp
-if torch_available:
-    import torch
 
 hparam_values = [
     (None, None, None, None),
@@ -90,7 +84,8 @@ def test_sklearnex_import_rf_classifier(
         hyperparameters.min_number_of_rows_for_vect_seq_compute = rows
         hyperparameters.scale_factor_for_vect_parallel_compute = scale
     assert "sklearnex" in rf.__module__
-    assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    assert_allclose([1], _as_numpy(rf.predict(X_test)))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -104,7 +99,8 @@ def test_sklearnex_import_rf_regression(dataframe, queue):
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     rf = RandomForestRegressor(max_depth=2, random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    pred = _as_numpy(rf.predict([[0, 0, 0, 0]]))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(rf.predict(X_test))
 
     # Check that the prediction is within a reasonable range.
     # 'y' should be in the neighborhood of zero for x=0.
@@ -136,7 +132,8 @@ def test_sklearnex_import_et_classifier(dataframe, queue):
     # defaults to seed=777, although it is set to 0
     rf = ExtraTreesClassifier(max_depth=2, random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    assert_allclose([1], _as_numpy(rf.predict(X_test)))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -152,15 +149,8 @@ def test_sklearnex_import_et_regression(dataframe, queue):
     # defaults to seed=777, although it is set to 0
     rf = ExtraTreesRegressor(random_state=0).fit(X, y)
     assert "sklearnex" in rf.__module__
-    pred = _as_numpy(
-        rf.predict(
-            [
-                [
-                    0,
-                ]
-            ]
-        )
-    )
+    X_test = _convert_to_dataframe([[0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(rf.predict(X_test))
 
     # Check that the prediction is within a reasonable range.
     # 'y' should be in the neighborhood of zero for x=0.
@@ -290,15 +280,7 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 @pytest.mark.parametrize(
     "estimator_class",
@@ -324,11 +306,11 @@ def test_rf_mixed_devices(
         y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         if is_regressor(model):
-            y = pd.Series(y)
+            y = y_xp.Series(y)
         else:
-            y = pd.Series(np.array(["a", "b"])[y])
+            y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
@@ -337,7 +319,7 @@ def test_rf_mixed_devices(
     if is_regressor(model):
         assert pred.__class__ == X.__class__
     else:
-        if y_xp is pd:
+        if y_xp in host_df_modules:
             assert isinstance(pred, np.ndarray)
         else:
             assert pred.__class__ == y.__class__

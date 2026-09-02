@@ -60,7 +60,8 @@ def check_preview_is_enabled() -> bool:
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues(device_filter_="cpu")
+    "dataframe,queue",
+    get_dataframes_and_queues("numpy,pandas", device_filter_="cpu"),
 )
 def test_sklearnex_multiclass_classification(dataframe, queue):
     from sklearnex.linear_model import LogisticRegression
@@ -580,7 +581,10 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
 
     model = LogisticRegression(solver="newton-cg").fit(X, y)
     X_problem = 1e10 * _as_numpy(model.coef_).reshape((1, -1))
-    X_problem = np.vstack([X_problem, -X_problem])
+    # predict input must share fit's namespace/device when array_api_dispatch is on
+    X_problem = _convert_to_dataframe(
+        np.vstack([X_problem, -X_problem]), sycl_queue=queue, target_df=dataframe
+    )
 
     pred_log_proba = model.predict_log_proba(X_problem)
     pred_log_proba = _as_numpy(pred_log_proba)
@@ -801,7 +805,8 @@ def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_
     ).fit(X_np, y_np)
     proba_sklearn = model_sklearn.predict_proba(X_np)
     pred_sklearn = model_sklearn.predict(X_np)
-    np.testing.assert_allclose(proba, proba_sklearn)
+    # oneDAL GPU vs sklearn CPU compute differ within float tolerance.
+    np.testing.assert_allclose(proba, proba_sklearn, rtol=1e-5, atol=1e-5)
     np.testing.assert_array_equal(pred, pred_sklearn)
 
 

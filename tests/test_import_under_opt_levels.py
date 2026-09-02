@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2014 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 
-from . import ensemble, linear_model, manifold, metrics, model_selection, neighbors, utils
+import os
+import subprocess
+import sys
 
-__all__ = [
-    "ensemble",
-    "linear_model",
-    "manifold",
-    "metrics",
-    "model_selection",
-    "neighbors",
-    "utils",
-]
+import pytest
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+@pytest.mark.parametrize("module", ["daal4py", "onedal", "sklearnex"])
+def test_import_under_different_opt_levels(level, module):
+    subprocess.run(
+        [sys.executable, "-c", f"import {module}"],
+        check=True,
+        env=os.environ | {"PYTHONOPTIMIZE": str(level)},
+    )
