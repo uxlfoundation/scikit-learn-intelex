@@ -494,6 +494,13 @@ static PyObject *convert_to_py_from_csr_impl(const detail::csr_table &table) {
 
 // dal::csr_table class is valid
 // zero- and one-based indeices are supported
+// Note: this creates deep copies of all the data arrays in the CSR matrix,
+// with both the resulting NumPy arrays and the oneDAL table being responsible
+// for freeing their own data. It is purposefully done this way instead of
+// creating NumPy arrays out of raw data pointers, because the resulting NumPy
+// arrays might outlive the oneDAL table. If a better approach is found in the
+// future, it would be better to have shared pointers instead, like it is done
+// for dense oneDAL tables.
 template <int NpType, typename T>
 static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     PyObject *result = PyTuple_New(3);
@@ -525,7 +532,8 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     }
 
     const T *data = table.get_data<T>();
-    auto data_array = dal::array<T>::wrap(data, non_zero_count);
+    dal::array<T> data_array = dal::array<T>::empty(non_zero_count);
+    std::copy(data, data + non_zero_count, data_array.get_mutable_data());
 
     PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
     PyTuple_SetItem(result, 0, py_data);
