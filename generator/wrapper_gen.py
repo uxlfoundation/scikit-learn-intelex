@@ -67,7 +67,6 @@ cython_header = """
 # Import the Python-level symbols of numpy
 import numpy as np
 
-import cython
 import sys
 from threading import RLock
 
@@ -559,19 +558,12 @@ cdef class {{flatname}}:
 {% endif %}
 {% endfor %}
 
-{% if free_threading %}
-    # Guards the NULL -> set transition of c_ptr. Readers need no
-    # synchronization because c_ptr is only ever written once.
-    @cython.critical_section
-{% endif %}
     def __setstate__(self, state):
         if not isinstance(state, bytes):
            raise ValueError("Invalid state .....")
-        # c_ptr is write-once: readers of this object dereference it without
-        # synchronization, so replacing it here would be a use-after-free for
-        # any thread already inside a property getter. Un-pickling always
-        # targets a freshly allocated object, so this only rejects reuse of an
-        # already-populated one.
+        # This object owns c_ptr and deletes it in __dealloc__, so overwriting a
+        # pointer that is already set would leak it. Un-pickling always targets a
+        # freshly allocated object, so this only rejects reuse of a populated one.
         if self.c_ptr != NULL:
            raise ValueError(
                "Cannot unpickle into an already-initialized object."
@@ -985,10 +977,6 @@ private:
 
     typename iomb_type::result_type * finalize()
     {
-        // Detach before waiting for the native mutex. The mutex is destroyed
-        // first, so ThreadAllow reattaches only after the protected state is free.
-        ThreadAllow allow_threads;
-        std::lock_guard<std::recursive_mutex> lock(_mutex);
 {% if distributed.name %}
         if({{distributed.arg_member}}) throw std::invalid_argument(
             "finalize() not supported in distributed mode"

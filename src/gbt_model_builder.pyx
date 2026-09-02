@@ -58,9 +58,6 @@ cdef class gbt_classification_model_builder:
     def __dealloc__(self):
         del self.c_ptr
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def create_tree(self, size_t n_nodes, size_t class_label):
         '''
         Create certain tree in the gradient boosted trees classification model for certain class
@@ -71,9 +68,6 @@ cdef class gbt_classification_model_builder:
         '''
         return self.c_ptr.createTree(n_nodes, class_label)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def add_leaf(self, c_gbt_clf_tree_id tree_id, double response, double cover, c_gbt_clf_node_id parent_id=c_gbt_clf_no_parent, size_t position=0):
         '''
         Create Leaf node and add it to certain tree
@@ -87,9 +81,6 @@ cdef class gbt_classification_model_builder:
         '''
         return clfAddLeafNodeWrapper(self.c_ptr, tree_id, parent_id, position, response, cover)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def add_split(self, c_gbt_clf_tree_id tree_id, size_t feature_index, double feature_value, int default_left, double cover, c_gbt_clf_node_id parent_id=c_gbt_clf_no_parent, size_t position=0):
         '''
         Create Split node and add it to certain tree.
@@ -105,9 +96,6 @@ cdef class gbt_classification_model_builder:
         '''
         return clfAddSplitNodeWrapper(self.c_ptr, tree_id, parent_id, position, feature_index, feature_value, default_left, cover)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def model(self, base_score):
         '''
         Get built model
@@ -132,9 +120,6 @@ cdef class gbt_regression_model_builder:
     def __dealloc__(self):
         del self.c_ptr
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def create_tree(self, size_t n_nodes):
         '''
         Create certain tree in the gradient boosted trees regression model
@@ -144,9 +129,6 @@ cdef class gbt_regression_model_builder:
         '''
         return self.c_ptr.createTree(n_nodes)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def add_leaf(self, c_gbt_reg_tree_id tree_id, double response, double cover, c_gbt_reg_node_id parent_id=c_gbt_reg_no_parent, size_t position=0):
         '''
         Create Leaf node and add it to certain tree
@@ -160,9 +142,6 @@ cdef class gbt_regression_model_builder:
         '''
         return regAddLeafNodeWrapper(self.c_ptr, tree_id, parent_id, position, response, cover)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def add_split(self, c_gbt_reg_tree_id tree_id, size_t feature_index, double feature_value, int default_left, double cover, c_gbt_reg_node_id parent_id=c_gbt_reg_no_parent, size_t position=0):
         '''
         Create Split node and add it to certain tree.
@@ -178,9 +157,6 @@ cdef class gbt_regression_model_builder:
         '''
         return regAddSplitNodeWrapper(self.c_ptr, tree_id, parent_id, position, feature_index, feature_value, default_left, cover)
 
-{% if free_threading %}
-    @cython.critical_section
-{% endif %}
     def model(self, base_score):
         '''
         Get built model
