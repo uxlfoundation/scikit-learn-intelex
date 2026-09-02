@@ -92,6 +92,92 @@ intersphinx_mapping = {
     "skops": ("https://skops.readthedocs.io/en/stable/", None),
 }
 
+# Intersphinx has no timeout by default, so an unresponsive host stalls the
+# build until the connection gives up on its own (observed at over two minutes).
+intersphinx_timeout = 30
+
+suppress_warnings = []
+
+
+def _prefetch_inventories(mapping, timeout=intersphinx_timeout):
+    """Download each ``objects.inv`` up front and point intersphinx at the copy.
+
+    ``build-doc.sh`` builds with ``-W``, so any warning fails the build, while
+    intersphinx fetches an inventory per entry above over the network. When a
+    host is unreachable it warns once for the inventory and once per
+    cross-reference into it, so an outage at any single third-party
+    documentation site fails the docs build on every branch.
+
+    Fetching here rather than probing for reachability keeps the decision and
+    the download in the same request: a host that flaps between responses
+    cannot pass a probe and then fail the fetch that intersphinx does later.
+    Inventories that cannot be downloaded are dropped from the mapping, and
+    only then is the cross-reference check relaxed, so a build with every host
+    up still validates every reference. Sphinx emits the unreachable-inventory
+    warning without a type (``sphinx/ext/intersphinx/_load.py``), which is why
+    it cannot simply be listed in ``suppress_warnings``.
+    """
+    import atexit
+    import concurrent.futures
+    import posixpath
+    import shutil
+    import tempfile
+
+    # Sphinx's own wrapper, so this request carries the same user agent and TLS
+    # settings as the one it replaces, and a proxy or certificate bundle that
+    # intersphinx would have honoured is not mistaken for an unreachable host.
+    from sphinx.util import requests
+
+    tls_info = (globals().get("tls_verify", True), globals().get("tls_cacerts"))
+
+    cache = tempfile.mkdtemp(prefix="sklearnex-intersphinx-")
+    atexit.register(shutil.rmtree, cache, ignore_errors=True)
+
+    def fetch(item):
+        name, (target, inventory) = item
+        url = inventory or posixpath.join(target, "objects.inv")
+        if "://" not in url:
+            return name, inventory, None  # already a local inventory
+        try:
+            with requests.get(url, timeout=timeout, _tls_info=tls_info) as response:
+                response.raise_for_status()
+                content = response.content
+        except Exception as error:
+            # Anything that stops the download means there is no inventory to
+            # use. Parsing stays with intersphinx, so a corrupt inventory is
+            # still reported as a build warning rather than silently ignored.
+            return name, None, error
+        path = os.path.join(cache, f"{name}.inv")
+        with open(path, "wb") as inventory_file:
+            inventory_file.write(content)
+        return name, path, None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(fetch, list(mapping.items())))
+
+    failures = {}
+    for name, path, error in results:
+        if error is None:
+            mapping[name] = (mapping[name][0], path)
+        else:
+            failures[name] = error
+
+    if not failures:
+        return
+
+    for name, error in sorted(failures.items()):
+        print(
+            f"conf.py: intersphinx inventory for {name!r} could not be "
+            f"downloaded ({error.__class__.__name__}: {error}); references "
+            "into it will render unlinked and will not be validated",
+            file=sys.stderr,
+        )
+        del mapping[name]
+    suppress_warnings.append("intersphinx.external")
+
+
+_prefetch_inventories(intersphinx_mapping)
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
