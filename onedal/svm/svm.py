@@ -109,8 +109,13 @@ class BaseSVM(ABC):
         result = self.train(params, *data_t)
 
         if self._sparse:
+            # Note: the coefficients from oneDAL come as dense, but
+            # scikit-learn stores them as sparse, hence the conversion
             self.dual_coef_ = _csr_array(from_table(result.coeffs).T)
-            self.support_vectors_ = _csr_array(from_table(result.support_vectors))
+            self.support_vectors_ = _csr_array(
+                from_table(result.support_vectors),
+                shape=(result.support_vectors.shape[0], result.support_vectors.shape[1]),
+            )
         else:
             self.dual_coef_ = from_table(result.coeffs, like=X).T
             self.support_vectors_ = from_table(result.support_vectors, like=X)
