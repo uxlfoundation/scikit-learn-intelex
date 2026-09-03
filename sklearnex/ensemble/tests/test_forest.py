@@ -142,7 +142,7 @@ def test_sklearnex_import_et_regression(dataframe, queue):
         pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import ExtraTreesRegressor
 
-    X, y = make_regression(n_features=1, random_state=0, shuffle=False)
+    X, y = make_regression(n_features=2, random_state=0, shuffle=False)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     # For the 2023.2 release, random_state is not supported
