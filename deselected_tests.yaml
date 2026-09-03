@@ -66,6 +66,11 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-CPU_DEVICE-float64-estimator0] >=1.8,<1.9
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-device1-float32-estimator0] >=1.8,<1.9
 
+  # _pairwise_callable() allocates its output without device=, so the n_jobs>1 path
+  # writes a default-device array into an on-device matrix. array-api-strict >=2.6
+  # rejects that cross-device __setitem__. Fixed upstream by sklearn #32460 (1.9 only).
+  - metrics/tests/test_pairwise.py::test_pairwise_parallel_array_api[pairwise_kernels-callable_rbf_kernel-kwds3-array_api_strict-device1-float32] >=1.8,<1.9
+
   # array_api_strict arrays are readonly; to_table -> __dlpack__ raises
   # "BufferError: Cannot export readonly array ... readonly is unsupported by DLPack
   # TODO: remove once dlpack data conversion issues are resolved for numpy <2.1
