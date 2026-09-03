@@ -443,6 +443,8 @@ static PyObject *convert_to_numpy_impl(
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
     PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule<T>);
     if (!cap) {
+        dal::array<T> *stored_array = static_cast<dal::array<T> *>(PyCapsule_GetPointer(cap, NULL));
+        delete stored_array;
         Py_DECREF(obj);
         throw std::runtime_error("Python capsule creation failed");
     }
