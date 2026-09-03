@@ -442,6 +442,10 @@ static PyObject *convert_to_numpy_impl(
 
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
     PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule<T>);
+    if (!cap) {
+        Py_DECREF(obj);
+        throw std::runtime_error("Python capsule creation failed");
+    }
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
     return obj;
 }
@@ -535,18 +539,30 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     const T *data = table.get_data<T>();
     auto data_array = dal::array<T>::wrap(data, non_zero_count);
 
+    // These put the Python objects into temporary pybind11 containers
+    // in order to ensure that if any allocation fails or the conversion
+    // throws, the intermediate objects would get destructed afterwards.
     PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
+    py::object py_data_holder = py::reinterpret_steal<py::object>(py_data);
 
     PyObject *py_col =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(column_indices_zero_based_array,
                                                          non_zero_count);
+    py::object py_col_holder = py::reinterpret_steal<py::object>(py_col);
+
     PyObject *py_row =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(row_offsets_zero_based_array,
                                                          rows_indices_count);
+    py::object py_row_holder = py::reinterpret_steal<py::object>(py_row);
     PyObject *result = PyTuple_New(3);
+    if (!result)
+        throw std::bad_alloc();
     PyTuple_SetItem(result, 0, py_data);
+    py_data_holder.release();
     PyTuple_SetItem(result, 1, py_col);
+    py_col_holder.release();
     PyTuple_SetItem(result, 2, py_row);
+    py_row_holder.release();
     return result;
 }
 
