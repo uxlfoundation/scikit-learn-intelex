@@ -84,7 +84,7 @@ def _load_all_models(with_sklearnex=True, estimator=True):
     already_patched = any(already_patched_map.values())
     try:
         if with_sklearnex:
-            patch_sklearn(TEST_PREVIEW_ESTIMATORS)
+            patch_sklearn(preview=TEST_PREVIEW_ESTIMATORS)
         elif already_patched:
             unpatch_sklearn()
 
