@@ -58,7 +58,7 @@ from sklearnex.neighbors import (
 )
 from sklearnex.svm import SVC, NuSVC
 
-TEST_PREVIEW_ESTIMATORS: bool = os.getenv("SKLEARNEX_TEST_PREVIEW_ESTIMATORS", False)
+TEST_PREVIEW_ESTIMATORS: bool = "SKLEARNEX_TEST_PREVIEW_ESTIMATORS" in os.environ
 
 
 def _load_all_models(with_sklearnex=True, estimator=True):
