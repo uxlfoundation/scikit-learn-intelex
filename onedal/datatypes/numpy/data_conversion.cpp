@@ -423,9 +423,9 @@ static PyObject *convert_to_numpy_impl(
     const int size_dims = column_count == 0 ? 1 : 2;
     npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
 
-    auto host_array = transfer_to_host(array);
+    dal::array<T> host_array = transfer_to_host(array);
     host_array.need_mutable_data();
-    auto *bytes = host_array.get_mutable_data();
+    T *bytes = host_array.get_mutable_data();
     // assumes that the array has writeable data (not clear if that is the case in oneDAL)
     int flags = layout == dal::data_layout::row_major ? NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
     PyObject *obj = PyArray_New(&PyArray_Type,
@@ -539,7 +539,7 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     }
 
     const T *data = table.get_data<T>();
-    auto data_array = dal::array<T>::wrap(data, non_zero_count);
+    dal::array<T> data_array = dal::array<T>::wrap(data, non_zero_count);
 
     // These put the Python objects into temporary pybind11 containers
     // in order to ensure that if any allocation fails or the conversion
