@@ -40,8 +40,6 @@ import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
-FREE_THREADING_BUILD = bool(get_config_vars().get("Py_GIL_DISABLED"))
-
 
 def check_for_build_arg(arg: str) -> bool:
     if arg in sys.argv:
@@ -54,6 +52,21 @@ NO_ABS_RPATH: bool = bool(os.environ.get("SKLEARNEX_NO_ABS_RPATH"))
 USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath") and not NO_ABS_RPATH
 DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
+# Which Python ABI the extension modules are built for. It defaults to the
+# interpreter driving the build, but is a build parameter in its own right so
+# that the free-threaded build path - the generator mode, the CMake
+# find_package(Python) branch and the pybind11 2.13 requirement it brings - can
+# be exercised from a regular interpreter as well. Note that the C++ side reads
+# Py_GIL_DISABLED from the Python headers, so forcing this on under a
+# GIL-enabled interpreter selects the free-threaded build configuration, not a
+# free-threaded ABI.
+FORCE_FREE_THREADING: bool = check_for_build_arg("--free-threading") or bool(
+    os.environ.get("SKLEARNEX_FREE_THREADING")
+)
+NO_FREE_THREADING: bool = bool(os.environ.get("SKLEARNEX_NO_FREE_THREADING"))
+FREE_THREADING_BUILD: bool = FORCE_FREE_THREADING or (
+    bool(get_config_vars().get("Py_GIL_DISABLED")) and not NO_FREE_THREADING
+)
 
 IS_WIN = False
 IS_MAC = False
@@ -455,6 +468,7 @@ class onedal_build:
             is_lin=IS_LIN,
             debug_build=DEBUG_BUILD,
             using_lld=USING_LLD,
+            free_threading=FREE_THREADING_BUILD,
         )
         build_onedal("host")
         if dpcpp:

@@ -174,6 +174,7 @@ def custom_build_cmake_clib(
     is_lin: bool = False,
     debug_build: bool = False,
     using_lld: bool = False,
+    free_threading: bool = False,
 ):
     import pybind11
 
@@ -244,7 +245,6 @@ def custom_build_cmake_clib(
     if cxx:
         env_build["CXX"] = cxx
     build_type = "Debug" if debug_build else "Release"
-    free_threading = bool(get_config_var("Py_GIL_DISABLED"))
 
     cmake_args = ["cmake"]
     if cmake_generator:
