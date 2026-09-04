@@ -136,6 +136,8 @@ cdef extern from "daal4py.h":
     cdef object make_nda(list_NumericTablePtr * nt_ptr) except +
     cdef object make_nda(dict_NumericTablePtr * nt_ptr, void *) except +
     cdef NumericTablePtr make_nt(PyObject * nda) except +
+    cdef object make_nt_capsule_for_testing(PyObject * nda, bool legacy) except +
+    cdef object roundtrip_nt_for_testing(PyObject * nda) except +
     cdef list_NumericTablePtr make_datacoll(PyObject * nda) except +
     cdef dict_NumericTablePtr make_dnt(PyObject * nda, void *) except +
 
@@ -166,7 +168,7 @@ cdef extern from "daal4py_cpp.h":
 
 def daalinit(nthreads: int = -1) -> None:
     '''
-    Set number of threads for daal4py
+    Set number of threads for daal4py.
 
     This modifies the number of threads configured for daal4py, which is a
     global setting - meaning: it is applied to all subsequent calls to daal4py
@@ -177,25 +179,28 @@ def daalinit(nthreads: int = -1) -> None:
 
     :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
 
+    .. note:: This function configures thread settings only. It does not
+              initialize MPI or distributed mode, the transceiver is
+              initialized lazily by the first distributed operation.
+
     :rtype: None
     '''
     c_daalinit(nthreads)
 
 def daalfini() -> None:
     '''
-    Finalize MPI environment
+    Release daal4py distributed resources.
 
-    When using distributed mode without ``mpi4py``, this function must be called after
-    the distributed computation calls before accessing the result object from the algorithm
-    that was executed in distributed mode. It has no effect when the python process is not
-    run through MPI (used for distributed mode).
-
-    This is a wrapper over ``MPI_Finalize``. It does not need to be called if ``mpi4py``
-    was imported before, as ``mpi4py`` calls this function upon process exit.
-
-    Note that software ``mpi4py`` calls this function automatically if it is imported, but
-    it only does so upon process exit, so this still needs to be called before accessing
-    the result objects in the process/rank that will use them.
+    Call this after the last distributed computation and before accessing its
+    result objects. It releases daal4py's distributed transceiver. If daal4py
+    initialized MPI, releasing the last transceiver finalizes MPI and another
+    distributed operation cannot be started in the same process. If MPI was
+    initialized by another library, for example |mpi4py|, it remains owned by
+    that library, and later distributed operations can create a new transceiver.
+    There is no function that creates one: as before, the next call to a
+    ``.compute()`` of an algorithm constructed with ``distributed=True`` creates
+    it lazily.
+    This function is a no-op when no daal4py distributed transceiver is active.
 
     :rtype: None
     '''
@@ -256,6 +261,14 @@ def enable_thread_pinning(enabled: bool = True) -> None:
     :rtype: None
     '''
     c_enable_thread_pinning(enabled)
+
+def _make_nt_capsule_for_testing(obj, legacy=False):
+    return make_nt_capsule_for_testing(<PyObject*>obj, legacy)
+
+
+def _roundtrip_nt_for_testing(obj):
+    return roundtrip_nt_for_testing(<PyObject*>obj)
+
 
 def get_data(x):
     if isinstance(x, pdDataFrame):

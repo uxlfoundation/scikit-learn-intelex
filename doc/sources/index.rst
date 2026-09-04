@@ -99,7 +99,7 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 
 Benefits:
 
-* Speed up training and inference by up to 100x with equivalent mathematical accuracy.
+* An average speed up of 8.5x on training and inference with equivalent mathematical accuracy.
 * Benefit from performance improvements across different hardware configurations, including :doc:`GPUs <oneapi-gpu>` and :doc:`multi-GPU <distributed-mode>` configurations.
 * Integrate the extension into your existing |sklearn| applications without code modifications.
 * Continue to use the open-source |sklearn| API.

@@ -123,6 +123,10 @@ outputs:
         - .ci
         - setup.cfg
         - examples
+        # tests/test_build_backend.py imports the build driver and cross-checks
+        # the Windows library names against the CMake project.
+        - scripts/build_backend.py
+        - scripts/CMakeLists.txt
         - tests
       script: run_test.sh  # [linux]
       script: run_test.bat  # [win]

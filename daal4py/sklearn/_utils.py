@@ -182,6 +182,10 @@ def check_is_array_api(x: object) -> bool:
     return not isinstance(x, np.ndarray) and hasattr(x, "__dlpack__")
 
 
+def check_can_modify_docstrings() -> bool:
+    return sys.flags.optimize < 2
+
+
 class PatchingConditionsChain:
     def __init__(self, scope_name):
         self.scope_name = scope_name

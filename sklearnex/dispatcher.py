@@ -18,10 +18,18 @@
 import os
 import sys
 from functools import lru_cache
+from types import ModuleType
 from typing import Optional, Union
 
 from daal4py.sklearn._utils import daal_check_version
-from daal4py.sklearn.monkeypatch.dispatcher import PatchMap
+
+# dict key: sklearn name
+# dict value: tuple entries:
+# - module from sklearn
+# - name of class/function within module
+# - sklearnex/daal4py replacement
+# - sklearn original if any
+PatchMap = dict[str, tuple[ModuleType, str, object, Optional[object]]]
 
 
 def _is_preview_enabled() -> bool:
@@ -54,9 +62,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
 
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.linear_model as linear_model_module
         import sklearn.preprocessing as preprocessing_module
         from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
         from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
+        from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
+        from sklearn.linear_model import Lasso as Lasso_sklearn
         from sklearn.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearn
 
         # Preview classes for patching
@@ -64,6 +75,8 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             EmpiricalCovariance as EmpiricalCovariance_sklearnex,
         )
         from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
+        from .preview.linear_model import ElasticNet as ElasticNet_sklearnex
+        from .preview.linear_model import Lasso as Lasso_sklearnex
         from .preview.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearnex
 
         # Since the state of the lru_cache without preview cannot be
@@ -84,6 +97,18 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 "IncrementalPCA",
                 IncrementalPCA_sklearnex,
                 IncrementalPCA_sklearn,
+            ),
+            "sklearn.linear_model.ElasticNet": (
+                linear_model_module,
+                "ElasticNet",
+                ElasticNet_sklearnex,
+                ElasticNet_sklearn,
+            ),
+            "sklearn.linear_model.Lasso": (
+                linear_model_module,
+                "Lasso",
+                Lasso_sklearnex,
+                Lasso_sklearn,
             ),
             "sklearn.preprocessing.MaxAbsScaler": (
                 preprocessing_module,
@@ -137,8 +162,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
     from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_sklearn
     from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn_gb
-    from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
-    from sklearn.linear_model import Lasso as Lasso_sklearn
     from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
     from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
     from sklearn.linear_model import Ridge as Ridge_sklearn
@@ -172,12 +195,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from .ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearnex
     from .ensemble import RandomForestClassifier as RandomForestClassifier_sklearnex
     from .ensemble import RandomForestRegressor as RandomForestRegressor_sklearnex
-    from .linear_model import ElasticNet as ElasticNet_sklearnex
     from .linear_model import (
         IncrementalLinearRegression as IncrementalLinearRegression_sklearnex,
     )
     from .linear_model import IncrementalRidge as IncrementalRidge_sklearnex
-    from .linear_model import Lasso as Lasso_sklearnex
     from .linear_model import LinearRegression as LinearRegression_sklearnex
     from .linear_model import LogisticRegression as LogisticRegression_sklearnex
     from .linear_model import Ridge as Ridge_sklearnex
@@ -218,18 +239,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         "sklearn.svm.SVC": (svm_module, "SVC", SVC_sklearnex, SVC_sklearn),
         "sklearn.svm.NuSVR": (svm_module, "NuSVR", NuSVR_sklearnex, NuSVR_sklearn),
         "sklearn.svm.NuSVC": (svm_module, "NuSVC", NuSVC_sklearnex, NuSVC_sklearn),
-        "sklearn.linear_model.ElasticNet": (
-            linear_model_module,
-            "ElasticNet",
-            ElasticNet_sklearnex,
-            ElasticNet_sklearn,
-        ),
-        "sklearn.linear_model.Lasso": (
-            linear_model_module,
-            "Lasso",
-            Lasso_sklearnex,
-            Lasso_sklearn,
-        ),
         "sklearn.linear_model.LinearRegression": (
             linear_model_module,
             "LinearRegression",
@@ -398,6 +407,48 @@ def get_patch_names() -> list[str]:
     return list(get_patch_map().keys())
 
 
+# Comment 2026-08-17: These functions were taken from a previous daal4py
+# patching codebase, which originally had more options and arguments for
+# functions. Some calling chains might have redundant steps and could be
+# simplified further.
+def do_patch(name: str, map: PatchMap) -> None:
+    descriptor = map.get(name)
+    if descriptor is None:
+        raise ValueError("Has no patch for: " + name)
+    which, what, replacer, _ = descriptor
+    setattr(which, what, replacer)
+
+
+def do_unpatch(name: str, map: PatchMap) -> None:
+    descriptor = map.get(name)
+    if descriptor is None:
+        raise ValueError("Has no patch for: " + name)
+    which, what, _, replacer = descriptor
+    if replacer is not None:
+        setattr(which, what, replacer)
+    elif hasattr(which, what):
+        delattr(which, what)
+
+
+def enable(
+    name: Optional[str],
+    map: PatchMap,
+):
+    if name is not None:
+        do_patch(name, map=map)
+    else:
+        for key in map:
+            do_patch(key, map=map)
+
+
+def disable(name: Optional[str], map: PatchMap):
+    if name is not None:
+        do_unpatch(name, map=map)
+    else:
+        for key in map:
+            do_unpatch(key, map=map)
+
+
 def patch_sklearn(
     name: Optional[Union[str, list[str]]] = None,
     verbose: bool = True,
@@ -475,8 +526,6 @@ def patch_sklearn(
 
         patch_sklearn_global(name, verbose)
 
-    from daal4py.sklearn import patch_sklearn as patch_sklearn_orig
-
     patch_map: PatchMap = get_patch_map()
 
     if name is not None:
@@ -488,14 +537,12 @@ def patch_sklearn(
             "sklearn.utils.parallel._funcwrapper",
         ]
         for name_mandatory in names_mandatory:
-            patch_sklearn_orig(
-                name_mandatory, verbose=False, deprecation=False, map=patch_map
-            )
+            enable(name_mandatory, map=patch_map)
     if isinstance(name, list):
         for algorithm in name:
-            patch_sklearn_orig(algorithm, verbose=False, deprecation=False, map=patch_map)
+            enable(algorithm, map=patch_map)
     else:
-        patch_sklearn_orig(name, verbose=False, deprecation=False, map=patch_map)
+        enable(name, map=patch_map)
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
@@ -530,17 +577,43 @@ def unpatch_sklearn(
         from sklearnex.glob.dispatcher import unpatch_sklearn_global
 
         unpatch_sklearn_global()
-    from daal4py.sklearn import unpatch_sklearn as unpatch_sklearn_orig
 
     patch_map: PatchMap = get_patch_map()
 
     if isinstance(name, list):
         for algorithm in name:
-            unpatch_sklearn_orig(algorithm, map=patch_map)
+            disable(algorithm, map=patch_map)
     else:
-        unpatch_sklearn_orig(name, map=patch_map)
+        disable(name, map=patch_map)
     if os.environ.get("SKLEARNEX_PREVIEW") == "enabled_via_patch_sklearn":
         os.environ.pop("SKLEARNEX_PREVIEW")
+
+
+def check_is_enabled(name: str, map: PatchMap) -> bool:
+    descriptor = map.get(name)
+    if descriptor is None:
+        return False
+    which, what, replacer, _ = descriptor
+    current = getattr(which, what, None)
+    if current is None:
+        return False
+    return current == replacer
+
+
+def check_patch_is_enabled(
+    name: Optional[str] = None, return_map: bool = False, *, map: PatchMap
+) -> Union[bool, dict[str, bool]]:
+    if name is not None:
+        return check_is_enabled(name, map=map)
+    if return_map:
+        enabled = {}
+        for key in map:
+            enabled[key] = check_is_enabled(key, map=map)
+    else:
+        enabled = True
+        for key in map:
+            enabled = enabled and check_is_enabled(key, map=map)
+    return enabled
 
 
 def sklearn_is_patched(
@@ -569,7 +642,6 @@ def sklearn_is_patched(
     Check : bool or dict[str, bool]
         The patching status of the desired estimators, either as a whole, or
         on a per-estimator basis (output type controlled by ``return_map``)."""
-    from daal4py.sklearn import sklearn_is_patched as sklearn_is_patched_orig
 
     map = get_patch_map()
 
@@ -577,15 +649,15 @@ def sklearn_is_patched(
         if return_map:
             result: dict[str, bool] = {}
             for algorithm in name:
-                result[algorithm] = sklearn_is_patched_orig(algorithm, map=map)
+                result[algorithm] = check_patch_is_enabled(algorithm, map=map)
             return result
         else:
             is_patched = True
             for algorithm in name:
-                is_patched = is_patched and sklearn_is_patched_orig(algorithm, map=map)
+                is_patched = is_patched and check_patch_is_enabled(algorithm, map=map)
             return is_patched
     else:
-        return sklearn_is_patched_orig(name, return_map=return_map, map=map)
+        return check_patch_is_enabled(name, return_map=return_map, map=map)
 
 
 def is_patched_instance(instance: object) -> bool:

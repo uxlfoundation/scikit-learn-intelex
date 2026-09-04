@@ -61,9 +61,7 @@ from sklearn.linear_model._logistic import (
 from sklearn.linear_model._logistic import (
     LogisticRegressionCV as LogisticRegressionCV_original,
 )
-from sklearn.linear_model._logistic import (
-    _check_solver,
-)
+from sklearn.linear_model._logistic import _check_solver
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
 from sklearn.utils.validation import check_is_fitted
@@ -189,13 +187,19 @@ def logistic_regression_path_d4p(
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
+
+    # sklearn 1.10 passes 'y' already label-encoded to 0..n_classes-1, while
+    # 'classes' stays the original labels, so both the positive class and the
+    # encoder have to be expressed in encoded space rather than label space.
+    y_classes = np.arange(n_classes) if sklearn_check_version("1.10") else classes
+
     if pos_class is None and multi_class != "multinomial":
         if classes.size > 2:
             raise ValueError("To fit OvR, use the pos_class argument")
         # np.unique(y) gives labels in sorted order.
-        pos_class = classes[1]
+        pos_class = y_classes[1]
 
-    le = LabelEncoder().fit(classes)
+    le = LabelEncoder().fit(y_classes)
 
     # Note: the LBFGS solver from SciPy will always cast the input to float64
     w0_dtype = X.dtype if solver != "lbfgs" else np.float64
@@ -959,7 +963,30 @@ def logistic_regression_path_dispatcher(
     )
     if not _dal_ready:
         _patching_status.write_log()
-        if sklearn_check_version("1.8"):
+        if sklearn_check_version("1.10"):
+            # 'class_weight' is folded into 'sample_weight' by the caller.
+            return lr_path_original(
+                X,
+                y,
+                classes=classes,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+                n_threads=n_threads,
+            )
+        elif sklearn_check_version("1.8"):
             return lr_path_original(
                 X,
                 y,

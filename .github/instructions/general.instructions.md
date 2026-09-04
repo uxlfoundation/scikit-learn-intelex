@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-Extension for scikit-learn accelerates scikit-learn by 10-100X using oneDAL (varies by algorithm and data). Zero code changes required for existing sklearn applications.
+Extension for scikit-learn accelerates scikit-learn up to 100X using oneDAL (varies by algorithm and data). Zero code changes required for existing sklearn applications.
 
 **Architecture**: 4-layer system (sklearnex ⇒ {daal4py, onedal} → oneDAL C++)
 **Platforms**: Linux, Windows; CPU (x86_64, ARM), GPU (Intel via SYCL)

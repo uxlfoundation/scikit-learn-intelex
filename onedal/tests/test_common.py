@@ -15,7 +15,11 @@
 # ==============================================================================
 
 import importlib
+import importlib.util
 import os
+import shutil
+import subprocess
+import sys
 from glob import glob
 
 from onedal.tests.utils._dataframes_support import test_frameworks
@@ -69,3 +73,34 @@ def test_frameworks_intentionality():
         # If an ImportError occurs, then something is wrong.
         except ModuleNotFoundError:
             pass
+
+
+def test_relative_importing(tmp_path):
+    spec = importlib.util.find_spec("onedal")
+
+    shutil.copytree(
+        spec.submodule_search_locations[0],
+        tmp_path / "onedal_test",
+        ignore=shutil.ignore_patterns("__pycache__", "tests"),
+    )
+
+    (tmp_path / "onedal.py").write_text(
+        "import traceback\n"
+        "raise ImportError(\n"
+        "    'absolute intra-onedal import detected:\\n'\n"
+        "    + ''.join(traceback.format_stack())\n"
+        ")\n"
+    )
+
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import pkgutil, importlib, onedal_test\n"
+            "for m in pkgutil.walk_packages(onedal_test.__path__, onedal_test.__name__ + '.'):\n"
+            "    if 'onedal_py' not in m.name:\n"
+            "        importlib.import_module(m.name)\n",
+        ],
+        cwd=str(tmp_path),
+        check=True,
+    )
