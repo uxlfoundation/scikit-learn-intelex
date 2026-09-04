@@ -61,6 +61,7 @@ from onedal.utils.validation import _num_features
 from .._device_offload import dispatch, support_input_format, wrap_output_data
 from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
+from ..dispatcher import _is_preview_enabled
 from ..utils._array_api import enable_array_api
 from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
@@ -356,6 +357,8 @@ class BaseForest(oneDALEstimator, ABC):
             f"sklearn.ensemble.{class_name}.{method_name}"
         )
 
+        X = data[0]
+
         if method_name == "fit":
             patching_status = self._onedal_fit_ready(patching_status, *data)
 
@@ -365,13 +368,15 @@ class BaseForest(oneDALEstimator, ABC):
                         daal_check_version((2023, "P", 200))
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    )
+                    ),
+                    (
+                        (_num_features(X) > 1) or _is_preview_enabled(),
+                        "Single-feature trees are only available under preview mode.",
+                    ),
                 ]
             )
 
         elif method_name in self._n_jobs_supported_onedal_methods:
-            X = data[0]
-
             dal_ready = patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),

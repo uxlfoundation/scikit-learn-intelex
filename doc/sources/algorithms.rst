@@ -73,7 +73,7 @@ Classification
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
-     - Number of classes must be at least 2. Nothing will be printed if ``verbose > 0``.
+     - Number of classes must be at least 2. Nothing will be printed if ``verbose > 0``. Fitting to single-column data is only supported in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
@@ -84,7 +84,7 @@ Classification
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
-     - Number of classes must be at least 2. Nothing will be printed if ``verbose > 0``.
+     - Number of classes must be at least 2. Nothing will be printed if ``verbose > 0``. Fitting to single-column data is only supported in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
        - For ``algorithm`` == ``'kd_tree'``:
@@ -149,7 +149,7 @@ Regression
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
        - Nothing will be printed if ``verbose > 0``
-     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported. Fitting to single-column data is only supported in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -160,7 +160,7 @@ Regression
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
        - Nothing will be printed if ``verbose > 0``
-     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported. Fitting to single-column data is only supported in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      -
        - For ``algorithm`` == ``'kd_tree'``:
