@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-from .. import onedal_check_version
-from .dbscan import DBSCAN
-from .kmeans import KMeans
+from ... import onedal_check_version
+from ...common._backend import bind_spmd_backend
 
-__all__ = ["DBSCAN", "KMeans"]
-
+# gated for the same reason as the batch estimator it derives from, which
+# 'onedal.cluster' only exports with oneDAL 2026.2 and newer
 if onedal_check_version(2026, 2, 0):
-    from .hdbscan import HDBSCAN
+    from ...cluster import HDBSCAN as HDBSCAN_Batch
 
-    __all__ += ["HDBSCAN"]
-
-if onedal_check_version(2023, 2, 0):
-    from .kmeans_init import KMeansInit, kmeans_plusplus
-
-    __all__ += ["KMeansInit", "kmeans_plusplus"]
+    class HDBSCAN(HDBSCAN_Batch):
+        @bind_spmd_backend("hdbscan.clustering")
+        def compute(self, params, data_table): ...

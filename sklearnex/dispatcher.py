@@ -100,6 +100,18 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 MaxAbsScaler_sklearn,
             ),
         }
+        if daal_check_version((2026, "P", 200)):
+            import sklearn.cluster as cluster_module
+            from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
+
+            from .preview.cluster import HDBSCAN as HDBSCAN_sklearnex
+
+            preview_mapping["sklearn.cluster.HDBSCAN"] = (
+                cluster_module,
+                "HDBSCAN",
+                HDBSCAN_sklearnex,
+                HDBSCAN_sklearn,
+            )
         if daal_check_version((2024, "P", 1)):
             import sklearn.linear_model as linear_model_module
             from sklearn.linear_model import (

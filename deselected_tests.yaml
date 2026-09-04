@@ -575,6 +575,32 @@ public:
   - linear_model/tests/test_logistic.py::test_logistic_regression_path_convergence_fail
 
   # --------------------------------------------------------
+  # The following tests only fail with the preview estimators, which are the only
+  # ones patching them, so they must keep running when preview mode is disabled
+preview:
+  # HDBSCAN in oneDAL builds neither the single-linkage nor the condensed tree that
+  # scikit-learn exposes as private fitted attributes ('_single_linkage_tree_'), it
+  # only returns the resulting labels. 'dbscan_clustering' is derived from that tree,
+  # so it is unavailable after a fit that was offloaded.
+  - cluster/tests/test_hdbscan.py::test_labelling_distinct
+  - cluster/tests/test_hdbscan.py::test_dbscan_clustering
+  # Compares the labels of dense data (clustered by oneDAL) against the labels of the
+  # same data in sparse format (a fallback to scikit-learn). Both find the same
+  # clusters, but the two implementations number them differently.
+  - cluster/tests/test_hdbscan.py::test_hdbscan_sparse
+  # Matches 'centroids_' and 'medoids_' against the expected centers by position, which
+  # only holds when the clusters are numbered the way scikit-learn numbers them. oneDAL
+  # finds the same clusters but derives the numbering from its own cluster selection, so
+  # the centers come back permuted. The accuracy of the centers themselves, and the empty
+  # ones reported for an all-noise fit, are covered by
+  # 'sklearnex/preview/cluster/tests/test_hdbscan.py' instead.
+  - cluster/tests/test_hdbscan.py::test_hdbscan_centers
+  # With 'allow_single_cluster' and unstructured data, oneDAL keeps every sample in the
+  # root cluster where scikit-learn leaves the samples that fall out of it before the
+  # cluster's own birth as noise.
+  - cluster/tests/test_hdbscan.py::test_hdbscan_allow_single_cluster_with_epsilon
+
+  # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
 gpu:
   # Segfaults

@@ -83,6 +83,9 @@ Current list of preview estimators:
    * - Estimator name
      - Module
      - Is patching supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - ``sklearnex.preview.cluster``
+     - Yes
    * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - ``sklearnex.preview.covariance``
      - Yes

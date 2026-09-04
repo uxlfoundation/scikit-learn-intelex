@@ -19,6 +19,11 @@ from .dbscan import DBSCAN
 
 __all__ = ["DBSCAN"]
 
+if onedal_check_version(2026, 2, 0):
+    from .hdbscan import HDBSCAN
+
+    __all__ += ["HDBSCAN"]
+
 if onedal_check_version(2023, 2, 0):
     from .kmeans import KMeans
 
