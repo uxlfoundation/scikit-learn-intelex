@@ -17,6 +17,7 @@
 from abc import ABC, abstractmethod
 from math import sqrt
 
+import numpy as np
 from scipy import sparse as sp
 
 from daal4py.sklearn._utils import is_sparse
@@ -112,10 +113,20 @@ class BaseSVM(ABC):
             # Note: the coefficients from oneDAL come as dense, but
             # scikit-learn stores them as sparse, hence the conversion
             self.dual_coef_ = _csr_array(from_table(result.coeffs).T)
-            self.support_vectors_ = _csr_array(
-                from_table(result.support_vectors),
-                shape=(result.support_vectors.shape[0], result.support_vectors.shape[1]),
-            )
+            if result.support_vectors.shape[0]:
+                self.support_vectors_ = _csr_array(
+                    from_table(result.support_vectors),
+                    shape=(
+                        result.support_vectors.shape[0],
+                        result.support_vectors.shape[1],
+                    ),
+                )
+            else:
+                # In this case, oneDAL might either error out or output a
+                # matrix with shape (0,0). If this changes in the future
+                # once empty support vectors are handled better, this
+                # condition can be removed
+                self.support_vectors_ = _csr_array(np.empty((0, X.shape[1])))
         else:
             self.dual_coef_ = from_table(result.coeffs, like=X).T
             self.support_vectors_ = from_table(result.support_vectors, like=X)
