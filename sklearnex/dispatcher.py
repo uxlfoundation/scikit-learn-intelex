@@ -62,9 +62,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
 
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.linear_model as linear_model_module
         import sklearn.preprocessing as preprocessing_module
         from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
         from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
+        from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
+        from sklearn.linear_model import Lasso as Lasso_sklearn
         from sklearn.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearn
 
         # Preview classes for patching
@@ -72,6 +75,8 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             EmpiricalCovariance as EmpiricalCovariance_sklearnex,
         )
         from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
+        from .preview.linear_model import ElasticNet as ElasticNet_sklearnex
+        from .preview.linear_model import Lasso as Lasso_sklearnex
         from .preview.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearnex
 
         # Since the state of the lru_cache without preview cannot be
@@ -92,6 +97,18 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 "IncrementalPCA",
                 IncrementalPCA_sklearnex,
                 IncrementalPCA_sklearn,
+            ),
+            "sklearn.linear_model.ElasticNet": (
+                linear_model_module,
+                "ElasticNet",
+                ElasticNet_sklearnex,
+                ElasticNet_sklearn,
+            ),
+            "sklearn.linear_model.Lasso": (
+                linear_model_module,
+                "Lasso",
+                Lasso_sklearnex,
+                Lasso_sklearn,
             ),
             "sklearn.preprocessing.MaxAbsScaler": (
                 preprocessing_module,
@@ -145,8 +162,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
     from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_sklearn
     from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn_gb
-    from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
-    from sklearn.linear_model import Lasso as Lasso_sklearn
     from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
     from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
     from sklearn.linear_model import Ridge as Ridge_sklearn
@@ -180,12 +195,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from .ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearnex
     from .ensemble import RandomForestClassifier as RandomForestClassifier_sklearnex
     from .ensemble import RandomForestRegressor as RandomForestRegressor_sklearnex
-    from .linear_model import ElasticNet as ElasticNet_sklearnex
     from .linear_model import (
         IncrementalLinearRegression as IncrementalLinearRegression_sklearnex,
     )
     from .linear_model import IncrementalRidge as IncrementalRidge_sklearnex
-    from .linear_model import Lasso as Lasso_sklearnex
     from .linear_model import LinearRegression as LinearRegression_sklearnex
     from .linear_model import LogisticRegression as LogisticRegression_sklearnex
     from .linear_model import Ridge as Ridge_sklearnex
@@ -226,18 +239,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         "sklearn.svm.SVC": (svm_module, "SVC", SVC_sklearnex, SVC_sklearn),
         "sklearn.svm.NuSVR": (svm_module, "NuSVR", NuSVR_sklearnex, NuSVR_sklearn),
         "sklearn.svm.NuSVC": (svm_module, "NuSVC", NuSVC_sklearnex, NuSVC_sklearn),
-        "sklearn.linear_model.ElasticNet": (
-            linear_model_module,
-            "ElasticNet",
-            ElasticNet_sklearnex,
-            ElasticNet_sklearn,
-        ),
-        "sklearn.linear_model.Lasso": (
-            linear_model_module,
-            "Lasso",
-            Lasso_sklearnex,
-            Lasso_sklearn,
-        ),
         "sklearn.linear_model.LinearRegression": (
             linear_model_module,
             "LinearRegression",
