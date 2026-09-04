@@ -40,6 +40,7 @@ from sklearnex.tests.utils import (
     call_method,
     gen_dataset,
     gen_models_info,
+    is_preview_exempt,
 )
 
 TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
@@ -109,11 +110,12 @@ def _sklearnex_walk(func):
 
 def test_class_trailing_underscore_ban(monkeypatch):
     """Trailing underscores are defined for sklearn to be signatures of a fitted
-    estimator instance, sklearnex extends this to the classes as well"""
+    estimator instance, sklearnex extends this to the classes as well. Preview
+    estimators are only checked when preview mode is enabled."""
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
-        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+        if not is_preview_exempt(obj) and "daal4py" not in obj.__module__:
             # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
@@ -129,14 +131,14 @@ def test_all_estimators_covered(monkeypatch):
     """Check that all estimators defined in sklearnex are available in either the
     patch map or covered in special testing via SPECIAL_INSTANCES. The estimator
     must inherit sklearn's BaseEstimator and must not have a leading underscore.
-    The sklearnex.spmd and sklearnex.preview packages are not tested.
+    The sklearnex.spmd package is not tested, and neither is sklearnex.preview
+    unless preview mode is enabled.
     """
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
     uncovered_estimators = []
     for name, obj in estimators:
-        # do nothing if defined in preview
-        if "preview" not in obj.__module__ and not (
+        if not is_preview_exempt(obj) and not (
             any([issubclass(est, obj) for est in PATCHED_MODELS.values()])
             or any([issubclass(est.__class__, obj) for est in SPECIAL_INSTANCES.values()])
         ):
@@ -150,11 +152,12 @@ def test_all_estimators_covered(monkeypatch):
 def test_oneDALEstimator_inheritance(monkeypatch):
     """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
     estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
-    mro.  This is only strictly set for non-preview estimators"""
+    mro.  This is only strictly set for non-preview estimators, unless preview mode
+    is enabled"""
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
-        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+        if not is_preview_exempt(obj) and "daal4py" not in obj.__module__:
             assert issubclass(
                 obj, oneDALEstimator
             ), f"{name} does not inherit the oneDALEstimator"
@@ -185,8 +188,8 @@ def test_frameworks_lazy_import(monkeypatch):
 
     filtered_modules = []
     for name, obj in estimators:
-        # do not test spmd or preview, as they are exempt
-        if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
+        # spmd is always exempt, preview only while preview mode is off
+        if not is_preview_exempt(obj) and "spmd" not in obj.__module__:
             filtered_modules += [obj.__module__]
 
     modules = ",".join(filtered_modules)
