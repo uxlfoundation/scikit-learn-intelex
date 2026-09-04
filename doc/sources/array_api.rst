@@ -184,6 +184,11 @@ also extends to cases where :doc:`patching <patching>` is applied, but the ``.fi
 through |sklearn| as a fallback (see :doc:`algorithms` for details) - meaning: ``move_estimator_to`` cannot
 be used with classes from the |sklearnex| regardless of which backend was used to fit the estimator.
 
+Sparse arrays
+~~~~~~~~~~~~~
+
+Currently, sparse arrays from libraries other than SciPy (e.g. ``torch.sparse``) are not supported.
+
 Example usage
 =============
 
