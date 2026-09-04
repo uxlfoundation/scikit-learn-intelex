@@ -68,6 +68,8 @@ except ImportError as e:
 
     raise
 
+__version__ = ".".join([str(v) for v in eval(_get__version__())[:3]])
+
 from . import mb, sklearn
 
-__all__ = ["mb", "sklearn"]
+__all__ = ["__version__", "mb", "sklearn"]
