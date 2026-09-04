@@ -93,9 +93,16 @@ ONEDAL_PY_INIT_MODULE(table) {
                 (!py::isinstance<py::tuple>(max_version) || py::len(max_version) != 2))
                 throw py::type_error("max_version must be a tuple (major, minor)");
 
-            if (!dl_device.is_none() &&
-                (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2))
-                throw py::type_error("dl_device must be a tuple (device_type, device_id)");
+            if (!dl_device.is_none()) {
+                if (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2)
+                    throw py::type_error("dl_device must be a tuple (device_type, device_id)");
+                // both entries are later cast to integers; mirror pybind11's integer
+                // caster (which accepts any index-able object) to fail with a
+                // meaningful error rather than an opaque cast failure
+                for (const auto& entry : dl_device.cast<py::tuple>())
+                    if (!PyIndex_Check(entry.ptr()))
+                        throw py::type_error("dl_device entries must be integers");
+            }
 
             if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj))
                 throw py::type_error("copy must be a boolean or None");
