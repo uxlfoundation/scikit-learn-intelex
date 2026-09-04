@@ -89,6 +89,22 @@ As an alternative, pip-compatible versions of NumPy and SciPy that would use one
 
     pip install --index-url https://software.repos.intel.com/python/pypi numpy scipy
 
+.. hint::
+
+  On Linux*, using the NumPy and SciPy wheels from the Intel index together with |sklearn| requires changing the threading backend of MKL to be compatible with the PyPI wheel of |sklearn|:
+
+  .. code-block:: bash
+
+    export MKL_THREADING_LAYER=GNU
+
+  Or to make it permanent:
+
+  .. code-block:: bash
+
+    printf "MKL_THREADING_LAYER=GNU\n" | sudo tee -a /etc/environment
+
+See the full `documentation <https://intel.github.io/optimization-zone/software/numpy/>`__ about setup of these packages.
+
 On Windows*, DLL loading does not bring global symbols into a process in the same way as Linux*, so there should be no potential symbol resolution conflicts from different BLAS / LAPACK providers when using Python libraries.
 
 Typically, other higher-level Python packages such as |sklearn| that make usage of BLAS and LAPACK do so through SciPy's bindings, but if another Python library were to dynamic-link to BLAS and/or LAPACK directly instead, similar considerations should apply.
