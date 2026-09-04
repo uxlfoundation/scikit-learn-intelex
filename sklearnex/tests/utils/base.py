@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import os
 import platform
 import subprocess
 from functools import partial
@@ -58,8 +57,6 @@ from sklearnex.neighbors import (
 )
 from sklearnex.svm import SVC, NuSVC
 
-TEST_PREVIEW_ESTIMATORS: bool = "SKLEARNEX_TEST_PREVIEW_ESTIMATORS" in os.environ
-
 
 def _load_all_models(with_sklearnex=True, estimator=True):
     """Convert sklearnex patch_map into a dictionary of estimators or functions
@@ -84,7 +81,7 @@ def _load_all_models(with_sklearnex=True, estimator=True):
     already_patched = any(already_patched_map.values())
     try:
         if with_sklearnex:
-            patch_sklearn(preview=TEST_PREVIEW_ESTIMATORS)
+            patch_sklearn()
         elif already_patched:
             unpatch_sklearn()
 
@@ -293,7 +290,7 @@ def call_method(estimator, method, X, y, **kwargs):
         ]
     )
 
-    if method == "inverse_transform" and hasattr(estimator, "n_components_"):
+    if method == "inverse_transform":
         # PCA's inverse_transform takes (n_samples, n_components)
         data = (
             (X[:, : estimator.n_components_],)
