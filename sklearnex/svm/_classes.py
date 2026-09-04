@@ -20,6 +20,7 @@ from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import NuSVR as _sklearn_NuSVR
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _deprecate_positional_args
 
@@ -32,7 +33,7 @@ from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import enable_array_api
 from ._base import BaseSVC, BaseSVR
 
 # array API support limited to sklearn 1.5 for regressors due to an incorrect array API
@@ -40,7 +41,7 @@ from ._base import BaseSVC, BaseSVR
 # sklearn 1.6.
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -48,8 +49,7 @@ class SVC(BaseSVC, _sklearn_SVC):
     __doc__ = _sklearn_SVC.__doc__
     _onedal_factory = onedal_SVC
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_SVC._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_SVC._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -90,19 +90,7 @@ class SVC(BaseSVC, _sklearn_SVC):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.C <= 0:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'C' must be strictly positive.")
+        self._validate_params()
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
         dispatch(
@@ -200,7 +188,7 @@ class SVC(BaseSVC, _sklearn_SVC):
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -208,8 +196,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     __doc__ = _sklearn_NuSVC.__doc__
     _onedal_factory = onedal_NuSVC
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_NuSVC._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_NuSVC._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -250,19 +237,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.nu <= 0 or self.nu > 1:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'nu' must be in the range (0, 1].")
+        self._validate_params()
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
         dispatch(
@@ -307,14 +282,13 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
     _onedal_factory = onedal_SVR
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_SVR._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_SVR._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -347,19 +321,7 @@ class SVR(BaseSVR, _sklearn_SVR):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.C <= 0:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'C' must be strictly positive.")
+        self._validate_params()
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
         dispatch(
@@ -379,14 +341,13 @@ class SVR(BaseSVR, _sklearn_SVR):
     fit.__doc__ = _sklearn_SVR.fit.__doc__
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class NuSVR(BaseSVR, _sklearn_NuSVR):
     __doc__ = _sklearn_NuSVR.__doc__
     _onedal_factory = onedal_NuSVR
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_NuSVR._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_NuSVR._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(
@@ -419,19 +380,7 @@ class NuSVR(BaseSVR, _sklearn_NuSVR):
         )
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif self.nu <= 0 or self.nu > 1:
-            # else if added to correct issues with
-            # sklearn tests:
-            # svm/tests/test_sparse.py::test_error
-            # svm/tests/test_svm.py::test_bad_input
-            # for sklearn versions < 1.2 (i.e. without
-            # validate_params parameter checking)
-            # Without this, a segmentation fault with
-            # Windows fatal exception: access violation
-            # occurs
-            raise ValueError("'nu' must be in the range (0, 1].")
+        self._validate_params()
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
         dispatch(

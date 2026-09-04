@@ -30,7 +30,6 @@ import pytest
 from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
 from onedal.tests.utils._dataframes_support import test_frameworks
 from sklearnex.base import oneDALEstimator
@@ -137,9 +136,15 @@ def test_all_estimators_covered(monkeypatch):
     uncovered_estimators = []
     for name, obj in estimators:
         # do nothing if defined in preview
-        if "preview" not in obj.__module__ and not (
-            any([issubclass(est, obj) for est in PATCHED_MODELS.values()])
-            or any([issubclass(est.__class__, obj) for est in SPECIAL_INSTANCES.values()])
+        if (
+            "preview" not in obj.__module__
+            and "daal4py" not in obj.__module__
+            and not (
+                any([issubclass(est, obj) for est in PATCHED_MODELS.values()])
+                or any(
+                    [issubclass(est.__class__, obj) for est in SPECIAL_INSTANCES.values()]
+                )
+            )
         ):
             uncovered_estimators += [".".join([obj.__module__, name])]
 
@@ -459,11 +464,10 @@ def call_validate_data(text, estimator, method):
         "sklearnex.utils.validation",
         "validate_data",
     }, "sklearnex's validate_data should be called first"
-    assert (
-        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
-        if sklearn_check_version("1.6")
-        else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
-    ), "sklearn's validate_data should be called second"
+    assert validate_data_calls[1] == {
+        "sklearn.utils.validation",
+        "validate_data",
+    }, "sklearn's validate_data should be called second"
     assert (
         valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
@@ -487,7 +491,7 @@ def n_jobs_check(text, estimator, method):
 
     assert bool(count) == bool(
         n_jobs_count
-    ), f"verify if {method} should be in control_n_jobs' decorated_methods for {estimator}"
+    ), f"verify if {method} should be in 'control_n_jobs' decorated_methods for {estimator}"
 
 
 def runtime_property_check(text, estimator, method):

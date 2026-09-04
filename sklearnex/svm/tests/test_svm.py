@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import pickle
-from contextlib import nullcontext
 
 import array_api_strict
 import numpy as np
@@ -41,8 +40,10 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    host_df_modules,
+    host_df_to_torch_working,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import (
     get_queues,
@@ -380,8 +381,6 @@ def test_multiple_calls_to_fit():
     + ([(dpnp, True), (dpnp, False)] if dpnp_available else []),
 )
 def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
-    if array_api and not sklearn_check_version("1.5"):
-        pytest.skip("Functionality introduced in later sklearn versions.")
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -395,12 +394,7 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
     X = X_xp.from_dlpack(X)
     y = X_xp.from_dlpack(y)
 
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
+    with config_context(array_api_dispatch=array_api):
         model = getattr(svm, estimator)().fit(X, y)
         with pytest.raises(ValueError):
             model.predict(X_sp)
@@ -412,8 +406,6 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
 @pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
 @pytest.mark.parametrize("array_api", [False, True])
 def test_dense_predict_on_sparse_fit_works(estimator, array_api):
-    if array_api and not sklearn_check_version("1.5"):
-        pytest.skip("Functionality introduced in later sklearn versions.")
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -424,12 +416,7 @@ def test_dense_predict_on_sparse_fit_works(estimator, array_api):
     X = X_sp.toarray()
     y = rng.integers(2, size=X.shape[0])
 
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
+    with config_context(array_api_dispatch=array_api):
         model = getattr(svm, estimator)().fit(X_sp, y)
         pred_dense = model.predict(X)
         pred_sp = model.predict(X_sp)
@@ -443,6 +430,10 @@ def test_dense_predict_on_sparse_fit_works(estimator, array_api):
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
@@ -523,22 +514,8 @@ def test_svm_mixed_array_namespaces(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
-)
-@pytest.mark.parametrize(
-    "w_xp, w_device",
-    [(None, None)]
-    + ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device, w_xp, w_device",
+    mixed_device_params(include_host_df_y=True, include_weight=True, x_devices=("cpu",)),
 )
 @pytest.mark.parametrize(
     "estimator_class",
@@ -552,7 +529,11 @@ def test_svr_mixed_devices(
 ):
     # Re-enable this once bug in scikit-learn is solved:
     # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if X_xp is torch and (y_xp is pd or w_xp is pd):
+    if (
+        not host_df_to_torch_working
+        and (torch_available and X_xp is torch)
+        and (y_xp in host_df_modules or w_xp in host_df_modules)
+    ):
         pytest.skip("Bug in scikit-learn")
     from sklearnex import svm
 
@@ -564,12 +545,12 @@ def test_svr_mixed_devices(
     w = rng.standard_gamma(1, size=X.shape[0]) if w_xp is not None else None
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
-        y = pd.Series(y)
+    if y_xp in host_df_modules:
+        y = y_xp.Series(y)
     else:
         y = y_xp.asarray(y, device=y_device)
-    if w_xp is pd:
-        w = pd.Series(w)
+    if w_xp in host_df_modules:
+        w = w_xp.Series(w)
     elif w_xp is not None:
         w = w_xp.asarray(w, device=w_device)
 
@@ -587,15 +568,7 @@ def test_svr_mixed_devices(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     from sklearnex.svm import SVC
@@ -607,14 +580,14 @@ def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
-        y = pd.Series(np.array(["a", "b"])[y])
+    if y_xp in host_df_modules:
+        y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
     model.fit(X, y)
     pred = model.predict(X)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         assert isinstance(pred, np.ndarray)
     else:
         assert pred.__class__ == y.__class__

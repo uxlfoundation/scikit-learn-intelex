@@ -19,15 +19,22 @@
 Supported Algorithms
 ####################
 
-.. note::
-  To verify that oneDAL is being used for these algorithms, you can enable verbose mode.
+.. hint::
+  While not every parameter or combination of parameters from estimators is supported in the
+  |sklearnex|, attempting to perform an unsupported operation will by default result in executing
+  code from stock |sklearn| when no accelerated routine is available (referred to as a *fallback*
+  throughout the documentation), thereby ensuring that any valid |sklearn| workflow will continue
+  working under patching.
+
+  To verify whether accelerated routines are used for some operation or not, enable verbose mode.
   See :doc:`verbose` for details.
 
 .. note::
   Beyond some parameter combinations from estimators not being supported, some features
   from |sklearn| are not supported as a whole - see :doc:`unsupported`.
 
-Applying |sklearnex| impacts the following |sklearn| estimators:
+The |sklearnex| offers accelerated versions of the following classes and functions from |sklearn|,
+with some limitations described below:
 
 on CPU
 ------
@@ -119,18 +126,21 @@ Regression
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 10
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.svm.SVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
+     - 
      - Negative weights are not supported.
    * - :obj:`sklearn.svm.NuSVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
+     - 
      - Negative weights are not supported.
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
@@ -141,8 +151,8 @@ Regression
        - ``n_estimators`` > ``6024``
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
-       - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Nothing will be printed if ``verbose > 0``.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -152,8 +162,8 @@ Regression
        - ``n_estimators`` > ``6024``
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
-       - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Nothing will be printed if ``verbose > 0``.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      -
        - For ``algorithm`` == ``'kd_tree'``:
@@ -165,12 +175,14 @@ Regression
 
        ``algorithm`` == ``'ball_tree'`` is not supported.
      - Multi-output and sparse data are not supported
+     - 
    * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
+     - 
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -179,16 +191,19 @@ Regression
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
+     - 
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
      - Sparse data is not supported.
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
      - Sparse data is not supported.
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
 
 Clustering
 **********
@@ -232,15 +247,11 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - All parameters are supported except:
-
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+     - 
      - Sparse data is not supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.manifold.TSNE`
@@ -250,7 +261,6 @@ Dimensionality Reduction
        - ``n_components`` can only be `2`
        - ``method`` != ``"barnes_hut"``
        
-       Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
      - Sparse data is not supported for the initialization and distance calculation stages.
      - 
 
@@ -542,17 +552,13 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
-     - All parameters are supported except:
-
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+     - 
      - Sparse data is not supported
-     - Estimator is **only** available in :doc:`preview mode <preview>`.
+     - Estimator is **only** available in :doc:`preview mode <preview>`. Additional parameter ``svd_solver`` (see :doc:`additional_parameters`) is not supported on GPU.
 
 Anomaly Detection
 *****************
@@ -788,15 +794,13 @@ Dimensionality Reduction
    * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
      - 
    * - :obj:`sklearn.decomposition.IncrementalPCA`
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
-       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
 
@@ -841,9 +845,3 @@ Other Tasks
        - Dense data
        - CSR sparse matrices
      - Sample weights **not** supported for CSR data format
-
-Scikit-learn Tests
-------------------
-
-Monkey-patched scikit-learn classes and functions passes scikit-learn's own test
-suite, with few exceptions - see :ref:`conformance_tests` for details.

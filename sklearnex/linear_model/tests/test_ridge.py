@@ -16,17 +16,13 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 
 from daal4py.sklearn._utils import daal_check_version
-from daal4py.sklearn.linear_model.tests.test_ridge import (
-    _test_multivariate_ridge_alpha_shape,
-    _test_multivariate_ridge_coefficients,
-)
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 
@@ -98,15 +94,11 @@ def test_sklearnex_import_ridge(dataframe, queue):
     y_c = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     ridge_reg = Ridge(alpha=0.5).fit(X_c, y_c)
 
-    if daal_check_version((2024, "P", 600)):
-        assert (
-            "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
-        )
-    else:
-        assert "daal4py" in ridge_reg.__module__
+    assert "sklearnex" in ridge_reg.__module__ and "preview" not in ridge_reg.__module__
 
-    assert_allclose(ridge_reg.intercept_, 3.86, rtol=1e-2)
-    assert_allclose(ridge_reg.coef_, [0.91, 1.64], rtol=1e-2)
+    _assert_in_namespace(ridge_reg.intercept_, dataframe)
+    assert_allclose_numpy(ridge_reg.intercept_, 3.86, rtol=1e-2)
+    assert_allclose_numpy(ridge_reg.coef_, [0.91, 1.64], rtol=1e-2)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -129,8 +121,19 @@ def test_ridge_coefficients(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    _assert_in_namespace(ridge_reg.coef_, dataframe)
+    assert_allclose_numpy(
+        ridge_reg.coef_,
+        coefficients_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    assert_allclose_numpy(
+        ridge_reg.intercept_,
+        intercept_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
 
 
 @pytest.mark.skipif(
@@ -170,20 +173,6 @@ def test_ridge_predict_before_fit(dataframe, queue):
         model.predict(X_c)
 
 
-@pytest.mark.skip(reason="Forced to use original sklearn for now.")
-def test_sklearnex_multivariate_ridge_coefs():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_coefficients(Ridge, random_state=0)
-
-
-@pytest.mark.skip(reason="Forced to use original sklearn for now.")
-def test_sklearnex_multivariate_ridge_alpha_shape():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_alpha_shape(Ridge, random_state=0)
-
-
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 100)), reason="requires onedal 2025.1.0 or higher"
 )
@@ -211,8 +200,19 @@ def test_ridge_overdetermined_system(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    _assert_in_namespace(ridge_reg.coef_, dataframe)
+    assert_allclose_numpy(
+        ridge_reg.coef_,
+        coefficients_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    assert_allclose_numpy(
+        ridge_reg.intercept_,
+        intercept_manual,
+        rtol=1e-6,
+        atol=1e-6,
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -230,12 +230,12 @@ def test_multivariate_ridge_scalar_alpha(dataframe, queue, fit_intercept, alpha)
     ridge.fit(X_c, y_c)
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept)
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    _assert_in_namespace(ridge.coef_, dataframe)
+    assert_allclose_numpy(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose_numpy(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
 
-    predictions = _as_numpy(ridge.predict(X_c))
     predictions_manual = X @ coef_manual.T + intercept
-    assert_allclose(predictions, predictions_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose_numpy(ridge.predict(X_c), predictions_manual, rtol=1e-6, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -252,5 +252,6 @@ def test_underdetermined_positive_alpha_ridge(dataframe, queue):
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept=True)
 
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    _assert_in_namespace(ridge.coef_, dataframe)
+    assert_allclose_numpy(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose_numpy(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)

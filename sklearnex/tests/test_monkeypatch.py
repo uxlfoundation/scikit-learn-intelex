@@ -130,9 +130,7 @@ def test_patch_by_list_many_estimators():
             assert LogisticRegression.__module__.startswith("sklearnex")
         else:
             assert LogisticRegression.__module__.startswith("daal4py")
-        assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith(
-            "sklearnex"
-        )
+        assert SVC.__module__.startswith("sklearnex")
 
     finally:
         sklearnex.unpatch_sklearn()
@@ -155,9 +153,7 @@ def test_unpatch_by_list_many_estimators():
             assert LogisticRegression.__module__.startswith("sklearnex")
         else:
             assert LogisticRegression.__module__.startswith("daal4py")
-        assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith(
-            "sklearnex"
-        )
+        assert SVC.__module__.startswith("sklearnex")
 
         sklearnex.unpatch_sklearn(
             [
@@ -178,9 +174,7 @@ def test_unpatch_by_list_many_estimators():
         else:
             assert LogisticRegression.__module__.startswith("daal4py")
 
-        assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith(
-            "sklearnex"
-        )
+        assert SVC.__module__.startswith("sklearnex")
     finally:
         sklearnex.unpatch_sklearn()
 
@@ -234,12 +228,7 @@ def test_preview_namespace():
 
         lr, pca, dbscan, svc, rfc = get_estimators()
         assert "sklearnex" in rfc.__module__
-
-        if daal_check_version((2023, "P", 100)):
-            assert "sklearnex" in lr.__module__
-        else:
-            assert "daal4py" in lr.__module__
-
+        assert "sklearnex" in lr.__module__
         assert "sklearnex" in pca.__module__
         assert "sklearnex" in dbscan.__module__
         assert "sklearnex" in svc.__module__
@@ -262,11 +251,7 @@ def test_preview_namespace():
 
         lr, pca, dbscan, svc, rfc = get_estimators()
 
-        if daal_check_version((2023, "P", 100)):
-            assert "sklearnex" in lr.__module__
-        else:
-            assert "daal4py" in lr.__module__
-
+        assert "sklearnex" in lr.__module__
         assert "sklearnex" in pca.__module__
         assert "sklearnex" in rfc.__module__
         assert "sklearnex" in dbscan.__module__

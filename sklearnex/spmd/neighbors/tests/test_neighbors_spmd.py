@@ -39,7 +39,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knncls_spmd_gold(dataframe, queue):
@@ -109,10 +109,9 @@ def test_knncls_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("weights", ["uniform", "distance"])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_knncls_spmd_synthetic(
     n_samples,
@@ -122,7 +121,6 @@ def test_knncls_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
     metric="euclidean",
 ):
     n_features, n_classes = n_features_and_classes
@@ -150,7 +148,7 @@ def test_knncls_spmd_synthetic(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
     )
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = KNeighborsClassifier_Batch(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
@@ -158,7 +156,7 @@ def test_knncls_spmd_synthetic(
     spmd_dists, spmd_indcs = spmd_model.kneighbors(local_dpt_X_test)
     batch_dists, batch_indcs = batch_model.kneighbors(X_test)
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
@@ -175,7 +173,7 @@ def test_knncls_spmd_synthetic(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knnreg_spmd_gold(dataframe, queue):
@@ -247,10 +245,9 @@ def test_knnreg_spmd_gold(dataframe, queue):
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_knnreg_spmd_synthetic(
     n_samples,
@@ -261,7 +258,6 @@ def test_knnreg_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
@@ -287,7 +283,7 @@ def test_knnreg_spmd_synthetic(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
     )
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = KNeighborsRegressor_Batch(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
@@ -295,7 +291,7 @@ def test_knnreg_spmd_synthetic(
     spmd_dists, spmd_indcs = spmd_model.kneighbors(local_dpt_X_test)
     batch_dists, batch_indcs = batch_model.kneighbors(X_test)
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
@@ -312,7 +308,7 @@ def test_knnreg_spmd_synthetic(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knnsearch_spmd_gold(dataframe, queue):
@@ -349,17 +345,15 @@ def test_knnsearch_spmd_gold(dataframe, queue):
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_knnsearch_spmd_synthetic(
     dimensions,
     dataframe,
     queue,
     dtype,
-    array_api_dispatch,
 ):
     if dimensions["n"] > 10000 and dtype == np.float32:
         pytest.skip("Skipping large float32 test due to expected precision issues")
@@ -377,7 +371,7 @@ def test_knnsearch_spmd_synthetic(
 
     # Ensure search results of batch algo match spmd
     # Configure array_api_dispatch for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_model = NearestNeighbors_SPMD(
             n_neighbors=dimensions["k"], algorithm="brute"
         ).fit(local_dpt_X_train)
@@ -398,7 +392,7 @@ def test_knnsearch_spmd_synthetic(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knn_spmd_empty_kneighbors(dataframe, queue):

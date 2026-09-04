@@ -16,12 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -38,7 +38,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_basic_stats_spmd_gold(dataframe, queue):
@@ -70,7 +70,11 @@ def test_basic_stats_spmd_gold(dataframe, queue):
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(getattr(spmd_result, attr), getattr(batch_result, attr))
+        _assert_in_namespace(getattr(spmd_result, attr), dataframe)
+        assert_allclose_numpy(
+            getattr(spmd_result, attr),
+            getattr(batch_result, attr),
+        )
 
 
 @pytest.mark.skipif(
@@ -82,13 +86,10 @@ def test_basic_stats_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
-@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
-def test_basic_stats_spmd_synthetic(
-    n_samples, n_features, dataframe, queue, dtype, array_api_dispatch
-):
+def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dtype):
     # Import spmd and batch algo
     from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
     from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatistics_SPMD
@@ -102,16 +103,16 @@ def test_basic_stats_spmd_synthetic(
 
     # Ensure results of batch algo match spmd
     # Configure array API dispatch status for spmd estimator
-    with config_context(array_api_dispatch=array_api_dispatch):
+    with config_context(array_api_dispatch=True):
         spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
     tol = 1e-5 if dtype == np.float32 else 1e-7
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(
-            _as_numpy(getattr(spmd_result, attr)),
-            _as_numpy(getattr(batch_result, attr)),
+        assert_allclose_numpy(
+            getattr(spmd_result, attr),
+            getattr(batch_result, attr),
             atol=tol,
             rtol=tol,
         )

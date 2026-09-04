@@ -16,6 +16,8 @@
 
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
+from sklearn.utils._array_api import get_namespace
+from sklearn.utils._param_validation import StrOptions
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -25,11 +27,8 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace
+from ...utils._array_api import enable_array_api
 from ...utils.validation import validate_data
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import StrOptions
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace
@@ -42,11 +41,10 @@ if sklearn_check_version("1.9"):
 class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     __doc__ = _sklearn_IncrementalPCA.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_IncrementalPCA._parameter_constraints,
-            "svd_solver": [StrOptions({"auto", "covariance_eigh", "onedal_svd"})],
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_IncrementalPCA._parameter_constraints,
+        "svd_solver": [StrOptions({"covariance_eigh", "full"})],
+    }
 
     def __init__(
         self,
@@ -55,14 +53,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         whiten=False,
         copy=True,
         batch_size=None,
-        svd_solver="auto",
+        svd_solver="covariance_eigh",
     ):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
         )
         self.svd_solver = svd_solver
         self._need_to_finalize = False
-        # Note: use of the onedal_svd solver will cause partial result to grow proportionally
+        # Note: use of the 'full' (svd-based) solver will cause partial result to grow proportionally
         # to the input data and for that reason is not the default, which is contrary
         # to the scikit-learn implementation.
 
@@ -82,18 +80,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 "more rows than columns for IncrementalPCA "
                 "processing" % (self.n_components, n_features)
             )
-        elif n_components > n_samples and (
-            not sklearn_check_version("1.6") or first_pass
-        ):
+        elif n_components > n_samples and first_pass:
             raise ValueError(
                 "n_components=%r must be less or equal to "
                 "the batch number of samples "
-                "%d" % (self.n_components, n_samples)
-                + (
-                    " for the first partial_fit call."
-                    if sklearn_check_version("1.6")
-                    else ""
-                )
+                "%d for the first partial_fit call." % (self.n_components, n_samples)
             )
         else:
             self._n_components_ = n_components
@@ -167,7 +158,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         onedal_params = {
             "n_components": self._n_components_,
             "whiten": self.whiten,
-            "method": "svd" if self.svd_solver == "onedal_svd" else "cov",
+            "method": "svd" if self.svd_solver == "full" else "cov",
         }
 
         if not hasattr(self, "_onedal_estimator"):
@@ -197,7 +188,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # NOTE: This covers up a numerical accuracy issue in oneDAL online PCA which
         # can yield NaN values for singular values. Replace in place using array API
         self.singular_values_[...] = xp.where(
-            xp.isnan(self.singular_values_), 0, self.singular_values_
+            xp.isnan(self.singular_values_),
+            xp.zeros_like(self.singular_values_),
+            self.singular_values_,
         )
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
@@ -213,8 +206,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # Taken from sklearn for conformance purposes
         self.components_ = None
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         xp, _ = get_namespace(X)
         X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
@@ -261,13 +253,13 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
-        # onedal_svd doesn't exist for GPU
+        # SVD solver doesn't exist for GPU
         X = data[0]
         if "fit" in method_name:
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "Sparse input is not supported"),
-                    (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
+                    (self.svd_solver != "full", "SVD not supported on GPU"),
                 ]
             )
         else:
@@ -280,7 +272,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return patching_status
 
     def partial_fit(self, X, y=None, check_input=True):
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
 
         dispatch(
@@ -296,8 +288,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,
@@ -325,8 +316,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @wrap_output_data
     def fit_transform(self, X, y=None, **fit_params):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         return dispatch(
             self,
             "fit_transform",

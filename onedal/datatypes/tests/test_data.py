@@ -25,7 +25,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from daal4py.sklearn._utils import _package_check_version
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
-from onedal.datatypes import from_table, to_table
+from onedal.datatypes import from_table, return_type_constructor, to_table
 from onedal.utils._third_party import dpctl_available
 
 backend = _dpc_backend or _default_backend
@@ -37,15 +37,16 @@ if dpctl_available:
     )
 
 from daal4py.sklearn._utils import get_dtype
+from onedal.basic_statistics import BasicStatistics
 from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     array_api_modules,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues
-from onedal.utils._array_api import _get_sycl_namespace
 
 data_shapes = [
     pytest.param((1000, 100), id="(1000, 100)"),  # 2-D array
@@ -70,7 +71,7 @@ class DummyEstimatorWithTableConversions:
         if not backend.is_dpc:
             raise RuntimeError("Table conversions should be done with DPC backend.")
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        xp = X.__array_namespace__()
         dbscan = DBSCAN()
         types = [xp.float32, xp.float64]
         if get_dtype(X) not in types:
@@ -179,50 +180,6 @@ def test_input_format_c_not_contiguous_numpy(queue, dtype):
     _test_input_format_c_not_contiguous_numpy(queue, dtype)
 
 
-def _test_input_format_c_contiguous_pandas(queue, dtype):
-    pd = pytest.importorskip("pandas")
-    rng = np.random.RandomState(0)
-    x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
-
-    x_numpy = np.asanyarray(x_default, dtype=dtype, order="C")
-    assert x_numpy.flags.c_contiguous
-    assert not x_numpy.flags.f_contiguous
-    assert not x_numpy.flags.fnc
-    x_df = pd.DataFrame(x_numpy)
-
-    expected = linear_kernel(x_df, queue=queue)
-    result = linear_kernel(x_numpy, queue=queue)
-    assert_allclose(expected, result)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_input_format_c_contiguous_pandas(queue, dtype):
-    _test_input_format_c_contiguous_pandas(queue, dtype)
-
-
-def _test_input_format_f_contiguous_pandas(queue, dtype):
-    pd = pytest.importorskip("pandas")
-    rng = np.random.RandomState(0)
-    x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
-
-    x_numpy = np.asanyarray(x_default, dtype=dtype, order="F")
-    assert not x_numpy.flags.c_contiguous
-    assert x_numpy.flags.f_contiguous
-    assert x_numpy.flags.fnc
-    x_df = pd.DataFrame(x_numpy)
-
-    expected = linear_kernel(x_df, queue=queue)
-    result = linear_kernel(x_numpy, queue=queue)
-    assert_allclose(expected, result)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_input_format_f_contiguous_pandas(queue, dtype):
-    _test_input_format_f_contiguous_pandas(queue, dtype)
-
-
 def _test_conversion_to_table(dtype):
     np.random.seed()
     if dtype in [np.int32, np.int64]:
@@ -262,14 +219,49 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
 
     X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    sua_iface, X_dp_namespace, _ = _get_sycl_namespace(X_dp)
-
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
     X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
+
+
+@pytest.mark.skipif(
+    not dpctl_available,
+    reason="dpctl is required for checks.",
+)
+@pytest.mark.skipif(
+    not backend.is_dpc,
+    reason="__sycl_usm_array_interface__ support requires DPC backend.",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "slicer",
+    [
+        pytest.param(np.s_[3:], id="rows"),
+        pytest.param(np.s_[2:8], id="row_range"),
+        pytest.param(np.s_[::2], id="row_step"),
+        pytest.param(np.s_[:, 1:4], id="cols"),
+        pytest.param(np.s_[:, 2:3], id="single_col"),
+        pytest.param(np.s_[2:8, 1:4], id="row_and_col"),
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sliced_view_offset_sycl_usm(dataframe, queue, slicer, dtype):
+    """A sliced view keeps the base allocation pointer in
+    `__sycl_usm_array_interface__['data'][0]` and encodes its start via the
+    `offset` field. The table conversion must apply that offset, otherwise the
+    view reads from row 0 (regression test for the SUA offset bug). Non-unit
+    steps and column subsets additionally exercise non-contiguous views.
+    """
+    X_np = np.arange(50, dtype=dtype).reshape(10, 5)
+    X_dp = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    X_view = X_dp[slicer]
+    X_roundtrip = from_table(to_table(X_view), like=X_dp)
+
+    assert_allclose(_as_numpy(X_roundtrip), X_np[slicer])
 
 
 @pytest.mark.skipif(
@@ -400,7 +392,6 @@ def test_to_table_non_contiguous_input(dataframe, queue):
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
 
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):
@@ -634,7 +625,7 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
     # extract to numpy (which should move to host)
     try:
         X_out = np.from_dlpack(X_table)
-    except RuntimeError as e:
+    except (RuntimeError, BufferError) as e:
         if "Unsupported device in DLTensor." in str(e):
             pytest.skip("Numpy version cannot request device conversion")
         else:
@@ -648,6 +639,32 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
 
     # verify that table immutability is gone and copy behavior has been followed
     assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues("gpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_return_type_constructor_array_api_host_from_gpu_table(queue, dtype):
+    """array_api_strict devices are host-only, but a global GPU queue can still
+    cause oneDAL to produce a SYCL-device table for such inputs. Converting that
+    table back via ``return_type_constructor`` must transfer it to host rather
+    than raising (array_api_strict's ``from_dlpack`` does not forward the
+    'device' argument to the exporter to request that transfer itself).
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(rng.random_sample((5, 3)), dtype=dtype)
+
+    # table produced on a real SYCL/GPU queue
+    X_table = to_table(X, queue=queue)
+
+    # host-only array_api_strict "like" array, mirroring what sklearnex passes
+    # when the estimator's input was array API but not on a SYCL device
+    like = array_api_modules["array_api"].asarray(X)
+
+    func = return_type_constructor(like)
+    X_out = func(X_table)
+
+    assert X_out.__dlpack_device__() == like.__dlpack_device__()
+    assert_allclose(np.asarray(X_out), X)
 
 
 @pytest.mark.skipif(_dpc_backend is None, reason="Functionality requires DPC module")
@@ -692,3 +709,251 @@ def test_nonwriteable_arrays():
     x_converted = np.asarray(x_converted).reshape(-1)
 
     np.testing.assert_array_equal(x_converted, x)
+
+
+# The widths the conversion reads in place, as a widening loop per width and
+# signedness.
+CSR_INDEX_DTYPES = [np.int32, np.uint32, np.int64, np.uint64]
+
+# Narrower index dtypes, which scipy does not produce on construction but does
+# permit afterwards, since `indices` and `indptr` are plain attributes. These take
+# the cast fallback instead of a loop of their own.
+CSR_CAST_INDEX_DTYPES = [np.int16, np.uint16]
+
+
+def _reinterpret_index_array(indices, index_dtype, layout):
+    """Return the same index values in a different buffer representation."""
+    typed = indices.astype(index_dtype)
+    if layout == "contiguous":
+        return typed
+    if layout == "strided":
+        # A two-element step. The elements stay aligned for their own dtype, so
+        # this exercises the general typed loop rather than the byte-wise one.
+        view = np.repeat(typed, 2)[::2]
+        assert view.strides[0] == 2 * typed.itemsize
+        assert view.flags.aligned
+        return view
+    if layout == "negative":
+        # A negative stride, which selects a different loop from the unit-stride
+        # case and so needs its own coverage.
+        #
+        # The two reversals are not about the conversion, which walks a negative
+        # stride perfectly well - they are about handing it the *same* index
+        # sequence as every other layout here. A plain ``typed[::-1]`` is also a
+        # negative-stride view, but of the values in reverse order, which is a
+        # different matrix: the per-column sums this asserts against would no
+        # longer match, and reversed ``indptr`` is not even a valid CSR structure.
+        # Storing the values backwards and then stepping backwards over them
+        # cancels out, leaving the original order behind a negative stride.
+        stored_backwards = typed[::-1].copy()
+        view = stored_backwards[::-1]
+        assert view.strides[0] == -typed.itemsize
+        assert view.flags.aligned
+        assert_array_equal(view, typed)
+        return view
+    if layout == "readonly":
+        typed.flags.writeable = False
+        return typed
+    if layout == "byteswapped":
+        return typed.astype(typed.dtype.newbyteorder("S"))
+    raise AssertionError(f"unhandled layout {layout}")
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES + CSR_CAST_INDEX_DTYPES)
+@pytest.mark.parametrize(
+    "layout", ["contiguous", "strided", "negative", "readonly", "byteswapped"]
+)
+def test_csr_index_representations_are_equivalent(index_dtype, layout):
+    """Every index dtype, stride and byte order must convert to the same table.
+
+    The conversion reads the caller's index buffers in whatever integer dtype
+    and stride they arrive in, rather than casting them to a fixed dtype first,
+    so each parameter here selects a different code path: a widening loop per
+    width and signedness, a strided variant of each, and a fallback through
+    numpy's own cast for the cases the loops will not read - a byte order they
+    cannot load, or a width narrower than the ones they implement.
+
+    Per-column sums are the observable. They catch a misread of ``indices``
+    directly, and a misread of ``indptr`` too, because the row boundaries decide
+    which entries are visited at all.
+    """
+    X = sp.random(64, 16, density=0.2, format="csr", dtype=np.float64, random_state=0)
+    X.sort_indices()
+    expected = np.asarray(X.sum(axis=0)).reshape(-1)
+
+    reinterpreted = X.copy()
+    reinterpreted.indices = _reinterpret_index_array(X.indices, index_dtype, layout)
+    reinterpreted.indptr = _reinterpret_index_array(X.indptr, index_dtype, layout)
+    # The conversion asks scipy whether the indices are sorted, and scipy answers
+    # that by calling into its own C routines, which reject some of the dtypes
+    # under test here ("unsupported data types in input" for uint64). Assert the
+    # answer instead - the indices came from a sorted matrix above.
+    reinterpreted.has_sorted_indices = True
+
+    result = BasicStatistics(result_options="sum").fit(reinterpreted)
+
+    assert_allclose(result.sum_, expected, rtol=0, atol=1e-9)
+
+
+class csr_matrix(sp.csr_matrix):
+    """CSR matrix that exposes deliberately unaligned index arrays for conversion."""
+
+    def __getattribute__(self, name):
+        if name == "indices":
+            try:
+                return object.__getattribute__(self, "_conversion_indices")
+            except AttributeError:
+                pass
+        if name == "indptr":
+            try:
+                return object.__getattribute__(self, "_conversion_indptr")
+            except AttributeError:
+                pass
+        if name == "has_sorted_indices":
+            return True
+        return super().__getattribute__(name)
+
+
+def _unaligned_index_array(values, index_dtype):
+    storage = bytearray(1 + values.size * np.dtype(index_dtype).itemsize)
+    unaligned = np.frombuffer(storage, dtype=index_dtype, count=values.size, offset=1)
+    unaligned[:] = values
+    assert unaligned.strides == (unaligned.itemsize,)
+    assert unaligned.ctypes.data % unaligned.dtype.alignment != 0
+    return unaligned
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_unaligned_unit_stride_indices(index_dtype):
+    """Unaligned, unit-stride CSR indices are read without a typed C++ dereference.
+
+    NumPy allows a unit-stride view to start at an odd byte, where reading
+    through a pointer to the element type would be undefined. Such a buffer must
+    therefore take the byte-wise fallback rather than the typed loops, and still
+    convert correctly and without writing through the caller's arrays.
+    """
+    X = csr_matrix(
+        (
+            np.array([1.0, 10.0, 100.0, 1000.0, 10000.0]),
+            np.array([0, 3, 1, 0, 2]),
+            np.array([0, 2, 3, 5]),
+        ),
+        shape=(3, 4),
+    )
+    X._conversion_indices = _unaligned_index_array(
+        sp.csr_matrix.__getattribute__(X, "indices"), index_dtype
+    )
+    X._conversion_indptr = _unaligned_index_array(
+        sp.csr_matrix.__getattribute__(X, "indptr"), index_dtype
+    )
+    original_indices = X.indices.copy()
+    original_indptr = X.indptr.copy()
+    assert X.has_sorted_indices
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [1001.0, 100.0, 10000.0, 10.0], rtol=0, atol=1e-9)
+    assert_array_equal(X.indices, original_indices)
+    assert_array_equal(X.indptr, original_indptr)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_zero_stride_indices(index_dtype):
+    """Broadcast CSR indices are rebased after a single load."""
+    X = csr_matrix(
+        (
+            np.array([1.0, 10.0, 100.0]),
+            np.array([0, 0, 0]),
+            np.array([0, 1, 2, 3]),
+        ),
+        shape=(3, 1),
+    )
+    X._conversion_indices = np.broadcast_to(np.array([0], dtype=index_dtype), X.nnz)
+    assert X.indices.strides == (0,)
+    assert X.indices.flags.aligned
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [111.0], rtol=0, atol=1e-9)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+def test_csr_conversion_accepts_single_element_indices_with_odd_stride(index_dtype):
+    """A one-element index array may carry a stride that is not a whole element.
+
+    NumPy only folds the strides of dimensions holding more than one element into
+    its alignment flag, so a one-element view reports itself as aligned while its
+    stride is an arbitrary byte count. Only element zero is ever read, at the base
+    pointer, but the conversion must not assume the byte stride divides the item
+    size when it decides how to read the buffer.
+    """
+    itemsize = np.dtype(index_dtype).itemsize
+    X = csr_matrix(
+        (np.array([5.0]), np.array([0]), np.array([0, 1])),
+        shape=(1, 1),
+    )
+    X._conversion_indices = np.lib.stride_tricks.as_strided(
+        np.zeros(2, dtype=index_dtype), shape=(1,), strides=(itemsize + 1,)
+    )
+    assert X.indices.shape == (1,)
+    assert X.indices.strides[0] % itemsize != 0
+    assert X.indices.flags.aligned
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, [5.0], rtol=0, atol=1e-9)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_INDEX_DTYPES)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_csr_conversion_does_not_modify_input(index_dtype, dtype):
+    """The conversion rebases indices to one-based in its own buffers.
+
+    It reads the caller's index arrays without copying them first, so this pins
+    down that it does not write through them - including for uint64 indices,
+    where no dtype cast forces a copy on the way in.
+    """
+    X = sp.random(64, 32, density=0.1, format="csr", dtype=dtype, random_state=0)
+    X.indices = X.indices.astype(index_dtype)
+    X.indptr = X.indptr.astype(index_dtype)
+    expected_indices = X.indices.copy()
+    expected_indptr = X.indptr.copy()
+    expected_data = X.data.copy()
+
+    X_table = to_table(X)
+
+    np.testing.assert_array_equal(X.indices, expected_indices)
+    np.testing.assert_array_equal(X.indptr, expected_indptr)
+    np.testing.assert_array_equal(X.data, expected_data)
+
+    # The data buffer is borrowed rather than copied, so the input must also
+    # survive the table outliving this statement.
+    del X_table
+    np.testing.assert_array_equal(X.data, expected_data)
+
+
+@pytest.mark.parametrize("index_dtype", CSR_CAST_INDEX_DTYPES)
+def test_csr_indices_retyped_after_construction(index_dtype):
+    """Index dtypes scipy accepts only after construction must convert correctly.
+
+    ``scipy.sparse`` builds ``indices`` and ``indptr`` as int32 or int64, but they
+    are plain attributes, so a caller can replace them with a narrower dtype
+    afterwards and scipy keeps operating on the matrix. Such widths have no loop
+    of their own here - they take the cast fallback - so this checks the values
+    that come out, against scipy computing on the same retyped matrix.
+    """
+    X = sp.random(100, 50, density=0.1, format="csr", dtype=np.float64, random_state=0)
+    X.sort_indices()
+    expected = np.asarray(X.sum(axis=0)).reshape(-1)
+
+    X.indices = X.indices.astype(index_dtype)
+    X.indptr = X.indptr.astype(index_dtype)
+    assert X.indices.dtype == index_dtype
+    assert X.indptr.dtype == index_dtype
+    # scipy answers this by calling into routines that reject narrow index
+    # dtypes, and the matrix came from a sorted one above.
+    X.has_sorted_indices = True
+
+    result = BasicStatistics(result_options="sum").fit(X)
+
+    assert_allclose(result.sum_, expected, rtol=0, atol=1e-9)

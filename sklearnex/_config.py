@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from sklearn import get_config as skl_get_config
 from sklearn import set_config as skl_set_config
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import check_can_modify_docstrings, sklearn_check_version
 from onedal._config import _get_config as onedal_get_config
 
 __all__ = ["get_config", "set_config", "config_context"]
@@ -30,11 +30,11 @@ _options_docstring = f"""Parameters
 {tab}----------
 {tab}target_offload : str or dpctl.SyclQueue or None
 {tab}    The device used to perform computations, either as a string indicating a name
-{tab}    recognized by the SyCL runtime, such as ``"gpu"``, ``"gpu:0"``, or as a
+{tab}    recognized by the SYCL runtime, such as ``"gpu"``, ``"gpu:0"``, or as a
 {tab}    :obj:`dpctl.SyclQueue` object indicating where to move the data.
 {tab}
-{tab}    Assuming SyCL-related dependencies are installed, the list of devices recognized
-{tab}    by SyCL can be retrieved through the CLI tool ``sycl-ls`` in a shell, or through
+{tab}    Assuming SYCL-related dependencies are installed, the list of devices recognized
+{tab}    by SYCL can be retrieved through the CLI tool ``sycl-ls`` in a shell, or through
 {tab}    :obj:`dpctl.get_devices` in a Python process.
 {tab}
 {tab}    String ``"auto"`` is also accepted.
@@ -109,9 +109,10 @@ def set_config(
         local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
 
 
-set_config.__doc__ = set_config.__doc__.replace(
-    "%_options_docstring%", _options_docstring
-)
+if check_can_modify_docstrings():
+    set_config.__doc__ = set_config.__doc__.replace(
+        "%_options_docstring%", _options_docstring
+    )
 
 
 @contextmanager
@@ -139,6 +140,7 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
         set_config(**old_config)
 
 
-config_context.__doc__ = config_context.__doc__.replace(
-    "%_options_docstring%", _options_docstring
-)
+if check_can_modify_docstrings():
+    config_context.__doc__ = config_context.__doc__.replace(
+        "%_options_docstring%", _options_docstring
+    )

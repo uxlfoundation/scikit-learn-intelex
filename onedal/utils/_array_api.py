@@ -17,12 +17,8 @@
 """Tools to support array_api."""
 
 from collections.abc import Iterable
-from functools import lru_cache
 
-import numpy as np
 import scipy.sparse as sp
-
-from ..utils._third_party import _is_subclass_fast
 
 
 def _supports_buffer_protocol(obj):
@@ -61,33 +57,3 @@ def _is_numpy_namespace(xp):
         "numpy.array_api",
         "sklearn.externals.array_api_compat.numpy",
     }
-
-
-@lru_cache(100)
-def _cls_to_sycl_namespace(cls):
-    if _is_subclass_fast(cls, "dpnp", "ndarray"):
-        import dpnp
-
-        return dpnp
-    else:
-        raise ValueError(f"SYCL type not recognized: {cls}")
-
-
-def _get_sycl_namespace(*arrays):
-    """Get namespace of sycl arrays."""
-
-    # sycl support designed to work regardless of array_api_dispatch sklearn global value
-    sua_iface = {type(x): x for x in arrays if hasattr(x, "__sycl_usm_array_interface__")}
-
-    if len(sua_iface) > 1:
-        raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
-
-    if sua_iface:
-        (X,) = sua_iface.values()
-        return (
-            sua_iface,
-            _cls_to_sycl_namespace(type(X)),
-            hasattr(X, "__array_namespace__"),
-        )
-
-    return sua_iface, np, False

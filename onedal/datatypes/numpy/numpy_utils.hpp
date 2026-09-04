@@ -135,10 +135,12 @@
     (PyArray_ISCARRAY_RO((PyArrayObject *)a) && array_type(a) < NPY_OBJECT)
 #define array_is_behaved_F(a) \
     (PyArray_ISFARRAY_RO((PyArrayObject *)a) && array_type(a) < NPY_OBJECT)
-#define array_is_native(a) (PyArray_ISNOTSWAPPED((PyArrayObject *)a))
-#define array_numdims(a)   PyArray_NDIM((PyArrayObject *)a)
-#define array_data(a)      PyArray_DATA((PyArrayObject *)a)
-#define array_size(a, i)   PyArray_DIM((PyArrayObject *)a, i)
+#define array_is_native(a)  (PyArray_ISNOTSWAPPED((PyArrayObject *)a))
+#define array_is_aligned(a) (PyArray_ISALIGNED((PyArrayObject *)a))
+#define array_numdims(a)    PyArray_NDIM((PyArrayObject *)a)
+#define array_data(a)       PyArray_DATA((PyArrayObject *)a)
+#define array_size(a, i)    PyArray_DIM((PyArrayObject *)a, i)
+#define array_stride(a, i)  PyArray_STRIDE((PyArrayObject *)a, i)
 
 namespace oneapi::dal::python::numpy {
 

@@ -18,15 +18,10 @@
 
 from sklearn.base import RegressorMixin
 from sklearn.neighbors._regression import KNeighborsRegressor as BaseKNeighborsRegressor
+from sklearn.utils.validation import _deprecate_positional_args
 
-from .._utils import sklearn_check_version
 from ..utils.validation import check_feature_names
 from ._base import KNeighborsMixin, NeighborsBase
-
-if not sklearn_check_version("1.2"):
-    from sklearn.neighbors._base import _check_weights
-
-from sklearn.utils.validation import _deprecate_positional_args
 
 
 class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):

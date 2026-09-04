@@ -19,7 +19,7 @@ import logging
 
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
+from onedal.tests.utils._dataframes_support import array_api_frameworks
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
 
 
@@ -60,6 +60,24 @@ def pytest_runtest_call(item):
         yield
 
 
+@pytest.fixture(autouse=True)
+def _array_api_dispatch_for_device_frameworks(request):
+    # Without array_api_dispatch, ``_device_offload.dispatch`` host-transfers these
+    # inputs and ``support_input_format``/``wrap_output_data`` restore the namespace
+    # via ``__array_namespace__``, which torch lacks -- so the on-device paths go
+    # untested and torch results come back as numpy. Force dispatch to exercise the
+    # real array API path; allow_sklearn_fallback tests cover host paths on purpose.
+    dataframe = getattr(request.node, "callspec", None)
+    dataframe = dataframe.params.get("dataframe") if dataframe else None
+    if dataframe in array_api_frameworks and not request.node.get_closest_marker(
+        "allow_sklearn_fallback"
+    ):
+        with config_context(array_api_dispatch=True):
+            yield
+    else:
+        yield
+
+
 @pytest.fixture
 def with_sklearnex():
     patch_sklearn()
@@ -69,10 +87,7 @@ def with_sklearnex():
 
 @pytest.fixture
 def with_array_api():
-    if sklearn_check_version("1.2"):
-        with config_context(array_api_dispatch=True):
-            yield
-    else:
+    with config_context(array_api_dispatch=True):
         yield
 
 

@@ -19,7 +19,7 @@ from functools import update_wrapper
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from .._config import config_context, get_config
+from .._config import config_context
 
 # Replacement of _FuncWrapper is required to correctly propagate
 # the scikit-learn-intelex configuration functions to the joblib workers.
@@ -55,7 +55,7 @@ if sklearn_check_version("1.7"):
                 warnings.filters = warning_filters
                 return self.function(*args, **kwargs)
 
-elif sklearn_check_version("1.2.1"):
+else:
 
     class _FuncWrapper:
         """Load the global configuration before calling the function."""
@@ -80,18 +80,4 @@ elif sklearn_check_version("1.2.1"):
                 )
                 config = {}
             with config_context(**config):
-                return self.function(*args, **kwargs)
-
-else:
-
-    class _FuncWrapper:
-        """Load the global configuration before calling the function."""
-
-        def __init__(self, function):
-            self.function = function
-            self.config = get_config()
-            update_wrapper(self, self.function)
-
-        def __call__(self, *args, **kwargs):
-            with config_context(**self.config):
                 return self.function(*args, **kwargs)

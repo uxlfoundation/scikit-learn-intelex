@@ -60,7 +60,8 @@ def check_preview_is_enabled() -> bool:
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues(device_filter_="cpu")
+    "dataframe,queue",
+    get_dataframes_and_queues("numpy,pandas", device_filter_="cpu"),
 )
 def test_sklearnex_multiclass_classification(dataframe, queue):
     from sklearnex.linear_model import LogisticRegression
@@ -485,7 +486,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
     )
 
     params = {"C": C}
-    if not sklearn_check_version:
+    if multi_class is not None:
         params["multi_class"] = multi_class
 
     with warnings.catch_warnings():
@@ -580,7 +581,10 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
 
     model = LogisticRegression(solver="newton-cg").fit(X, y)
     X_problem = 1e10 * _as_numpy(model.coef_).reshape((1, -1))
-    X_problem = np.vstack([X_problem, -X_problem])
+    # predict input must share fit's namespace/device when array_api_dispatch is on
+    X_problem = _convert_to_dataframe(
+        np.vstack([X_problem, -X_problem]), sycl_queue=queue, target_df=dataframe
+    )
 
     pred_log_proba = model.predict_log_proba(X_problem)
     pred_log_proba = _as_numpy(pred_log_proba)
@@ -588,9 +592,6 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     assert not np.any(np.isinf(pred_log_proba))
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("y_type", ["numeric", "string"])
 @pytest.mark.allow_sklearn_fallback
@@ -804,7 +805,8 @@ def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_
     ).fit(X_np, y_np)
     proba_sklearn = model_sklearn.predict_proba(X_np)
     pred_sklearn = model_sklearn.predict(X_np)
-    np.testing.assert_allclose(proba, proba_sklearn)
+    # oneDAL GPU vs sklearn CPU compute differ within float tolerance.
+    np.testing.assert_allclose(proba, proba_sklearn, rtol=1e-5, atol=1e-5)
     np.testing.assert_array_equal(pred, pred_sklearn)
 
 
@@ -830,3 +832,19 @@ def test_no_warning_for_n_jobs():
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=FutureWarning)
         model.fit(X, y, w)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_dtype_is_preserved(dtype):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3)).astype(dtype)
+    y = rng.integers(2, size=X.shape[0]).astype(np.int64)
+    model = LogisticRegression().fit(X, y)
+    assert model.coef_.dtype == X.dtype
+    assert model.intercept_.dtype == X.dtype

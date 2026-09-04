@@ -109,7 +109,7 @@ public:
     const int step11ResultQueriesTag                   = 16;
     const int step12ResultAssignmentQueriesTag         = 17;
 
-    transceiver * tcvr;
+    std::shared_ptr<transceiver> tcvr;
 
     int main(const T1 & input1)
     {

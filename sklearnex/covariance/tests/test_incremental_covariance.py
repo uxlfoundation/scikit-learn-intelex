@@ -30,8 +30,9 @@ from sklearn.decomposition import PCA
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
 )
@@ -67,8 +68,9 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[0, 0], [0, 0]])
         expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
     X = np.array([[1, 2], [3, 6]])
     X = X.astype(dtype)
@@ -88,8 +90,8 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[1, 2], [2, 4]])
         expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -110,8 +112,9 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
     )
     expected_means = np.array([0, 0.5, 1, 1.5])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -140,8 +143,9 @@ def test_sklearnex_partial_fit_on_random_data(
     expected_covariance = np.cov(X.T, bias=1)
     expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -179,12 +183,14 @@ def test_sklearnex_fit_on_random_data(
         expected_covariance = np.cov(X.T, bias=1)
         expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_whitened_toy_score(dataframe, queue):
+    from sklearnex import config_context
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
     # Load a sklearn toy dataset with sufficient data
@@ -197,10 +203,9 @@ def test_whitened_toy_score(dataframe, queue):
     # change dataframe
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-    # fit data
-    est = IncrementalEmpiricalCovariance()
-    est.fit(X_df)
-    # location_ attribute approximately zero (10,), covariance_ identity (10,10)
+    # non-numpy array API inputs (e.g. dpnp) require array_api_dispatch
+    array_api = dataframe not in ("numpy", "pandas")
+    context = config_context(array_api_dispatch=True) if array_api else nullcontext()
 
     # The log-likelihood can be calculated simply due to covariance_
     # use of scipy.linalg.pinvh, np.linalg.sloget and np.cov for estimator
@@ -209,11 +214,19 @@ def test_whitened_toy_score(dataframe, queue):
         -(n - slogdet(pinvh(np.cov(X.T, bias=1)))[1] + n * np.log(2 * np.pi)) / 2
     )
     # expected_result = -14.1780602988
-    result = _as_numpy(est.score(X_df))
-    assert_allclose(expected_result, result, atol=1e-6)
+    with context:
+        # fit data; location_ approximately zero (10,), covariance_ identity (10,10)
+        est = IncrementalEmpiricalCovariance()
+        est.fit(X_df)
+        score = est.score(X_df)
+        _assert_in_namespace(score, dataframe)
+    assert_allclose_numpy(expected_result, score, atol=1e-6)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp excluded: SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,array_api")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle
@@ -280,9 +293,9 @@ def test_IncrementalEmpiricalCovariance_against_sklearn(monkeypatch, sklearn_tes
     sklearn_test()
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.4"), reason="requires array_api_support sklearn config"
-)
+# Manages array_api_dispatch itself; exempt from the autouse dispatch fixture so the
+# dispatch=False branch still exercises the host-transfer path.
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize("dispatch", [True, False])
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_score_verify_namespace(dispatch, dataframe, queue):
@@ -299,7 +312,8 @@ def test_score_verify_namespace(dispatch, dataframe, queue):
         cfg_context = config_context(array_api_dispatch=True)
         err = pytest.raises((TypeError, ValueError))
     else:
-        # support_sycl_format will cause it to function
+        # without array_api_dispatch, fitted attributes are host numpy, so a
+        # numpy score input shares their namespace and the call succeeds
         cfg_context = nullcontext()
         err = nullcontext()
 

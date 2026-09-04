@@ -24,6 +24,7 @@ import numpy as np
 from mpi4py import MPI
 from numpy.testing import assert_allclose
 
+from sklearnex import config_context
 from sklearnex.spmd.ensemble import RandomForestRegressor
 
 
@@ -59,13 +60,20 @@ dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-rf = RandomForestRegressor(max_depth=2, random_state=0).fit(dpnp_X_train, dpnp_y_train)
-
-y_predict = rf.predict(dpnp_X_test)
-
-print("Ground truth (first 5 observations on rank {}):\n{}".format(mpi_rank, y_test[:5]))
-print(
-    "Regression results (first 5 observations on rank {}):\n{}".format(
-        mpi_rank, y_predict[:5]
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    rf = RandomForestRegressor(max_depth=2, random_state=0).fit(
+        dpnp_X_train, dpnp_y_train
     )
-)
+
+    y_predict = rf.predict(dpnp_X_test)
+
+    print(
+        "Ground truth (first 5 observations on rank {}):\n{}".format(mpi_rank, y_test[:5])
+    )
+    print(
+        "Regression results (first 5 observations on rank {}):\n{}".format(
+            mpi_rank, y_predict[:5]
+        )
+    )

@@ -14,22 +14,32 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
+
 import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
 from sklearn import datasets
 from sklearn.base import is_regressor
 
-from daal4py.sklearn._utils import sklearn_check_version
+if hasattr(sp, "csr_array"):
+    CSR_CTOR = sp.csr_array
+else:
+    CSR_CTOR = sp.csr_matrix
+
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    host_df_modules,
+    host_df_to_torch_working,
+    mixed_device_params,
     torch_available,
-    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.neighbors import (
@@ -188,11 +198,32 @@ def test_p_present_if_metric_is_minkowski():
     assert knn.effective_metric_params_["p"] == 3
 
 
+# This triggers a fallback on the call to 'predict' by passing
+# a sparse matrix, which is not supported by oneDAL. If this
+# changes, a fallback would need to be triggered in some other way.
+@pytest.mark.allow_sklearn_fallback
+def test_no_metric_args_warning_on_fallback():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+
+    X_sp = CSR_CTOR(X)
+
+    knn = KNeighborsRegressor(algorithm="brute").fit(X, y)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        _ = knn.predict(X_sp)
+
+
 # Note: this doesn't check 'kneighbors_graph', because that function
 # transfers the data to NumPy internally, so it will not necessarily
 # end up erroring out.
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"), reason="Functionality introduced in alter versions."
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("weights", ["uniform", "distance"])
 def test_error_on_incompatible_namespaces(weights, with_array_api):
@@ -219,6 +250,10 @@ def test_error_on_incompatible_namespaces(weights, with_array_api):
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
@@ -283,15 +318,7 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
-    "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
-)
-@pytest.mark.parametrize(
-    "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
-    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
-    + [(pd, None)],
+    "X_xp, X_device, y_xp, y_device", mixed_device_params(include_host_df_y=True)
 )
 @pytest.mark.parametrize(
     "estimator",
@@ -301,6 +328,14 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
     ],
 )
 def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array_api):
+    # Re-enable this once bug in scikit-learn is solved:
+    # https://github.com/scikit-learn/scikit-learn/issues/34046
+    if (
+        not host_df_to_torch_working
+        and (torch_available and X_xp is torch)
+        and y_xp in host_df_modules
+    ):
+        pytest.skip("Bug in scikit-learn")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
     if is_regressor(estimator):
@@ -309,11 +344,11 @@ def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array
         y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.asarray(X, device=X_device)
-    if y_xp is pd:
+    if y_xp in host_df_modules:
         if is_regressor(estimator):
-            y = pd.Series(y)
+            y = y_xp.Series(y)
         else:
-            y = pd.Series(np.array(["a", "b"])[y])
+            y = y_xp.Series(np.array(["a", "b"])[y])
     else:
         y = y_xp.asarray(y, device=y_device)
 
@@ -322,7 +357,7 @@ def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array
     if is_regressor(estimator):
         assert pred.__class__ == X.__class__
     else:
-        if y_xp is pd:
+        if y_xp in host_df_modules:
             assert isinstance(pred, np.ndarray)
         else:
             assert pred.__class__ == y.__class__

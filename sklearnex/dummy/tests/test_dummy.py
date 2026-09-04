@@ -17,11 +17,11 @@
 import numpy as np
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
 )
 from sklearnex import config_context
 from sklearnex.dummy import DummyRegressor
@@ -29,6 +29,7 @@ from sklearnex.dummy import DummyRegressor
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_DummyRegressor(dataframe, queue):
+    skip_array_api_strict_readonly(dataframe)
     rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
@@ -37,13 +38,11 @@ def test_sklearnex_import_DummyRegressor(dataframe, queue):
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     est = DummyRegressor(strategy="constant", constant=np.pi).fit(X, y)
     assert "sklearnex" in est.__module__
-    pred = _as_numpy(est.predict([[0, 0, 0, 0]]))
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
+    pred = _as_numpy(est.predict(X_test))
     np.testing.assert_array_equal(np.pi * np.ones(pred.shape), pred)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.3"), reason="lacks sklearn array API support"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
     rng = np.random.default_rng(seed=42)
@@ -59,4 +58,4 @@ def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
 
     np.testing.assert_array_equal(np.full(pred.shape, np.e), pred)
     est.constant_ = np.ones(est.constant_.shape)
-    np.testing.assert_array_equal(np.ones(pred.shape), est.predict([[0, 0, 0, 0]]))
+    np.testing.assert_array_equal(np.ones(pred.shape), _as_numpy(est.predict(X_test)))

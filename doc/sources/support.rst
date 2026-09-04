@@ -11,12 +11,13 @@
 .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
+.. include:: substitutions.rst
 
 #######
 Support
 #######
 
-We are committed to providing support and assistance to help you make the most out of Extension for Scikit-learn. 
+We are committed to providing support and assistance to help you make the most out of |sklearnex|.
 Use the following methods if you face any challenges.
 
 

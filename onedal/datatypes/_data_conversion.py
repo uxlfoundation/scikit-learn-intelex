@@ -17,9 +17,9 @@
 import numpy as np
 import scipy.sparse as sp
 
-from onedal import _default_backend as backend
-
+from .. import _default_backend as backend
 from ..utils._third_party import is_dpnp_ndarray, lazy_import
+from ._dlpack import cpu_dlpack_device
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -76,7 +76,13 @@ def to_table(*args, queue=None):
 def _compat_convert(array_api_compat, array):
     def converter_func(x):
         xp = array_api_compat.get_namespace(array)
-        out = xp.from_dlpack(x)
+        try:
+            out = xp.from_dlpack(x)
+        except (RuntimeError, BufferError):
+            # PyTorch's DLPack importer only accepts device USM, but a table may be
+            # backed by shared or host USM while still advertising a SYCL device, so
+            # fall back to a host copy and let the move below place it.
+            out = xp.asarray(backend.from_table(x))
         if out.device != array.device:
             out = xp.from_dlpack(out, device=array.device)
         return out
@@ -124,7 +130,21 @@ def return_type_constructor(array):
     elif hasattr(array, "__array_namespace__"):
         xp = array.__array_namespace__()
         device = array.device
-        func = lambda inp: xp.from_dlpack(inp, device=device)
+
+        def func(inp):
+            # Some array API libraries (e.g. array_api_strict) do not forward
+            # the 'device' argument of their 'from_dlpack' to the exporter's
+            # '__dlpack__', so a oneDAL table on a SYCL device never gets asked
+            # to transfer to host when the target namespace is host-only.
+            # NumPy's 'from_dlpack' does forward it, so route through NumPy
+            # first in that case, then hand the resulting host array to 'xp'.
+            if (
+                inp.__dlpack_device__() != cpu_dlpack_device
+                and array.__dlpack_device__() == cpu_dlpack_device
+            ):
+                return xp.asarray(np.from_dlpack(inp, device="cpu"), device=device)
+            return xp.from_dlpack(inp, device=device)
+
     else:
         try:
             func = _compat_convert(array)

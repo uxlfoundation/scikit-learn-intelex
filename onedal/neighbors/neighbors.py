@@ -16,24 +16,33 @@
 
 from abc import ABCMeta, abstractmethod
 
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
-
-from ..common._estimator_checks import _check_is_fitted, _is_classifier
-from ..common._mixin import ClassifierMixin, RegressorMixin
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
+from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
+from ..utils import _sycl_queue_manager as QM
 
 
-class NeighborsCommonBase(metaclass=ABCMeta):
-    def __init__(self):
+class NeighborsBase(metaclass=ABCMeta):
+    def __init__(
+        self,
+        n_neighbors=None,
+        radius=None,
+        algorithm="auto",
+        metric="minkowski",
+        p=2,
+        metric_params=None,
+    ):
+        self.n_neighbors = n_neighbors
+        self.radius = radius
+        self.algorithm = algorithm
+        self.metric = metric
+        self.p = p
+        self.metric_params = metric_params
         self.requires_y = False
-        self.n_neighbors = None
-        self.metric = None
         self.classes_ = None
         self.effective_metric_ = None
         self._fit_method = None
-        self.radius = None
         self.effective_metric_params_ = None
         self._onedal_model = None
 
@@ -85,24 +94,6 @@ class NeighborsCommonBase(metaclass=ABCMeta):
             "result_option": "indices|distances" if y is None else "responses",
         }
 
-
-class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
-    def __init__(
-        self,
-        n_neighbors=None,
-        radius=None,
-        algorithm="auto",
-        metric="minkowski",
-        p=2,
-        metric_params=None,
-    ):
-        self.n_neighbors = n_neighbors
-        self.radius = radius
-        self.algorithm = algorithm
-        self.metric = metric
-        self.p = p
-        self.metric_params = metric_params
-
     def _fit(self, X, y):
         self._onedal_model = None
         self._tree = None
@@ -115,20 +106,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self, "effective_metric_params_", self.metric_params
         )
 
-        if y is not None or self.requires_y:
-            if _is_classifier(self):
-                if not hasattr(self, "_y") or self._y is None:
-                    raise ValueError(
-                        "Internal error: Classification target processing must be done in sklearnex layer before calling onedal fit. "
-                        "_y attribute is not set."
-                    )
-            elif y is not None:
-                # For regressors, store y only if provided
-                self._y = y
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self._fit_X = X
-        self._fit_method = super()._parse_auto_method(
+        self._fit_method = self._parse_auto_method(
             self.algorithm, self.n_samples_fit_, self.n_features_in_
         )
 
@@ -156,7 +137,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         if X is None:
             X = self._fit_X
 
-        params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
+        params = self._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances, like=X)
         indices = from_table(prediction_results.indices, like=X)
@@ -166,7 +147,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return indices
 
 
-class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
+class KNeighborsClassifier(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
@@ -176,7 +157,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         p=2,
         metric="minkowski",
         metric_params=None,
-        **kwargs,
     ):
         super().__init__(
             n_neighbors=n_neighbors,
@@ -184,7 +164,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
             metric=metric,
             p=p,
             metric_params=metric_params,
-            **kwargs,
         )
         self.weights = weights
 
@@ -224,7 +203,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
 
-class KNeighborsRegressor(NeighborsBase, RegressorMixin):
+class KNeighborsRegressor(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
@@ -234,7 +213,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         p=2,
         metric="minkowski",
         metric_params=None,
-        **kwargs,
     ):
         super().__init__(
             n_neighbors=n_neighbors,
@@ -242,7 +220,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
             metric=metric,
             p=p,
             metric_params=metric_params,
-            **kwargs,
         )
         self.weights = weights
 
@@ -322,7 +299,6 @@ class NearestNeighbors(NeighborsBase):
         p=2,
         metric="minkowski",
         metric_params=None,
-        **kwargs,
     ):
         super().__init__(
             n_neighbors=n_neighbors,
@@ -330,7 +306,6 @@ class NearestNeighbors(NeighborsBase):
             metric=metric,
             p=p,
             metric_params=metric_params,
-            **kwargs,
         )
         self.requires_y = False
 

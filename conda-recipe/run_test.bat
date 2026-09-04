@@ -46,6 +46,14 @@ if "%~2"=="--json-report" (
     del /q .pytest_reports\*.json
 )
 
+rem Distributed tests on Windows need PYTHON to carry an MPI launcher, as in
+rem set "PYTHON=mpiexec -n 2 python" (see doc/sources/tests.rst). Skip them when it
+rem does not, which is also the case under conda-build: PYTHON is a plain
+rem interpreter there and the recipe installs no MPI stack on Windows, since
+rem meta.yaml marks mpi, mpi4py and pytest-mpi as "# [not win]".
+echo %PYTHON% | findstr /i /c:"mpiexec" /c:"mpirun" >nul
+if errorlevel 1 set NO_DIST=1
+
 echo "NO_DIST=%NO_DIST%"
 setlocal enabledelayedexpansion
 pytest %PYTEST_CONFIG% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
@@ -61,6 +69,18 @@ if NOT "%NO_DIST%"=="1" (
     )
     %PYTHON% "%1tests\helper_mpi_tests.py"^
         pytest --with-mpi %PYTEST_CONFIG% -s "%1tests\test_daal4py_spmd_examples.py" %PYTEST_ARGS:FILENAME=mpi_legacy%
+    if !errorlevel! NEQ 0 (
+        set exitcode=1
+    )
+    %PYTHON% "%1tests\helper_mpi_tests.py"^
+        pytest --with-mpi %PYTEST_CONFIG% -s "%1tests\test_mpi_lifecycle.py" %PYTEST_ARGS:FILENAME=mpi_lifecycle%
+    if !errorlevel! NEQ 0 (
+        set exitcode=1
+    )
+    rem Run directly rather than through the helper: this covers the
+    rem daal4py-owned MPI path, and the helper imports mpi4py, which would take
+    rem that ownership away.
+    %PYTHON% "%1tests\mpi_lifecycle_smoke.py"
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )

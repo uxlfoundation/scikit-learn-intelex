@@ -17,15 +17,12 @@ from abc import ABCMeta
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-
+from .. import onedal_check_version
 from .._config import _get_config
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array
 
 
 class BaseEmpiricalCovariance(metaclass=ABCMeta):
@@ -42,9 +39,9 @@ class BaseEmpiricalCovariance(metaclass=ABCMeta):
             "fptype": dtype,
             "method": self.method,
         }
-        if daal_check_version((2024, "P", 1)):
+        if onedal_check_version(2024, 0, 1):
             params["bias"] = self.bias
-        if daal_check_version((2024, "P", 400)):
+        if onedal_check_version(2024, 4, 0):
             params["assumeCentered"] = self.assume_centered
 
         return params
@@ -109,7 +106,7 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
             result = self.compute(params, hparams.backend, X_table)
         else:
             result = self.compute(params, X_table)
-        if daal_check_version((2024, "P", 1)) or (not self.bias):
+        if onedal_check_version(2024, 0, 1) or (not self.bias):
             self.covariance_ = from_table(result.cov_matrix, like=X)
         else:
             self.covariance_ = (

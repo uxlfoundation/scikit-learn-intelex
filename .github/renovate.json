@@ -62,6 +62,13 @@
       "matchStrings": ["pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       "depNameTemplate": "pre-commit",
       "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["(^|/)meta\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s*-\\s*[\"']\\S+\\s+<=(?<currentValue>[^\"']+)[\"']"
+      ],
     }
   ]
 }

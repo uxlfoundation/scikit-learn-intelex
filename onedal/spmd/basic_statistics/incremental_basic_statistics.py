@@ -14,11 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.common._backend import bind_spmd_backend
-
 from ...basic_statistics import (
     IncrementalBasicStatistics as base_IncrementalBasicStatistics,
 )
+from ...common._backend import bind_spmd_backend
 
 
 class IncrementalBasicStatistics(base_IncrementalBasicStatistics):

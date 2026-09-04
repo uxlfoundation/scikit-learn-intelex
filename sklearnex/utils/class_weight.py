@@ -15,10 +15,10 @@
 # ==============================================================================
 
 from sklearn.preprocessing import LabelEncoder as _sklearn_LabelEncoder
+from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from ._array_api import get_namespace
 from .validation import _check_sample_weight
 
 if sklearn_check_version("1.9"):
@@ -78,10 +78,6 @@ def _compute_class_weight(
             (classes.shape[0],), dtype=xp.float64, device=getattr(classes, "device", None)
         )
     elif class_weight == "balanced":
-        if not sklearn_check_version("1.6"):
-            raise RuntimeError(
-                "array API support with 'balanced' keyword not supported for sklearn <1.6"
-            )
         # Find the weight of each class as present in y.
         if y_encoded is None:
             le = _sklearn_LabelEncoder()

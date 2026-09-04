@@ -20,7 +20,10 @@ Model serialization (pickling)
 Serializing objects
 -------------------
 
-Objects in Python are bound to the process that creates them. Usually, when it comes to statistical or machine learning models, one typically wants to save fitted models for later usage - for example, by fitting a model on a large machine, saving it to disk storage, and then serving it (making predictions on new data) on other smaller machines.
+Objects in Python are bound to the process that creates them. Usually, when it comes to statistical or machine learning models, one typically wants to save fitted models for later usage - for example, by fitting a model on a large machine, saving it to disk storage, and then serving it (making predictions on new data, or inferencing) on other smaller machines.
+
+.. hint::
+    See the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__ for additional tips when deploying estimators in online services.
 
 Just like other objects in Python, estimator objects from the |sklearnex| can be serialized / persisted / pickled using the built-in ``pickle`` module - for example:
 

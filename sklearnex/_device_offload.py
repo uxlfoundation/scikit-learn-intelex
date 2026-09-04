@@ -14,21 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
+from sklearn.utils import get_tags
+from sklearn.utils._array_api import get_namespace
+
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal._device_offload import _transfer_to_host
-from onedal.datatypes import copy_to_dpnp
+from onedal._device_offload import _get_host_inputs, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
-from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import get_config
-from ._utils import PatchingConditionsChain, get_tags
+from ._utils import PatchingConditionsChain
 from .base import oneDALEstimator
-from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -120,7 +121,6 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
-    # TODO validate if this comment is valid (e.g. X on GPU, y on CPU)
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
@@ -147,13 +147,12 @@ def dispatch(
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
-        # move data to host because of multiple reasons: array_api fallback to host,
-        # non array_api supporting oneDAL code, issues with usm support in sklearn.
-        has_usm_data_for_args, hostargs = _transfer_to_host(*args)
-        has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
+        # move data to host because of multiple reasons: array_api fallback to host
+        # and non array_api supporting oneDAL code
+        _, hostargs = _transfer_to_host(*args)
+        _, hostvalues = _transfer_to_host(*kwargs.values())
 
         hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-        has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
 
         while backend is None:
             backend, patching_status = _get_backend(obj, method_name, *hostargs)
@@ -163,8 +162,7 @@ def dispatch(
             patching_status.write_log(queue=queue, transferred_to_host=False)
             return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
-            if sklearn_array_api and not has_usm_data:
-                # dpnp fallback is not handled properly yet.
+            if sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
             else:
@@ -192,52 +190,89 @@ def wrap_output_data(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
-        # In case ARRAY API is enabled the result is already converted to the required type
-        if _array_api_offload() and get_tags(self).onedal_array_api:
-            # When transform_output is polars/pandas, sklearn's _set_output
-            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
-            # Transfer to host so sklearn can wrap into the requested format.
-            if func.__name__ in ("transform", "fit_transform") and (
-                get_config().get("transform_output")
-                not in (
-                    "default",
-                    None,
-                )
-                or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
-                != "default"
-            ):
-                _, (result,) = _transfer_to_host(result)
+
+        # When transform_output is polars/pandas, sklearn's _set_output wrapper
+        # builds a DataFrame from the result. For array-api results whose data
+        # lives on a non-CPU device the DataFrame constructor raises: pandas with
+        # "Implicit conversion to a NumPy array is not allowed" and polars with
+        # "DataFrame constructor called with unsupported type". Transfer to host
+        # first so sklearn can wrap into the requested format.
+        if func.__name__ in ("transform", "fit_transform") and (
+            get_config().get("transform_output", "default") not in ("default", None)
+            or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
+            != "default"
+        ):
+            _, (result,) = _transfer_to_host(result)
             return result
-        if not (len(args) == 0 and len(kwargs) == 0):
-            data = (*args, *kwargs.values())[0]
-            # When transform_output is polars/pandas, sklearn's _set_output
-            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
-            # Transfer to host so sklearn can wrap into the requested format.
-            if func.__name__ in ("transform", "fit_transform") and (
-                get_config().get("transform_output")
-                not in (
-                    "default",
-                    None,
-                )
-                or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
-                != "default"
-            ):
-                _, (result,) = _transfer_to_host(result)
-                return result
 
-            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
-                queue = usm_iface["syclobj"]
-                return copy_to_dpnp(queue, result)
+        # Array API path: result is already in the caller's namespace/device.
+        if _array_api_offload() and get_tags(self).onedal_array_api:
+            return result
 
-            if get_config().get("transform_output") in ("default", None):
-                if hasattr(data, "dtype"):
-                    xp, is_array_api = get_namespace(data)
-                    if is_array_api and not _is_numpy_namespace(xp):
-                        device = getattr(data, "device", None)
-                        if isinstance(result, tuple):
-                            result = tuple(xp.asarray(r, device=device) for r in result)
-                        elif not isinstance(result, (int, float)):
-                            result = xp.asarray(result, device=device)
+        if not args and not kwargs:
+            return result
+
+        data = (*args, *kwargs.values())[0]
+
+        if hasattr(data, "dtype"):
+            xp, is_array_api = get_namespace(data)
+            if is_array_api and not _is_numpy_namespace(xp):
+                device = getattr(data, "device", None)
+                if isinstance(result, tuple):
+                    result = tuple(xp.asarray(r, device=device) for r in result)
+                elif getattr(result, "ndim", 0) > 0:
+                    result = xp.asarray(result, device=device)
         return result
 
     return wrapper
+
+
+def support_input_format(func):
+    """Transform input and output function arrays to/from host.
+
+    Wraps host-side scikit-learn / daal4py fallback functions (device offload to
+    oneDAL happens in ``dispatch``): inputs are transferred to host and the output
+    is converted back to the input's array API namespace and device.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
+    """
+
+    def invoke_func(self_or_None, *args, **kwargs):
+        if self_or_None is None:
+            return func(*args, **kwargs)
+        else:
+            return func(self_or_None, *args, **kwargs)
+
+    @wraps(func)
+    def wrapper_impl(*args, **kwargs):
+        # remove self from args if it is a class method
+        if inspect.isfunction(func) and "." in func.__qualname__:
+            self = args[0]
+            args = args[1:]
+        else:
+            self = None
+
+        if len(args) == 0 and len(kwargs) == 0:
+            return invoke_func(self, *args, **kwargs)
+
+        with QM.manage_global_queue(None, *args):
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+            result = invoke_func(self, *hostargs, **hostkwargs)
+
+        data = (*args, *kwargs.values())[0]
+        if get_config().get("transform_output") in ("default", None):
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
+            if input_array_api and not _is_numpy_namespace(input_array_api):
+                input_array_api_device = data.device
+                result = _asarray(result, input_array_api, device=input_array_api_device)
+        return result
+
+    return wrapper_impl

@@ -26,6 +26,7 @@ from dpctl import SyclQueue
 from mpi4py import MPI
 from sklearn.datasets import load_digits
 
+from sklearnex import config_context
 from sklearnex.spmd.cluster import DBSCAN
 
 
@@ -57,6 +58,9 @@ queue = SyclQueue("gpu")
 
 dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=queue)
 
-model = DBSCAN(eps=3, min_samples=2).fit(dpnp_X)
+# Array API dispatch keeps dpnp data on device throughout the computation.
+# The SCIPY_ARRAY_API environment variable must also be set to enable this.
+with config_context(array_api_dispatch=True):
+    model = DBSCAN(eps=3, min_samples=2).fit(dpnp_X)
 
-print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])
+    print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])
