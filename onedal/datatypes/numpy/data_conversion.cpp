@@ -24,6 +24,9 @@
 
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
+#if ONEDAL_VERSION >= 20260200
+#include "oneapi/dal/table/detail/csr_utils.hpp"
+#endif
 
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 #include "onedal/datatypes/numpy/numpy_utils.hpp"
@@ -504,57 +507,68 @@ template <int NpType, typename T>
 static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     const std::int64_t rows_indices_count = table.get_row_count() + 1;
     const std::int64_t non_zero_count = table.get_non_zero_count();
-    const std::int64_t *row_offsets = table.get_row_offsets();
-    const std::int64_t *column_indices = table.get_column_indices();
 
-    std::uint64_t *column_indices_zero_based_data = nullptr;
-    std::uint64_t *row_offsets_zero_based_data = nullptr;
-
-    dal::array<std::uint64_t> column_indices_zero_based_array;
-    dal::array<std::uint64_t> row_offsets_zero_based_array;
+    dal::array<std::int64_t> column_indices_zero_based_array;
+    dal::array<std::int64_t> row_offsets_zero_based_array;
 
     if (table.get_indexing() == sparse_indexing::zero_based) {
-        column_indices_zero_based_data =
-            const_cast<std::uint64_t *>(reinterpret_cast<const std::uint64_t *>(column_indices));
-        row_offsets_zero_based_data =
-            const_cast<std::uint64_t *>(reinterpret_cast<const std::uint64_t *>(row_offsets));
+#if ONEDAL_VERSION >= 20260200
+        column_indices_zero_based_array = dal::detail::get_original_column_indices(table);
+        row_offsets_zero_based_array = dal::detail::get_original_row_offsets(table);
+#else
+        const std::int64_t *column_indices_zero_based_data = table.get_column_indices();
+        const std::int64_t *row_offsets_zero_based_data = table.get_row_offsets();
 
-        column_indices_zero_based_array =
-            dal::array<std::uint64_t>::wrap(column_indices_zero_based_data, non_zero_count);
-        row_offsets_zero_based_array =
-            dal::array<std::uint64_t>::wrap(row_offsets_zero_based_data, rows_indices_count);
+        column_indices_zero_based_array = dal::array<std::int64_t>::empty(non_zero_count);
+        row_offsets_zero_based_array = dal::array<std::int64_t>::empty(rows_indices_count);
+        std::copy(column_indices_zero_based_data,
+                  column_indices_zero_based_data + non_zero_count,
+                  column_indices_zero_based_array.get_mutable_data());
+        std::copy(row_offsets_zero_based_data,
+                  row_offsets_zero_based_data + non_zero_count,
+                  row_offsets_zero_based_array.get_mutable_data());
+#endif
     }
     else { // table.get_indexing() == sparse_indexing::one_based
-        column_indices_zero_based_array = dal::array<std::uint64_t>::empty(non_zero_count);
-        row_offsets_zero_based_array = dal::array<std::uint64_t>::empty(rows_indices_count);
+        const std::int64_t *row_offsets_base1 = table.get_row_offsets();
+        const std::int64_t *column_indices_base1 = table.get_column_indices();
 
-        column_indices_zero_based_data = column_indices_zero_based_array.get_mutable_data();
-        row_offsets_zero_based_data = row_offsets_zero_based_array.get_mutable_data();
+        column_indices_zero_based_array = dal::array<std::int64_t>::empty(non_zero_count);
+        row_offsets_zero_based_array = dal::array<std::int64_t>::empty(rows_indices_count);
+
+        std::int64_t *column_indices_zero_based_data =
+            column_indices_zero_based_array.get_mutable_data();
+        std::int64_t *row_offsets_zero_based_data = row_offsets_zero_based_array.get_mutable_data();
 
         for (std::int64_t i = 0; i < non_zero_count; ++i)
-            column_indices_zero_based_data[i] = column_indices[i] - 1;
+            column_indices_zero_based_data[i] = column_indices_base1[i] - 1;
 
         for (std::int64_t i = 0; i < rows_indices_count; ++i)
-            row_offsets_zero_based_data[i] = row_offsets[i] - 1;
+            row_offsets_zero_based_data[i] = row_offsets_base1[i] - 1;
     }
 
+#if ONEDAL_VERSION >= 20260200
+    dal::array<byte_t> data_array = dal::detail::get_original_data(table);
+    PyObject *py_data = convert_to_numpy_impl<NpType>(data_array, non_zero_count);
+#else
+    dal::array<T> data_array = dal::array<T>::empty(non_zero_count);
     const T *data = table.get_data<T>();
-    dal::array<T> data_array = dal::array<T>::wrap(data, non_zero_count);
+    std::copy(data, data + non_zero_count, data_array.get_mutable_data());
+    PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
+#endif
 
     // These put the Python objects into temporary pybind11 containers
     // in order to ensure that if any allocation fails or the conversion
     // throws, the intermediate objects would get destructed afterwards.
-    PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
     py::object py_data_holder = py::reinterpret_steal<py::object>(py_data);
 
     PyObject *py_col =
-        convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(column_indices_zero_based_array,
-                                                         non_zero_count);
+        convert_to_numpy_impl<NPY_INT64, std::int64_t>(column_indices_zero_based_array,
+                                                       non_zero_count);
     py::object py_col_holder = py::reinterpret_steal<py::object>(py_col);
 
-    PyObject *py_row =
-        convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(row_offsets_zero_based_array,
-                                                         rows_indices_count);
+    PyObject *py_row = convert_to_numpy_impl<NPY_INT64, std::int64_t>(row_offsets_zero_based_array,
+                                                                      rows_indices_count);
     py::object py_row_holder = py::reinterpret_steal<py::object>(py_row);
     PyObject *result = PyTuple_New(3);
     if (!result)
