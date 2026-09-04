@@ -84,7 +84,7 @@ Current list of preview estimators:
      - Is patching supported
    * - :obj:`sklearn.linear_model.Lasso`
      - Yes
-   * - :obj:`sklearn.covariance.ElasticNet`
+   * - :obj:`sklearn.linear_model.ElasticNet`
      - Yes
    * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - Yes
