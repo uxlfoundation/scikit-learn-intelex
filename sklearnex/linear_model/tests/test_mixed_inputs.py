@@ -17,8 +17,14 @@
 import array_api_strict
 import numpy as np
 import pandas as pd
-import polars as pl
 import pytest
+
+try:
+    import polars as pl
+except ModuleNotFoundError as error:
+    if error.name != "polars":
+        raise
+    pl = None
 
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
@@ -60,7 +66,7 @@ def _split_row(arr, start, stop):
         return arr.iloc[start:stop]
     # Array-API namespaces need the trailing ellipsis to slice rows only; polars
     # slices rows already and rejects it as a column selector.
-    if len(arr.shape) == 1 or isinstance(arr, pl.DataFrame):
+    if len(arr.shape) == 1 or (pl is not None and isinstance(arr, pl.DataFrame)):
         return arr[start:stop]
     return arr[start:stop, ...]
 

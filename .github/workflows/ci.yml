@@ -72,6 +72,8 @@ jobs:
             SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.14"
             SKLEARN_VERSION: "1.9"
+          - PYTHON_VERSION: "3.14t"
+            SKLEARN_VERSION: "1.9"
     name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -106,7 +108,7 @@ jobs:
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           # Determine dpctl support
           DPCFLAG="0"
-          if [ $(echo ${{ matrix.PYTHON_VERSION }} | grep '${{ env.DPCTL_PY_VERSIONS }}') ]; then DPCFLAG=''; fi
+          if [[ "${{ matrix.PYTHON_VERSION }}" != *t ]] && grep -q '${{ env.DPCTL_PY_VERSIONS }}' <<< '${{ matrix.PYTHON_VERSION }}'; then DPCFLAG=''; fi
           echo "DPCFLAG=${DPCFLAG}" >> "$GITHUB_OUTPUT"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
@@ -131,16 +133,49 @@ jobs:
       - name: Build daal4py/sklearnex
         run: |
           source venv/bin/activate
-          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
-          python setup.py install --single-version-externally-managed --record=record.txt
+          if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
+            # Build our DPC extension on free-threaded Python even though the
+            # optional dpctl/dpnp client wheels do not publish a cp314t ABI.
+            source .github/scripts/activate_components.sh
+            python setup.py bdist_wheel
+            pip install --force-reinstall --no-deps dist/*.whl
+          else
+            source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
+            python setup.py install --single-version-externally-managed --record=record.txt
+          fi
       - name: Install testing requirements
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
-          pip install --upgrade -r requirements-test.txt
+          if [[ "${{ matrix.PYTHON_VERSION }}" == *t ]]; then
+            pip install --upgrade -r requirements-test-free-threaded.txt
+          else
+            pip install --upgrade -r requirements-test.txt
+          fi
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
+      - name: Verify free-threaded wheel ABI
+        if: ${{ endsWith(matrix.PYTHON_VERSION, 't') }}
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          cd /tmp
+          # PYTHON_GIL=0 is deliberately *not* set: the point of this check is
+          # that nothing we ship declares itself GIL-requiring and thereby makes
+          # the interpreter re-enable the GIL at import time.
+          python - <<'PY'
+          import sys
+          import sysconfig
+
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+          assert not sys._is_gil_enabled()
+          import sklearnex
+
+          assert not sys._is_gil_enabled(), (
+              "importing sklearnex re-enabled the GIL"
+          )
+          PY
       - name: Sklearnex testing
         run: |
           source venv/bin/activate
@@ -173,6 +208,66 @@ jobs:
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           export SKLEARNEX_PREVIEW='YES'
           bash .ci/scripts/run_sklearn_tests.sh $CPU
+
+  mpi_lnx:
+    needs: onedal_nightly
+    name: Linux CPython3.14t MPI two-rank
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      NO_DPC: "1"
+      PYTHON_GIL: "0"
+
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v7
+      - name: Install free-threaded Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14t"
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Install native runtime and MPI
+        run: |
+          sudo apt-get update
+          bash .ci/env/apt.sh tbb
+          sudo apt-get install -y intel-oneapi-mpi-devel
+      - name: Install build and test requirements
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          source /opt/intel/oneapi/setvars.sh
+          pip install -r dependencies-dev wheel scikit-learn
+          # The generic mpi4py wheel can select a different MPI ABI and make
+          # each Intel MPI-launched rank appear as a singleton communicator.
+          MPICC=mpicc pip install --no-cache-dir --no-binary=mpi4py mpi4py
+      - name: Build distributed host extensions
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          test -n "$I_MPI_ROOT"
+          python setup.py bdist_wheel
+          pip install --force-reinstall --no-deps dist/*.whl
+      - name: Run free-threaded MPI two-rank smoke
+        run: |
+          source venv/bin/activate
+          source .github/scripts/activate_components.sh
+          cd /tmp
+          mpiexec -n 2 python "$GITHUB_WORKSPACE/tests/mpi_lifecycle_smoke.py"
 
   sklearn_win:
     needs: onedal_nightly

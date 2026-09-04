@@ -62,8 +62,23 @@ In general, accelerated computations offered by estimators from the |sklearnex|
 do not raise the Python GIL, thus they are not compatible with parallelization
 backends that rely on Python threads. Instead, process-based parallelism is
 recommended, which is the default mode in tools like :mod:`joblib` and by
-extension in metaestimators from |sklearn|. Note that builds of the |sklearnex| for
-free-threaded Python are not offered at this moment.
+extension in metaestimators from |sklearn|.
+
+The |sklearnex| can be built from source for free-threaded CPython (see
+:doc:`installation`), in which case importing it does not re-enable the GIL.
+This only removes the GIL as an obstacle to running Python code in parallel -
+it does **not** lift any of the restrictions described in this section, since
+those come from global state in the |sklearnex| and in the |onedal| rather than
+from the GIL. If anything, they become easier to hit, as Python threads then
+execute concurrently instead of being serialized by the interpreter.
+
+What is supported, on both build flavors, is concurrent use of **separate**
+estimator instances - each one constructed, fitted and used within a single
+thread - subject to the exceptions listed below. Instances that are not shared
+hold no Python state in common, and the underlying |onedal| computations they
+dispatch are themselves thread-safe. On a GIL-enabled build this arrangement
+still yields no parallelism for the computation itself, since the GIL is held
+throughout it; on a free-threaded build the computations do overlap.
 
 Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
 usage in Python threads, even if running under the Python GIL:
@@ -73,12 +88,27 @@ usage in Python threads, even if running under the Python GIL:
   calls to estimators with different ``n_jobs`` are performed in parallel
   through **Python threads**, there might be threading races that override
   one another's configuration, potentially leading to process-wide crashes.
+  Note that a call with an explicit ``n_jobs`` sets this process-global value
+  for the duration of the call and restores the previous value afterwards, so
+  a concurrent call can both observe the wrong thread count and have its own
+  value discarded when the other call finishes. This is a property of the
+  global configuration itself and is not something the caller can lock around.
 - The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
   :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
   suitable for parallel calls in Python threads regardless of the ``n_jobs``
   parameter due to usage of other Python-level global state variables.
   Attempting to fit multiple logistic regression estimator objects in parallel
   might result in crashes and incorrect estimations.
+- A single estimator instance must not be **modified** from more than one
+  thread, nor read from one thread while another modifies it. This covers
+  ``.fit()``, ``.set_params()`` and direct attribute assignment, and equally
+  restoring state into an existing object - for example through
+  ``__setstate__()``. None of those are atomic: two threads writing can leave
+  the instance holding a mixture of both states, and a thread reading
+  concurrently can observe it part-way through a write, including a fitted
+  attribute that no longer matches the model behind it. Fit each instance in one
+  thread and treat it as read-only from then on; to fit several models at once,
+  give each thread its own instance.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
@@ -92,6 +122,12 @@ usage in Python threads, even if running under the Python GIL:
     - :obj:`sklearn.neighbors.KNeighborsRegressor`.
     - :obj:`sklearn.neighbors.KNeighborsClassifier`.
     - :obj:`sklearn.neighbors.LocalOutlierFactor`.
+
+- Result and model objects from the deprecated :doc:`daal4py <daal4py>` module
+  are read-only once constructed, and reading their attributes from multiple
+  threads is safe. Un-pickling into an already-populated object is not, and is
+  rejected with an error rather than silently replacing state that another
+  thread might be reading.
 
 Other considerations
 ====================

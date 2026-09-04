@@ -52,6 +52,21 @@ NO_ABS_RPATH: bool = bool(os.environ.get("SKLEARNEX_NO_ABS_RPATH"))
 USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath") and not NO_ABS_RPATH
 DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
+# Which Python ABI the extension modules are built for. It defaults to the
+# interpreter driving the build, but is a build parameter in its own right so
+# that the free-threaded build path - the generator mode, the CMake
+# find_package(Python) branch and the pybind11 2.13 requirement it brings - can
+# be exercised from a regular interpreter as well. Note that the C++ side reads
+# Py_GIL_DISABLED from the Python headers, so forcing this on under a
+# GIL-enabled interpreter selects the free-threaded build configuration, not a
+# free-threaded ABI.
+FORCE_FREE_THREADING: bool = check_for_build_arg("--free-threading") or bool(
+    os.environ.get("SKLEARNEX_FREE_THREADING")
+)
+NO_FREE_THREADING: bool = bool(os.environ.get("SKLEARNEX_NO_FREE_THREADING"))
+FREE_THREADING_BUILD: bool = FORCE_FREE_THREADING or (
+    bool(get_config_vars().get("Py_GIL_DISABLED")) and not NO_FREE_THREADING
+)
 
 IS_WIN = False
 IS_MAC = False
@@ -104,9 +119,11 @@ if (not no_dist) and (mpi_root is None):
         "'MPIROOT' is not set, cannot build with distributed mode."
         " Use 'NO_DIST=1' to build without distributed mode."
     )
+onedal_shared_libs = get_onedal_shared_libs(dal_root, IS_WIN)
+dpc_backend_library = "onedal_dpc"
 dpcpp = (
     shutil.which("icpx" if not IS_WIN else "icx") is not None
-    and "onedal_dpc" in get_onedal_shared_libs(dal_root, IS_WIN)
+    and dpc_backend_library in onedal_shared_libs
     and not no_dpc
     and not (IS_WIN and debug_build)
 )
@@ -351,13 +368,23 @@ for key, value in get_config_vars().items():
 
 
 def gen_pyx(odir):
-    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + ["./setup.py"]
+    generation_mode = "free-threaded" if FREE_THREADING_BUILD else "gil-enabled"
+    generation_mode_file = pathlib.Path(odir) / ".daal4py-generation-mode"
+    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + [
+        "./setup.py",
+        "./src/gbt_model_builder.pyx",
+        "./src/log_reg_model_builder.pyx",
+    ]
     src_files = [
         os.path.abspath("build/daal4py_cpp.h"),
         os.path.abspath("build/daal4py_cpp.cpp"),
         os.path.abspath("build/daal4py_cy.pyx"),
     ]
-    if all(os.path.isfile(x) for x in src_files):
+    if (
+        all(os.path.isfile(x) for x in src_files)
+        and generation_mode_file.is_file()
+        and generation_mode_file.read_text() == generation_mode
+    ):
         src_files.sort(key=os.path.getmtime)
         gtr_files.sort(key=os.path.getmtime, reverse=True)
         if os.path.getmtime(src_files[0]) > os.path.getmtime(gtr_files[0]):
@@ -372,7 +399,15 @@ def gen_pyx(odir):
     odir = os.path.abspath(odir)
     if not os.path.isdir(odir):
         os.mkdir(odir)
-    gen_daal4py(dal_root, odir, sklearnex_version, no_dist=no_dist, no_stream=no_stream)
+    gen_daal4py(
+        dal_root,
+        odir,
+        sklearnex_version,
+        no_dist=no_dist,
+        no_stream=no_stream,
+        free_threading=FREE_THREADING_BUILD,
+    )
+    generation_mode_file.write_text(generation_mode)
 
 
 gen_pyx(os.path.abspath("./build"))
@@ -437,6 +472,7 @@ class onedal_build:
             is_lin=IS_LIN,
             debug_build=DEBUG_BUILD,
             using_lld=USING_LLD,
+            free_threading=FREE_THREADING_BUILD,
         )
         build_onedal("host")
         if dpcpp:

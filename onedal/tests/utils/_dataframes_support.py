@@ -59,7 +59,16 @@ except (ImportError, KeyError):
 
 import numpy as np
 import pandas as pd
-import polars as pl
+
+try:
+    import polars as pl
+except ModuleNotFoundError as error:
+    if error.name != "polars":
+        raise
+    # polars ships abi3-only wheels, which are not installable on a
+    # free-threaded interpreter - see requirements-test-free-threaded.txt. Every
+    # test module that imports this one would fail to collect on a hard import.
+    pl = None
 
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
@@ -74,7 +83,7 @@ test_frameworks = os.environ.get(
 array_api_frameworks = ("dpnp", "array_api", "torch")
 
 # Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
-host_df_modules = (pd, pl)
+host_df_modules = (pd, pl) if pl is not None else (pd,)
 
 # ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
 # but only for the exceptions it catches; torch signals this case with
