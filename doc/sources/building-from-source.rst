@@ -252,8 +252,6 @@ The following environment variables can be used to control setup aspects:
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
 - ``NO_DPC``: set to '1', 'yes' or alike to build without support of the |onedal| DPC++ interfaces (GPU). Note that building the DPC++ component (default) of this library requires also the DPC++ components of the |onedal| (packages ``dal-gpu`` / ``daal-gpu`` if installing it from ``conda`` or ``pip``).
 - ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
-- ``SKLEARNEX_FREE_THREADING``: set to a non-empty value to select the free-threaded build configuration, equivalent to passing ``--free-threading``.
-- ``SKLEARNEX_NO_FREE_THREADING``: set to a non-empty value to select the GIL-enabled build configuration even when the interpreter running the build is free-threaded.
 - ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to cancel the ``--abs-rpath`` option and to omit the MPI library folders from the rpath of ``daal4py.mpi_transceiver``, leaving only relative (``$ORIGIN``-based) entries in the resulting shared objects. Intended for builds whose artifacts are redistributed, where absolute paths from the build machine do not exist on the target. Note that ``conda`` interpreters carry an additional ``-Wl,-rpath`` entry pointing at the build environment in ``LDSHARED``/``LDCXXSHARED`` and in ``$LDFLAGS``; those are outside the control of this option and require post-processing of the built objects to remove.
 
 .. note:: The ``-j`` flag in the ``MAKEFLAGS`` environment variable is superseded in ``setup.py`` modes which support the ``--parallel`` and ``-j`` command line flags.

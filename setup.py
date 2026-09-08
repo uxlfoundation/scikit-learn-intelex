@@ -60,12 +60,11 @@ USING_LLD: bool = check_for_build_arg("--using-lld")
 # Py_GIL_DISABLED from the Python headers, so forcing this on under a
 # GIL-enabled interpreter selects the free-threaded build configuration, not a
 # free-threaded ABI.
-FORCE_FREE_THREADING: bool = check_for_build_arg("--free-threading") or bool(
-    os.environ.get("SKLEARNEX_FREE_THREADING")
-)
-NO_FREE_THREADING: bool = bool(os.environ.get("SKLEARNEX_NO_FREE_THREADING"))
-FREE_THREADING_BUILD: bool = FORCE_FREE_THREADING or (
-    bool(get_config_vars().get("Py_GIL_DISABLED")) and not NO_FREE_THREADING
+# check_for_build_arg() has to stay on the left of the 'or': it strips the
+# argument from sys.argv as a side effect, and short-circuiting past it would
+# leave setuptools to abort on an unrecognized argument.
+FREE_THREADING_BUILD: bool = check_for_build_arg("--free-threading") or bool(
+    get_config_vars().get("Py_GIL_DISABLED")
 )
 
 IS_WIN = False

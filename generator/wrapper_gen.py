@@ -982,6 +982,8 @@ private:
             "finalize() not supported in distributed mode"
         );
 {% endif %}
+        ThreadAllow allow_threads;
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         if({{streaming.arg_member}}) {
             _algostream->finalizeCompute();
             return new typename iomb_type::result_type(_algostream->getResult());
@@ -1042,7 +1044,10 @@ public:
         bool setup_only = false)
     {
         // Detach before waiting for the native mutex to avoid a GIL/mutex
-        // inversion with a thread already computing on this manager.
+        // inversion with a thread already computing on this manager. For the
+        // same reason the Cython side must not hold a suspendable Python
+        // critical section across this call: a thread could acquire it while
+        // blocked here and keep the first thread from reattaching.
         ThreadAllow allow_threads;
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         {{input_args|fmt('{}', 'assign_member', sep=';\n')|indent(8)}};
@@ -1141,10 +1146,7 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% set cytype = result_map.class_type.replace('Ptr', '')|d2cy(False)|lower %}
-    # The native per-manager mutex protects state across the full oneDAL call.
-    # Do not hold a suspendable Python critical section across ThreadAllow:
-    # another thread could acquire it while blocked on the native mutex and
-    # prevent the first thread from reattaching.
+    # compute simply forwards to the C++ de-templatized manager__iface__::compute
     def _compute(self,
                  {{input_args|fmt('{}', 'decl_dflt_cy', sep=',\n')|indent(17)}},
                  setup=False):
@@ -1187,7 +1189,7 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% if streaming.name %}
-    # finalize is serialized by the native per-manager mutex.
+    # finalize simply forwards to the C++ de-templatized manager__iface__::finalize
     def finalize(self):
         if self.c_ptr.get() == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")
@@ -1226,7 +1228,7 @@ cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
 {% endif %}
 
 {% if streaming.name %}
-    # finalize is serialized by the native per-manager mutex.
+    # finalize simply forwards to the C++ de-templatized manager__iface__::finalize
     def finalize(self):
         if self.c_ptr.get() == NULL:
             raise ValueError("Pointer to oneDAL entity is NULL")

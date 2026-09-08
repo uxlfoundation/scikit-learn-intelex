@@ -62,9 +62,9 @@ try:
 except ModuleNotFoundError as error:
     if error.name != "polars":
         raise
-    # polars ships abi3-only wheels, which are not installable on a
-    # free-threaded interpreter - see requirements-test-free-threaded.txt. Every
-    # test module that imports this one would fail to collect on a hard import.
+    # polars has no free-threaded wheel on PyPI - see
+    # requirements-test-free-threaded.txt for the details. Every test module that
+    # imports this one would fail to collect on a hard import.
     pl = None
 
 from onedal.datatypes._dlpack import dlpack_to_numpy

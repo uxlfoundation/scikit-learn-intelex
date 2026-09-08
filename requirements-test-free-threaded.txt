@@ -1,12 +1,17 @@
 # Test requirements for free-threaded CPython builds.
 #
 # This mirrors requirements-test.txt minus catboost, shap and polars, none of
-# which are installable on a free-threaded interpreter on the platform this is
-# tested on (Linux x86-64):
+# which have a binary wheel installable on a free-threaded interpreter on the
+# platform this is tested on (Linux x86-64):
 #   - catboost publishes no cp3XXt wheel at all.
 #   - shap publishes cp314t wheels for some platforms, but not manylinux x86-64.
-#   - polars publishes abi3 wheels only, and an abi3 wheel built against the
-#     limited API is not usable from a free-threaded build.
+#   - polars ships its compiled code in polars-runtime-{32,64}, which publishes
+#     cp310-abi3 wheels only. A free-threaded interpreter accepts abi3t but not
+#     plain abi3, so there is nothing to install from PyPI. Its sdist does build
+#     - maturin bootstraps the Rust nightly it pins - but that adds a multi-GB
+#     toolchain download and tens of minutes to the job. conda-forge does have
+#     cp314t builds of polars-runtime-64, so this is a wheel-only limitation and
+#     would go away if this job moved to a conda-based environment.
 # PEP 508 has no environment marker for the free-threaded build, so the split
 # cannot be expressed as a marker in requirements-test.txt itself.
 #

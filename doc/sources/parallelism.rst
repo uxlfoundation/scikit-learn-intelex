@@ -95,16 +95,11 @@ usage in Python threads, even if running under the Python GIL:
   parameter due to usage of other Python-level global state variables.
   Attempting to fit multiple logistic regression estimator objects in parallel
   might result in crashes and incorrect estimations.
-- A single estimator instance must not be **modified** from more than one
-  thread, nor read from one thread while another modifies it. This covers
-  ``.fit()``, ``.set_params()`` and direct attribute assignment, and equally
-  restoring state into an existing object - for example through
-  ``__setstate__()``. None of those are atomic: two threads writing can leave
-  the instance holding a mixture of both states, and a thread reading
-  concurrently can observe it part-way through a write, including a fitted
-  attribute that no longer matches the model behind it. Fit each instance in one
-  thread and treat it as read-only from then on; to fit several models at once,
-  give each thread its own instance.
+- A single estimator instance must not be **modified** from more than one thread,
+  nor read while another thread modifies it - this includes ``.fit()``,
+  ``.set_params()``, direct attribute assignment and un-pickling into an existing
+  object. Fit each instance in one thread and treat it as read-only from then on;
+  to fit several models at once, give each thread its own instance.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
@@ -119,11 +114,9 @@ usage in Python threads, even if running under the Python GIL:
     - :obj:`sklearn.neighbors.KNeighborsClassifier`.
     - :obj:`sklearn.neighbors.LocalOutlierFactor`.
 
-- Result and model objects from the deprecated :doc:`daal4py <daal4py>` module
-  are read-only once constructed, and reading their attributes from multiple
-  threads is safe. Un-pickling into an already-populated object is not, and is
-  rejected with an error rather than silently replacing state that another
-  thread might be reading.
+- Un-pickling into an already-populated result or model object from the deprecated
+  :doc:`daal4py <daal4py>` module raises an error instead of silently replacing
+  state that another thread might be reading.
 
 Other considerations
 ====================
