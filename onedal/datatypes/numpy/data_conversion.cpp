@@ -24,7 +24,7 @@
 
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
-#if ONEDAL_VERSION >= 20260200
+#if (ONEDAL_VERSION >= 20260200) && (__INTEL_DAAL_BUILD_DATE > 20260905)
 #include "oneapi/dal/table/detail/csr_utils.hpp"
 #endif
 
@@ -512,7 +512,7 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     dal::array<std::int64_t> row_offsets_zero_based_array;
 
     if (table.get_indexing() == sparse_indexing::zero_based) {
-#if ONEDAL_VERSION >= 20260200
+#if (ONEDAL_VERSION >= 20260200) && (__INTEL_DAAL_BUILD_DATE > 20260905)
         column_indices_zero_based_array = dal::detail::get_original_column_indices(table);
         row_offsets_zero_based_array = dal::detail::get_original_row_offsets(table);
 #else
@@ -547,7 +547,7 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
             row_offsets_zero_based_data[i] = row_offsets_base1[i] - 1;
     }
 
-#if ONEDAL_VERSION >= 20260200
+#if (ONEDAL_VERSION >= 20260200) && (__INTEL_DAAL_BUILD_DATE > 20260905)
     dal::array<byte_t> data_array = dal::detail::get_original_data(table);
     PyObject *py_data = convert_to_numpy_impl<NpType>(data_array, non_zero_count);
 #else
