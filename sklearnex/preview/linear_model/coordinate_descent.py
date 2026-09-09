@@ -16,7 +16,7 @@
 
 from daal4py.sklearn.linear_model import ElasticNet, Lasso
 
-from ..base import oneDALEstimator
+from ...base import oneDALEstimator
 
 ElasticNet._doc_link_module = "daal4py"
 ElasticNet._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

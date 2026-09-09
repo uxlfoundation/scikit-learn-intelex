@@ -20,27 +20,31 @@ Parallelism Specifics
 
 |sklearnex| supports the :term:`n_jobs` parameter of the original |sklearn| with the following differences:
 
-* `n_jobs` parameter is supported for all estimators patched by |sklearnex|,
+* ``n_jobs`` parameter is supported for all estimators patched by |sklearnex|,
   while |sklearn| enables it for selected estimators only.
-* `n_jobs` estimator parameter sets the number of threads used by the underlying |onedal|.
+* ``n_jobs`` estimator parameter sets the number of threads used by the underlying |onedal|.
 * |sklearnex| doesn't use :mod:`joblib` for parallelism in patched estimators and functions.
 * The only low-level parallelism library used by |sklearnex| is `oneTBB <https://github.com/uxlfoundation/oneTBB>`__ 
   (through the |onedal| and `oneMKL <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html>`__).
-* If `n_jobs` is not specified, |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
+* If ``n_jobs`` is not specified, |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
   Note that the deprecated :doc:`daal4py <daal4py>` module uses a global configuration instead of per-object ``n_jobs`` arguments, 
   with the default also being all available threads.
 
 .. hint::
     If serving estimators from the |sklearnex| in online services - e.g. through a REST framework like
     `Flask <https://flask.palletsprojects.com>`__ - where requests might be parallelized through a
-    different tool, one might want to set ``n_jobs=1`` in estimators objects after fitting - e.g.
+    different tool like `GUnicorn <https://gunicorn.org/>`__, one might want to set ``n_jobs=1`` in estimators objects after fitting - e.g.
 
     .. code-block:: python
 
         estimator.fit(...)
         estimator.set_params(n_jobs=1)
 
-    See also the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__.
+    And one might want to also limit parallelism of the higher-level framework (such as GUnicorn) to
+    number of threads or physical cores in the machine.
+
+    See also the Intel guide for `optimization of scikit-learn workflows <https://intel.github.io/optimization-zone/software/scikit-learn/>`__ - same
+    considerations apply to estimators from the |sklearnex|.
 
 |sklearnex| follows the same rules as |sklearn| for
 the calculation of the :term:`n_jobs` parameter value.
@@ -49,7 +53,7 @@ When |sklearn|'s utilities with built-in parallelism are used
 (for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
 |sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``.
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
-(usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
+(usually the number of logical CPUs divided by ``n_jobs`` set for higher-level parallelized entities).
 
 Python threads and thread safety
 ================================
@@ -93,7 +97,7 @@ Other considerations
 ====================
 
 .. note::
-    Environment variables such as `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, and others used by
+    Environment variables such as ``OMP_NUM_THREADS``, ``MKL_NUM_THREADS``, ``OPENBLAS_NUM_THREADS``, and others used by
     low-level parallelism libraries do not affect |sklearnex|, nor does the 
     `mkl-service <https://github.com/IntelPython/mkl-service>`__ package.
 
@@ -106,7 +110,8 @@ Other considerations
     If ``n_jobs`` is negative then the ``threadpoolctl``'s number will be ``max(1, n_threadpoolctl + n_jobs + 1)``.
 
 .. note::
-    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or Python threads.
+    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or Python threads,
+    unless the Python threads are scheduled through :mod:`joblib`.
 
 .. warning::
     If several instances of |sklearnex| algorithms are run sequentially and the ``n_jobs`` parameter for the first run
