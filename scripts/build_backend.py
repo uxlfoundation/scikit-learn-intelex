@@ -20,6 +20,7 @@ import logging
 import os
 import platform as plt
 import subprocess
+import sys
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
@@ -173,6 +174,7 @@ def custom_build_cmake_clib(
     is_lin: bool = False,
     debug_build: bool = False,
     using_lld: bool = False,
+    free_threading: bool = False,
 ):
     import pybind11
 
@@ -263,7 +265,25 @@ def custom_build_cmake_clib(
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
         f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
         f"-DCMAKE_BUILD_TYPE={build_type}",
+        f"-DSKLEARNEX_FREE_THREADING={'ON' if free_threading else 'OFF'}",
     ]
+
+    if free_threading:
+        # Tell CMake which interpreter to use, and check afterwards that it
+        # listened. Only the free-threaded path needs this: it is the one that
+        # calls find_package(Python), whose own search prefers a system
+        # interpreter over the venv one running this build - on a host with both
+        # cp312 and cp314t installed it picks cp312 and produces a wheel that
+        # cannot be imported. Passing the hint alone is not enough, because
+        # FindPython treats it as a hint rather than a requirement, hence the
+        # SOABI cross-check.
+        cmake_args += [
+            "-DPython_EXECUTABLE=" + sys.executable,
+            "-DPython_ROOT_DIR=" + sys.prefix,
+        ]
+        python_soabi = get_config_var("SOABI")
+        if python_soabi:
+            cmake_args += ["-DEXPECTED_PYTHON_SOABI=" + python_soabi]
 
     if build_distribute:
         cmake_args += [

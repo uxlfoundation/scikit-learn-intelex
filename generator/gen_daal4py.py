@@ -35,7 +35,7 @@ from sys import platform
 
 from .format import mk_var
 from .parse import parse_header, parse_version
-from .wrapper_gen import wrapper_gen
+from .wrapper_gen import jenv, wrapper_gen
 from .wrappers import (
     add_get_result,
     add_setup,
@@ -1071,7 +1071,7 @@ class cython_interface(object):
             if ns in cfg:
                 cfg[ns]["model_typemap"]["derived"] = model_hierarchy[m]
 
-    def hlapi(self, version, no_dist=False, no_stream=False):
+    def hlapi(self, version, no_dist=False, no_stream=False, free_threading=False):
         """
         Generate high level wrappers for namespaces allowed by wrap_algo(ns, version).
 
@@ -1118,7 +1118,11 @@ class cython_interface(object):
         self.prepare_model_hierarchy(algoconfig)
 
         # and now we can finally generate the code
-        wg = wrapper_gen(algoconfig, {cpp2hl(i): ifaces[i] for i in ifaces})
+        wg = wrapper_gen(
+            algoconfig,
+            {cpp2hl(i): ifaces[i] for i in ifaces},
+            free_threading=free_threading,
+        )
         cpp_map, cpp_begin, cpp_end, pyx_map, pyx_begin, pyx_end = (
             "",
             "",
@@ -1196,7 +1200,15 @@ class cython_interface(object):
 ###############################################################################
 
 
-def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stream=False):
+def gen_daal4py(
+    dalroot,
+    outdir,
+    version,
+    warn_all=False,
+    no_dist=False,
+    no_stream=False,
+    free_threading=False,
+):
     global no_warn
     if warn_all:
         no_warn = {}
@@ -1241,7 +1253,9 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
     iface = cython_interface(algo_path)
     iface.read()
     print("Generating sources...")
-    cpp_h, cpp_cpp, pyx_file = iface.hlapi(iface.version, no_dist, no_stream)
+    cpp_h, cpp_cpp, pyx_file = iface.hlapi(
+        iface.version, no_dist, no_stream, free_threading=free_threading
+    )
 
     # 'ridge_regression', parametertype is a template without any need
     with open(jp(outdir, "daal4py_cpp.h"), "w") as f:
@@ -1261,14 +1275,18 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
         in iface.namespace_dict["algorithms::gbt::classification"].classes
     ):
         with open(jp("src", "gbt_model_builder.pyx"), "r") as f:
-            pyx_gbt_model_builder = f.read()
+            pyx_gbt_model_builder = jenv.from_string(f.read()).render(
+                free_threading=free_threading
+            )
     if (
         "algorithms::logistic_regression" in iface.namespace_dict
         and "ModelBuilder"
         in iface.namespace_dict["algorithms::logistic_regression"].classes
     ):
         with open(jp("src", "log_reg_model_builder.pyx"), "r") as f:
-            pyx_log_reg_model_builder = f.read()
+            pyx_log_reg_model_builder = jenv.from_string(f.read()).render(
+                free_threading=free_threading
+            )
     if "algorithms::tree_utils" in iface.namespace_dict:
         with open(jp("src", "gettree.pyx"), "r") as f:
             pyx_gettree = f.read()
