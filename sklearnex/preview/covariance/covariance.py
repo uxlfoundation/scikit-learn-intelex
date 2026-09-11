@@ -102,7 +102,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             f"sklearn.covariance.{class_name}.{method_name}"
         )
         if method_name in ["fit", "mahalanobis"]:
-            (X,) = data
+            X = data[0]
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
@@ -150,9 +150,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             dtype=[xp.float64, xp.float32],
             reset=False,
         )
-
-        location = self.location_
-        precision = self.get_precision()
 
         est = clone(self)
         est.set_params(assume_centered=True)
