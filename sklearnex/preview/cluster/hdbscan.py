@@ -16,13 +16,6 @@
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
-# HDBSCAN was added to oneDAL in 2026.2. This is the only version check for it in this
-# package, 'sklearnex.preview.cluster' exports 'HDBSCAN' based on whether this module
-# defines it. The whole module is gated, rather than just the 'onedal' import, so that
-# it stays importable with an older oneDAL: 'sklearn.utils.all_estimators' imports every
-# sklearnex module directly, so a module-level 'raise ImportError' or an unguarded
-# 'onedal.cluster' import would break the estimator discovery that
-# 'sklearnex/tests/test_common.py' relies on.
 if daal_check_version((2026, "P", 200)):
     import warnings
 
@@ -120,13 +113,16 @@ if daal_check_version((2026, "P", 200)):
             self.labels_ = self._onedal_estimator.labels_
 
             # oneDAL reports no centers when it does not find any cluster, while
-            # scikit-learn returns them empty
+            # scikit-learn returns them empty. 'empty_like' allocates, so that the
+            # estimator is not left holding a view on 'X'
             if self.store_centers in ("centroid", "both"):
                 centroids = self._onedal_estimator.centroids_
-                self.centroids_ = X[:0, :] if centroids is None else centroids
+                self.centroids_ = (
+                    xp.empty_like(X[:0, :]) if centroids is None else centroids
+                )
             if self.store_centers in ("medoid", "both"):
                 medoids = self._onedal_estimator.medoids_
-                self.medoids_ = X[:0, :] if medoids is None else medoids
+                self.medoids_ = xp.empty_like(X[:0, :]) if medoids is None else medoids
 
             # scikit-learn derives the membership strengths from the lambda values
             # of the condensed tree, which oneDAL does not return, so the degree to

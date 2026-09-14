@@ -19,17 +19,11 @@ from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 
-# HDBSCAN was added to oneDAL in 2026.2, and 'onedal/cluster/hdbscan.cpp' is compiled
-# out below that version, so the 'hdbscan' backend submodule does not exist. The class
-# is gated rather than only its import in 'onedal/cluster/__init__.py' because
-# 'bind_default_backend' resolves the backend method while the class body is executed:
-# without the gate the module would raise on a direct import, which is what
-# 'onedal/tests/test_common.py::test_relative_importing' does for every onedal module.
+# the 'hdbscan' backend submodule is compiled out below oneDAL 2026.2, and
+# 'bind_default_backend' resolves against it while the class body is executed
 if onedal_check_version(2026, 2, 0):
 
     class HDBSCAN:
-        # all parameters follow oneDAL's naming and semantics, the translation of
-        # scikit-learn's parameters happens in the sklearnex estimator
         def __init__(
             self,
             min_cluster_size=5,

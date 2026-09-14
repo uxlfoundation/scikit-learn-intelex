@@ -18,6 +18,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+try:
+    from scipy.sparse import csr_array as csr_class
+except ImportError:
+    from scipy.sparse import csr_matrix as csr_class
+
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -171,6 +176,8 @@ def test_hdbscan_centers_all_noise():
     # oneDAL reports no centers at all here, while scikit-learn returns them empty
     for centers in (hdbscan.centroids_, hdbscan.medoids_):
         assert _as_numpy(centers).shape == (0, X.shape[1])
+        # not a view on 'X', which would keep the whole input alive
+        assert centers.base is None
 
 
 def test_hdbscan_probabilities():
@@ -190,10 +197,8 @@ def test_hdbscan_probabilities():
 @pytest.mark.allow_sklearn_fallback
 def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
-    from scipy.sparse import csr_matrix
-
     from sklearnex.preview.cluster import HDBSCAN
 
-    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(csr_matrix(_grouped_data()))
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(csr_class(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
     assert_groups_found(hdbscan.labels_)

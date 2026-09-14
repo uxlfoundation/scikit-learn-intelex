@@ -17,8 +17,6 @@
 from ... import onedal_check_version
 from ...common._backend import bind_spmd_backend
 
-# gated for the same reason as the batch estimator it derives from, which
-# 'onedal.cluster' only exports with oneDAL 2026.2 and newer
 if onedal_check_version(2026, 2, 0):
     from ...cluster import HDBSCAN as HDBSCAN_Batch
 

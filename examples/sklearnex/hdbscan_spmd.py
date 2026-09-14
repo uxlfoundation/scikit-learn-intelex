@@ -19,7 +19,6 @@
 #    mpirun -n 4 python ./hdbscan_spmd.py
 
 import dpnp
-from dpctl import SyclQueue
 from mpi4py import MPI
 from sklearn.datasets import load_digits
 
@@ -47,9 +46,7 @@ size = comm.Get_size()
 
 X, _ = get_train_data(rank, size)
 
-queue = SyclQueue("gpu")
-
-dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=queue)
+dpnp_X = dpnp.asarray(X, usm_type="device", device="gpu")
 
 # Array API dispatch keeps dpnp data on device throughout the computation.
 # The SCIPY_ARRAY_API environment variable must also be set to enable this.
