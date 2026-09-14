@@ -70,6 +70,12 @@ deselected_tests:
   # "BufferError: Cannot export readonly array ... readonly is unsupported by DLPack
   # TODO: remove once dlpack data conversion issues are resolved for numpy <2.1
   - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=None,device=None)] >=1.6,<1.7
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-device1-float32] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
+  - tests/test_common.py::test_estimators[PCA()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
 
   # PCA get_precision() inverts a rank-deficient covariance on the check's fixture; sklearn
   # xfails these with "linalg.inv fails because input is singular" (gh-33205). The XPASS/XFAIL
