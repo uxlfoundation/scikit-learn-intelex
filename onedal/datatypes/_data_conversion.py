@@ -76,7 +76,13 @@ def to_table(*args, queue=None):
 def _compat_convert(array_api_compat, array):
     def converter_func(x):
         xp = array_api_compat.get_namespace(array)
-        out = xp.from_dlpack(x)
+        try:
+            out = xp.from_dlpack(x)
+        except (RuntimeError, BufferError):
+            # PyTorch's DLPack importer only accepts device USM, but a table may be
+            # backed by shared or host USM while still advertising a SYCL device, so
+            # fall back to a host copy and let the move below place it.
+            out = xp.asarray(backend.from_table(x))
         if out.device != array.device:
             out = xp.from_dlpack(out, device=array.device)
         return out

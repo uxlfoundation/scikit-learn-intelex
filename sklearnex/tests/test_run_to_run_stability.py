@@ -33,7 +33,11 @@ from sklearn.datasets import (
 
 import daal4py as d4p
 from daal4py.sklearn._utils import daal_check_version
-from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
+from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
+    get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
+)
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
 from sklearnex.decomposition import PCA
@@ -201,14 +205,20 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
         pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
-    # TODO: remove this once scikit-learn implements array API support
-    # for LogisticRegressionCV
-    if (
-        estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
-        and dataframe == "array_api"
-        and not get_tags(est).array_api_support
-    ):
-        pytest.skip("Array API inputs not supported in estimator")
+    # Estimators without array API support in either sklearn or oneDAL (e.g.
+    # ElasticNet, Lasso, LogisticRegressionCV) fall through to the daal4py/sklearn
+    # host path, which does not accept array_api_strict inputs under forced dispatch.
+    tags = get_tags(est)
+    array_api_check = getattr(tags, "array_api_support", False) or getattr(
+        tags, "onedal_array_api", False
+    )
+    if dataframe == "array_api" and not array_api_check:
+        pytest.skip("Array API inputs not supported in either sklearn or sklearnex")
+
+    # PCA rebuilds its model from fitted arrays through the oneDAL round-trip,
+    # which fails on read-only array_api_strict arrays under numpy < 2.2.5.
+    if "PCA" in estimator:
+        skip_array_api_strict_readonly(dataframe)
 
     params = est.get_params().copy()
     if "random_state" in params:
@@ -307,6 +317,11 @@ def test_other_estimator_stability(estimator, method, dataframe, queue):
 
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
+    # PCA rebuilds its model from fitted arrays through the oneDAL round-trip,
+    # which fails on read-only array_api_strict arrays under numpy < 2.2.5.
+    if "PCA" in estimator:
+        skip_array_api_strict_readonly(dataframe)
 
     params = est.get_params().copy()
     if "random_state" in params:

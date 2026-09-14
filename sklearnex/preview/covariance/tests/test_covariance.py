@@ -16,11 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
 )
@@ -71,8 +72,9 @@ def test_sklearnex_import_covariance(
     else:
         expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
     X = np.array([[1, 2], [3, 6]])
 
@@ -85,8 +87,8 @@ def test_sklearnex_import_covariance(
         expected_covariance = np.array([[1, 2], [2, 4]])
         expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.skipif(

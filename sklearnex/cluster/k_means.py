@@ -476,6 +476,10 @@ if daal_check_version((2023, "P", 200)):
             self.n_iter_ = self._onedal_estimator.n_iter_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
 
+            self._warn_on_degenerate_clustering()
+
+        def _warn_on_degenerate_clustering(self):
+            """Warn when fewer than n_clusters clusters received any point."""
             xp, _ = get_namespace(self.labels_)
             unique_func = getattr(xp, "unique_values", np.unique)
             distinct_clusters = unique_func(self.labels_).shape[0]

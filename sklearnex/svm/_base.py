@@ -34,6 +34,7 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.utils.validation import _num_samples
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._sparse import _align_api_if_sparse
@@ -418,7 +419,7 @@ class BaseSVM(oneDALEstimator):
                             not self._is_multi_class_classifier()
                             and (
                                 not sp.issparse(self.support_vectors_)
-                                or (hasattr(X, "shape") and X.shape[0] > 1)
+                                or (_num_samples(X) > 1)
                             )
                         ),
                         "Single-row prediction from a scikit-learn model has"

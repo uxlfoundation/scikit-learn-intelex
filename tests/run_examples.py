@@ -17,8 +17,6 @@
 
 import argparse
 import os
-import platform as plt
-import struct
 import subprocess
 import sys
 from collections import defaultdict
@@ -60,15 +58,7 @@ elif sys.platform in ["win32", "cygwin"]:
 else:
     assert False, sys.platform + " not supported"
 
-arch_dir = plt.machine()
-plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
-arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
-assert 8 * struct.calcsize("P") in [32, 64]
-
-if 8 * struct.calcsize("P") == 32:
-    logdir = jp(runner_dir, "_results", "ia32")
-else:
-    logdir = jp(runner_dir, "_results", arch_dir)
+logdir = jp(runner_dir, "_results")
 
 ex_log_dirs = [
     (jp(examples_rootdir, "daal4py"), jp(logdir, "daal4py")),

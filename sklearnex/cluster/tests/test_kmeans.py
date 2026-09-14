@@ -38,7 +38,9 @@ from daal4py.sklearn._utils import (
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
     get_queues,
@@ -131,8 +133,9 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
         expected_cluster_centers = np.array([[10.0, 2.0], [1.0, 2.0]], dtype=np.float32)
         expected_inertia = 16.0
 
-    assert_allclose(expected_cluster_labels, _as_numpy(kmeans.predict(X_test_df)))
-    assert_allclose(expected_cluster_centers, _as_numpy(kmeans.cluster_centers_))
+    _assert_in_namespace(kmeans.predict(X_test_df), dataframe)
+    assert_allclose_numpy(expected_cluster_labels, kmeans.predict(X_test_df))
+    assert_allclose_numpy(expected_cluster_centers, kmeans.cluster_centers_)
     assert expected_inertia == kmeans.inertia_
 
 

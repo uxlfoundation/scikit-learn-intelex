@@ -74,6 +74,27 @@ steps:
       DPNP_VERSION: 0.20.0
     displayName: "Install testing requirements"
   - script: |
+      set -e
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      conda install -q -y -c conda-forge mpi4py pytest-mpi
+      # No MPI backend is pinned here: daal4py is built against Intel MPI, which
+      # is ABI compatible with the MPICH already present in these environments,
+      # and mpi4py resolves against whichever one that is.
+      command -v mpiexec
+      # MPI owned by mpi4py - the transceiver must adopt it, and daalfini must
+      # leave finalization to its owner.
+      mpiexec -n 2 python tests/helper_mpi_tests.py \
+          pytest --with-mpi -c setup.cfg -s tests/test_mpi_lifecycle.py
+      # MPI owned by daal4py, which needs a process where nothing imported
+      # mpi4py first - hence a plain script rather than a pytest module.
+      mpiexec -n 2 python tests/mpi_lifecycle_smoke.py
+    env:
+      TBBROOT: ${{ variables.TBBROOT }}
+      RUN_MPI_TESTS: ${{ variables.RUN_MPI_TESTS }}
+    displayName: "MPI lifecycle tests"
+    condition: and(succeeded(), eq(variables['RUN_MPI_TESTS'], '1'))
+  - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi

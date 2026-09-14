@@ -191,7 +191,18 @@ public:
         m_inited = true;
     }
 
-    ~transceiver() { m_transceiver->fini(); }
+    ~transceiver() noexcept
+    {
+        try
+        {
+            m_transceiver->fini();
+        }
+        catch (...)
+        {
+            // Destructors must not terminate the process. Explicit MPI calls
+            // report errors at their call sites; teardown is best-effort.
+        }
+    }
 
     inline size_t nMembers() { return m_transceiver->nMembers(); }
 
@@ -263,7 +274,7 @@ protected:
 
 // @return the global transceiver object
 // Repeated calls will not re-initialize.
-extern transceiver * get_transceiver();
+extern std::shared_ptr<transceiver> get_transceiver();
 extern void del_transceiver();
 
 template <typename T>
