@@ -15,6 +15,7 @@
 *******************************************************************************/
 #include "oneapi/dal/algo/pca.hpp"
 #include "onedal/common.hpp"
+#include "onedal/version.hpp"
 #define NO_IMPORT_ARRAY // import_array called in table.cpp
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 
