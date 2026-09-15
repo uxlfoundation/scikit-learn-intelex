@@ -81,9 +81,9 @@ ONEDAL_MAJOR_BINARY_VERSION, ONEDAL_MINOR_BINARY_VERSION = get_onedal_version(
     dal_root, "binary"
 )
 ONEDAL_VERSION = get_onedal_version(dal_root)
-if ONEDAL_VERSION < 20210300:
+if ONEDAL_VERSION < 20250000:
     raise ValueError(
-        "OneDAL version is too old. Please use a more recent version (>= 2021.4)."
+        "OneDAL version is too old. Please use a more recent version (>= 2025.0)."
     )
 
 sklearnex_version = (
@@ -111,7 +111,7 @@ dpcpp = (
     and not (IS_WIN and debug_build)
 )
 
-use_parameters_lib = (not IS_WIN) and (ONEDAL_VERSION >= 20240000)
+use_parameters_lib = not IS_WIN
 
 build_distributed = dpcpp and not no_dist and IS_LIN
 
@@ -516,11 +516,11 @@ packages_with_tests = [
     "sklearnex.utils",
 ]
 
-if ONEDAL_VERSION >= 20230100:
-    packages_with_tests += ["onedal.basic_statistics", "onedal.linear_model"]
-
-if ONEDAL_VERSION >= 20230200:
-    packages_with_tests += ["onedal.cluster"]
+packages_with_tests += [
+    "onedal.basic_statistics",
+    "onedal.cluster",
+    "onedal.linear_model",
+]
 
 if build_distributed:
     packages_with_tests += [
@@ -533,21 +533,17 @@ if build_distributed:
         "sklearnex.spmd.decomposition",
         "sklearnex.spmd.ensemble",
     ]
-    if ONEDAL_VERSION >= 20230100:
-        packages_with_tests += [
-            "onedal.spmd.basic_statistics",
-            "onedal.spmd.linear_model",
-            "onedal.spmd.neighbors",
-            "sklearnex.spmd.basic_statistics",
-            "sklearnex.spmd.linear_model",
-            "sklearnex.spmd.neighbors",
-        ]
-    if ONEDAL_VERSION >= 20230200:
-        packages_with_tests += [
-            "onedal.spmd.cluster",
-            "sklearnex.spmd.cluster",
-            "sklearnex.spmd.preprocessing",
-        ]
+    packages_with_tests += [
+        "onedal.spmd.basic_statistics",
+        "onedal.spmd.cluster",
+        "onedal.spmd.linear_model",
+        "onedal.spmd.neighbors",
+        "sklearnex.spmd.basic_statistics",
+        "sklearnex.spmd.cluster",
+        "sklearnex.spmd.linear_model",
+        "sklearnex.spmd.neighbors",
+        "sklearnex.spmd.preprocessing",
+    ]
 
 setup(
     name="scikit-learn-intelex",

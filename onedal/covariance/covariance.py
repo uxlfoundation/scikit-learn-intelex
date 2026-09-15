@@ -17,7 +17,6 @@ from abc import ABCMeta
 
 import numpy as np
 
-from .. import onedal_check_version
 from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
@@ -35,16 +34,12 @@ class BaseEmpiricalCovariance(metaclass=ABCMeta):
     def compute(self, *args, **kwargs): ...
 
     def _get_onedal_params(self, dtype=np.float32):
-        params = {
+        return {
             "fptype": dtype,
             "method": self.method,
+            "bias": self.bias,
+            "assumeCentered": self.assume_centered,
         }
-        if onedal_check_version(2024, 0, 1):
-            params["bias"] = self.bias
-        if onedal_check_version(2024, 4, 0):
-            params["assumeCentered"] = self.assume_centered
-
-        return params
 
 
 class EmpiricalCovariance(BaseEmpiricalCovariance):
@@ -106,13 +101,7 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
             result = self.compute(params, hparams.backend, X_table)
         else:
             result = self.compute(params, X_table)
-        if onedal_check_version(2024, 0, 1) or (not self.bias):
-            self.covariance_ = from_table(result.cov_matrix, like=X)
-        else:
-            self.covariance_ = (
-                from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
-            )
-
+        self.covariance_ = from_table(result.cov_matrix, like=X)
         self.location_ = from_table(result.means, like=X)[0, ...]
 
         return self

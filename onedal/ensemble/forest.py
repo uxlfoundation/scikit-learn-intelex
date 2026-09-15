@@ -18,7 +18,6 @@ import math
 import numbers
 from abc import ABC, abstractmethod
 
-from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
@@ -135,11 +134,8 @@ class BaseForest(ABC):
             "class_count": self.class_count_,  # used in classification only
             "infer_mode": self.infer_mode,  # used in classification only
             "voting_mode": self.voting_mode,  # used in classification only
+            "splitter_mode": self.splitter_mode,
         }
-
-        if onedal_check_version(2023, 1, 1):
-            onedal_params["splitter_mode"] = self.splitter_mode
-        return onedal_params
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
