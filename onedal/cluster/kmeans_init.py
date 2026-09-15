@@ -25,8 +25,28 @@ from ..utils import _sycl_queue_manager as QM
 
 
 class KMeansInit:
-    """
-    KMeansInit oneDAL implementation.
+    """KMeansInit oneDAL implementation.
+
+    Parameters
+    ----------
+    cluster_count : int
+        Number of centroids to compute.
+
+    seed : int, default=777
+        Seed of the random number generator used by the sampling methods.
+
+    local_trials_count : int, default=None
+        Number of trials performed on each sampling step. If None,
+        ``2 + int(log(cluster_count))`` trials are used.
+
+    algorithm : str, default="plus_plus_dense"
+        Centroid initialization method. Available methods: "dense",
+        "by_default", "plus_plus_dense", "random_dense", "plus_plus_csr",
+        "random_csr".
+
+    is_csr : bool, default=False
+        If True, the input data is expected in CSR format and the
+        computation is forced onto the host.
     """
 
     def __init__(

@@ -484,12 +484,15 @@ packages_with_tests = [
     "daal4py.sklearn.utils",
     "daal4py.sklearn.model_selection",
     "onedal",
+    "onedal.basic_statistics",
+    "onedal.cluster",
     "onedal.common",
     "onedal.covariance",
     "onedal.datatypes",
     "onedal.decomposition",
     "onedal.dummy",
     "onedal.ensemble",
+    "onedal.linear_model",
     "onedal.neighbors",
     "onedal.primitives",
     "onedal.svm",
@@ -516,30 +519,22 @@ packages_with_tests = [
     "sklearnex.utils",
 ]
 
-packages_with_tests += [
-    "onedal.basic_statistics",
-    "onedal.cluster",
-    "onedal.linear_model",
-]
-
 if build_distributed:
     packages_with_tests += [
         "onedal.spmd",
+        "onedal.spmd.basic_statistics",
+        "onedal.spmd.cluster",
         "onedal.spmd.covariance",
         "onedal.spmd.decomposition",
         "onedal.spmd.ensemble",
+        "onedal.spmd.linear_model",
+        "onedal.spmd.neighbors",
         "sklearnex.spmd",
+        "sklearnex.spmd.basic_statistics",
+        "sklearnex.spmd.cluster",
         "sklearnex.spmd.covariance",
         "sklearnex.spmd.decomposition",
         "sklearnex.spmd.ensemble",
-    ]
-    packages_with_tests += [
-        "onedal.spmd.basic_statistics",
-        "onedal.spmd.cluster",
-        "onedal.spmd.linear_model",
-        "onedal.spmd.neighbors",
-        "sklearnex.spmd.basic_statistics",
-        "sklearnex.spmd.cluster",
         "sklearnex.spmd.linear_model",
         "sklearnex.spmd.neighbors",
         "sklearnex.spmd.preprocessing",

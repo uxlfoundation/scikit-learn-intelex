@@ -33,8 +33,26 @@ _hparams_reserved_words = [
 
 class HyperParameters:
     """Class for simplified interaction with oneDAL hyperparameters.
+
     Overrides `__getattribute__` and `__setattr__` to utilize getters and setters
     of hyperparameter class from onedal backend.
+
+    Parameters
+    ----------
+    algorithm : str
+        Name of the oneDAL algorithm the hyperparameters belong to.
+
+    op : str
+        Name of the algorithm operation, e.g. "train" or "infer".
+
+    setters : dict
+        Mapping of hyperparameter name to its backend setter.
+
+    getters : dict
+        Mapping of hyperparameter name to its backend getter.
+
+    backend : object
+        Hyperparameters object from the onedal backend.
     """
 
     def __init__(self, algorithm, op, setters, getters, backend):
@@ -127,7 +145,21 @@ for (algorithm, op), hyperparameters_lambda in hyperparameters_backend.items():
 
 
 def get_hyperparameters_backend(algorithm, op):
-    """Get hyperparameters for a specific algorithm and operation."""
+    """Get a fresh backend hyperparameters object for an algorithm and operation.
+
+    Parameters
+    ----------
+    algorithm : str
+        Name of the oneDAL algorithm.
+
+    op : str
+        Name of the algorithm operation, e.g. "train" or "infer".
+
+    Returns
+    -------
+    hyperparameters : object
+        Newly created hyperparameters object from the onedal backend.
+    """
     if (algorithm, op) in hyperparameters_backend:
         return hyperparameters_backend[(algorithm, op)]()
     else:
