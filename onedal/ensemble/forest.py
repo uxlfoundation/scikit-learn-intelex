@@ -136,6 +136,7 @@ class BaseForest(ABC):
             "voting_mode": self.voting_mode,  # used in classification only
             "splitter_mode": self.splitter_mode,
         }
+        return onedal_params
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
