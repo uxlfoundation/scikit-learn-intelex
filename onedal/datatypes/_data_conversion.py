@@ -135,14 +135,15 @@ def return_type_constructor(array):
             # Some array API libraries (e.g. array_api_strict) do not forward
             # the 'device' argument of their 'from_dlpack' to the exporter's
             # '__dlpack__', so a oneDAL table on a SYCL device never gets asked
-            # to transfer to host when the target namespace is host-only.
-            # NumPy's 'from_dlpack' does forward it, so route through NumPy
-            # first in that case, then hand the resulting host array to 'xp'.
+            # to transfer to host when the target namespace is host-only. The
+            # backend's numpy converter always yields host data, so use it to
+            # do the transfer ('np.from_dlpack' could request it via 'device',
+            # but that keyword only exists in NumPy 2.1 and newer).
             if (
                 inp.__dlpack_device__() != cpu_dlpack_device
                 and array.__dlpack_device__() == cpu_dlpack_device
             ):
-                return xp.asarray(np.from_dlpack(inp, device="cpu"), device=device)
+                return xp.asarray(backend.from_table(inp), device=device)
             return xp.from_dlpack(inp, device=device)
 
     else:
