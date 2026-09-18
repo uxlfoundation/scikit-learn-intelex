@@ -56,11 +56,11 @@ requirements:
   host:
     - python
     - setuptools
-    - cmake
+    - cmake >=3.18
     - clang-format
-    - cython
+    - cython >=3.1
     - jinja2
-    - pybind11
+    - pybind11 >=2.13
     - numpy >=2,<3
     # dal-devel pinning depends on the recipe location (repo or feedstock)
     - dal-devel
