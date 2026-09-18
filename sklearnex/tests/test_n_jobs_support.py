@@ -83,6 +83,8 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
         or (hasattr(estimator, "solver") and estimator.solver == "newton-cg")
     ) and not ("SKLEARNEX_PREVIEW" in os.environ):
         pytest.skip("Functionality in preview mode")
+    if estimator == "EmpiricalCovariance":
+        pytest.skip("Involves fallback to scikit-learn")
 
     est = _get_estimator_instance(estimator)
     caplog.set_level(logging.DEBUG, logger="sklearnex")
