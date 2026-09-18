@@ -20,17 +20,12 @@ import pytest
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split as skl_train_test_split
 
-from daal4py.sklearn._utils import daal_check_version
 from daal4py.sklearn.model_selection import train_test_split as d4p_train_test_split
 
 N_SAMPLES = [2**i + 1 for i in range(2, 17)]
 RANDOM_STATE = 777
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2021, "P", 400)),
-    reason="train_test_split has bugfix since 2021.4 release",
-)
 @pytest.mark.parametrize("n_samples", N_SAMPLES)
 def test_results_similarity(n_samples):
     x, y = make_classification(

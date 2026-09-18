@@ -21,8 +21,6 @@ from functools import lru_cache
 from types import ModuleType
 from typing import Optional, Union
 
-from daal4py.sklearn._utils import daal_check_version
-
 # dict key: sklearn name
 # dict value: tuple entries:
 # - module from sklearn
@@ -117,22 +115,21 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 MaxAbsScaler_sklearn,
             ),
         }
-        if daal_check_version((2024, "P", 1)):
-            import sklearn.linear_model as linear_model_module
-            from sklearn.linear_model import (
-                LogisticRegressionCV as LogisticRegressionCV_sklearn,
-            )
+        import sklearn.linear_model as linear_model_module
+        from sklearn.linear_model import (
+            LogisticRegressionCV as LogisticRegressionCV_sklearn,
+        )
 
-            from .preview.linear_model import (
-                LogisticRegressionCV as LogisticRegressionCV_sklearnex,
-            )
+        from .preview.linear_model import (
+            LogisticRegressionCV as LogisticRegressionCV_sklearnex,
+        )
 
-            preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
-                linear_model_module,
-                "LogisticRegressionCV",
-                LogisticRegressionCV_sklearnex,
-                LogisticRegressionCV_sklearn,
-            )
+        preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
+            linear_model_module,
+            "LogisticRegressionCV",
+            LogisticRegressionCV_sklearnex,
+            LogisticRegressionCV_sklearn,
+        )
         return mapping | preview_mapping
 
     # Scikit-learn* modules
@@ -385,13 +382,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         ),
     }
 
-    if daal_check_version((2024, "P", 600)):
-        mapping["sklearn.linear_model.IncrementalRidge"] = (
-            linear_model_module,
-            "IncrementalRidge",
-            IncrementalRidge_sklearnex,
-            None,
-        )
+    mapping["sklearn.linear_model.IncrementalRidge"] = (
+        linear_model_module,
+        "IncrementalRidge",
+        IncrementalRidge_sklearnex,
+        None,
+    )
 
     return mapping
 

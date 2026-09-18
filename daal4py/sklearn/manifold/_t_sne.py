@@ -63,7 +63,6 @@ import daal4py
 from daal4py.sklearn._utils import (
     PatchingConditionsChain,
     check_is_array_api,
-    daal_check_version,
     is_sparse,
     sklearn_check_version,
 )
@@ -101,13 +100,12 @@ class TSNE(BaseTSNE):
         ]
 
         # Pass params to daal4py backend
-        if daal_check_version((2023, "P", 1)):
-            size_iter.extend(
-                [
-                    [self._EXPLORATION_MAX_ITER],
-                    [self._N_ITER_CHECK],
-                ]
-            )
+        size_iter.extend(
+            [
+                [self._EXPLORATION_MAX_ITER],
+                [self._N_ITER_CHECK],
+            ]
+        )
 
         size_iter = np.array(size_iter, dtype=P.dtype)
 
@@ -162,10 +160,6 @@ class TSNE(BaseTSNE):
                 ),
                 (self.n_components == 2, "Number of components != 2."),
                 (self.verbose == 0, "Verbose mode is set."),
-                (
-                    daal_check_version((2021, "P", 600)),
-                    "oneDAL version is lower than 2021.6.",
-                ),
                 # Scikit-learn didn't support sparse PCA initialization before 1.8.
                 # This nevertheless offloads it to sklearn because it produces a different
                 # error message than what would be thrown by simply passing the input to PCA.

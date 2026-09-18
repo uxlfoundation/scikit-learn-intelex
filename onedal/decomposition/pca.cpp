@@ -15,6 +15,7 @@
 *******************************************************************************/
 #include "oneapi/dal/algo/pca.hpp"
 #include "onedal/common.hpp"
+#include "onedal/version.hpp"
 #define NO_IMPORT_ARRAY // import_array called in table.cpp
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 
@@ -31,10 +32,8 @@ struct params2desc {
         bool is_deterministic = params["is_deterministic"].cast<bool>();
 
         auto desc = pca::descriptor<Float, Method>()
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
                         .set_whiten(whiten)
                         .set_normalization_mode(dal::pca::normalization::mean_center)
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240100
                         .set_component_count(n_components)
                         .set_deterministic(is_deterministic);
         return desc;
@@ -89,11 +88,9 @@ void init_model(py::module_& m) {
                        [](const py::bytes& bytes) {
                            return deserialize<model_t>(bytes);
                        }))
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
                    .DEF_ONEDAL_PY_PROPERTY(eigenvalues, model_t)
                    .DEF_ONEDAL_PY_PROPERTY(means, model_t)
                    .DEF_ONEDAL_PY_PROPERTY(variances, model_t)
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240100
                    .DEF_ONEDAL_PY_PROPERTY(eigenvectors, model_t);
 }
 
@@ -107,11 +104,9 @@ void init_train_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(model, result_t)
         .def_property_readonly("eigenvectors", &result_t::get_eigenvectors)
         .def_property_readonly("eigenvalues", &result_t::get_eigenvalues)
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
         .def_property_readonly("singular_values", &result_t::get_singular_values)
         .def_property_readonly("explained_variances_ratio",
                                &result_t::get_explained_variances_ratio)
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240100
         .def_property_readonly("means", &result_t::get_means)
         .def_property_readonly("variances", &result_t::get_variances);
 }

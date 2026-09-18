@@ -30,11 +30,7 @@
 #include "onedal/datatypes/common.hpp"
 #include "onedal/version.hpp"
 
-#if ONEDAL_VERSION <= 20230100
-#include "oneapi/dal/table/detail/csr.hpp"
-#else
 #include "oneapi/dal/table/csr.hpp"
-#endif
 
 #if ONEDAL_VERSION >= 20260200
 #include "oneapi/dal/table/detail/csr_utils.hpp"
@@ -42,11 +38,7 @@
 
 namespace oneapi::dal::python::numpy {
 
-#if ONEDAL_VERSION <= 20230100
-typedef oneapi::dal::detail::csr_table csr_table_t;
-#else
 typedef oneapi::dal::csr_table csr_table_t;
-#endif
 
 static std::shared_ptr<PyObject> make_python_owner(PyObject *obj) {
     Py_INCREF(obj);
@@ -284,10 +276,6 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
             [owner = make_python_owner(reinterpret_cast<PyObject *>(np_data))](const T *) {}),
         column_indices_one_based,
         row_indices_one_based,
-#if ONEDAL_VERSION <= 20230100
-        // row_count parameter is present in csr_table's constructor only in older versions of oneDAL
-        row_count,
-#endif
         column_count);
 }
 
@@ -456,52 +444,6 @@ static PyObject *convert_to_numpy_impl(
     return obj;
 }
 
-#if ONEDAL_VERSION <= 20230100
-
-// dal::detail::csr_table class is valid
-// only one-based indeices are supported
-template <int NpType, typename T>
-static PyObject *convert_to_py_from_csr_impl(const detail::csr_table &table) {
-    PyObject *result = PyTuple_New(3);
-    const std::int64_t rows_indices_count = table.get_row_count() + 1;
-
-    const std::int64_t *row_indices_one_based = table.get_row_indices();
-    std::uint64_t *row_indices_zero_based_data =
-        detail::host_allocator<std::uint64_t>().allocate(rows_indices_count);
-    for (std::int64_t i = 0; i < rows_indices_count; ++i)
-        row_indices_zero_based_data[i] = row_indices_one_based[i] - 1;
-
-    auto row_indices_zero_based_array =
-        dal::array<std::uint64_t>::wrap(row_indices_zero_based_data, rows_indices_count);
-    PyObject *py_row =
-        convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(row_indices_zero_based_array,
-                                                         rows_indices_count);
-    PyTuple_SetItem(result, 2, py_row);
-
-    const std::int64_t non_zero_count = row_indices_zero_based_data[rows_indices_count - 1];
-    const T *data = reinterpret_cast<const T *>(table.get_data());
-    auto data_array = dal::array<T>::wrap(data, non_zero_count);
-
-    PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
-    PyTuple_SetItem(result, 0, py_data);
-
-    const std::int64_t *column_indices_one_based = table.get_column_indices();
-    std::uint64_t *column_indices_zero_based_data =
-        detail::host_allocator<std::uint64_t>().allocate(non_zero_count);
-    for (std::int64_t i = 0; i < non_zero_count; ++i)
-        column_indices_zero_based_data[i] = column_indices_one_based[i] - 1;
-
-    auto column_indices_zero_based_array =
-        dal::array<std::uint64_t>::wrap(column_indices_zero_based_data, non_zero_count);
-    PyObject *py_col =
-        convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(column_indices_zero_based_array,
-                                                         non_zero_count);
-    PyTuple_SetItem(result, 1, py_col);
-    return result;
-}
-
-#else // ONEDAL_VERSION > 20230100
-
 // dal::csr_table class is valid
 // zero- and one-based indeices are supported
 template <int NpType, typename T>
@@ -582,8 +524,6 @@ static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
     py_row_holder.release();
     return result;
 }
-
-#endif // ONEDAL_VERSION <= 20230100
 
 PyObject *convert_to_pyobject(const dal::table &input) {
     PyObject *res = nullptr;

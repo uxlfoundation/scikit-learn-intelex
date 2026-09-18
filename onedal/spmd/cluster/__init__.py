@@ -14,12 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from ... import onedal_check_version
 from .dbscan import DBSCAN
+from .kmeans import KMeans
 
-__all__ = ["DBSCAN"]
-
-if onedal_check_version(2023, 2, 0):
-    from .kmeans import KMeans
-
-    __all__ += ["KMeans"]
+__all__ = ["DBSCAN", "KMeans"]

@@ -26,7 +26,7 @@ from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
@@ -153,11 +153,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
-        if not daal_check_version((2024, "P", 400)) and self.assume_centered:
-            xp, _ = get_namespace(self._onedal_estimator.location_)
-            location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += xp.dot(location.T, location)
-            self._onedal_estimator.location_ = xp.zeros_like(xp.squeeze(location))
         if self.store_precision:
             self.precision_ = _pinvh(
                 self._onedal_estimator.covariance_, check_finite=False

@@ -837,7 +837,6 @@ void c_train_test_split(data_or_file & orig, data_or_file & train, data_or_file 
 
 double c_roc_auc_score(data_or_file & y_true, data_or_file & y_test)
 {
-#if __INTEL_DAAL__ >= 2021 && INTEL_DAAL_VERSION >= 20210200
     const size_t col_true = y_true.table->getNumberOfColumns();
     const size_t row_true = y_true.table->getNumberOfRows();
     const size_t col_test = y_test.table->getNumberOfColumns();
@@ -859,24 +858,17 @@ double c_roc_auc_score(data_or_file & y_true, data_or_file & y_test)
 
     PyErr_SetString(PyExc_RuntimeError, "Unknown shape data");
     return 0.0;
-#else
-    return -1.0;
-#endif
 }
 
 void c_generate_shuffled_indices(data_or_file & idx, data_or_file & random_state)
 {
-#if __INTEL_DAAL__ == 2020 && INTEL_DAAL_VERSION >= 20200003 || __INTEL_DAAL__ >= 2021
     auto idxTable         = get_table(idx);
     auto randomStateTable = get_table(random_state);
     daal::data_management::internal::generateShuffledIndices<int>(idxTable, randomStateTable);
-#else
-#endif
 }
 
 void c_tsne_gradient_descent(data_or_file & init, data_or_file & p, data_or_file & size_iter, data_or_file & params, data_or_file & results, char dtype)
 {
-#if __INTEL_DAAL__ >= 2021 && INTEL_DAAL_VERSION >= 20210600
     auto initTable                                     = get_table(init);
     auto pTable                                        = get_table(p);
     auto sizeIterTable                                 = get_table(size_iter);
@@ -895,6 +887,4 @@ void c_tsne_gradient_descent(data_or_file & init, data_or_file & p, data_or_file
     }
     else
         PyErr_SetString(PyExc_RuntimeError, "Unexpected table type");
-#else
-#endif
 }

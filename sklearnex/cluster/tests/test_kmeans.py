@@ -30,11 +30,7 @@ if hasattr(sp, "csr_array"):
 else:
     CSR_CTOR = sp.csr_matrix
 
-from daal4py.sklearn._utils import (
-    _package_check_version,
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -91,10 +87,6 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     assert "sklearnex" in kmeans_dense.__module__
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2024, "P", 700)),
-    reason="Sparse data requires oneDAL>=2024.7.0",
-)
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
@@ -139,10 +131,6 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
     assert expected_inertia == kmeans.inertia_
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2024, "P", 700)),
-    reason="Sparse data requires oneDAL>=2024.7.0",
-)
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("init", ["k-means++", "random", "arraylike"])
 @pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
