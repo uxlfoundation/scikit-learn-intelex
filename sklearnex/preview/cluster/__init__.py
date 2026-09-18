@@ -1,5 +1,5 @@
-# ==============================================================================
-# Copyright 2023 Intel Corporation
+# ===============================================================================
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+# ===============================================================================
 
-from .. import onedal_check_version
-from .dbscan import DBSCAN
-from .kmeans import KMeans
+from . import hdbscan as _hdbscan
 
-__all__ = ["DBSCAN", "KMeans"]
+__all__ = []
 
-if onedal_check_version(2026, 2, 0):
+# '.hdbscan' defines the estimator only when the oneDAL in use provides the
+# algorithm, so the version check it does is not repeated here
+if hasattr(_hdbscan, "HDBSCAN"):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]
-
-if onedal_check_version(2023, 2, 0):
-    from .kmeans_init import KMeansInit, kmeans_plusplus
-
-    __all__ += ["KMeansInit", "kmeans_plusplus"]
