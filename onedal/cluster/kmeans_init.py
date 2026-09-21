@@ -37,7 +37,7 @@ class KMeansInit:
 
     local_trials_count : int, default=None
         Number of trials performed on each sampling step. If None,
-        ``2 + int(log(cluster_count))`` trials are used.
+        ``2 + floor(log(cluster_count))`` trials are used.
 
     algorithm : str, default="plus_plus_dense"
         Centroid initialization method. Available methods: "dense",
