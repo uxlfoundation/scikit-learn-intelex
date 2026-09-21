@@ -244,7 +244,7 @@ Environment variables
 
 The following environment variables can be used to control setup aspects:
 
-- ``SKLEARNEX_VERSION``: sets the package version.
+- ``SKLEARNEX_VERSION``: sets the ``__version__`` attribute for the ``sklearnex`` module. Note that the ``onedal_py_*`` and ``daal4py`` modules instead determine their ``__version__`` string at runtime according to the version from |onedal| that gets loaded.
 - ``DALROOT``: sets the |onedal| path.
 - ``MKLROOT``: path to the oneMKL runtime libraries, which are used for the DPC module. This variable is optional and only has an effect when using the option ``abs-rpath`` on Linux* (see the rest of this page for details).
 - ``MPIROOT``: sets the path to the MPI library. If this variable is not set but ``I_MPI_ROOT`` is found, will use ``I_MPI_ROOT`` instead. Not used when using ``NO_DIST=1``.
