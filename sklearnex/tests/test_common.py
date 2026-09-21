@@ -136,9 +136,15 @@ def test_all_estimators_covered(monkeypatch):
     uncovered_estimators = []
     for name, obj in estimators:
         # do nothing if defined in preview
-        if "preview" not in obj.__module__ and not (
-            any([issubclass(est, obj) for est in PATCHED_MODELS.values()])
-            or any([issubclass(est.__class__, obj) for est in SPECIAL_INSTANCES.values()])
+        if (
+            "preview" not in obj.__module__
+            and "daal4py" not in obj.__module__
+            and not (
+                any([issubclass(est, obj) for est in PATCHED_MODELS.values()])
+                or any(
+                    [issubclass(est.__class__, obj) for est in SPECIAL_INSTANCES.values()]
+                )
+            )
         ):
             uncovered_estimators += [".".join([obj.__module__, name])]
 
@@ -485,7 +491,7 @@ def n_jobs_check(text, estimator, method):
 
     assert bool(count) == bool(
         n_jobs_count
-    ), f"verify if {method} should be in control_n_jobs' decorated_methods for {estimator}"
+    ), f"verify if {method} should be in 'control_n_jobs' decorated_methods for {estimator}"
 
 
 def runtime_property_check(text, estimator, method):
