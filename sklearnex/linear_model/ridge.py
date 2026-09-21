@@ -282,6 +282,7 @@ if daal_check_version((2024, "P", 600)):
             self._coef_ = self._onedal_estimator.coef_
             self._intercept_ = self._onedal_estimator.intercept_
             self.solver_ = "cholesky"
+            self.n_iter_ = None
 
             if y.ndim == 1 or y.shape[1] == 1:
                 self._coef_ = self._coef_[0, ...]  # set to 1d
