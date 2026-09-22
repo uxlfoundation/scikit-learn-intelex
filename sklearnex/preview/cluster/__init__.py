@@ -18,6 +18,8 @@ from daal4py.sklearn._utils import daal_check_version
 
 __all__ = []
 
+# '.hdbscan' repeats this check around its own contents so that importing the module
+# directly stays safe on older oneDAL - see the comment there
 if daal_check_version((2026, "P", 200)):
     from .hdbscan import HDBSCAN
 
