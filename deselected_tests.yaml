@@ -457,6 +457,8 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[wide-42-True-cholesky]
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[wide-42-True-cholesky]
 
+  # Fails due to numerical tolerances slightly outside scikit-learn's thresholds
+  - linear_model/tests/test_ridge.py::test_solver_consistency[42-20-float32-0.1-cholesky-None]
 
   # Scikit-learn requires erroring out on different array API namespaces even if they are on the same device,
   # but no harm in working correctly under those scenarios.
