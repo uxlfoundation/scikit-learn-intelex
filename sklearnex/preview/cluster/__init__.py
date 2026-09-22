@@ -14,13 +14,11 @@
 # limitations under the License.
 # ===============================================================================
 
-from . import hdbscan as _hdbscan
+from daal4py.sklearn._utils import daal_check_version
 
 __all__ = []
 
-# '.hdbscan' defines the estimator only when the oneDAL in use provides the
-# algorithm, so the version check it does is not repeated here
-if hasattr(_hdbscan, "HDBSCAN"):
+if daal_check_version((2026, "P", 200)):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]
