@@ -56,16 +56,7 @@ except (ImportError, KeyError):
 
 import numpy as np
 import pandas as pd
-
-try:
-    import polars as pl
-except ModuleNotFoundError as error:
-    if error.name != "polars":
-        raise
-    # polars has no free-threaded wheel on PyPI - see
-    # requirements-test-free-threaded.txt for the details. Every test module that
-    # imports this one would fail to collect on a hard import.
-    pl = None
+import polars as pl
 
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
@@ -75,7 +66,7 @@ test_frameworks = os.environ.get(
 )
 
 # Namespace-neutral host data frame libraries, valid as y/weight alongside any X.
-host_df_modules = (pd, pl) if pl is not None else (pd,)
+host_df_modules = (pd, pl)
 
 # ``move_to`` has a host round-trip fallback for inputs that lack ``__dlpack__``,
 # but only for the exceptions it catches; torch signals this case with

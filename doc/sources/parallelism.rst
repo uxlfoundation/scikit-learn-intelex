@@ -98,8 +98,7 @@ usage in Python threads, even if running under the Python GIL:
 - A single estimator instance must not be **modified** from more than one thread,
   nor read while another thread modifies it - this includes ``.fit()``,
   ``.set_params()``, direct attribute assignment and un-pickling into an existing
-  object. Fit each instance in one thread and treat it as read-only from then on;
-  to fit several models at once, give each thread its own instance.
+  object.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
@@ -113,10 +112,6 @@ usage in Python threads, even if running under the Python GIL:
     - :obj:`sklearn.neighbors.KNeighborsRegressor`.
     - :obj:`sklearn.neighbors.KNeighborsClassifier`.
     - :obj:`sklearn.neighbors.LocalOutlierFactor`.
-
-- Un-pickling into an already-populated result or model object from the deprecated
-  :doc:`daal4py <daal4py>` module raises an error instead of silently replacing
-  state that another thread might be reading.
 
 Other considerations
 ====================
