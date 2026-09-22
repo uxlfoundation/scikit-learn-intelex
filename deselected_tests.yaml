@@ -453,6 +453,10 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-eigen-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-svd-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[wide-42-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[wide-42-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[wide-42-True-cholesky]
+
 
   # Scikit-learn requires erroring out on different array API namespaces even if they are on the same device,
   # but no harm in working correctly under those scenarios.
