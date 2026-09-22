@@ -23,68 +23,7 @@
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
 
-// TODO: Using includes should be the primary path
-#if defined(ONEDAL_VERSION) && (20240400 < ONEDAL_VERSION)
-
 #include "oneapi/dal/detail/dtype_dispatcher.hpp"
-
-#else // Version check
-
-#include "oneapi/dal/detail/error_messages.hpp"
-
-namespace oneapi::dal::detail {
-
-template <typename Op, typename OnUnknown>
-inline constexpr auto dispatch_by_data_type(data_type dtype, Op&& op, OnUnknown&& on_unknown) {
-    switch (dtype) {
-        case data_type::int8: return op(std::int8_t{});
-        case data_type::uint8: return op(std::uint8_t{});
-        case data_type::int16: return op(std::int16_t{});
-        case data_type::uint16: return op(std::uint16_t{});
-        case data_type::int32: return op(std::int32_t{});
-        case data_type::uint32: return op(std::uint32_t{});
-        case data_type::int64: return op(std::int64_t{});
-        case data_type::uint64: return op(std::uint64_t{});
-        case data_type::float32: return op(float{});
-        case data_type::float64: return op(double{});
-        default: return on_unknown(dtype);
-    }
-}
-
-template <typename Op, typename ResultType = std::invoke_result_t<Op, float>>
-inline constexpr ResultType dispatch_by_data_type(data_type dtype, Op&& op) {
-    // Necessary to make the return type conformant with
-    // other dispatch branches
-    const auto on_unknown = [](data_type) -> ResultType {
-        using msg = oneapi::dal::detail::error_messages;
-        throw unimplemented{ msg::unsupported_conversion_types() };
-    };
-
-    return dispatch_by_data_type(dtype, std::forward<Op>(op), on_unknown);
-}
-
-} // namespace oneapi::dal::detail
-
-#endif // Version check
-
-// TODO: Using includes should be the primary path
-#if defined(ONEDAL_VERSION) && (ONEDAL_VERSION < 20240000)
-
-namespace oneapi::dal::detail {
-
-template <typename... Types, typename Op>
-constexpr inline void apply(Op&& op) {
-    ((void)op(Types{}), ...);
-}
-
-template <typename Op, typename... Args>
-constexpr inline void apply(Op&& op, Args&&... args) {
-    ((void)op(std::forward<Args>(args)), ...);
-}
-
-} //namespace oneapi::dal::detail
-
-#endif // Version check
 
 #define SET_CTYPE_FROM_DAL_TYPE(_T, _FUNCT, _EXCEPTION) \
     switch (_T) {                                       \

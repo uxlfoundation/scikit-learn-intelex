@@ -64,7 +64,7 @@ To install the necessary Python dependencies:
 Non-Python dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Apart from Python libraries and from the |onedal| (version ``2021.4`` or higher), the following dependencies are needed in order to compile the |sklearnex|:
+Apart from Python libraries and from the |onedal| (version ``2025.0`` or higher), the following dependencies are needed in order to compile the |sklearnex|:
 
 - A C++ compiler.
 - clang-format.

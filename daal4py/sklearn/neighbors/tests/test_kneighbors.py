@@ -20,7 +20,6 @@ from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier as ScikitKNeighborsClassifier
 
-from daal4py.sklearn._utils import daal_check_version
 from daal4py.sklearn.neighbors import KNeighborsClassifier as DaalKNeighborsClassifier
 
 DISTANCES = ["minkowski"]
@@ -28,7 +27,7 @@ ALGORITHMS = ["brute", "kd_tree", "auto"]
 WEIGHTS = ["uniform", "distance"]
 KS = [1, 3, 7, 15, 31]
 N_TRIES = 10
-ACCURACY_RATIO = 1.0 if daal_check_version(((2020, "P", 300))) else 0.9
+ACCURACY_RATIO = 1.0
 LOG_LOSS_RATIO = 1.02
 ROC_AUC_RATIO = 0.999
 IRIS = load_iris()
