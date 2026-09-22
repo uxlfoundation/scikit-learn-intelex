@@ -16,13 +16,6 @@
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
-# This module has to stay importable on every supported oneDAL, so the estimator is
-# defined inside the version check rather than only being re-exported conditionally by
-# '__init__.py': 'sklearnex/tests/test_common.py' drives 'all_estimators' over a
-# 'pkgutil.walk_packages' of the whole package, which imports every module under
-# 'sklearnex' by name and does not filter out 'preview'. 'onedal.cluster.HDBSCAN' only
-# exists from oneDAL 2026.2 on, so a plain top-level import of it would make that walk
-# raise ImportError whenever an older oneDAL is in use.
 if daal_check_version((2026, "P", 200)):
     import warnings
 
