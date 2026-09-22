@@ -14,342 +14,325 @@
 # limitations under the License.
 # ===============================================================================
 
-import logging
+import numbers
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+import numpy as np
+from sklearn.linear_model import Ridge as _sklearn_Ridge
+from sklearn.metrics import r2_score
+from sklearn.utils._array_api import get_namespace
+from sklearn.utils.validation import check_is_fitted
 
-if daal_check_version((2024, "P", 600)):
-    import numbers
+from daal4py.sklearn._n_jobs_support import control_n_jobs
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
+from onedal.linear_model import Ridge as onedal_Ridge
+from onedal.utils.validation import _num_features, _num_samples
 
-    import numpy as np
-    from sklearn.linear_model import Ridge as _sklearn_Ridge
-    from sklearn.metrics import r2_score
-    from sklearn.utils._array_api import get_namespace
-    from sklearn.utils.validation import check_is_fitted
+from .._device_offload import dispatch, wrap_output_data
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
+from ..utils._array_api import enable_array_api
+from ..utils.validation import validate_data
+from ._base_linear_model import _BaseLinearModel
 
-    from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import is_sparse
-    from onedal.linear_model import Ridge as onedal_Ridge
-    from onedal.utils.validation import _num_features, _num_samples
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
 
-    from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain
-    from ..base import oneDALEstimator
-    from ..utils._array_api import enable_array_api
-    from ..utils.validation import validate_data
-    from ._base_linear_model import _BaseLinearModel
 
-    if sklearn_check_version("1.9"):
-        from sklearn.utils._array_api import (
-            check_same_namespace,
-            get_namespace_and_device,
-            move_to,
+@enable_array_api
+@control_n_jobs(decorated_methods=["fit", "predict", "score"])
+class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
+    __doc__ = _sklearn_Ridge.__doc__
+
+    _parameter_constraints: dict = {**_sklearn_Ridge._parameter_constraints}
+
+    def __init__(
+        self,
+        alpha=1.0,
+        fit_intercept=True,
+        copy_X=True,
+        max_iter=None,
+        tol=1e-4,
+        solver="auto",
+        positive=False,
+        random_state=None,
+    ):
+        super().__init__(
+            alpha=alpha,
+            fit_intercept=fit_intercept,
+            copy_X=copy_X,
+            max_iter=max_iter,
+            tol=tol,
+            solver=solver,
+            positive=positive,
+            random_state=random_state,
         )
 
-    @enable_array_api
-    @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-    class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
-        __doc__ = _sklearn_Ridge.__doc__
+    _onedal_Ridge = staticmethod(onedal_Ridge)
 
-        _parameter_constraints: dict = {**_sklearn_Ridge._parameter_constraints}
+    def fit(self, X, y, sample_weight=None):
+        self._validate_params()
 
-        def __init__(
+        # It is necessary to properly update coefs for predict if we
+        # fallback to sklearn in dispatch
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+
+        dispatch(
             self,
-            alpha=1.0,
-            fit_intercept=True,
-            copy_X=True,
-            max_iter=None,
-            tol=1e-4,
-            solver="auto",
-            positive=False,
-            random_state=None,
-        ):
-            super().__init__(
-                alpha=alpha,
-                fit_intercept=fit_intercept,
-                copy_X=copy_X,
-                max_iter=max_iter,
-                tol=tol,
-                solver=solver,
-                positive=positive,
-                random_state=random_state,
-            )
+            "fit",
+            {
+                "onedal": self.__class__._onedal_fit,
+                "sklearn": _sklearn_Ridge.fit,
+            },
+            X,
+            y,
+            sample_weight,
+        )
+        return self
 
-        _onedal_Ridge = staticmethod(onedal_Ridge)
+    @wrap_output_data
+    def predict(self, X):
+        check_is_fitted(self)
 
-        def fit(self, X, y, sample_weight=None):
-            self._validate_params()
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_Ridge.predict,
+            },
+            X,
+        )
 
-            # It is necessary to properly update coefs for predict if we
-            # fallback to sklearn in dispatch
-            if hasattr(self, "_onedal_estimator"):
-                del self._onedal_estimator
+    @wrap_output_data
+    def score(self, X, y, sample_weight=None):
+        check_is_fitted(self)
 
-            dispatch(
-                self,
-                "fit",
-                {
-                    "onedal": self.__class__._onedal_fit,
-                    "sklearn": _sklearn_Ridge.fit,
-                },
-                X,
-                y,
-                sample_weight,
-            )
-            return self
+        return dispatch(
+            self,
+            "score",
+            {
+                "onedal": self.__class__._onedal_score,
+                "sklearn": _sklearn_Ridge.score,
+            },
+            X,
+            y,
+            sample_weight=sample_weight,
+        )
 
-        @wrap_output_data
-        def predict(self, X):
-            check_is_fitted(self)
+    def _onedal_fit_supported(self, patching_status, method_name, *data):
+        assert method_name == "fit"
+        assert len(data) == 3
+        X, y, sample_weight = data
 
-            return dispatch(
-                self,
-                "predict",
-                {
-                    "onedal": self.__class__._onedal_predict,
-                    "sklearn": _sklearn_Ridge.predict,
-                },
-                X,
-            )
+        normalize_is_set = (
+            hasattr(self, "normalize")
+            and self.normalize
+            and self.normalize != "deprecated"
+        )
+        positive_is_set = hasattr(self, "positive") and self.positive
 
-        @wrap_output_data
-        def score(self, X, y, sample_weight=None):
-            check_is_fitted(self)
+        patching_status.and_conditions(
+            [
+                (
+                    self.solver == "auto",
+                    f"'{self.solver}' solver is not supported. "
+                    "Only 'auto' solver is supported.",
+                ),
+                (
+                    not is_sparse(X) and not is_sparse(y),
+                    "Sparse input is not supported.",
+                ),
+                (sample_weight is None, "Sample weight is not supported."),
+                (not normalize_is_set, "Normalization is not supported."),
+                (
+                    not positive_is_set,
+                    "Forced positive coefficients are not supported.",
+                ),
+                (
+                    isinstance(self.alpha, numbers.Real),
+                    "Non-scalar alpha is not supported yet.",
+                ),
+            ]
+        )
 
-            return dispatch(
-                self,
-                "score",
-                {
-                    "onedal": self.__class__._onedal_score,
-                    "sklearn": _sklearn_Ridge.score,
-                },
-                X,
-                y,
-                sample_weight=sample_weight,
-            )
+        return patching_status
 
-        def _onedal_fit_supported(self, patching_status, method_name, *data):
-            assert method_name == "fit"
-            assert len(data) == 3
-            X, y, sample_weight = data
+    def _onedal_predict_supported(self, patching_status, method_name, *data):
+        assert method_name in ["predict", "score"]
+        assert len(data) <= 2
 
-            normalize_is_set = (
-                hasattr(self, "normalize")
-                and self.normalize
-                and self.normalize != "deprecated"
-            )
-            positive_is_set = hasattr(self, "positive") and self.positive
+        n_samples = _num_samples(data[0])
+        model_is_sparse = is_sparse(self.coef_) or (
+            self.fit_intercept and is_sparse(self.intercept_)
+        )
+        patching_status.and_conditions(
+            [
+                (
+                    self.solver == "auto",
+                    f"'{self.solver}' solver is not supported. "
+                    "Only 'auto' solver is supported.",
+                ),
+                (n_samples > 0, "Number of samples is less than 1."),
+                (not is_sparse(data[0]), "Sparse input is not supported."),
+                (not model_is_sparse, "Sparse coefficients are not supported."),
+            ]
+        )
 
-            patching_status.and_conditions(
-                [
-                    (
-                        self.solver == "auto",
-                        f"'{self.solver}' solver is not supported. "
-                        "Only 'auto' solver is supported.",
-                    ),
-                    (
-                        not is_sparse(X) and not is_sparse(y),
-                        "Sparse input is not supported.",
-                    ),
-                    (sample_weight is None, "Sample weight is not supported."),
-                    (not normalize_is_set, "Normalization is not supported."),
-                    (
-                        not positive_is_set,
-                        "Forced positive coefficients are not supported.",
-                    ),
-                    (
-                        isinstance(self.alpha, numbers.Real),
-                        "Non-scalar alpha is not supported yet.",
-                    ),
-                ]
-            )
+        return patching_status
 
-            return patching_status
+    def _onedal_gpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearn.linear_model.{self.__class__.__name__}.{method_name}"
+        )
 
-        def _onedal_predict_supported(self, patching_status, method_name, *data):
-            assert method_name in ["predict", "score"]
-            assert len(data) <= 2
+        if method_name == "fit":
+            if not daal_check_version((2025, "P", 200)):
+                n_samples = _num_samples(data[0])
+                n_features = _num_features(data[0], fallback_1d=True)
+                is_underdetermined = n_samples < (n_features + int(self.fit_intercept))
+                is_zero_alpha = isinstance(self.alpha, numbers.Real) and np.isclose(
+                    self.alpha, 0, atol=1e-5
+                )
 
-            n_samples = _num_samples(data[0])
-            model_is_sparse = is_sparse(self.coef_) or (
-                self.fit_intercept and is_sparse(self.intercept_)
-            )
-            patching_status.and_conditions(
-                [
-                    (
-                        self.solver == "auto",
-                        f"'{self.solver}' solver is not supported. "
-                        "Only 'auto' solver is supported.",
-                    ),
-                    (n_samples > 0, "Number of samples is less than 1."),
-                    (not is_sparse(data[0]), "Sparse input is not supported."),
-                    (not model_is_sparse, "Sparse coefficients are not supported."),
-                ]
-            )
+                patching_status.and_condition(
+                    not is_underdetermined or not is_zero_alpha,
+                    "The shape of X (fitting) does not satisfy oneDAL requirements:"
+                    "Number of features + 1 >= number of samples and alpha = 0.",
+                )
 
-            return patching_status
+            return self._onedal_fit_supported(patching_status, method_name, *data)
 
-        def _onedal_gpu_supported(self, method_name, *data):
-            patching_status = PatchingConditionsChain(
-                f"sklearn.linear_model.{self.__class__.__name__}.{method_name}"
-            )
+        if method_name in ["predict", "score"]:
+            return self._onedal_predict_supported(patching_status, method_name, *data)
 
-            if method_name == "fit":
-                if not daal_check_version((2025, "P", 200)):
-                    n_samples = _num_samples(data[0])
-                    n_features = _num_features(data[0], fallback_1d=True)
-                    is_underdetermined = n_samples < (
-                        n_features + int(self.fit_intercept)
-                    )
-                    is_zero_alpha = isinstance(self.alpha, numbers.Real) and np.isclose(
-                        self.alpha, 0, atol=1e-5
-                    )
+        raise RuntimeError(f"Unknown method {method_name} in {self.__class__.__name__}")
 
-                    patching_status.and_condition(
-                        not is_underdetermined or not is_zero_alpha,
-                        "The shape of X (fitting) does not satisfy oneDAL requirements:"
-                        "Number of features + 1 >= number of samples and alpha = 0.",
-                    )
+    def _onedal_cpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearn.linear_model.{self.__class__.__name__}.{method_name}"
+        )
 
-                return self._onedal_fit_supported(patching_status, method_name, *data)
+        if method_name == "fit":
+            if not daal_check_version((2025, "P", 100)):
+                n_samples = _num_samples(data[0])
+                n_features = _num_features(data[0], fallback_1d=True)
+                is_underdetermined = n_samples < (n_features + int(self.fit_intercept))
+                is_zero_alpha = isinstance(self.alpha, numbers.Real) and np.isclose(
+                    self.alpha, 0, atol=1e-5
+                )
 
-            if method_name in ["predict", "score"]:
-                return self._onedal_predict_supported(patching_status, method_name, *data)
+                patching_status.and_condition(
+                    not is_underdetermined or not is_zero_alpha,
+                    "The shape of X (fitting) does not satisfy oneDAL requirements:"
+                    "Number of features + 1 >= number of samples and alpha = 0.",
+                )
+            return self._onedal_fit_supported(patching_status, method_name, *data)
 
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
+        if method_name in ["predict", "score"]:
+            return self._onedal_predict_supported(patching_status, method_name, *data)
 
-        def _onedal_cpu_supported(self, method_name, *data):
-            patching_status = PatchingConditionsChain(
-                f"sklearn.linear_model.{self.__class__.__name__}.{method_name}"
-            )
+        raise RuntimeError(f"Unknown method {method_name} in {self.__class__.__name__}")
 
-            if method_name == "fit":
-                if not daal_check_version((2025, "P", 100)):
-                    n_samples = _num_samples(data[0])
-                    n_features = _num_features(data[0], fallback_1d=True)
-                    is_underdetermined = n_samples < (
-                        n_features + int(self.fit_intercept)
-                    )
-                    is_zero_alpha = isinstance(self.alpha, numbers.Real) and np.isclose(
-                        self.alpha, 0, atol=1e-5
-                    )
+    def _initialize_onedal_estimator(self, override_fit_intercept: bool = False) -> None:
+        onedal_params = {
+            "fit_intercept": self._get_fit_intercept(override_fit_intercept),
+            "alpha": self.alpha,
+            "copy_X": self.copy_X,
+        }
+        self._onedal_estimator = self._onedal_Ridge(**onedal_params)
 
-                    patching_status.and_condition(
-                        not is_underdetermined or not is_zero_alpha,
-                        "The shape of X (fitting) does not satisfy oneDAL requirements:"
-                        "Number of features + 1 >= number of samples and alpha = 0.",
-                    )
-                return self._onedal_fit_supported(patching_status, method_name, *data)
+    def _onedal_fit(self, X, y, sample_weight, queue=None):
+        # `Sample weight` is not supported. Expected to be None value.
+        assert sample_weight is None
 
-            if method_name in ["predict", "score"]:
-                return self._onedal_predict_supported(patching_status, method_name, *data)
-
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
-
-        def _initialize_onedal_estimator(
-            self, override_fit_intercept: bool = False
-        ) -> None:
-            onedal_params = {
-                "fit_intercept": self._get_fit_intercept(override_fit_intercept),
-                "alpha": self.alpha,
-                "copy_X": self.copy_X,
-            }
-            self._onedal_estimator = self._onedal_Ridge(**onedal_params)
-
-        def _onedal_fit(self, X, y, sample_weight, queue=None):
-            # `Sample weight` is not supported. Expected to be None value.
-            assert sample_weight is None
-
-            if sklearn_check_version("1.9"):
-                xp, _ = get_namespace(X)
-            else:
-                xp, _ = get_namespace(X, y)
-
-            self._validate_params()
-
-            X, y = validate_data(
-                self,
-                X=X,
-                y=y,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse=["csr", "csc", "coo"],
-                y_numeric=True,
-                multi_output=True,
-            )
-
-            self._initialize_onedal_estimator()
-            self._onedal_estimator.fit(X, y, queue=queue)
-            self.n_features_in_ = self._onedal_estimator.n_features_in_
-            self._coef_ = self._onedal_estimator.coef_
-            self._intercept_ = self._onedal_estimator.intercept_
-
-            if y.ndim == 1 or y.shape[1] == 1:
-                self._coef_ = self._coef_[0, ...]  # set to 1d
-                self._intercept_ = self._intercept_[0]  # set 1d to scalar
-
-        def _onedal_predict(self, X, queue=None):
+        if sklearn_check_version("1.9"):
             xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
-            )
+        else:
+            xp, _ = get_namespace(X, y)
 
-            if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="coef_", method="predict")
+        self._validate_params()
 
-            if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator_from_coefs()
+        X, y = validate_data(
+            self,
+            X=X,
+            y=y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse=["csr", "csc", "coo"],
+            y_numeric=True,
+            multi_output=True,
+        )
 
-            res = self._onedal_estimator.predict(X, queue=queue)
-            if res.shape[1] == 1 and self.coef_.ndim == 1:
-                return xp.reshape(res, (-1,))
-            else:
-                return res
+        self._initialize_onedal_estimator()
+        self._onedal_estimator.fit(X, y, queue=queue)
+        self.n_features_in_ = self._onedal_estimator.n_features_in_
+        self._coef_ = self._onedal_estimator.coef_
+        self._intercept_ = self._onedal_estimator.intercept_
 
-        def _onedal_score(self, X, y, sample_weight=None, queue=None):
-            if sklearn_check_version("1.9"):
-                xp, _, device_ = get_namespace_and_device(X)
-                y = move_to(y, xp=xp, device=device_)
-            return r2_score(
-                y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-            )
+        if y.ndim == 1 or y.shape[1] == 1:
+            self._coef_ = self._coef_[0, ...]  # set to 1d
+            self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
-        @property
-        def coef_(self):
-            return self._coef_
+    def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        X = validate_data(
+            self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
+        )
 
-        @coef_.setter
-        def coef_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.coef_ = value
-                self._onedal_estimator._onedal_model = None
-            self._coef_ = value
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="coef_", method="predict")
 
-        @coef_.deleter
-        def coef_(self):
-            del self._coef_
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator_from_coefs()
 
-        @property
-        def intercept_(self):
-            return self._intercept_
+        res = self._onedal_estimator.predict(X, queue=queue)
+        if res.shape[1] == 1 and self.coef_.ndim == 1:
+            return xp.reshape(res, (-1,))
+        else:
+            return res
 
-        @intercept_.setter
-        def intercept_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.intercept_ = value
-                self._onedal_estimator._onedal_model = None
-            self._intercept_ = value
+    def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        if sklearn_check_version("1.9"):
+            xp, _, device_ = get_namespace_and_device(X)
+            y = move_to(y, xp=xp, device=device_)
+        return r2_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
 
-        @intercept_.deleter
-        def intercept_(self):
-            del self._intercept_
+    @property
+    def coef_(self):
+        return self._coef_
 
-        fit.__doc__ = _sklearn_Ridge.fit.__doc__
-        predict.__doc__ = _sklearn_Ridge.predict.__doc__
-        score.__doc__ = _sklearn_Ridge.score.__doc__
+    @coef_.setter
+    def coef_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.coef_ = value
+            self._onedal_estimator._onedal_model = None
+        self._coef_ = value
 
-else:
-    raise ImportError("Ridge requires oneDAL version >= 2024.6 but it was not found")
+    @coef_.deleter
+    def coef_(self):
+        del self._coef_
+
+    @property
+    def intercept_(self):
+        return self._intercept_
+
+    @intercept_.setter
+    def intercept_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.intercept_ = value
+            self._onedal_estimator._onedal_model = None
+        self._intercept_ = value
+
+    @intercept_.deleter
+    def intercept_(self):
+        del self._intercept_
+
+    fit.__doc__ = _sklearn_Ridge.fit.__doc__
+    predict.__doc__ = _sklearn_Ridge.predict.__doc__
+    score.__doc__ = _sklearn_Ridge.score.__doc__

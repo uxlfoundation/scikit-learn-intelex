@@ -218,31 +218,29 @@ def onedal_check_version(
     return _v >= (major, minor, update)
 
 
+__version__ = ".".join([str(v) for v in _default_backend.__version_tuple__])
+
 # Core modules and functions to export
 __all__ = [
+    "__version__",
     "_ensure_dpc_available",
     "_host_backend",
     "_default_backend",
     "_dpc_backend",
     "_spmd_backend",
+    "basic_statistics",
+    "cluster",
     "covariance",
     "decomposition",
     "dummy",
     "ensemble",
+    "linear_model",
     "neighbors",
     "onedal_check_version",
     "primitives",
     "svm",
 ]
 
-# Additional features based on version checks
-if onedal_check_version(2023, 1, 0):
-    __all__ += ["basic_statistics", "linear_model"]
-if onedal_check_version(2023, 2, 0):
-    __all__ += ["cluster"]
-
 # Exports if SPMD backend is available
 if _spmd_backend is not None:
     __all__ += ["spmd"]
-
-__version__ = "2199.9.9"

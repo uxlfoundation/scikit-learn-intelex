@@ -17,15 +17,11 @@
 from .. import onedal_check_version
 from .dbscan import DBSCAN
 from .kmeans import KMeans
+from .kmeans_init import KMeansInit, kmeans_plusplus
 
-__all__ = ["DBSCAN", "KMeans"]
+__all__ = ["DBSCAN", "KMeans", "KMeansInit", "kmeans_plusplus"]
 
 if onedal_check_version(2026, 2, 0):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]
-
-if onedal_check_version(2023, 2, 0):
-    from .kmeans_init import KMeansInit, kmeans_plusplus
-
-    __all__ += ["KMeansInit", "kmeans_plusplus"]

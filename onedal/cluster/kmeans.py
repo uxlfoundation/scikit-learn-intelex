@@ -18,22 +18,17 @@ import warnings
 from abc import ABC
 
 import numpy as np
-
-from .. import onedal_check_version
-from .._device_offload import supports_queue
-from ..basic_statistics import BasicStatistics
-from ..common._backend import bind_default_backend
-from ..utils import _sycl_queue_manager as QM
-
-if onedal_check_version(2023, 2, 0):
-    from .kmeans_init import KMeansInit
-
 from sklearn.cluster._kmeans import _kmeans_plusplus
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils import check_random_state
 
+from .._device_offload import supports_queue
+from ..basic_statistics import BasicStatistics
+from ..common._backend import bind_default_backend
 from ..datatypes import from_table, return_type_constructor, to_table
+from ..utils import _sycl_queue_manager as QM
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
+from .kmeans_init import KMeansInit
 
 
 class KMeans(ABC):
@@ -212,7 +207,7 @@ class KMeans(ABC):
         random_state = check_random_state(self.random_state)
 
         init = self.init
-        use_onedal_init = onedal_check_version(2023, 2, 0) and not callable(self.init)
+        use_onedal_init = not callable(self.init)
 
         # Resolve n_init from 'auto' to integer if not already resolved
         # by the sklearnex layer (_resolve_n_init).
