@@ -1,3 +1,7 @@
+---
+applyTo: "daal4py/**,generator/**"
+---
+
 # daal4py/* - Direct oneDAL Python Bindings
 
 ## Purpose
@@ -18,7 +22,7 @@ pytest daal4py/sklearn/tests/
 
 ## For GitHub Copilot
 
-See [daal4py/AGENTS.md](../daal4py/AGENTS.md) for comprehensive information including:
+See [daal4py/AGENTS.md](../../daal4py/AGENTS.md) for comprehensive information including:
 - Detailed native oneDAL API patterns
 - Model builder conversion process
 - Monkeypatch system architecture

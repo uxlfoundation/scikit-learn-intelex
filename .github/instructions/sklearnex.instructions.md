@@ -1,3 +1,7 @@
+---
+applyTo: "sklearnex/**"
+---
+
 # sklearnex/* - Primary sklearn-compatible Interface
 
 ## Purpose
@@ -24,7 +28,7 @@ pytest sklearnex/tests/test_config.py
 
 ## For GitHub Copilot
 
-See [sklearnex/AGENTS.md](../sklearnex/AGENTS.md) for comprehensive information including:
+See [sklearnex/AGENTS.md](../../sklearnex/AGENTS.md) for comprehensive information including:
 - Detailed patching system architecture
 - Device offloading and fallback mechanisms
 - Algorithm support conditions and GPU compatibility

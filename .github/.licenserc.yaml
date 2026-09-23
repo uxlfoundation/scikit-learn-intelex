@@ -68,6 +68,7 @@ header:
     - '.github/Pull_Request_template.md'
     - '.github/renovate.json'
     - '.github/instructions/*.md'
+    - '.github/copilot-instructions.md'
     # Specific files
     - 'LICENSE'
     - 'AGENTS.md'

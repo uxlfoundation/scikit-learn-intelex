@@ -1,3 +1,7 @@
+---
+applyTo: "setup.py,setup.cfg,pyproject.toml,dependencies-dev,requirements*.txt,conda-recipe/**,.ci/**,.github/workflows/**"
+---
+
 # Build Configuration Files
 
 ## Purpose
@@ -42,7 +46,7 @@ Build system configuration for Extension for scikit-learn using setup.py, conda,
 
 ## For GitHub Copilot
 
-See [.ci/AGENTS.md](../.ci/AGENTS.md) for comprehensive information including:
+See [.ci/AGENTS.md](../../.ci/AGENTS.md) for comprehensive information including:
 - Platform-specific build configurations
 - CI/CD pipeline details
 - Common build issues and solutions

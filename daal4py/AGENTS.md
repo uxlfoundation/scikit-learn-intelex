@@ -147,7 +147,7 @@ daal4py and onedal are **separate** Python binding implementations to oneDAL C++
 5. Update monkeypatch dispatcher for sklearn compatibility
 
 ### Modifying Existing Algorithms
-- Native API: Modify generated sources or generator templates
+- Native API: Modify the generator (`generator/`), never the generated `build/daal4py_cy.pyx`
 - sklearn API: Direct edits in `daal4py/sklearn/`
 - Model builders: Edit `daal4py/mb/`
 

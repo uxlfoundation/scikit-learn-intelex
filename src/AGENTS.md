@@ -40,3 +40,4 @@ Cython interfaces for converting external ML framework models to oneDAL format. 
 - Distributed algorithms use MPI communication layer
 - Model builders enable XGBoost/LightGBM/CatBoost integration
 - Maintain thread safety and cross-platform compatibility
+- Report errors as Python exceptions, not `std::cerr`; the existing `std::cerr` calls predate this rule

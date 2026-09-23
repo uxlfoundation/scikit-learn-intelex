@@ -98,3 +98,12 @@ oneDAL GPU → oneDAL CPU → sklearn → Error
 - SPMD variants in `spmd/` subdirectory for distributed execution
 - Preview features require explicit environment variable activation
 - Direct imports from sklearnex guarantee acceleration without patching
+
+## Rules for Changes
+- sklearn-conformance logic (parameter validation, attribute names, output formatting) belongs in the `sklearnex/` estimator, not in `onedal/`.
+- Write for the newest supported sklearn first, and gate older versions with `sklearn_check_version`. Write bounds as `< 1.2`, not `<= 1.1`.
+- When the sklearn floor in `setup.py` moves, delete the `sklearn_check_version` branches that became always true.
+- Derive the queue and device from the input data. Never use a global queue.
+- Don't add branches to hot paths for rare cases. Put the workaround in the pybind11/C++ layer.
+- dpnp is the only SYCL array type; don't add `dpctl.tensor` code.
+- Methods read the estimator's fitted attributes from `self` (`self.coef_`) rather than taking them as arguments.

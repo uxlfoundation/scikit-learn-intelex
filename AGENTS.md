@@ -139,24 +139,45 @@ python -c "import dpctl; print(dpctl.get_devices())"
 - `requirements-test.txt` - scikit-learn and runtime dependencies
 - `dependencies-dev` - Build dependencies
 
-### Version Support Policy
-
-**Python**:
-Supports officially maintained Python versions. Support for newly released versions may be delayed; support for older versions may extend beyond EOL to accommodate user needs.
-
-**scikit-learn**:
-Aims to support the last 4 scikit-learn releases. sklearn 1.0 maintained as special case for production environments.
-
-**oneDAL**:
-Backwards compatible with oneDAL 2021.1+. Forward compatibility not guaranteed.
+### Version Floors
+The floors are enforced in code; read them there rather than trusting prose:
+- oneDAL: `ONEDAL_VERSION` check in `setup.py` (currently >= 2025.0)
+- scikit-learn and Python: `install_requires` / `python_requires` in `setup.py`
+- `sklearn_check_version` gates below the scikit-learn floor are always true and should be deleted
 
 ## Code Generation
-The generator/ directory contains automated code generation from oneDAL C++ headers to Python bindings. Modify generator/wrappers.py to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.
+`generator/` generates daal4py's Cython bindings from oneDAL C++ headers. Modify `generator/wrappers.py` to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.
+
+Never edit the generated `build/daal4py_cy.pyx`; change `generator/` and rebuild.
+
+## Build & Test
+```bash
+export DALROOT=/path/to/onedal
+python setup.py develop
+
+pytest sklearnex/linear_model/tests/     # one module; start here
+pytest --pyargs sklearnex                # one package, as conda-recipe/run_test.sh does
+```
+- `conda-recipe/run_test.sh` is the full suite (legacy `tests/`, `daal4py`, `sklearnex`, `onedal`, global patching, then MPI). It is slow; run a module first.
+- GPU cases come from the `get_queues()` / `get_dataframes_and_queues()` parametrizations, which only emit a GPU queue when one is available; there is no `gpu` marker.
+- MPI tests need `mpirun` and `--with-mpi`; see the MPI block in `conda-recipe/run_test.sh`.
+
+## Rules for Changes
+These come from recurring review comments; each one has been asked for on several PRs.
+- Comments describe the code as it will be once merged. Don't reference discarded approaches, narrate the change, or mention "this PR".
+- One PR, one logical change. Drive-by fixes, renames, and mechanical changes (formatting, codegen, mass renames) go in their own PRs.
+- Search before adding a helper, fixture, constant table, or validation routine. Extend the existing one, and name it in the PR description.
+- Don't add a lock, guard, `try`/`except`, or redundant check unless you can name the failure it prevents.
+- A bug fix comes with a test that fails without the fix.
+- Don't hardcode versions, URLs, or paths that a source-of-truth file or Renovate already tracks.
+- New functions get full type hints and a numpydoc docstring.
+- New files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
 
 ## Component Documentation
 - `sklearnex/AGENTS.md`: API patterns, device offloading
 - `daal4py/AGENTS.md`: Native oneDAL bindings, model builders
 - `onedal/AGENTS.md`: Pybind11 implementation, memory management
+- `onedal/datatypes/AGENTS.md`: Data conversion, Python C-API reference ownership
 - `src/AGENTS.md`: C++/Cython core, distributed computing
 - `examples/AGENTS.md`: Usage patterns and example scripts
 - `tests/AGENTS.md`: Testing infrastructure, validation patterns

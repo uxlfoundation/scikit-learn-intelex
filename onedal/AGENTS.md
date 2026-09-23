@@ -19,6 +19,8 @@ Automatic backend selection between GPU (DPC++) and CPU (Host) based on availabl
 - **SYCL USM**: GPU memory sharing via `__sycl_usm_array_interface__`
 - **DLPack**: Cross-framework tensor exchange
 
+See `datatypes/AGENTS.md` for reference-ownership rules before editing conversion code.
+
 ## Algorithm Categories
 - **Clustering**: DBSCAN, K-Means
 - **Linear Models**: Linear/Ridge/Logistic regression

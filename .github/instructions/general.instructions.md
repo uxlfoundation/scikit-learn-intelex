@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # General Repository Instructions - Intel Extension for scikit-learn
 
 ## Repository Overview
@@ -23,7 +27,7 @@ pytest --verbose sklearnex
 
 ## For GitHub Copilot
 
-See [AGENTS.md](../AGENTS.md) for comprehensive information including:
+See [AGENTS.md](../../AGENTS.md) for comprehensive information including:
 - Detailed architecture and layer interactions
 - Algorithm support and GPU compatibility
 - Performance patterns and optimization strategies
