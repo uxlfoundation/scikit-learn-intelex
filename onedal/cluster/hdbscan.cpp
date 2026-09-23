@@ -188,9 +188,7 @@ ONEDAL_PY_INIT_MODULE(hdbscan) {
     using task_list = types<task::clustering>;
     auto sub = m.def_submodule("hdbscan");
 
-#ifdef ONEDAL_DATA_PARALLEL_SPMD
-    ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_spmd, task_list);
-#else // ONEDAL_DATA_PARALLEL_SPMD
+#ifndef ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_compute_result, sub, task_list);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
