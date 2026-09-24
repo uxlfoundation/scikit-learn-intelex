@@ -1,0 +1,30 @@
+# Test requirements for free-threaded CPython builds.
+#
+# This mirrors requirements-test.txt with two differences:
+#   - catboost and shap are dropped: neither publishes a wheel for the
+#     free-threaded ABI (catboost has no cp3XXt wheel at all, shap builds cp314t
+#     for some platforms but not manylinux x86-64). The tests that need them skip
+#     when they are absent, so the effect is reduced coverage of those optional
+#     integrations - see doc/sources/unsupported.rst.
+#   - polars is not listed: its compiled runtime is published as abi3, which a
+#     free-threaded interpreter does not accept, so it is installed from
+#     conda-forge instead - see the free-threaded Python step in
+#     .github/workflows/ci.yml. The version pin there is read from
+#     requirements-test.txt.
+# PEP 508 has no environment marker for the free-threaded build, so these
+# differences cannot be expressed as markers in requirements-test.txt itself.
+# Revisit whenever catboost or shap starts shipping a usable wheel.
+pytest==9.1.1
+pytest-json-report==1.5.0
+pytest-cov==7.1.0
+pytest-mock==3.15.1
+numpy>=2.0.0
+scikit-learn==1.9.0
+pandas==3.0.5
+xgboost==3.4.1
+lightgbm==4.7.0
+treelite==4.7.1
+array-api-compat==1.15.0
+array-api-strict==2.5
+packaging==26.3
+pyyaml==6.0.3
