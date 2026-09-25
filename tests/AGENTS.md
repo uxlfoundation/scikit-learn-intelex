@@ -137,7 +137,7 @@ python .circleci/run_xpu_tests.py -q --no-intel-optimized -d cpu --reduced --des
 
 ## Writing Tests
 - Reuse the shared utilities before writing new ones: `get_dataframes_and_queues()` and `_convert_to_dataframe()` in `onedal/tests/utils/_dataframes_support.py`, `get_queues()` in `onedal/tests/utils/_device_selection.py`, and the fixtures in `sklearnex/conftest.py` (`with_array_api`, `with_sklearnex`).
-- A new estimator method runs over `@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())`, which covers numpy, pandas, polars, dpnp, torch, and `array_api_strict`. Also cover the method with and without `target_offload`, and set output through both `config_context` and `estimator.set_output`.
+- A new estimator method runs over `@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())`, which covers numpy, pandas, dpnp, torch, and `array_api_strict` when installed. It has no polars, so parametrize pandas and polars input explicitly, as `sklearnex/decomposition/tests/test_pca.py` does. Also cover the method with and without `target_offload`, and for methods that return data, set output through both `config_context` and `estimator.set_output`.
 - A test must be able to fail: it can't pass when the behavior it names is absent (e.g. a concurrency test that would also pass when run serially). Tests don't modify installed files (mock them instead), depend on the working directory, or hardcode a Python version.
 - Parametrize instead of making several assertions in sequence, so every failure shows up at once.
 - Put `@pytest.mark.mpi` on each MPI test explicitly, not programmatically, so the tests stay greppable.

@@ -54,7 +54,7 @@ These come from recurring review comments; each one has been asked for on severa
 - A bug fix comes with a test that fails without the fix.
 - Don't hardcode versions, URLs, or paths that a source-of-truth file or Renovate already tracks.
 - New functions get full type hints and a numpydoc docstring.
-- New files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
+- New source files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
 
 ## Directory Guides
 Read the `AGENTS.md` nearest the files you change:
