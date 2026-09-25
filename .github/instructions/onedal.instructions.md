@@ -1,3 +1,7 @@
+---
+applyTo: "onedal/**"
+---
+
 # onedal/* - Low-Level C++ Bindings
 
 ## Purpose
@@ -19,7 +23,7 @@ pytest onedal/common/tests/
 
 ## For GitHub Copilot
 
-See [onedal/AGENTS.md](../onedal/AGENTS.md) for comprehensive information including:
+See [onedal/AGENTS.md](../../onedal/AGENTS.md) for comprehensive information including:
 - Backend system architecture (DPC++/Host selection)
 - Data conversion methods and zero-copy patterns
 - Algorithm structure and implementation patterns

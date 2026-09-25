@@ -1,3 +1,7 @@
+---
+applyTo: "src/**"
+---
+
 # src/* - Core C++/Cython Implementation
 
 ## Purpose
@@ -21,7 +25,7 @@ pytest tests/test_daal4py_serialization.py
 
 ## For GitHub Copilot
 
-See [src/AGENTS.md](../src/AGENTS.md) for comprehensive information including:
+See [src/AGENTS.md](../../src/AGENTS.md) for comprehensive information including:
 - C++/Cython architecture and memory management
 - GIL protection patterns and thread safety
 - MPI communication layer and distributed algorithms

@@ -1,3 +1,7 @@
+---
+applyTo: "tests/**,**/tests/**,deselected_tests.yaml,.circleci/**"
+---
+
 # tests/* - Testing Infrastructure
 
 ## Purpose
@@ -31,7 +35,7 @@ For detailed coverage information, see tests/AGENTS.md.
 
 ## For GitHub Copilot
 
-See [tests/AGENTS.md](../tests/AGENTS.md) for comprehensive information including:
+See [tests/AGENTS.md](../../tests/AGENTS.md) for comprehensive information including:
 - Validation patterns and numerical accuracy requirements
 - Performance testing and timeout configurations
 - Cross-platform testing strategies
