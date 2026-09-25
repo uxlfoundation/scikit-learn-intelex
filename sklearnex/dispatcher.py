@@ -21,6 +21,8 @@ from functools import lru_cache
 from types import ModuleType
 from typing import Optional, Union
 
+from daal4py.sklearn._utils import daal_check_version
+
 # dict key: sklearn name
 # dict value: tuple entries:
 # - module from sklearn
@@ -115,6 +117,19 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 MaxAbsScaler_sklearn,
             ),
         }
+        if daal_check_version((2026, "P", 200)):
+            import sklearn.cluster as cluster_module
+            from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
+
+            from .preview.cluster import HDBSCAN as HDBSCAN_sklearnex
+
+            preview_mapping["sklearn.cluster.HDBSCAN"] = (
+                cluster_module,
+                "HDBSCAN",
+                HDBSCAN_sklearnex,
+                HDBSCAN_sklearn,
+            )
+
         import sklearn.linear_model as linear_model_module
         from sklearn.linear_model import (
             LogisticRegressionCV as LogisticRegressionCV_sklearn,
