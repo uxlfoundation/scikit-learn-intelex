@@ -17,11 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-
-try:
-    from scipy.sparse import csr_array as csr_class
-except ImportError:
-    from scipy.sparse import csr_matrix as csr_class
+from scipy import sparse as sp
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
@@ -34,6 +30,8 @@ pytestmark = pytest.mark.skipif(
     not daal_check_version((2026, "P", 200)),
     reason="HDBSCAN requires oneDAL >= 2026.2",
 )
+
+_csr_array = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
 
 # Three tight groups of samples, far apart from each other and lying in clearly
 # different directions as seen from the origin, so that every supported metric,
@@ -199,6 +197,6 @@ def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
     from sklearnex.preview.cluster import HDBSCAN
 
-    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(csr_class(_grouped_data()))
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_csr_array(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
     assert_groups_found(hdbscan.labels_)
