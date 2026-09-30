@@ -16,12 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     get_dataframes_and_queues,
 )
 from sklearnex import config_context
@@ -70,7 +70,11 @@ def test_basic_stats_spmd_gold(dataframe, queue):
 
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(getattr(spmd_result, attr), getattr(batch_result, attr))
+        _assert_in_namespace(getattr(spmd_result, attr), dataframe)
+        assert_allclose_numpy(
+            getattr(spmd_result, attr),
+            getattr(batch_result, attr),
+        )
 
 
 @pytest.mark.skipif(
@@ -106,9 +110,9 @@ def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dty
     tol = 1e-5 if dtype == np.float32 else 1e-7
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(
-            _as_numpy(getattr(spmd_result, attr)),
-            _as_numpy(getattr(batch_result, attr)),
+        assert_allclose_numpy(
+            getattr(spmd_result, attr),
+            getattr(batch_result, attr),
             atol=tol,
             rtol=tol,
         )

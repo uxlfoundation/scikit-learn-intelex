@@ -76,7 +76,13 @@ def to_table(*args, queue=None):
 def _compat_convert(array_api_compat, array):
     def converter_func(x):
         xp = array_api_compat.get_namespace(array)
-        out = xp.from_dlpack(x)
+        try:
+            out = xp.from_dlpack(x)
+        except (RuntimeError, BufferError):
+            # PyTorch's DLPack importer only accepts device USM, but a table may be
+            # backed by shared or host USM while still advertising a SYCL device, so
+            # fall back to a host copy and let the move below place it.
+            out = xp.asarray(backend.from_table(x))
         if out.device != array.device:
             out = xp.from_dlpack(out, device=array.device)
         return out
@@ -129,14 +135,15 @@ def return_type_constructor(array):
             # Some array API libraries (e.g. array_api_strict) do not forward
             # the 'device' argument of their 'from_dlpack' to the exporter's
             # '__dlpack__', so a oneDAL table on a SYCL device never gets asked
-            # to transfer to host when the target namespace is host-only.
-            # NumPy's 'from_dlpack' does forward it, so route through NumPy
-            # first in that case, then hand the resulting host array to 'xp'.
+            # to transfer to host when the target namespace is host-only. The
+            # backend's numpy converter always yields host data, so use it to
+            # do the transfer ('np.from_dlpack' could request it via 'device',
+            # but that keyword only exists in NumPy 2.1 and newer).
             if (
                 inp.__dlpack_device__() != cpu_dlpack_device
                 and array.__dlpack_device__() == cpu_dlpack_device
             ):
-                return xp.asarray(np.from_dlpack(inp, device="cpu"), device=device)
+                return xp.asarray(backend.from_table(inp), device=device)
             return xp.from_dlpack(inp, device=device)
 
     else:

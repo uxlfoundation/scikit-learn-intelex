@@ -95,9 +95,9 @@ ONEDAL_MAJOR_BINARY_VERSION, ONEDAL_MINOR_BINARY_VERSION = get_onedal_version(
     dal_root, "binary"
 )
 ONEDAL_VERSION = get_onedal_version(dal_root)
-if ONEDAL_VERSION < 20210300:
+if ONEDAL_VERSION < 20250000:
     raise ValueError(
-        "OneDAL version is too old. Please use a more recent version (>= 2021.4)."
+        "OneDAL version is too old. Please use a more recent version (>= 2025.0)."
     )
 
 sklearnex_version = (
@@ -127,7 +127,7 @@ dpcpp = (
     and not (IS_WIN and debug_build)
 )
 
-use_parameters_lib = (not IS_WIN) and (ONEDAL_VERSION >= 20240000)
+use_parameters_lib = not IS_WIN
 
 build_distributed = dpcpp and not no_dist and IS_LIN
 
@@ -169,15 +169,19 @@ else:
 
 def get_sdl_cflags():
     if IS_LIN or IS_MAC:
-        return DIST_CFLAGS + [
+        sdl_flags = [
             "-fstack-protector-strong",
             "-fPIC",
-            "-D_FORTIFY_SOURCE=2",
             "-Wformat",
             "-Wformat-security",
             "-fno-strict-overflow",
             "-fno-delete-null-pointer-checks",
         ]
+        if not DEBUG_BUILD:
+            sdl_flags += ["-D_FORTIFY_SOURCE=2"]
+        else:
+            sdl_flags += ["-fno-omit-frame-pointer"]
+        return DIST_CFLAGS + sdl_flags
     if IS_WIN:
         return DIST_CFLAGS + ["-GS"]
 
@@ -429,14 +433,13 @@ class onedal_build:
         self.onedal_post_build()
         if hasattr(self, "build_lib"):
             # swap out __version__ before install
-            for p in ["onedal", "sklearnex"]:
-                loc = os.sep.join((self.build_lib, p, "__init__.py"))
-                if os.path.isfile(loc):
-                    with open(loc, "r+") as f:
-                        data = f.read().replace("2199.9.9", sklearnex_version)
-                        f.seek(0)
-                        f.write(data)
-                        f.truncate()
+            loc = os.sep.join((self.build_lib, "sklearnex", "__init__.py"))
+            if os.path.isfile(loc):
+                with open(loc, "r+") as f:
+                    data = f.read().replace("2199.9.9", sklearnex_version)
+                    f.seek(0)
+                    f.write(data)
+                    f.truncate()
 
     def onedal_run(self):
         n_threads = self.parallel
@@ -515,12 +518,15 @@ packages_with_tests = [
     "daal4py.sklearn.utils",
     "daal4py.sklearn.model_selection",
     "onedal",
+    "onedal.basic_statistics",
+    "onedal.cluster",
     "onedal.common",
     "onedal.covariance",
     "onedal.datatypes",
     "onedal.decomposition",
     "onedal.dummy",
     "onedal.ensemble",
+    "onedal.linear_model",
     "onedal.neighbors",
     "onedal.primitives",
     "onedal.svm",
@@ -547,38 +553,26 @@ packages_with_tests = [
     "sklearnex.utils",
 ]
 
-if ONEDAL_VERSION >= 20230100:
-    packages_with_tests += ["onedal.basic_statistics", "onedal.linear_model"]
-
-if ONEDAL_VERSION >= 20230200:
-    packages_with_tests += ["onedal.cluster"]
-
 if build_distributed:
     packages_with_tests += [
         "onedal.spmd",
+        "onedal.spmd.basic_statistics",
+        "onedal.spmd.cluster",
         "onedal.spmd.covariance",
         "onedal.spmd.decomposition",
         "onedal.spmd.ensemble",
+        "onedal.spmd.linear_model",
+        "onedal.spmd.neighbors",
         "sklearnex.spmd",
+        "sklearnex.spmd.basic_statistics",
+        "sklearnex.spmd.cluster",
         "sklearnex.spmd.covariance",
         "sklearnex.spmd.decomposition",
         "sklearnex.spmd.ensemble",
+        "sklearnex.spmd.linear_model",
+        "sklearnex.spmd.neighbors",
+        "sklearnex.spmd.preprocessing",
     ]
-    if ONEDAL_VERSION >= 20230100:
-        packages_with_tests += [
-            "onedal.spmd.basic_statistics",
-            "onedal.spmd.linear_model",
-            "onedal.spmd.neighbors",
-            "sklearnex.spmd.basic_statistics",
-            "sklearnex.spmd.linear_model",
-            "sklearnex.spmd.neighbors",
-        ]
-    if ONEDAL_VERSION >= 20230200:
-        packages_with_tests += [
-            "onedal.spmd.cluster",
-            "sklearnex.spmd.cluster",
-            "sklearnex.spmd.preprocessing",
-        ]
 
 setup(
     name="scikit-learn-intelex",

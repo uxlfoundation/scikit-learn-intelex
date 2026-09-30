@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -33,6 +34,6 @@ def test_sklearnex_import_dbscan(dataframe, queue):
     dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
     assert "sklearnex" in dbscan.__module__
 
-    result = dbscan.labels_
+    result = _as_numpy(dbscan.labels_)
     expected = np.array([0, 0, 0, 1, 1, -1], dtype=np.int32)
     assert_allclose(expected, result)

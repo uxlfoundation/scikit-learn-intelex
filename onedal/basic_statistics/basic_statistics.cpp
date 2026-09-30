@@ -17,8 +17,6 @@
 #include "oneapi/dal/algo/basic_statistics.hpp"
 
 #include "onedal/common.hpp"
-#include "onedal/version.hpp"
-
 #define NO_IMPORT_ARRAY // import_array called in table.cpp
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 
@@ -28,8 +26,6 @@
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
-
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 
 namespace basic_statistics {
 
@@ -250,7 +246,5 @@ ONEDAL_PY_INIT_MODULE(basic_statistics) {
     ONEDAL_PY_INSTANTIATE(init_partial_compute_result, sub, task::compute);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 }
-
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 
 } // namespace oneapi::dal::python

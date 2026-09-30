@@ -150,14 +150,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             is_inlier = xp.where(output, -ones, ones)
         else:
             xp, _ = get_namespace(self.negative_outlier_factor_)
-            sycl_queue = getattr(self.negative_outlier_factor_, "sycl_queue", None)
-            if sycl_queue is not None:
-                is_inlier = xp.ones(
-                    self.n_samples_fit_, dtype=xp.int64, sycl_queue=sycl_queue
-                )
-            else:
-                is_inlier = xp.ones(self.n_samples_fit_, dtype=xp.int64)
             mask = self.negative_outlier_factor_ < self.offset_
+            # ``ones_like`` inherits the queue/device of the fitted scores, which a
+            # bare ``ones`` drops for namespaces without a ``sycl_queue`` (e.g. torch).
+            is_inlier = xp.ones_like(mask, dtype=xp.int64)
             is_inlier = xp.where(mask, -is_inlier, is_inlier)
         return is_inlier
 

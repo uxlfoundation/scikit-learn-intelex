@@ -14,82 +14,82 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._utils import daal_check_version
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_array_equal
+from sklearn.datasets import load_diabetes
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
 
-if daal_check_version((2024, "P", 600)):
-    import numpy as np
-    import pytest
-    from numpy.testing import assert_allclose, assert_array_equal
-    from sklearn.datasets import load_diabetes
-    from sklearn.metrics import mean_squared_error
-    from sklearn.model_selection import train_test_split
+from onedal.linear_model import Ridge
+from onedal.tests.utils._device_selection import get_queues
 
-    from onedal.linear_model import Ridge
-    from onedal.tests.utils._device_selection import get_queues
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    def test_diabetes(queue, dtype):
-        X, y = load_diabetes(return_X_y=True)
-        X, y = X.astype(dtype), y.astype(dtype)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, train_size=0.8, random_state=777
-        )
-        model = Ridge(fit_intercept=True, alpha=0.1)
-        model.fit(X_train, y_train, queue=queue)
-        y_pred = model.predict(X_test, queue=queue)
-        assert_allclose(mean_squared_error(y_test, y_pred), 2388.775, rtol=1e-5)
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_diabetes(queue, dtype):
+    X, y = load_diabetes(return_X_y=True)
+    X, y = X.astype(dtype), y.astype(dtype)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=0.8, random_state=777
+    )
+    model = Ridge(fit_intercept=True, alpha=0.1)
+    model.fit(X_train, y_train, queue=queue)
+    y_pred = model.predict(X_test, queue=queue)
+    assert_allclose(mean_squared_error(y_test, y_pred), 2388.775, rtol=1e-5)
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    def test_pickle(queue, dtype):
-        X, y = load_diabetes(return_X_y=True)
-        X, y = X.astype(dtype), y.astype(dtype)
-        model = Ridge(fit_intercept=True, alpha=0.5)
-        model.fit(X, y, queue=queue)
-        expected = model.predict(X, queue=queue)
 
-        import pickle
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_pickle(queue, dtype):
+    X, y = load_diabetes(return_X_y=True)
+    X, y = X.astype(dtype), y.astype(dtype)
+    model = Ridge(fit_intercept=True, alpha=0.5)
+    model.fit(X, y, queue=queue)
+    expected = model.predict(X, queue=queue)
 
-        dump = pickle.dumps(model)
-        model2 = pickle.loads(dump)
+    import pickle
 
-        assert isinstance(model2, model.__class__)
-        result = model2.predict(X, queue=queue)
+    dump = pickle.dumps(model)
+    model2 = pickle.loads(dump)
 
-        assert_array_equal(expected, result)
+    assert isinstance(model2, model.__class__)
+    result = model2.predict(X, queue=queue)
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    def test_no_intercept_results(queue, dtype):
-        seed = 42
-        n_features, n_targets = 19, 7
-        n_train_samples, n_test_samples = 3500, 1999
+    assert_array_equal(expected, result)
 
-        gen = np.random.default_rng(seed)
 
-        X = gen.random(size=(n_train_samples, n_features), dtype=dtype)
-        y = gen.random(size=(n_train_samples, n_targets), dtype=dtype)
-        alpha = 0.5
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_no_intercept_results(queue, dtype):
+    seed = 42
+    n_features, n_targets = 19, 7
+    n_train_samples, n_test_samples = 3500, 1999
 
-        lambda_identity = alpha * np.eye(X.shape[1])
-        inverse_term = np.linalg.inv(np.dot(X.T, X) + lambda_identity)
-        xt_y = np.dot(X.T, y)
-        coef = np.dot(inverse_term, xt_y)
+    gen = np.random.default_rng(seed)
 
-        model = Ridge(fit_intercept=False, alpha=alpha)
-        model.fit(X, y, queue=queue)
+    X = gen.random(size=(n_train_samples, n_features), dtype=dtype)
+    y = gen.random(size=(n_train_samples, n_targets), dtype=dtype)
+    alpha = 0.5
 
-        if queue and queue.sycl_device.is_gpu:
-            tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
-        else:
-            tol = 2e-3 if model.coef_.dtype == np.float32 else 1e-5
-        assert_allclose(coef, model.coef_.T, rtol=tol)
+    lambda_identity = alpha * np.eye(X.shape[1])
+    inverse_term = np.linalg.inv(np.dot(X.T, X) + lambda_identity)
+    xt_y = np.dot(X.T, y)
+    coef = np.dot(inverse_term, xt_y)
 
-        Xt = gen.random(size=(n_test_samples, n_features), dtype=dtype)
-        gtr = Xt @ coef
+    model = Ridge(fit_intercept=False, alpha=alpha)
+    model.fit(X, y, queue=queue)
 
-        res = model.predict(Xt, queue=queue)
+    if queue and queue.sycl_device.is_gpu:
+        tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
+    else:
+        tol = 2e-3 if model.coef_.dtype == np.float32 else 1e-5
+    assert_allclose(coef, model.coef_.T, rtol=tol)
 
-        tol = 2e-4 if res.dtype == np.float32 else 1e-7
-        assert_allclose(gtr, res, rtol=tol)
+    Xt = gen.random(size=(n_test_samples, n_features), dtype=dtype)
+    gtr = Xt @ coef
+
+    res = model.predict(Xt, queue=queue)
+
+    tol = 2e-4 if res.dtype == np.float32 else 1e-7
+    assert_allclose(gtr, res, rtol=tol)

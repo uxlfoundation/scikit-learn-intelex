@@ -19,7 +19,6 @@ from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version
 
 
 def main():
@@ -85,25 +84,24 @@ def main():
 
 
 if __name__ == "__main__":
-    if daal_check_version(((2021, "P", 1))):
-        (
-            d4p_model,
-            predict_result_d4p,
-            predict_proba_result_d4p,
-            predict_log_proba_result_d4p,
-        ) = main()
-        print("\nLogistic Regression coefficients:\n", d4p_model.coef_)
-        print("\nLogistic Regression intercepts:\n", d4p_model.intercept_)
-        print(
-            "\nLogistic regression prediction results (first 10 rows):\n",
-            predict_result_d4p[0:10],
-        )
-        print(
-            "\nLogistic regression prediction probabilities (first 10 rows):\n",
-            predict_proba_result_d4p[0:10],
-        )
-        print(
-            "\nLogistic regression prediction log probabilities (first 10 rows):\n",
-            predict_log_proba_result_d4p[0:10],
-        )
-        print("All looks good!")
+    (
+        d4p_model,
+        predict_result_d4p,
+        predict_proba_result_d4p,
+        predict_log_proba_result_d4p,
+    ) = main()
+    print("\nLogistic Regression coefficients:\n", d4p_model.coef_)
+    print("\nLogistic Regression intercepts:\n", d4p_model.intercept_)
+    print(
+        "\nLogistic regression prediction results (first 10 rows):\n",
+        predict_result_d4p[0:10],
+    )
+    print(
+        "\nLogistic regression prediction probabilities (first 10 rows):\n",
+        predict_proba_result_d4p[0:10],
+    )
+    print(
+        "\nLogistic regression prediction log probabilities (first 10 rows):\n",
+        predict_log_proba_result_d4p[0:10],
+    )
+    print("All looks good!")
