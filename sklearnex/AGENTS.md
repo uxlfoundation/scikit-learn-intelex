@@ -107,3 +107,9 @@ oneDAL GPU → oneDAL CPU → sklearn → Error
 - Don't add branches to hot paths for rare cases. Put the workaround in the pybind11/C++ layer.
 - dpnp is the only SYCL array type; don't add `dpctl.tensor` code.
 - Methods read the estimator's fitted attributes from `self` (`self.coef_`) rather than taking them as arguments.
+
+## Verification
+```bash
+pytest --verbose sklearnex
+pytest sklearnex/tests/test_patching.py sklearnex/tests/test_config.py   # patching and config_context
+```

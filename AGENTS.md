@@ -2,6 +2,23 @@
 
 Accelerates scikit-learn with oneDAL. Python, C++ (pybind11) and Cython; CPU (x86_64, ARM) and Intel GPU via SYCL.
 
+## Rules for Changes
+These come from recurring review comments; each one has been asked for on several PRs.
+- Comments describe the code as it will be once merged. Don't reference discarded approaches, narrate the change, or mention "this PR".
+- Keep comments short and plain: explain why in one line when one line is enough, and in two sentences rather than a paragraph. Agent-written comments have historically been bloated and hard to read; don't restate the code, hedge, or add emphasis.
+- One PR, one logical change. Drive-by fixes, renames, and mechanical changes (formatting, codegen, mass renames) go in their own PRs.
+- Search before adding a helper, fixture, constant table, or validation routine. Extend the existing one, and name it in the PR description.
+- Don't add a lock, guard, `try`/`except`, or redundant check unless you can name the failure it prevents.
+- A bug fix comes with a test that fails without the fix.
+- Don't hardcode versions, URLs, or paths that a source-of-truth file or Renovate already tracks.
+- New functions get full type hints and a numpydoc docstring.
+- Keep the layering: scikit-learn conformance goes in the `sklearnex/` estimator, oneDAL calls in `onedal/`, and the queue comes from the input data (see `sklearnex/AGENTS.md`).
+- Code that holds a `PyObject*` follows the ownership rules in `onedal/datatypes/AGENTS.md`.
+- New source files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
+
+## Reviewing
+Report source-confirmed problems with correctness, layering, reference ownership, device and queue handling, sklearn compatibility, and test coverage. Don't report what CI already enforces: black, isort, clang-format, numpydoc validation, codespell and license headers.
+
 ## Architecture
 ```text
 sklearnex/  ->  daal4py/ (Cython)  -> oneDAL C++
@@ -40,24 +57,13 @@ pytest sklearnex/linear_model/tests/     # one module; start here
 pytest --pyargs sklearnex                # one package, as conda-recipe/run_test.sh does
 ```
 - Build switches read by `setup.py`: `NO_DIST=1` (no MPI; otherwise `MPIROOT` must be set), `NO_DPC=1` (no GPU), `NO_STREAM=1`. More variants: `doc/sources/building-from-source.rst`.
+- After C++/Cython changes, rebuild in place with `python setup.py build_ext --inplace --force` (daal4py) and `python setup.py build` (onedal), and set `PYTHONPATH` to the repo root.
 - `conda-recipe/run_test.sh` is the full suite (legacy `tests/`, `daal4py`, `sklearnex`, `onedal`, global patching, then MPI). It is slow; run a module first.
 - GPU cases come from the `get_queues()` / `get_dataframes_and_queues()` parametrizations, which only emit a GPU queue when one is available; there is no `gpu` marker.
 - MPI tests need `mpirun` and `--with-mpi`; see the MPI block in `conda-recipe/run_test.sh`.
 
-## Rules for Changes
-These come from recurring review comments; each one has been asked for on several PRs.
-- Comments describe the code as it will be once merged. Don't reference discarded approaches, narrate the change, or mention "this PR".
-- Keep comments short and plain: explain why in one line when one line is enough, and in two sentences rather than a paragraph. Agent-written comments have historically been bloated and hard to read; don't restate the code, hedge, or add emphasis.
-- One PR, one logical change. Drive-by fixes, renames, and mechanical changes (formatting, codegen, mass renames) go in their own PRs.
-- Search before adding a helper, fixture, constant table, or validation routine. Extend the existing one, and name it in the PR description.
-- Don't add a lock, guard, `try`/`except`, or redundant check unless you can name the failure it prevents.
-- A bug fix comes with a test that fails without the fix.
-- Don't hardcode versions, URLs, or paths that a source-of-truth file or Renovate already tracks.
-- New functions get full type hints and a numpydoc docstring.
-- New source files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
-
 ## Directory Guides
-Read the `AGENTS.md` nearest the files you change:
+Read the `AGENTS.md` nearest the files you change. When editing these files, every command, path and snippet must match the repository; delete what can't be verified rather than soften it.
 - `sklearnex/AGENTS.md`: API patterns, device offloading
 - `daal4py/AGENTS.md`: Native oneDAL bindings, model builders
 - `onedal/AGENTS.md`: Pybind11 implementation, memory management

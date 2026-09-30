@@ -34,3 +34,9 @@ See `datatypes/AGENTS.md` for reference-ownership rules before editing conversio
 - Handle CPU/GPU backend availability gracefully
 - Monitor memory usage on GPU
 - Test across different device configurations
+
+## Verification
+```bash
+pytest --verbose onedal
+pytest onedal/datatypes/tests/ onedal/common/tests/   # data conversion and policies
+```

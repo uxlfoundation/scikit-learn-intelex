@@ -180,3 +180,9 @@ Run pytest on `daal4py/sklearn/` and `tests/` for validation. MPI tests require 
 - Generated code in build directories, templates in generator/
 - Zero-copy operations critical for performance
 - Dense data and contiguous arrays required for most algorithms
+
+## Verification
+```bash
+pytest --pyargs daal4py                     # as conda-recipe/run_test.sh does
+pytest tests/test_daal4py_examples.py tests/test_model_builders.py
+```
