@@ -33,11 +33,10 @@ Free-threaded Python
 --------------------
 
 Free-threaded CPython (see :doc:`installation`) is experimental and is only
-validated on Linux* for CPU execution. Execution on GPU through the DPC/SYCL
-backend, and hence also the SPMD interfaces, is untested there, since ``dpctl``
-and ``dpnp`` publish no free-threaded wheels; free-threaded builds on Windows* are
-likewise not validated. Note that being importable without re-enabling the GIL
-does not make the estimators safe for concurrent use - all of the restrictions
+validated on Linux* for CPU execution. GPU execution (including the SPMD
+interfaces) and Windows* builds are not yet validated with free-threaded Python.
+Note that being importable without re-enabling the GIL does not make the
+estimators safe for concurrent use - all of the restrictions
 described in :doc:`parallelism` continue to apply, and process-based parallelism
 remains the recommended way to run concurrent estimator calls.
 

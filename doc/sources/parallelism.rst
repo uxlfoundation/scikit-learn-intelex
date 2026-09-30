@@ -88,11 +88,6 @@ usage in Python threads, even if running under the Python GIL:
   calls to estimators with different ``n_jobs`` are performed in parallel
   through **Python threads**, there might be threading races that override
   one another's configuration, potentially leading to process-wide crashes.
-  Note that a call with an explicit ``n_jobs`` sets this process-global value
-  for the duration of the call and restores the previous value afterwards, so
-  a concurrent call can both observe the wrong thread count and have its own
-  value discarded when the other call finishes. This is a property of the
-  global configuration itself and is not something the caller can lock around.
 - The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
   :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
   suitable for parallel calls in Python threads regardless of the ``n_jobs``

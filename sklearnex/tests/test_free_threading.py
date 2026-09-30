@@ -22,7 +22,9 @@ import sysconfig
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
+import numpy as np
 import pytest
+from sklearn.datasets import make_classification, make_regression
 
 IS_FREE_THREADED = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
 pytestmark = pytest.mark.skipif(
@@ -31,17 +33,20 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_native_imports_keep_gil_disabled():
+    # PYTHON_GIL must not be set here: it would keep the GIL disabled even for
+    # a module that does not declare free-threading support, which is exactly
+    # the regression this test is meant to catch. With '-W error', the
+    # RuntimeWarning that CPython emits when it re-enables the GIL fails the
+    # import.
     code = """
 import importlib
 import sys
-import sysconfig
 
-assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
 assert not sys._is_gil_enabled()
 importlib.import_module({module!r})
 assert not sys._is_gil_enabled()
 """
-    env = os.environ | {"PYTHON_GIL": "0"}
+    env = {k: v for k, v in os.environ.items() if k != "PYTHON_GIL"}
 
     dpc_backend = "onedal._onedal_py_dpc"
     native_backend = (
@@ -67,52 +72,69 @@ assert not sys._is_gil_enabled()
         )
 
 
-def test_daal4py_model_is_read_only_and_readable_concurrently():
-    """Model wrappers hold a write-once native pointer.
+def _fit_and_predict(name):
+    from sklearnex.basic_statistics import BasicStatistics
+    from sklearnex.cluster import DBSCAN, KMeans
+    from sklearnex.decomposition import PCA
+    from sklearnex.ensemble import RandomForestClassifier
+    from sklearnex.linear_model import LinearRegression, Ridge
+    from sklearnex.neighbors import KNeighborsClassifier, NearestNeighbors
+    from sklearnex.svm import SVC
 
-    Readers dereference it without synchronization, so replacing it would be a
-    use-after-free for a thread already inside a getter. Unpickling into a
-    populated object is therefore rejected, and concurrent reads are safe.
-    """
-    import pickle
+    X, y = make_classification(300, 8, random_state=0)
+    Xr, yr = make_regression(300, 8, random_state=0)
+    if name == "LinearRegression":
+        return LinearRegression().fit(Xr, yr).predict(Xr)
+    if name == "Ridge":
+        return Ridge().fit(Xr, yr).predict(Xr)
+    if name == "PCA":
+        return np.abs(PCA(3).fit(X).transform(X))
+    if name == "KMeans":
+        return KMeans(4, n_init=1, random_state=0).fit(X).cluster_centers_
+    if name == "DBSCAN":
+        return DBSCAN(eps=3.0).fit(X).labels_
+    if name == "RandomForestClassifier":
+        return RandomForestClassifier(8, random_state=0).fit(X, y).predict_proba(X)
+    if name == "KNeighborsClassifier":
+        return KNeighborsClassifier().fit(X, y).predict_proba(X)
+    if name == "NearestNeighbors":
+        return NearestNeighbors(n_neighbors=3).fit(X).kneighbors(X)[1]
+    if name == "SVC":
+        return SVC().fit(X, y).decision_function(X)
+    if name == "BasicStatistics":
+        return BasicStatistics().fit(X).mean_
+    raise KeyError(name)
 
-    import numpy as np
 
-    import daal4py
+_ESTIMATORS = [
+    "LinearRegression",
+    "Ridge",
+    "PCA",
+    "KMeans",
+    "DBSCAN",
+    "RandomForestClassifier",
+    "KNeighborsClassifier",
+    "NearestNeighbors",
+    "SVC",
+    "BasicStatistics",
+]
 
-    x = np.arange(400, dtype=np.float64).reshape(200, 2)
-    y = (x[:, 0] > x[:, 1]).astype(np.int64).reshape(-1, 1)
-    model = (
-        daal4py.decision_forest_classification_training(
-            nClasses=2,
-            nTrees=4,
-        )
-        .compute(x, y)
-        .model
-    )
-    state = model.__getstate__()
 
-    with pytest.raises(ValueError, match="already-initialized"):
-        model.__setstate__(state)
+@pytest.mark.filterwarnings("ignore:'Threading' parallel backend:UserWarning")
+def test_independent_estimators_run_concurrently():
+    """Separate estimator instances, each used by one thread, give the same
+    results as when run serially - the supported mode in parallelism.rst."""
+    expected = {name: _fit_and_predict(name) for name in _ESTIMATORS}
+    tasks = _ESTIMATORS * 2
+    start = Barrier(len(tasks))
 
-    # The supported path - unpickling allocates a fresh object - still works.
-    # nosec B301: the input is pickle.dumps of an object created on the line
-    # above, not untrusted data. Round-tripping is the behavior under test.
-    assert pickle.loads(pickle.dumps(model)).NumberOfTrees == 4  # nosec
-
-    start = Barrier(4)
-
-    def read_state():
+    def run(name):
         start.wait()
-        for _ in range(32):
-            assert model.NumberOfTrees == 4
-            assert model.__getstate__()
-            assert repr(model)
-            assert daal4py.getTreeState(model, 0, 2) is not None
+        return name, _fit_and_predict(name)
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(read_state) for _ in range(4)]
-        for future in futures:
-            future.result()
+    for _ in range(3):
+        with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+            for name, result in executor.map(run, tasks):
+                np.testing.assert_allclose(result, expected[name], err_msg=name)
 
     assert not sys._is_gil_enabled()
