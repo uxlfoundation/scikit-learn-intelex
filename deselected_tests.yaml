@@ -456,6 +456,10 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[wide-42-True-cholesky]
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[wide-42-True-cholesky]
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[wide-42-True-cholesky]
+  # Note: the parameters for these tests vary over scikit-learn versions
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[42-wide-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[42-wide-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[42-wide-True-cholesky]
 
   # Fails due to numerical tolerances slightly outside scikit-learn's thresholds
   - linear_model/tests/test_ridge.py::test_solver_consistency[42-20-float32-0.1-cholesky-None]
