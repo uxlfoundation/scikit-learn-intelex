@@ -82,7 +82,7 @@ def test_sklearnex_import_linear(
         expected_coefs = expected_coefs.T
 
     linreg = LinearRegression()
-    if daal_check_version((2024, "P", 0)) and macro_block is not None:
+    if macro_block is not None:
         hyperparameters.cpu_macro_block = macro_block
         hyperparameters.gpu_macro_block = macro_block
         if daal_check_version((2025, "P", 500)) and non_batched_route:

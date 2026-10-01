@@ -18,7 +18,6 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
@@ -52,19 +51,13 @@ class BaseLinearRegression(metaclass=ABCMeta):
     # fill that 'alpha' slot with something else just to predict.
     def _get_onedal_params(self, dtype, override_alpha=False):
         intercept = "intercept|" if self.fit_intercept else ""
-        params = {
+        return {
             "fptype": dtype,
             "method": self.algorithm,
             "intercept": self.fit_intercept,
             "result_option": (intercept + "coefficients"),
+            "alpha": self.alpha if not override_alpha else 1.0,
         }
-        if onedal_check_version(2024, 6, 0):
-            if not override_alpha:
-                params["alpha"] = self.alpha
-            else:
-                params["alpha"] = 1.0
-
-        return params
 
     def _create_model(self, coef_, intercept_, xp) -> None:
         model = self.model()

@@ -25,23 +25,13 @@
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
 #include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
-#include "onedal/version.hpp"
-
-#if ONEDAL_VERSION <= 20230100
-#include "oneapi/dal/table/detail/csr.hpp"
-#else
 #include "oneapi/dal/table/csr.hpp"
-#endif
 
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
 
-#if ONEDAL_VERSION <= 20230100
-typedef oneapi::dal::detail::csr_table csr_table_t;
-#else
 typedef oneapi::dal::csr_table csr_table_t;
-#endif
 
 static void* init_numpy() {
     import_array();

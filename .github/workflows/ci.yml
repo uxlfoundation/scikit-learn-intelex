@@ -391,12 +391,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - OS: ubuntu-24.04
-            FRAMEWORKS: "pytorch,numpy"
+          - FRAMEWORKS: "pytorch,numpy"
             DEVICE: cpu
     needs: [onedal_nightly, build_uxl]
     name: LinuxNightly [${{ matrix.FRAMEWORKS }}]-${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
-    runs-on: ${{ matrix.OS }}
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
       - name: Checkout Scikit-learn-intelex
