@@ -18,6 +18,7 @@
 
 #include "onedal/common.hpp"
 #include "onedal/primitives/kernel_functions.hpp"
+#include "onedal/version.hpp"
 
 namespace py = pybind11;
 

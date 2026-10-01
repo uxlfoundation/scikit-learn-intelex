@@ -42,12 +42,8 @@ test_estimators = [
     [IncrementalLinearRegression, "regression", "fit", "cpu_macro_block", 10],
     [IncrementalLinearRegression, "regression", "partial_fit", "cpu_macro_block", 10],
     [LinearRegression, "regression", "fit", "cpu_macro_block", 10],
+    [RandomForestClassifier, "classification", "predict", "block_size", 8],
 ]
-
-if daal_check_version((2024, "P", 300)):
-    test_estimators.append(
-        [RandomForestClassifier, "classification", "predict", "block_size", 8]
-    )
 
 if daal_check_version((2025, "P", 700)):
     test_estimators.append([EmpiricalCovariance, "compute", "fit", "cpu_grain_size", 2])

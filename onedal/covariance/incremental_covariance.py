@@ -16,7 +16,6 @@
 
 import numpy as np
 
-from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, return_type_constructor, to_table
@@ -134,10 +133,6 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
                 result = self.finalize_compute(params, self._partial_result)
 
             self.covariance_ = from_table(result.cov_matrix, like=self._outtype)
-
-            if self.bias and not onedal_check_version(2024, 0, 1):
-                n_rows = self._partial_result.partial_n_rows
-                self.covariance_ *= (n_rows - 1) / n_rows
 
             self.location_ = from_table(result.means, like=self._outtype)[0, ...]
             self._outtype = None

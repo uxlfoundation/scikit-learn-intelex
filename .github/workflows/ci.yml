@@ -40,7 +40,7 @@ env:
 jobs:
 
   onedal_nightly:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: Identify oneDAL nightly
     timeout-minutes: 2
 
@@ -73,7 +73,7 @@ jobs:
           - PYTHON_VERSION: "3.14"
             SKLEARN_VERSION: "1.9"
     name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
 
     steps:
@@ -319,7 +319,7 @@ jobs:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
     needs: onedal_nightly
     name: LinuxNightly build Python${{ needs.onedal_nightly.outputs.uxl-python }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
 
     steps:
@@ -391,12 +391,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - OS: ubuntu-24.04
-            FRAMEWORKS: "pytorch,numpy"
+          - FRAMEWORKS: "pytorch,numpy"
             DEVICE: cpu
     needs: [onedal_nightly, build_uxl]
     name: LinuxNightly [${{ matrix.FRAMEWORKS }}]-${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
-    runs-on: ${{ matrix.OS }}
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
       - name: Checkout Scikit-learn-intelex

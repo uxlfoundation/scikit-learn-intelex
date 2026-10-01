@@ -126,18 +126,21 @@ Regression
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 10
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.svm.SVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
+     - 
      - Negative weights are not supported.
    * - :obj:`sklearn.svm.NuSVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
+     - 
      - Negative weights are not supported.
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
@@ -148,8 +151,8 @@ Regression
        - ``n_estimators`` > ``6024``
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
-       - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Nothing will be printed if ``verbose > 0``.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -159,8 +162,8 @@ Regression
        - ``n_estimators`` > ``6024``
        - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
        - Non-integer ``max_samples`` larger than 1 or integer ``max_samples`` greater than number of rows, with ``bootstrap=True``
-       - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - Nothing will be printed if ``verbose > 0``.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      -
        - For ``algorithm`` == ``'kd_tree'``:
@@ -172,12 +175,14 @@ Regression
 
        ``algorithm`` == ``'ball_tree'`` is not supported.
      - Multi-output and sparse data are not supported
+     - 
    * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
+     - 
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -186,16 +191,19 @@ Regression
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
+     - 
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
      - Sparse data is not supported.
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
      - Sparse data is not supported.
+     - Estimator is **only** available in :doc:`preview mode <preview>`.
 
 Clustering
 **********

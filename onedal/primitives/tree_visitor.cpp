@@ -296,6 +296,21 @@ void init_get_tree_state(py::module_& m) {
                                                      n_classes);
             node_visitor<Task, decltype(tsv)> tsv_decorator{ &tsv };
             model.traverse_depth_first(iTree, std::move(tsv_decorator));
+
+            // Sets the 'missing_go_to_left' values on non-terminal nodes.
+            // Note that this requires having the values in the arrays
+            // already filled-in for the children of each node, so it cannot be
+            // done in the same pass that sets these initial values.
+            py::array_t<skl_tree_node>& node_ar = tsv.node_ar;
+            skl_tree_node* nodes = static_cast<skl_tree_node*>(node_ar.request().ptr);
+            for (Py_ssize_t node_index = 0; node_index < node_ar.size(); node_index++) {
+                skl_tree_node& node = nodes[node_index];
+                if (node.left_child >= 0 && node.right_child >= 0) {
+                    node.missing_go_to_left = nodes[node.left_child].n_node_samples >=
+                                              nodes[node.right_child].n_node_samples;
+                }
+            }
+
             tree_state_t output = tree_state_t(tsv);
             // convert the value_ar to fractional values, rather than total ones
             // the last axis (2) is the n_classes, which must be summed for the

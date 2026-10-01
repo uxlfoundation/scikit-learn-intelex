@@ -136,9 +136,6 @@ def test_ridge_coefficients(
     )
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2024, "P", 600)), reason="requires onedal 2024.6.0 or higher"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_ridge_score_before_fit(dataframe, queue):
     from sklearnex.linear_model import Ridge
@@ -155,9 +152,6 @@ def test_ridge_score_before_fit(dataframe, queue):
         model.score(X_c, y_c)
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2024, "P", 600)), reason="requires onedal 2024.6.0 or higher"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_ridge_predict_before_fit(dataframe, queue):
     from sklearnex.linear_model import Ridge

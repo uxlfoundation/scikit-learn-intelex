@@ -29,19 +29,13 @@ ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
 ONEDAL_PY_INIT_MODULE(ensemble);
 ONEDAL_PY_INIT_MODULE(decomposition);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 ONEDAL_PY_INIT_MODULE(basic_statistics);
 ONEDAL_PY_INIT_MODULE(linear_model);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 ONEDAL_PY_INIT_MODULE(kmeans_init);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 ONEDAL_PY_INIT_MODULE(kmeans);
 ONEDAL_PY_INIT_MODULE(kmeans_common);
 ONEDAL_PY_INIT_MODULE(neighbors);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 ONEDAL_PY_INIT_MODULE(logistic_regression);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 #else // ONEDAL_DATA_PARALLEL_SPMD
 ONEDAL_PY_INIT_MODULE(sycl);
 
@@ -61,23 +55,15 @@ ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
 ONEDAL_PY_INIT_MODULE(ensemble);
 ONEDAL_PY_INIT_MODULE(decomposition);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 ONEDAL_PY_INIT_MODULE(basic_statistics);
 ONEDAL_PY_INIT_MODULE(linear_model);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 ONEDAL_PY_INIT_MODULE(kmeans_init);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 ONEDAL_PY_INIT_MODULE(kmeans);
 ONEDAL_PY_INIT_MODULE(kmeans_common);
 ONEDAL_PY_INIT_MODULE(neighbors);
 ONEDAL_PY_INIT_MODULE(svm);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 ONEDAL_PY_INIT_MODULE(logistic_regression);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
 ONEDAL_PY_INIT_MODULE(finiteness_checker);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
 ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
@@ -88,19 +74,13 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_dbscan(m);
     init_decomposition(m);
     init_ensemble(m);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
     init_basic_statistics(m);
     init_linear_model(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     init_kmeans_init(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     init_kmeans(m);
     init_kmeans_common(m);
     init_neighbors(m);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
     init_logistic_regression(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 }
 #else
 #ifdef ONEDAL_DATA_PARALLEL
@@ -122,23 +102,15 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     init_dbscan(m);
     init_decomposition(m);
     init_ensemble(m);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
     init_basic_statistics(m);
     init_linear_model(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     init_kmeans_init(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     init_kmeans(m);
     init_kmeans_common(m);
     init_neighbors(m);
     init_svm(m);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
     init_logistic_regression(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_finiteness_checker(m);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_dummy(m);
 
     // verify that the proper version of oneDAL at runtime is used versus what was used for compilation

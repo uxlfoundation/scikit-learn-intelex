@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import sklearnex
-from daal4py.sklearn._utils import daal_check_version
 
 # General use of patch_sklearn and unpatch_sklearn in pytest is not recommended.
 # It changes global state and can impact the operation of other tests. This file
@@ -104,10 +103,7 @@ def test_patch_by_list_simple():
 
         assert RandomForestRegressor.__module__.startswith("sklearn")
         assert KNeighborsRegressor.__module__.startswith("sklearn")
-        if daal_check_version((2024, "P", 1)):
-            assert LogisticRegression.__module__.startswith("sklearnex")
-        else:
-            assert LogisticRegression.__module__.startswith("daal4py")
+        assert LogisticRegression.__module__.startswith("sklearnex")
         assert SVC.__module__.startswith("sklearn")
     finally:
         sklearnex.unpatch_sklearn()
@@ -126,10 +122,7 @@ def test_patch_by_list_many_estimators():
 
         assert RandomForestRegressor.__module__.startswith("sklearn")
         assert KNeighborsRegressor.__module__.startswith("sklearn")
-        if daal_check_version((2024, "P", 1)):
-            assert LogisticRegression.__module__.startswith("sklearnex")
-        else:
-            assert LogisticRegression.__module__.startswith("daal4py")
+        assert LogisticRegression.__module__.startswith("sklearnex")
         assert SVC.__module__.startswith("sklearnex")
 
     finally:
@@ -149,10 +142,7 @@ def test_unpatch_by_list_many_estimators():
         assert KNeighborsRegressor.__module__.startswith(
             "daal4py"
         ) or KNeighborsRegressor.__module__.startswith("sklearnex")
-        if daal_check_version((2024, "P", 1)):
-            assert LogisticRegression.__module__.startswith("sklearnex")
-        else:
-            assert LogisticRegression.__module__.startswith("daal4py")
+        assert LogisticRegression.__module__.startswith("sklearnex")
         assert SVC.__module__.startswith("sklearnex")
 
         sklearnex.unpatch_sklearn(
@@ -169,10 +159,7 @@ def test_unpatch_by_list_many_estimators():
 
         assert RandomForestRegressor.__module__.startswith("sklearn")
         assert KNeighborsRegressor.__module__.startswith("sklearn")
-        if daal_check_version((2024, "P", 1)):
-            assert LogisticRegression.__module__.startswith("sklearnex")
-        else:
-            assert LogisticRegression.__module__.startswith("daal4py")
+        assert LogisticRegression.__module__.startswith("sklearnex")
 
         assert SVC.__module__.startswith("sklearnex")
     finally:

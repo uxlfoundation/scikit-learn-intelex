@@ -26,8 +26,9 @@ import onedal
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.decomposition import PCA
-from sklearnex.linear_model import Lasso, LinearRegression, LogisticRegression
+from sklearnex.linear_model import LinearRegression, LogisticRegression
 from sklearnex.manifold import TSNE
+from sklearnex.preview.linear_model import Lasso
 from sklearnex.svm import SVR
 
 # Note here: 'TSNE', 'LogisticRegression', and 'Lasso' are implemented

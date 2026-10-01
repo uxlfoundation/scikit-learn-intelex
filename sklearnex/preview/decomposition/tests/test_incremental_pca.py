@@ -26,11 +26,7 @@ from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
-from daal4py.sklearn._utils import (
-    _package_check_version,
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -129,35 +125,16 @@ def check_pca_on_gold_data(incpca, dtype, whiten, transformed_data, dataframe):
         atol=tol,
     )
     assert np.abs(_as_numpy(incpca.noise_variance_) - expected_noise_variance_) < tol
-    if daal_check_version((2024, "P", 500)):
-        assert_allclose_numpy(
-            incpca.components_,
-            expected_components_,
-            atol=tol,
-        )
-        assert_allclose_numpy(
-            transformed_data,
-            expected_transformed_data,
-            atol=tol,
-        )
-    else:
-        components = _as_numpy(incpca.components_)
-        for i in range(incpca.n_components_):
-            abs_dot_product = np.abs(np.dot(components[i], expected_components_[i]))
-            assert np.abs(abs_dot_product - 1.0) < tol
-
-            if np.dot(components[i], expected_components_[i]) < 0:
-                assert_allclose_numpy(
-                    -transformed_data[i],
-                    expected_transformed_data[i],
-                    atol=tol,
-                )
-            else:
-                assert_allclose_numpy(
-                    transformed_data[i],
-                    expected_transformed_data[i],
-                    atol=tol,
-                )
+    assert_allclose_numpy(
+        incpca.components_,
+        expected_components_,
+        atol=tol,
+    )
+    assert_allclose_numpy(
+        transformed_data,
+        expected_transformed_data,
+        atol=tol,
+    )
 
 
 def check_pca(incpca, dtype, whiten, data, transformed_data, dataframe):
