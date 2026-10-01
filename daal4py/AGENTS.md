@@ -147,7 +147,7 @@ daal4py and onedal are **separate** Python binding implementations to oneDAL C++
 5. Update monkeypatch dispatcher for sklearn compatibility
 
 ### Modifying Existing Algorithms
-- Native API: Modify generated sources or generator templates
+- Native API: Modify the generator (`generator/`), never the generated `build/daal4py_cy.pyx`
 - sklearn API: Direct edits in `daal4py/sklearn/`
 - Model builders: Edit `daal4py/mb/`
 
@@ -180,3 +180,9 @@ Run pytest on `daal4py/sklearn/` and `tests/` for validation. MPI tests require 
 - Generated code in build directories, templates in generator/
 - Zero-copy operations critical for performance
 - Dense data and contiguous arrays required for most algorithms
+
+## Verification
+```bash
+pytest --pyargs daal4py                     # as conda-recipe/run_test.sh does
+pytest tests/test_daal4py_examples.py tests/test_model_builders.py
+```

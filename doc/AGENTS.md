@@ -30,3 +30,9 @@ Production deployment: `./build-doc.sh --gh-pages`
 - Include proper docstrings for autodoc generation
 - Test documentation builds locally before submitting
 - Maintain cross-references and intersphinx links
+
+## Rules for Changes
+- When a fact changes, update every place it appears, including `README.md` (the PyPI description via `setup.py`) and `doc/sources/tests.rst` for test commands.
+- Use Sphinx roles for API names (`:obj:`, `:class:`, `:func:`) and the `|sklearnex|` / `|onedal|` substitutions from `rst_prolog` in `sources/conf.py`, not raw double backticks or spelled-out product names.
+- Keep pages user-facing. Implementation detail belongs in code comments or `AGENTS.md`.
+- When revising a page, shorten or replace text rather than appending to it.

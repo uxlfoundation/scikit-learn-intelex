@@ -40,3 +40,11 @@ Cython interfaces for converting external ML framework models to oneDAL format. 
 - Distributed algorithms use MPI communication layer
 - Model builders enable XGBoost/LightGBM/CatBoost integration
 - Maintain thread safety and cross-platform compatibility
+- Report errors as Python exceptions, not `std::cerr`; the existing `std::cerr` calls predate this rule
+
+## Verification
+```bash
+python setup.py build_ext --inplace --force   # rebuild daal4py after C++/Cython changes
+pytest tests/test_model_builders.py tests/test_daal4py_serialization.py
+mpirun -n 4 python tests/helper_mpi_tests.py pytest -s tests/test_daal4py_spmd_examples.py   # as conda-recipe/run_test.sh does
+```
