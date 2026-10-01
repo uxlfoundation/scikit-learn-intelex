@@ -186,12 +186,12 @@ Regression
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
-       - ``solver`` != `'auto'`
+       - ``solver`` not in [``'auto'``, ``'cholesky'``]
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
-     - 
+     - The Cholesky solver might fall back to spectral decomposition when regularization is too low instead of erroring out, but the ``solver_`` attribute will still be reported as ``'cholesky'``.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
@@ -496,7 +496,7 @@ Regression
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
-       - ``solver`` != `'auto'`
+       - ``solver`` not in [``'auto'``, ``'cholesky'``]
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
        - ``alpha`` must be a scalar

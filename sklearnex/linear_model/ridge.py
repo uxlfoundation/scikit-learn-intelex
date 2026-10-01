@@ -139,9 +139,9 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         patching_status.and_conditions(
             [
                 (
-                    self.solver == "auto",
+                    self.solver in ["auto", "cholesky"],
                     f"'{self.solver}' solver is not supported. "
-                    "Only 'auto' solver is supported.",
+                    "Only 'auto' and 'cholesky' are supported.",
                 ),
                 (
                     not is_sparse(X) and not is_sparse(y),
@@ -172,11 +172,6 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         )
         patching_status.and_conditions(
             [
-                (
-                    self.solver == "auto",
-                    f"'{self.solver}' solver is not supported. "
-                    "Only 'auto' solver is supported.",
-                ),
                 (n_samples > 0, "Number of samples is less than 1."),
                 (not is_sparse(data[0]), "Sparse input is not supported."),
                 (not model_is_sparse, "Sparse coefficients are not supported."),
@@ -272,6 +267,8 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self._coef_ = self._onedal_estimator.coef_
         self._intercept_ = self._onedal_estimator.intercept_
+        self.solver_ = "cholesky"
+        self.n_iter_ = None
 
         if y.ndim == 1 or y.shape[1] == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
