@@ -179,7 +179,8 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
 )
 @pytest.mark.parametrize(
     "array_input_like",
-    (
+    [np.arange(1)]
+    + (
         [array_api_strict.arange(1)]
         if _package_check_version("2.1", np.__version__)
         else []
