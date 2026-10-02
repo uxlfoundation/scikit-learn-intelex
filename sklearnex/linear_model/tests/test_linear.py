@@ -14,19 +14,37 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scipy.linalg import lstsq
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _assert_in_namespace,
     _convert_to_dataframe,
     assert_allclose_numpy,
+    dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
 )
+from onedal.tests.utils._device_selection import (
+    is_sycl_device_available,
+)
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
 
 
 @pytest.fixture
@@ -143,3 +161,94 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
     _assert_in_namespace(y_pred, dataframe)
     tol = 1e-5 if _as_numpy(y_pred).dtype == np.float32 else 1e-7
     assert_allclose_numpy(gtr, y_pred, rtol=tol)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.parametrize(
+    "array_like",
+    [array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and is_sycl_device_available
+        else []
+    ),
+)
+def test_move_estimator_to_np_to_arrayapi(array_like, with_array_api):
+    from sklearnex.linear_model import LinearRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(10, 3))
+    y = rng.standard_normal(size=X.shape[0])
+
+    xp, _, device = get_namespace_and_device(array_like)
+    X_array_api = move_to(X, xp=xp, device=device)
+
+    model = LinearRegression().fit(X, y)
+    model2 = move_estimator_to(model, xp, device)
+
+    assert isinstance(model.coef_, np.ndarray)
+    assert not isinstance(model2.coef_, np.ndarray)
+    assert model2.coef_.__class__ == array_like.__class__
+
+    pred_np = model.predict(X)
+    pred_array_api = model2.predict(X_array_api)
+
+    assert pred_array_api.__class__ == X_array_api.__class__
+    pred_array_api = _as_numpy(pred_array_api)
+    np.testing.assert_allclose(pred_array_api, pred_np, atol=1e-6)
+
+
+# TODO: update this once scikit-learn introduces a config option
+# to control whether the attributes are always numpy or follow 'X'
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.parametrize(
+    "array_like",
+    [array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and is_sycl_device_available
+        else []
+    ),
+)
+def test_move_estimator_to_arrayapi_to_np(array_like, with_array_api):
+    from sklearnex.linear_model import LinearRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(10, 3))
+    y = rng.standard_normal(size=X.shape[0])
+
+    xp, _, device = get_namespace_and_device(array_like)
+    X_array_api = move_to(X, xp=xp, device=device)
+    y_array_api = move_to(y, xp=xp, device=device)
+
+    xp_np, _, device_np = get_namespace_and_device(X)
+
+    model = LinearRegression().fit(X_array_api, y_array_api)
+    model2 = move_estimator_to(model, xp_np, device_np)
+
+    assert not isinstance(model.coef_, np.ndarray)
+    assert isinstance(model2.coef_, np.ndarray)
+
+    pred_np = model2.predict(X)
+    pred_array_api = model.predict(X_array_api)
+
+    assert isinstance(pred_np, np.ndarray)
+    assert pred_array_api.__class__ == X_array_api.__class__
+    pred_array_api = _as_numpy(pred_array_api)
+    np.testing.assert_allclose(pred_np, pred_array_api, atol=1e-6)
