@@ -167,61 +167,18 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
     assert_allclose_numpy(gtr, y_pred, rtol=tol)
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later sklearn versions",
-)
-@pytest.mark.parametrize(
-    "array_like",
-    (
-        [array_api_strict.arange(1)]
-        if _package_check_version("2.1", np.__version__)
-        else []
-    )
-    + (
-        [dpnp.arange(1, device="gpu")]
-        if dpnp_available and is_sycl_device_available
-        else []
-    )
-    + (
-        [torch.arange(1, device="xpu")]
-        if torch_available and is_sycl_device_available
-        else []
-    ),
-)
-def test_move_estimator_to_np_to_arrayapi(array_like, with_array_api):
-    from sklearnex.linear_model import LinearRegression
-
-    rng = np.random.default_rng(seed=123)
-    X = rng.standard_normal(size=(10, 3), dtype=np.float32)
-    y = rng.standard_normal(size=X.shape[0], dtype=np.float32)
-
-    xp, _, device = get_namespace_and_device(array_like)
-    X_array_api = move_to(X, xp=xp, device=device)
-
-    model = LinearRegression().fit(X, y)
-    model2 = move_estimator_to(model, xp, device)
-
-    assert isinstance(model.coef_, np.ndarray)
-    assert not isinstance(model2.coef_, np.ndarray)
-    assert model2.coef_.__class__ == array_like.__class__
-
-    pred_np = model.predict(X)
-    pred_array_api = model2.predict(X_array_api)
-
-    assert pred_array_api.__class__ == X_array_api.__class__
-    pred_array_api = _as_numpy(pred_array_api)
-    np.testing.assert_allclose(pred_array_api, pred_np, atol=1e-6)
-
-
 # TODO: update this once scikit-learn introduces a config option
 # to control whether the attributes are always numpy or follow 'X'
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later sklearn versions",
 )
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
 @pytest.mark.parametrize(
-    "array_like",
+    "array_input_like",
     (
         [array_api_strict.arange(1)]
         if _package_check_version("2.1", np.__version__)
@@ -238,29 +195,48 @@ def test_move_estimator_to_np_to_arrayapi(array_like, with_array_api):
         else []
     ),
 )
-def test_move_estimator_to_arrayapi_to_np(array_like, with_array_api):
+@pytest.mark.parametrize(
+    "array_output_like",
+    [np.arange(1)]
+    + (
+        [array_api_strict.arange(1)]
+        if _package_check_version("2.1", np.__version__)
+        else []
+    )
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and is_sycl_device_available
+        else []
+    ),
+)
+def test_move_estimator_to(array_input_like, array_output_like, with_array_api):
     from sklearnex.linear_model import LinearRegression
 
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(10, 3), dtype=np.float32)
     y = rng.standard_normal(size=X.shape[0], dtype=np.float32)
 
-    xp, _, device = get_namespace_and_device(array_like)
-    X_array_api = move_to(X, xp=xp, device=device)
-    y_array_api = move_to(y, xp=xp, device=device)
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+    y_in = move_to(y, xp=xp_in, device=device_in)
 
-    xp_np, _, device_np = get_namespace_and_device(X)
+    xp_move, _, device_move = get_namespace_and_device(array_output_like)
+    X_move = move_to(X, xp=xp_move, device=device_move)
 
-    model = LinearRegression().fit(X_array_api, y_array_api)
-    model2 = move_estimator_to(model, xp_np, device_np)
+    model = LinearRegression().fit(X_in, y_in)
+    model_moved = move_estimator_to(model, xp_move, device_move)
 
-    assert not isinstance(model.coef_, np.ndarray)
-    assert isinstance(model2.coef_, np.ndarray)
+    assert model.coef_.__class__ == array_input_like.__class__
+    assert model_moved.coef_.__class__ == array_output_like.__class__
 
-    pred_np = model2.predict(X)
-    pred_array_api = model.predict(X_array_api)
+    pred_orig = model.predict(X_in)
+    pred_moved = model_moved.predict(X_move)
 
-    assert isinstance(pred_np, np.ndarray)
-    assert pred_array_api.__class__ == X_array_api.__class__
-    pred_array_api = _as_numpy(pred_array_api)
-    np.testing.assert_allclose(pred_np, pred_array_api, atol=1e-6)
+    assert pred_orig.__class__ == array_input_like.__class__
+    assert pred_moved.__class__ == array_output_like.__class__
+    np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
