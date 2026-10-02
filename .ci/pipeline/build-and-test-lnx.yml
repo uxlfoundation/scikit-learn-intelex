@@ -22,7 +22,9 @@ steps:
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pip setuptools wheel
+      PYTHON_VERSION=$(PYTHON_VERSION)
+      if [[ "${PYTHON_VERSION}" == *t ]]; then PYTHON_SPEC="python-freethreading=${PYTHON_VERSION%t}"; else PYTHON_SPEC="python=${PYTHON_VERSION}"; fi
+      conda create -q -y -n CB -c conda-forge ${PYTHON_SPEC} mpich pip setuptools wheel
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
@@ -66,7 +68,13 @@ steps:
       # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.14 build.
       # conda install runs before pip so that pip's pins (incl. the numpy 1.x runtime version) take final precedence.
       if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
-      pip install --upgrade -r requirements-test.txt
+      if [[ "$(PYTHON_VERSION)" == *t ]]; then
+        # polars has no free-threaded wheel on PyPI - see requirements-test-free-threaded.txt
+        conda install -q -y -c conda-forge polars=$(sed -n 's/^polars==//p' requirements-test.txt)
+        pip install --upgrade -r requirements-test-free-threaded.txt
+      else
+        pip install --upgrade -r requirements-test.txt
+      fi
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
