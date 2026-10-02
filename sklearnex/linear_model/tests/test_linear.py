@@ -20,7 +20,11 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.linalg import lstsq
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _assert_in_namespace,
@@ -169,7 +173,11 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
 )
 @pytest.mark.parametrize(
     "array_like",
-    [array_api_strict.arange(1)]
+    (
+        [array_api_strict.arange(1)]
+        if _package_check_version("2.1", np.__version__)
+        else []
+    )
     + (
         [dpnp.arange(1, device="gpu")]
         if dpnp_available and is_sycl_device_available
@@ -214,7 +222,11 @@ def test_move_estimator_to_np_to_arrayapi(array_like, with_array_api):
 )
 @pytest.mark.parametrize(
     "array_like",
-    [array_api_strict.arange(1)]
+    (
+        [array_api_strict.arange(1)]
+        if _package_check_version("2.1", np.__version__)
+        else []
+    )
     + (
         [dpnp.arange(1, device="gpu")]
         if dpnp_available and is_sycl_device_available
