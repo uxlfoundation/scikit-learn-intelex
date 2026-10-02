@@ -86,6 +86,8 @@ Current list of preview estimators:
      - Yes
    * - :obj:`sklearn.linear_model.ElasticNet`
      - Yes
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - Yes
    * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - Yes
    * - :obj:`sklearn.decomposition.IncrementalPCA`
