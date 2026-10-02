@@ -182,7 +182,6 @@ another.
 This function is only supported for the following estimators from the |sklearnex|:
 
 - :obj:`sklearn.linear_model.LinearRegression`
-- :obj:`sklearn.linear_model.Ridge`
 
 The following estimators cannot be moved, but if fitted on GPU, will be able to predict on both CPU and GPU without additional data transfers:
 
