@@ -179,10 +179,16 @@ Starting with version 1.9, |sklearn| provides an experimental utility ``sklearn.
 which can be used to move an estimator that was fitted with one array API library namespace and device to
 another.
 
-This function is not supported with estimators from the |sklearnex| at the moment. This lack of support
-also extends to cases where :doc:`patching <patching>` is applied, but the ``.fit()`` routine is handled
-through |sklearn| as a fallback (see :doc:`algorithms` for details) - meaning: ``move_estimator_to`` cannot
-be used with classes from the |sklearnex| regardless of which backend was used to fit the estimator.
+This function is only supported for the following estimators from the |sklearnex|:
+
+- :obj:`sklearn.linear_model.LinearRegression`
+
+The following estimators cannot be moved, but if fitted on GPU, will be able to predict on both CPU and GPU without additional data transfers:
+
+- :obj:`sklearn.ensemble.ExtraTreesClassifier`
+- :obj:`sklearn.ensemble.ExtraTreesRegressor`
+- :obj:`sklearn.ensemble.RandomForestClassifier`
+- :obj:`sklearn.ensemble.RandomForestRegressor`
 
 Example usage
 =============
