@@ -185,8 +185,8 @@ def test_move_estimator_to_np_to_arrayapi(array_like, with_array_api):
     from sklearnex.linear_model import LinearRegression
 
     rng = np.random.default_rng(seed=123)
-    X = rng.standard_normal(size=(10, 3))
-    y = rng.standard_normal(size=X.shape[0])
+    X = rng.standard_normal(size=(10, 3), dtype=np.float32)
+    y = rng.standard_normal(size=X.shape[0], dtype=np.float32)
 
     xp, _, device = get_namespace_and_device(array_like)
     X_array_api = move_to(X, xp=xp, device=device)
@@ -230,8 +230,8 @@ def test_move_estimator_to_arrayapi_to_np(array_like, with_array_api):
     from sklearnex.linear_model import LinearRegression
 
     rng = np.random.default_rng(seed=123)
-    X = rng.standard_normal(size=(10, 3))
-    y = rng.standard_normal(size=X.shape[0])
+    X = rng.standard_normal(size=(10, 3), dtype=np.float32)
+    y = rng.standard_normal(size=X.shape[0], dtype=np.float32)
 
     xp, _, device = get_namespace_and_device(array_like)
     X_array_api = move_to(X, xp=xp, device=device)
