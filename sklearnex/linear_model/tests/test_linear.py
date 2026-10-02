@@ -190,9 +190,11 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
         if dpnp_available and is_sycl_device_available
         else []
     )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
     + (
         [torch.arange(1, device="xpu")]
-        if torch_available and is_sycl_device_available
+        if torch_available and is_sycl_device_available and sklearn_check_version("1.10")
         else []
     ),
 )
@@ -211,7 +213,7 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
     )
     + (
         [torch.arange(1, device="xpu")]
-        if torch_available and is_sycl_device_available
+        if torch_available and is_sycl_device_available and sklearn_check_version("1.10")
         else []
     ),
 )
