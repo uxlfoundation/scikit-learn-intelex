@@ -99,8 +99,8 @@ usage in Python threads, even if running under the Python GIL:
   instance. Many estimators modify themselves in-place outside of ``.fit()``,
   for example by building the |onedal| model from fitted attributes on the
   first call to ``.predict()``, or by finalizing incremental results when an
-  attribute is first accessed. Under the GIL these are serialized, but with
-  free-threading concurrent calls on a shared instance can race.
+  attribute is first accessed. Under free-threading, concurrent calls on a
+  shared instance can race.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
