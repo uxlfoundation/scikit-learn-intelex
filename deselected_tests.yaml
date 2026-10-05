@@ -520,11 +520,6 @@ deselected_tests:
   # 'sklearnex/cluster/tests/test_hdbscan.py' instead.
   - cluster/tests/test_hdbscan.py::test_hdbscan_centers
 
-  # With 'allow_single_cluster' and unstructured data, oneDAL keeps every sample in the
-  # root cluster where scikit-learn leaves the samples that fall out of it before the
-  # cluster's own birth as noise.
-  - cluster/tests/test_hdbscan.py::test_hdbscan_allow_single_cluster_with_epsilon
-
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
