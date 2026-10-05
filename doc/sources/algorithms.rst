@@ -209,14 +209,13 @@ Clustering
 **********
 
 .. list-table::
-   :widths: 10 40 10 10
+   :widths: 10 30 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
-     - Other limitations
    * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
@@ -226,24 +225,23 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
-     -
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
-     -
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported.
-     - The clusters are the same as |sklearn|'s, but they are not necessarily
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************
@@ -526,14 +524,13 @@ Clustering
 **********
 
 .. list-table::
-   :widths: 10 40 10 10
+   :widths: 10 30 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
-     - Other limitations
    * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
@@ -544,24 +541,23 @@ Clustering
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
      - No limitations
-     -
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
-     -
    * - :obj:`sklearn.cluster.HDBSCAN`
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported.
-     - The clusters are the same as |sklearn|'s, but they are not necessarily
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************
@@ -810,7 +806,7 @@ Clustering
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
        - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
-     - Only dense data is supported.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************

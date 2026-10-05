@@ -14,15 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._utils import daal_check_version
-
 from .dbscan import DBSCAN
+from .hdbscan import HDBSCAN
 from .k_means import KMeans
 
-__all__ = ["DBSCAN", "KMeans"]
-
-# '.hdbscan' repeats this check so that importing the module stays safe on older oneDAL
-if daal_check_version((2026, "P", 200)):
-    from .hdbscan import HDBSCAN
-
-    __all__ += ["HDBSCAN"]
+__all__ = ["DBSCAN", "HDBSCAN", "KMeans"]
