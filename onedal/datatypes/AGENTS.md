@@ -11,7 +11,6 @@ Converts NumPy, SciPy sparse, SYCL USM (dpnp), and DLPack inputs to oneDAL table
 - `tests/test_data.py`: round-trip tests across formats and devices
 
 ## Rules
-Most review findings in this directory are reference leaks and aliasing bugs, not style.
 
 - Never hold a bare owned `PyObject*`. Wrap it in `py::reinterpret_steal<py::object>(...)` as soon as it is created, so every throwing path releases it. Note that `convert_to_numpy_impl`, `PyArray_New`, and `need_mutable_data()` can all throw.
 - Only steal references you own. Borrowed references (attributes of user-provided objects, `PyTuple_GetItem`) use `py::reinterpret_borrow`.

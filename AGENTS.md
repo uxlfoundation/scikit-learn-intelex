@@ -17,7 +17,7 @@ These come from recurring review comments; each one has been asked for on severa
 - New source files use the header `Copyright contributors to the oneDAL project`; leave existing headers alone.
 
 ## Reviewing
-Report source-confirmed problems with correctness, layering, reference ownership, device and queue handling, sklearn compatibility, and test coverage. Don't report what CI already enforces: black, isort, clang-format, numpydoc validation, codespell and license headers.
+Report source-confirmed problems with correctness, layering, reference ownership, device and queue handling, sklearn compatibility, and test coverage. Don't report what CI already enforces: black, isort, clang-format, numpydoc formatting, codespell and license headers. The numpydoc hook skips GL08 and private names, so a missing docstring is not caught by CI and is worth reporting.
 
 ## Architecture
 ```text

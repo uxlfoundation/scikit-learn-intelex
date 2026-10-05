@@ -9,17 +9,16 @@ Native Python interface to oneDAL with three APIs: native oneDAL algorithms, skl
 Direct access to oneDAL algorithms with explicit setup/compute/finalize phases. Provides maximum control and performance. Import via `import daal4py as d4p`.
 
 ### 2. sklearn-Compatible API
-Drop-in replacements for sklearn estimators. Located in `daal4py/sklearn/`. Monkeypatch system provides transparent acceleration via `patch_sklearn()`.
+Drop-in replacements for sklearn estimators in `daal4py/sklearn/`, imported directly (`from daal4py.sklearn import ...`). daal4py's own patching was removed in #3371; `patch_sklearn()` lives in `sklearnex/dispatcher.py` and does not route here.
 
 ### 3. Model Builders API
-Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`. Provides up to 100X speedup (varies by model and data).
+Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`.
 
 ## Key Components
 
 ### Core Files
 - `__init__.py`: Native API entry, algorithm loading
 - `sklearn/`: sklearn-compatible implementations
-- `sklearn/monkeypatch/dispatcher.py`: Patching system
 - `mb/tree_based_builders.py`: Tree model conversions
 - `mb/logistic_regression_builders.py`: LogReg conversions
 
@@ -31,23 +30,12 @@ Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for acc
 - **Statistics**: covariance, low_order_moments, correlation_distance, cosine_distance
 - **Other**: association_rules, bacon_outlier, cholesky, em_gmm, implicit_als, knn, normalization, qr, pivoted_qr, quantiles, sorting, outlier_detection
 
-## Monkeypatch System
-
-### Implementation
-Located in `daal4py/sklearn/monkeypatch/dispatcher.py`. Replaces sklearn estimators with daal4py implementations when conditions met.
-
-### Core Functions
-- `patch_sklearn()`: Replace sklearn algorithms globally
-- `unpatch_sklearn()`: Restore original sklearn
-- `get_patch_map()`: Retrieve algorithm mappings
-- Condition checking via `_daal*_check_supported()` functions
-
-### Patching Logic
-Checks data characteristics (density, dtype, shape), algorithm parameters, and oneDAL compatibility before applying acceleration.
+## Patching
+Patching is `sklearnex`'s, not daal4py's: `patch_sklearn()`, `unpatch_sklearn()` and `get_patch_map()` are all in `sklearnex/dispatcher.py`. See `sklearnex/AGENTS.md`.
 
 ## Model Builders
 
-Convert externally trained models to oneDAL format for up to **100X faster inference** (speedup varies by model complexity and data size).
+Convert externally trained models to oneDAL format for faster inference.
 
 ### Supported Frameworks
 
@@ -73,7 +61,7 @@ xgb_model = xgb.XGBClassifier().fit(X_train, y_train)
 # 2. Convert to oneDAL
 daal_model = convert_model(xgb_model)
 
-# 3. Accelerated inference (up to 100X faster)
+# 3. Accelerated inference
 predictions = daal_model.predict(X_test)
 ```
 
@@ -135,7 +123,7 @@ daal4py and onedal are **separate** Python binding implementations to oneDAL C++
 ### Error Handling
 - Input validation in Python layer
 - C++ exceptions converted to Python exceptions
-- Automatic fallback to sklearn in monkeypatch system when conditions not met
+- Fallback to sklearn is `sklearnex`'s job, not daal4py's
 
 ## Development Guidelines
 
@@ -144,7 +132,7 @@ daal4py and onedal are **separate** Python binding implementations to oneDAL C++
 2. Add to generator/wrappers.py if available
 3. Rebuild to generate bindings
 4. Add sklearn wrapper in `daal4py/sklearn/` if needed
-5. Update monkeypatch dispatcher for sklearn compatibility
+5. Register it in `sklearnex/dispatcher.py` if it should be patched
 
 ### Modifying Existing Algorithms
 - Native API: Modify the generator (`generator/`), never the generated `build/daal4py_cy.pyx`
