@@ -57,7 +57,10 @@ if onedal_check_version(2026, 2, 0):
         def compute(self, params, data_table): ...
 
         def _get_onedal_params(self, data):
-            result_options = "responses"
+            # the membership strengths come out of the same condensed tree the labels
+            # do, and the dendrogram is only four values per merge, so both are always
+            # worth having -- the dendrogram is what lets a caller re-cut the hierarchy
+            result_options = "responses|probabilities|single_linkage_tree"
             if self.store_centers in ("centroid", "both"):
                 result_options += "|cluster_centers"
             if self.store_centers in ("medoid", "both"):
@@ -87,9 +90,15 @@ if onedal_check_version(2026, 2, 0):
             params = self._get_onedal_params(X_table)
             result = self.compute(params, X_table)
 
-            # 2d table but only 1d of information
+            # 2d tables but only 1d of information
             self.labels_ = from_table(result.responses, like=X)[:, 0]
+            self.probabilities_ = from_table(result.probabilities, like=X)[:, 0]
             self.n_clusters_ = int(result.cluster_count)
+
+            # '(n - 1) x 4' rows of '[left, right, distance, size]'. Always brought
+            # to host, unlike the arrays above: the consumers of the dendrogram walk
+            # it one merge at a time, which is not work for a device
+            self.single_linkage_tree_ = from_table(result.single_linkage_tree)
 
             # oneDAL computes the centers only when it is asked to, and leaves them
             # empty when it does not find any cluster, 'None' marks both absences

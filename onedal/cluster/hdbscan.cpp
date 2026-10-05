@@ -70,6 +70,12 @@ static auto get_onedal_result_options(const py::dict& params) {
         else if (option == "medoid_centers") {
             onedal_options = onedal_options | result_options::medoid_centers;
         }
+        else if (option == "probabilities") {
+            onedal_options = onedal_options | result_options::probabilities;
+        }
+        else if (option == "single_linkage_tree") {
+            onedal_options = onedal_options | result_options::single_linkage_tree;
+        }
         else {
             ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
         }
@@ -172,7 +178,9 @@ void init_compute_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(result_options, result_t)
         .DEF_ONEDAL_PY_PROPERTY(cluster_count, result_t)
         .DEF_ONEDAL_PY_PROPERTY(cluster_centers, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(medoid_centers, result_t);
+        .DEF_ONEDAL_PY_PROPERTY(medoid_centers, result_t)
+        .DEF_ONEDAL_PY_PROPERTY(probabilities, result_t)
+        .DEF_ONEDAL_PY_PROPERTY(single_linkage_tree, result_t);
 }
 
 ONEDAL_PY_TYPE2STR(hdbscan::task::clustering, "clustering");

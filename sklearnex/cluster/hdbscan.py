@@ -19,6 +19,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 if daal_check_version((2026, "P", 200)):
     import warnings
 
+    import numpy as np
     from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
     from sklearn.utils.validation import _num_samples, check_array
 
@@ -26,11 +27,49 @@ if daal_check_version((2026, "P", 200)):
     from daal4py.sklearn._utils import is_sparse
     from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 
-    from ..._device_offload import dispatch
-    from ..._utils import PatchingConditionsChain
-    from ...base import oneDALEstimator
-    from ...utils._array_api import enable_array_api, get_namespace
-    from ...utils.validation import assert_all_finite, validate_data
+    from .._device_offload import dispatch
+    from .._utils import PatchingConditionsChain
+    from ..base import oneDALEstimator
+    from ..utils._array_api import enable_array_api, get_namespace
+    from ..utils.validation import assert_all_finite, validate_data
+
+    # scikit-learn's own record layout for a dendrogram, the dtype of
+    # 'HDBSCAN._single_linkage_tree_'. Repeated rather than imported from the
+    # private 'sklearn.cluster._hdbscan._tree': a rename there would break the
+    # import of this module, and so all of the patching, where a change of the
+    # layout only breaks 'dbscan_clustering', loudly, on the typed memoryview
+    _SINGLE_LINKAGE_TREE_DTYPE = np.dtype(
+        [
+            ("left_node", np.int64),
+            ("right_node", np.int64),
+            ("value", np.float64),
+            ("cluster_size", np.int64),
+        ]
+    )
+
+    def _as_single_linkage_tree(tree):
+        """Convert oneDAL's dendrogram table into scikit-learn's record array.
+
+        Parameters
+        ----------
+        tree : ndarray of shape (n_samples - 1, 4)
+            Merges in ascending distance order, as
+            ``[left, right, distance, size]``.
+
+        Returns
+        -------
+        tree : ndarray of shape (n_samples - 1,)
+            The same merges, in '_SINGLE_LINKAGE_TREE_DTYPE'.
+        """
+        # a single observation has nothing to merge, and oneDAL reports no table
+        # at all rather than an empty one, which arrives here as a flat array
+        tree = np.reshape(tree, (-1, 4))
+        result = np.empty(tree.shape[0], dtype=_SINGLE_LINKAGE_TREE_DTYPE)
+        result["left_node"] = tree[:, 0]
+        result["right_node"] = tree[:, 1]
+        result["value"] = tree[:, 2]
+        result["cluster_size"] = tree[:, 3]
+        return result
 
     @enable_array_api
     @control_n_jobs(decorated_methods=["fit"])
@@ -124,11 +163,14 @@ if daal_check_version((2026, "P", 200)):
                 medoids = self._onedal_estimator.medoids_
                 self.medoids_ = xp.empty_like(X[:0, :]) if medoids is None else medoids
 
-            # scikit-learn derives the membership strengths from the lambda values
-            # of the condensed tree, which oneDAL does not return, so the degree to
-            # which a sample persists in its cluster is unknown. Noise is reported
-            # as zero, as scikit-learn does, and the members of a cluster as one
-            self.probabilities_ = xp.astype(self.labels_ != -1, xp.float64)
+            self.probabilities_ = self._onedal_estimator.probabilities_
+
+            # the hierarchy the flat clustering above was cut out of, in the record
+            # layout scikit-learn's own routines are typed on, so that a caller can
+            # re-cut it at another distance -- see 'dbscan_clustering'
+            self._single_linkage_tree_ = _as_single_linkage_tree(
+                self._onedal_estimator.single_linkage_tree_
+            )
 
         def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
@@ -223,3 +265,22 @@ if daal_check_version((2026, "P", 200)):
             return self
 
         fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
+
+        def dbscan_clustering(self, cut_distance, min_cluster_size=5):
+            if not hasattr(self, "_onedal_estimator"):
+                return super().dbscan_clustering(cut_distance, min_cluster_size)
+
+            # imported here and not at module scope on purpose: a rename in this
+            # private module must not break the import of this one, and with it all
+            # of the patching
+            from sklearn.cluster._hdbscan._tree import labelling_at_cut
+
+            # scikit-learn's version then restores the labels of the samples it had
+            # found to be infinite or missing during 'fit'. oneDAL does not take
+            # such data in the first place, so there is nothing to restore, and
+            # 'labels_', which may live on a device, does not have to be read back
+            return labelling_at_cut(
+                self._single_linkage_tree_, cut_distance, min_cluster_size
+            )
+
+        dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__

@@ -510,7 +510,6 @@ packages_with_tests = [
     "sklearnex.model_selection",
     "sklearnex.neighbors",
     "sklearnex.preview",
-    "sklearnex.preview.cluster",
     "sklearnex.preview.covariance",
     "sklearnex.preview.decomposition",
     "sklearnex.preview.linear_model",

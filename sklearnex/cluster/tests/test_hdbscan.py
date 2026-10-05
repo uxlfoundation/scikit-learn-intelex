@@ -94,7 +94,7 @@ def _in_group_order(centers):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_import_hdbscan(dataframe, queue, dtype):
     """oneDAL must find the groups the data was built from."""
-    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.cluster import HDBSCAN
 
     X = _grouped_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -120,7 +120,7 @@ def test_sklearnex_import_hdbscan(dataframe, queue, dtype):
 )
 def test_hdbscan_metrics(metric, algorithm, metric_params):
     """Every metric and algorithm offloaded to oneDAL must find the groups."""
-    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(
         min_cluster_size=_MIN_CLUSTER_SIZE,
@@ -136,7 +136,7 @@ def test_hdbscan_metrics(metric, algorithm, metric_params):
 @pytest.mark.parametrize("store_centers", ["centroid", "medoid", "both"])
 def test_hdbscan_centers(cluster_selection_method, store_centers):
     """oneDAL computes the centers only when it is asked to."""
-    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.cluster import HDBSCAN
 
     X = _grouped_data()
     hdbscan = HDBSCAN(
@@ -163,7 +163,7 @@ def test_hdbscan_centers(cluster_selection_method, store_centers):
 
 def test_hdbscan_centers_all_noise():
     """No cluster means no center, reported as scikit-learn reports it."""
-    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.cluster import HDBSCAN
 
     X = _grouped_data()
     # a cluster has to hold every sample to be kept, which none of the groups does
@@ -179,23 +179,96 @@ def test_hdbscan_centers_all_noise():
 
 
 def test_hdbscan_probabilities():
-    """'probabilities_' must stay a probability."""
-    from sklearnex.preview.cluster import HDBSCAN
+    """'probabilities_' must be a membership strength in the assigned cluster."""
+    from sklearnex.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_grouped_data())
     assert hasattr(hdbscan, "_onedal_estimator")
 
+    labels = _as_numpy(hdbscan.labels_)
     probabilities = _as_numpy(hdbscan.probabilities_)
+    assert probabilities.shape == labels.shape
     assert np.all(probabilities >= 0) and np.all(probabilities <= 1)
-    # oneDAL does not return the lambda values that the membership strengths are
-    # derived from, so a sample either belongs to its cluster or is noise
-    assert_allclose(probabilities, _as_numpy(hdbscan.labels_) != -1)
+
+    # a sample belongs to its cluster to some degree, noise to none at all
+    assert np.all(probabilities[labels == -1] == 0)
+    assert np.all(probabilities[labels != -1] > 0)
+
+    # the strengths are relative to the most persistent member of the cluster,
+    # which therefore reaches 1
+    for label in np.unique(labels[labels != -1]):
+        assert_allclose(probabilities[labels == label].max(), 1.0)
+
+
+def test_hdbscan_single_linkage_tree_dtype():
+    """The record layout must stay the one scikit-learn's own routines are typed on."""
+    from sklearn.cluster._hdbscan._tree import HIERARCHY_dtype
+
+    from sklearnex.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
+
+    assert _SINGLE_LINKAGE_TREE_DTYPE == HIERARCHY_dtype
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_single_linkage_tree(dataframe, queue, dtype):
+    """'_single_linkage_tree_' must be a dendrogram of the data."""
+    from sklearnex.cluster import HDBSCAN
+    from sklearnex.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
+
+    X = _grouped_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    n_samples = len(X)
+    tree = hdbscan._single_linkage_tree_
+    assert tree.dtype == _SINGLE_LINKAGE_TREE_DTYPE
+    assert tree.shape == (n_samples - 1,)
+
+    # one merge per row, in ascending distance order, each of the two merged nodes
+    # either a sample or a node some earlier row created
+    assert np.all(np.diff(tree["value"]) >= 0)
+    for row, (left, right) in enumerate(zip(tree["left_node"], tree["right_node"])):
+        assert 0 <= left < n_samples + row
+        assert 0 <= right < n_samples + row
+    assert tree["cluster_size"][-1] == n_samples
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_hdbscan_dbscan_clustering(dataframe, queue):
+    """scikit-learn's 'dbscan_clustering' must work off oneDAL's dendrogram.
+
+    This is the point of exporting it: the DBSCAN clustering at a given epsilon
+    comes out of the hierarchy that was already built, without fitting again.
+    """
+    from sklearnex.cluster import HDBSCAN
+
+    X = _grouped_data()
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    # the groups are tighter than one unit across and tens of units apart, so a cut
+    # anywhere in between has to recover exactly them, and a cut above everything
+    # has to put all of the samples together
+    assert_groups_found(hdbscan.dbscan_clustering(cut_distance=5.0))
+
+    joined = hdbscan.dbscan_clustering(cut_distance=1000.0)
+    assert len(np.unique(joined)) == 1
+    assert np.all(joined != -1)
+
+    # nothing merges below the within-group spread, so every sample is on its own
+    # and no component reaches 'min_cluster_size'
+    assert np.all(hdbscan.dbscan_clustering(cut_distance=1e-6) == -1)
 
 
 @pytest.mark.allow_sklearn_fallback
 def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
-    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_csr_array(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
