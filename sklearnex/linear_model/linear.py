@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from sklearn.base import clone
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils._array_api import get_namespace
@@ -325,15 +324,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
     @intercept_.deleter
     def intercept_(self):
         del self._intercept_
-
-    def __sklearn_array_api_convert__(self, converter):
-        out = clone(self)
-        if hasattr(out, "_onedal_estimator"):
-            del out._onedal_estimator
-        out._coef_ = converter(self._coef_)
-        out._intercept_ = converter(self._intercept_)
-        out._initialize_onedal_estimator_from_coefs()
-        return out
 
     fit.__doc__ = _sklearn_LinearRegression.fit.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__

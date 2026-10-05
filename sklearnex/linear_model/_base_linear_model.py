@@ -15,6 +15,7 @@
 # ==============================================================================
 from abc import ABC, abstractmethod
 
+from sklearn.base import clone
 from sklearn.utils._array_api import get_namespace
 
 
@@ -38,3 +39,12 @@ class _BaseLinearModel(ABC):
         xp, _ = get_namespace(self.coef_)
         self._initialize_onedal_estimator(override_fit_intercept=True)
         self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
+
+    def __sklearn_array_api_convert__(self, converter):
+        out = clone(self)
+        if hasattr(out, "_onedal_estimator"):
+            del out._onedal_estimator
+        out._coef_ = converter(self._coef_)
+        out._intercept_ = converter(self._intercept_)
+        out._initialize_onedal_estimator_from_coefs()
+        return out
