@@ -179,6 +179,15 @@ def test_predict_after_fallback_array_api(
     ),
 )
 def test_move_estimator_to(estimator, array_input_like, array_move_like, with_array_api):
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and is_sycl_device_available("gpu")
+        and isinstance(array_input_like, dpnp.ndarray)
+    ):
+        pytest.skip()
     from sklearnex import linear_model
 
     rng = np.random.default_rng(seed=123)
