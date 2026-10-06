@@ -109,3 +109,19 @@ def get_onedal_shared_libs(dal_root: str, is_win: bool) -> list[str]:
         ):
             found_libraries.append(lib_name)
     return found_libraries
+
+
+if __name__ == "__main__":
+    # Print the oneDAL release version (e.g. "2026.3.0") parsed from
+    # library_version_info.h of the oneDAL installation at DALROOT.
+    # Usage:
+    #   DALROOT=/path/to/onedal python scripts/version.py
+    #   python scripts/version.py /path/to/onedal
+    # DALROOT from the environment takes priority over the argument.
+    import sys
+
+    dal_root = os.environ.get("DALROOT") or (sys.argv[1] if len(sys.argv) > 1 else None)
+    if not dal_root:
+        sys.exit("Usage: set DALROOT or pass it as version.py DALROOT")
+    major, minor_update = divmod(get_onedal_version(dal_root), 10000)
+    print("{}.{}.{}".format(major, *divmod(minor_update, 100)))
