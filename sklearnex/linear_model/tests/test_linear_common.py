@@ -136,12 +136,7 @@ def test_predict_after_fallback_array_api(
 @pytest.mark.parametrize("estimator", ["LinearRegression", "Ridge"])
 @pytest.mark.parametrize(
     "array_input_like",
-    [np.arange(1)]
-    + (
-        [array_api_strict.arange(1)]
-        if _package_check_version("2.1", np.__version__)
-        else []
-    )
+    [np.arange(1), array_api_strict.arange(1)]
     + (
         [dpnp.arange(1, device="gpu")]
         if dpnp_available and is_sycl_device_available("gpu")
@@ -159,12 +154,7 @@ def test_predict_after_fallback_array_api(
 )
 @pytest.mark.parametrize(
     "array_move_like",
-    [np.arange(1)]
-    + (
-        [array_api_strict.arange(1)]
-        if _package_check_version("2.1", np.__version__)
-        else []
-    )
+    [np.arange(1), array_api_strict.arange(1)]
     + (
         [dpnp.arange(1, device="gpu")]
         if dpnp_available and is_sycl_device_available("gpu")
