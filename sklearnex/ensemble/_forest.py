@@ -843,9 +843,11 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             ensure_all_finite=False,
         )
 
-        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
+        # oneDAL can return a slightly negative class probability (fixed in later releases).
+        # Clipping alone would leave the row summing to more than 1, so renormalize after it.
         out = self._onedal_estimator.predict_proba(X, queue=queue)
-        return xp.clip(out, 0.0, 1.0)
+        out = xp.clip(out, 0.0, 1.0)
+        return out / xp.sum(out, axis=1, keepdims=True)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return accuracy_score(

@@ -364,3 +364,39 @@ def test_predict_with_nan(estimator_class):
     if not is_regressor(model):
         proba = model.predict_proba(X_nan)
         assert not np.any(np.isnan(proba))
+
+
+def test_classifier_predict_proba_rows_sum_to_one_after_clipping(monkeypatch):
+    from sklearnex.ensemble import RandomForestClassifier
+
+    X, y = make_classification(n_samples=100, n_classes=3, n_informative=4, random_state=0)
+    clf = RandomForestClassifier(n_estimators=5, random_state=0).fit(X, y)
+
+    # A raw oneDAL row that sums to 1 but holds a negative entry, as older oneDAL
+    # releases can return.
+    raw = np.tile(np.array([[0.01, -0.005, 0.995]]), (X.shape[0], 1))
+    monkeypatch.setattr(clf._onedal_estimator, "predict_proba", lambda X, queue=None: raw)
+
+    proba = clf.predict_proba(X)
+    assert np.all(proba >= 0) and np.all(proba <= 1)
+    assert_allclose(proba.sum(axis=1), 1.0, rtol=0, atol=1e-12)
+
+
+@pytest.mark.parametrize("estimator", ["RandomForestClassifier", "ExtraTreesClassifier"])
+def test_classifier_predict_proba_is_a_distribution(estimator):
+    import sklearnex.ensemble
+    from sklearn.metrics import roc_auc_score
+
+    X, y = make_classification(
+        n_samples=200_000,
+        n_features=30,
+        n_informative=15,
+        n_classes=7,
+        n_clusters_per_class=1,
+        random_state=0,
+    )
+    clf = getattr(sklearnex.ensemble, estimator)(n_estimators=100, random_state=0)
+    proba = clf.fit(X, y).predict_proba(X)
+    assert np.all(proba >= 0) and np.all(proba <= 1)
+    assert np.allclose(1, proba.sum(axis=1))
+    roc_auc_score(y, proba, multi_class="ovr")
