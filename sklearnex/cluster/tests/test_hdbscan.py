@@ -16,7 +16,7 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 from scipy import sparse as sp
 
 from daal4py.sklearn._utils import daal_check_version
@@ -148,7 +148,14 @@ def test_hdbscan_centers(cluster_selection_method, store_centers):
     assert_groups_found(hdbscan.labels_)
 
     if store_centers in ("centroid", "both"):
-        expected = np.stack([group.mean(axis=0) for group in _groups(X)])
+        # weighted by the membership strengths, as scikit-learn weights them
+        probabilities = _as_numpy(hdbscan.probabilities_)
+        expected = np.stack(
+            [
+                np.average(group, weights=weights, axis=0)
+                for group, weights in zip(_groups(X), _groups(probabilities))
+            ]
+        )
         assert_allclose(_in_group_order(hdbscan.centroids_), expected, atol=1e-5)
     else:
         assert not hasattr(hdbscan, "centroids_")
@@ -273,3 +280,219 @@ def test_hdbscan_sparse_falls_back():
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_csr_array(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
     assert_groups_found(hdbscan.labels_)
+
+
+def _fit_both(X, X_sklearn=None, **params):
+    """Fit scikit-learn's estimator and the patched one, each on its own copy.
+
+    Returns
+    -------
+    expected, result : HDBSCAN or Exception
+        The fitted estimators, or what each of them raised.
+    """
+    from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+
+    from sklearnex.cluster import HDBSCAN
+
+    params.setdefault("copy", False)
+    outcomes = []
+    for estimator, data in (
+        (_sklearn_HDBSCAN, X if X_sklearn is None else X_sklearn),
+        (HDBSCAN, X),
+    ):
+        try:
+            outcomes.append(estimator(**params).fit(data))
+        except Exception as error:
+            outcomes.append(error)
+    return outcomes
+
+
+def _assert_same_error(expected, result):
+    assert isinstance(expected, Exception), "scikit-learn did not raise"
+    assert type(result) is type(expected)
+    assert str(result) == str(expected)
+
+
+def _assert_same_partition(expected, result):
+    """The same clustering, with the same special labels, in any numbering."""
+    expected, result = _as_numpy(expected), _as_numpy(result)
+    assert expected.shape == result.shape
+    for special in (-1, -2, -3):
+        assert_array_equal(expected == special, result == special)
+    pairs = set(zip(expected.tolist(), result.tolist()))
+    assert len(pairs) == len(set(expected.tolist())) == len(set(result.tolist()))
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("algorithm", ["auto", "brute", "kd_tree", "ball_tree"])
+@pytest.mark.parametrize(
+    "metric,metric_params",
+    [
+        ("euclidean", None),
+        ("euclidean", {}),
+        ("l2", None),
+        ("manhattan", None),
+        ("l1", None),
+        ("cityblock", None),
+        ("chebyshev", None),
+        ("infinity", None),
+        ("p", None),
+        ("p", {"p": 3}),
+        ("minkowski", None),
+        ("minkowski", {"p": 1}),
+        ("minkowski", {"p": 2.0}),
+        ("minkowski", {"p": np.inf}),
+        ("minkowski", {"p": 1.5}),
+        ("minkowski", {"p": 0.5}),
+        ("minkowski", {"p": 2, "w": np.ones(2)}),
+        ("euclidean", {"p": 2}),
+        ("cosine", None),
+        ("seuclidean", None),
+    ],
+)
+def test_hdbscan_metric_params_match_sklearn(metric, metric_params, algorithm):
+    """Every metric scikit-learn computes identically is offloaded, the rest is not."""
+    from sklearnex.cluster.hdbscan import _onedal_metric
+
+    expected, result = _fit_both(
+        _grouped_data(),
+        min_cluster_size=_MIN_CLUSTER_SIZE,
+        metric=metric,
+        metric_params=metric_params,
+        algorithm=algorithm,
+    )
+    offloaded = _onedal_metric(metric, metric_params, algorithm) is not None
+    if isinstance(expected, Exception):
+        assert not offloaded
+        _assert_same_error(expected, result)
+        return
+    assert hasattr(result, "_onedal_estimator") == offloaded
+    _assert_same_partition(expected.labels_, result.labels_)
+
+
+def _non_finite_data(dtype=np.float64):
+    X = _grouped_data(dtype)
+    X[3, 0] = np.nan
+    X[17, 1] = np.inf
+    X[20, 0] = -np.inf
+    X[33] = [np.nan, np.inf]
+    # infinities of both signs sum to NaN, which scikit-learn takes as missing
+    X[40] = [np.inf, -np.inf]
+    return X
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["auto", "brute", "kd_tree"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_non_finite_matches_sklearn(dataframe, queue, algorithm, dtype):
+    """The samples with NaN or inf are labelled as scikit-learn labels them."""
+    X = _non_finite_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    expected, result = _fit_both(
+        X_df, X, min_cluster_size=_MIN_CLUSTER_SIZE, algorithm=algorithm
+    )
+    assert hasattr(result, "_onedal_estimator")
+
+    labels = _as_numpy(result.labels_)
+    assert labels.dtype == expected.labels_.dtype
+    assert_array_equal(labels[[17, 20]], -2)
+    assert_array_equal(labels[[3, 33, 40]], -3)
+    _assert_same_partition(expected.labels_, labels)
+
+    probabilities = _as_numpy(result.probabilities_)
+    assert probabilities.dtype == expected.probabilities_.dtype
+    assert_array_equal(np.isnan(probabilities), np.isnan(expected.probabilities_))
+    # oneDAL computes in the dtype of the data, scikit-learn always in float64,
+    # and the strengths are ratios of the small distances within the groups
+    assert_allclose(
+        probabilities,
+        expected.probabilities_,
+        atol=1e-5 if dtype == np.float64 else 0.1,
+    )
+
+    tree = result._single_linkage_tree_
+    assert tree.dtype == expected._single_linkage_tree_.dtype
+    assert tree.shape == expected._single_linkage_tree_.shape
+    # the outliers are merged last, at an infinite distance, in scikit-learn's order
+    n_outliers = 5
+    assert_array_equal(tree[-n_outliers:], expected._single_linkage_tree_[-n_outliers:])
+    assert np.all(np.isfinite(tree["value"][:-n_outliers]))
+
+    for cut_distance in (5.0, 1000.0):
+        _assert_same_partition(
+            expected.dbscan_clustering(cut_distance),
+            result.dbscan_clustering(cut_distance),
+        )
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize(
+    "X,params",
+    [
+        # scikit-learn fails to compute the centers of data with outliers
+        (_non_finite_data(), {"store_centers": "both"}),
+        # too few finite samples left for 'min_samples'
+        (np.where(np.arange(45)[:, None] < 3, 1.0, np.nan) * np.ones((45, 2)), {}),
+        (
+            np.where(np.arange(45)[:, None] < 1, 1.0, np.inf) * np.ones((45, 2)),
+            {"min_samples": 1},
+        ),
+        (_grouped_data()[:1], {}),
+        (_grouped_data()[:1], {"min_samples": 1}),
+        (_grouped_data()[:4], {}),
+        (_grouped_data()[:0], {}),
+        (_grouped_data()[:, :0], {}),
+        (_grouped_data()[:, 0], {}),
+    ],
+)
+def test_hdbscan_errors_match_sklearn(X, params):
+    """Whatever scikit-learn rejects falls back, to raise scikit-learn's error."""
+    expected, result = _fit_both(X, **params)
+    _assert_same_error(expected, result)
+    assert not hasattr(result, "_onedal_estimator")
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"leaf_size": 0},
+        {"leaf_size": 2.5},
+        {"min_cluster_size": 1},
+        {"min_samples": 0},
+        {"alpha": 0.0},
+        {"max_cluster_size": 0},
+        {"cluster_selection_epsilon": -1.0},
+        {"cluster_selection_method": "bad"},
+        {"algorithm": "kdtree"},
+        {"store_centers": "bad"},
+        {"copy": "bad"},
+        {"n_jobs": "bad"},
+        {"metric": "bad"},
+        {"metric_params": "bad"},
+        {"metric": "precomputed", "store_centers": "both"},
+    ],
+)
+@pytest.mark.allow_sklearn_fallback
+def test_hdbscan_invalid_parameters_match_sklearn(params):
+    expected, result = _fit_both(_grouped_data(), **params)
+    _assert_same_error(expected, result)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_output_dtypes_match_sklearn(dtype):
+    """scikit-learn computes in float64 whatever the input, and so types its output."""
+    X = _grouped_data(dtype)
+    expected, result = _fit_both(
+        X, min_cluster_size=_MIN_CLUSTER_SIZE, store_centers="both"
+    )
+    assert hasattr(result, "_onedal_estimator")
+    for attribute in (
+        "labels_",
+        "probabilities_",
+        "centroids_",
+        "medoids_",
+        "_single_linkage_tree_",
+    ):
+        assert getattr(result, attribute).dtype == getattr(expected, attribute).dtype
+    assert result._min_samples == expected._min_samples
+    assert result._metric_params == expected._metric_params
