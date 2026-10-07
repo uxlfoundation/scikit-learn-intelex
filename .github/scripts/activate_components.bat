@@ -21,7 +21,7 @@ rem prepare vc
 rem The Visual Studio installation is dependent on the github-actions runner
 rem version changes can be found in "C:\Program Files\Microsoft Visual Studio"
 call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvarsall" x64
-rem prepare only TBB and MKL from oneAPI if a parameter is given.
-IF "%1"=="" (call .\oneapi\setvars.bat) ELSE (call .\oneapi\tbb\latest\env\vars.bat & call .\oneapi\mkl\latest\env\vars.bat)
+rem prepare only TBB from oneAPI if a parameter is given (MKL is staticly linked for CPU).
+IF "%1"=="" (call .\oneapi\setvars.bat) ELSE (call .\oneapi\tbb\latest\env\vars.bat)
 rem prepare oneDAL
 call .\__release_win\daal\latest\env\vars.bat
