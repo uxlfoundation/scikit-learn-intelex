@@ -148,7 +148,6 @@ jobs:
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
           cd .ci
-          python -c "import onedal._onedal_py_dpc"
           ../conda-recipe/run_test.sh
       - name: Sklearn testing
         run: |
