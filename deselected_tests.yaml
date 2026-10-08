@@ -226,6 +226,9 @@ deselected_tests:
   # Different random number generation engine in oneDAL and scikit-learn
   # The result is depend on random state, for random_state=777 in RandomForestClassifier the test is passed
   - ensemble/tests/test_voting.py::test_majority_label_iris
+  # Asserts the probabilities of a 10-tree forest on 2 rows, which only depend on how many
+  # bootstrap draws picked both rows, so it passes only if the oneDAL stream matches numpy's
+  - ensemble/tests/test_voting.py::test_set_estimator_drop
 
   # scikit-learn-intelex RF threads are used internally and are not explicitly specified
   - ensemble/tests/test_forest.py::test_backend_respected
@@ -637,9 +640,6 @@ gpu:
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
   - tests/test_common.py::test_estimators[SVC()-check_estimators_unfitted]
-
-  # Introduced with RNG forest updates in oneDAL
-  - ensemble/tests/test_voting.py::test_set_estimator_drop
 
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
