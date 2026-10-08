@@ -226,8 +226,7 @@ deselected_tests:
   # Different random number generation engine in oneDAL and scikit-learn
   # The result is depend on random state, for random_state=777 in RandomForestClassifier the test is passed
   - ensemble/tests/test_voting.py::test_majority_label_iris
-  # Asserts the probabilities of a 10-tree forest on 2 rows, which only depend on how many
-  # bootstrap draws picked both rows, so it passes only if the oneDAL stream matches numpy's
+  # Expected probabilities come from numpy's bootstrap draws, which oneDAL's RNG does not reproduce
   - ensemble/tests/test_voting.py::test_set_estimator_drop
 
   # scikit-learn-intelex RF threads are used internally and are not explicitly specified
