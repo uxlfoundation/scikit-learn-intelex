@@ -34,7 +34,9 @@ def pytest_configure(config):
 
 @pytest.fixture(autouse=True)
 def allow_sklearn_fallback(request):
-    with config_context(allow_sklearn_fallback=request.node.get_closest_marker("allow_sklearn_fallback")):
+    with config_context(
+        allow_sklearn_fallback=request.node.get_closest_marker("allow_sklearn_fallback")
+    ):
         yield
 
 
