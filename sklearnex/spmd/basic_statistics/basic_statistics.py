@@ -16,8 +16,9 @@
 
 from onedal.spmd.basic_statistics import BasicStatistics as onedal_BasicStatistics
 
-from ...basic_statistics import BasicStatistics as BasicStatistics_Batch
 from ...base import onedal_spmd_estimator
+from ...basic_statistics import BasicStatistics as BasicStatistics_Batch
+
 
 @onedal_spmd_estimator
 class BasicStatistics(BasicStatistics_Batch):
