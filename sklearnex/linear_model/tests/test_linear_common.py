@@ -167,7 +167,10 @@ def test_predict_after_fallback_array_api(
         else []
     ),
 )
-def test_move_estimator_to(estimator, array_input_like, array_move_like, with_array_api):
+@pytest.mark.parametrize("num_targets", [1, 2])
+def test_move_estimator_to(
+    estimator, array_input_like, array_move_like, num_targets, with_array_api
+):
     # TODO: remove this skip once issue in sklearn is fixed:
     # https://github.com/scikit-learn/scikit-learn/issues/35088
     if (
@@ -181,7 +184,10 @@ def test_move_estimator_to(estimator, array_input_like, array_move_like, with_ar
 
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(10, 3), dtype=np.float32)
-    y = rng.standard_normal(size=X.shape[0], dtype=np.float32)
+    y = rng.standard_normal(
+        size=X.shape[0] if num_targets == 1 else (X.shape[0], num_targets),
+        dtype=np.float32,
+    )
 
     xp_in, _, device_in = get_namespace_and_device(array_input_like)
     X_in = move_to(X, xp=xp_in, device=device_in)
