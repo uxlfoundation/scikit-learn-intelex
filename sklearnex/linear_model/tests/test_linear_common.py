@@ -24,6 +24,7 @@ from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     dpnp_available,
     torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import (
     is_sycl_device_available,
@@ -148,9 +149,7 @@ def test_predict_after_fallback_array_api(
     # in older sklearn versions.
     + (
         [torch.arange(1, device="xpu")]
-        if torch_available
-        and is_sycl_device_available("gpu")
-        and sklearn_check_version("1.10")
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
         else []
     ),
 )
@@ -164,9 +163,7 @@ def test_predict_after_fallback_array_api(
     )
     + (
         [torch.arange(1, device="xpu")]
-        if torch_available
-        and is_sycl_device_available("gpu")
-        and sklearn_check_version("1.10")
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
         else []
     ),
 )
