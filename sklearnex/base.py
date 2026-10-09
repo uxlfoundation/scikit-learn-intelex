@@ -92,7 +92,7 @@ def onedal_spmd_estimator(cls):
     # used internally in _device_offload to prevent sklearn offloading but
     # is general enough for common use.
     orig_sklearn_tags = cls.__sklearn_tags__()
-    
+
     def __sklearn_tags__(self) -> Tags:
         tags = orig_sklearn_tags()
         tags.onedal_spmd = True
