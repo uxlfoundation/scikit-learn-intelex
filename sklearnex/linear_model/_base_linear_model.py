@@ -15,7 +15,6 @@
 # ==============================================================================
 from abc import ABC, abstractmethod
 
-from sklearn.base import clone
 from sklearn.utils._array_api import get_namespace
 
 
