@@ -19,7 +19,7 @@ from functools import partial
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.preprocessing._data import _handle_zeros_in_scale
 from sklearn.utils._array_api import get_namespace
-from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.utils.validation import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse
@@ -71,7 +71,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             f"sklearn.preprocessing.{self.__class__.__name__}.{method_name}"
         )
         if method_name in ["fit", "partial_fit"]:
-            (X,) = data
+            X = data[0]
             try:
                 X_test = _check_array(X)
                 assert_all_finite(X_test)  # minimally verify the data
@@ -193,6 +193,9 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
 
     # transform is inherited unchanged from scikit-learn: it relies only on the fitted
     # scale vectors and array API operations, so no oneDAL override is needed.
+
+    fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
+    partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
     # explicitly from the user. We wrap properties that require a finalized state.
