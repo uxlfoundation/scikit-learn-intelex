@@ -41,6 +41,8 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
+    from sklearnex.tests.utils.misc import assert_same_namespace
+
 
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("dim_y", [1, 3])
@@ -194,12 +196,12 @@ def test_move_estimator_to(estimator, array_input_like, array_move_like, with_ar
     model = getattr(linear_model, estimator)().fit(X_in, y_in)
     model_moved = move_estimator_to(model, xp_move, device_move)
 
-    assert model.coef_.__class__ == array_input_like.__class__
-    assert model_moved.coef_.__class__ == array_move_like.__class__
+    assert_same_namespace(model.coef_, array_input_like)
+    assert_same_namespace(model_moved.coef_, array_move_like)
 
     pred_orig = model.predict(X_in)
     pred_moved = model_moved.predict(X_move)
 
-    assert pred_orig.__class__ == array_input_like.__class__
-    assert pred_moved.__class__ == array_move_like.__class__
+    assert_same_namespace(pred_orig, array_input_like)
+    assert_same_namespace(pred_moved, array_move_like)
     np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
