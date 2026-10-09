@@ -53,6 +53,7 @@ if sklearn_check_version("1.9"):
     from onedal.tests.utils._dataframes_support import (
         _as_numpy,
         dpnp_available,
+        dpnp_to_strict_working,
         torch_available,
         torch_xpu_available,
     )
@@ -105,6 +106,15 @@ if sklearn_check_version("1.9"):
         ),
     )
     def test_dbscan_move_estimator_to(array_input_like, array_move_like, with_array_api):
+        # TODO: remove this skip once issue in sklearn is fixed:
+        # https://github.com/scikit-learn/scikit-learn/issues/35088
+        if (
+            isinstance(array_move_like, array_api_strict._array_object.Array)
+            and dpnp_available
+            and isinstance(array_input_like, dpnp.ndarray)
+            and not dpnp_to_strict_working
+        ):
+            pytest.skip()
         from sklearnex.cluster import DBSCAN
 
         X, _ = make_blobs(n_samples=20, random_state=123)
