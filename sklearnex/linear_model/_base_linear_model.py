@@ -41,9 +41,12 @@ class _BaseLinearModel(ABC):
         self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
 
     def __sklearn_array_api_convert__(self, converter):
-        out = clone(self)
-        if hasattr(out, "_onedal_estimator"):
-            del out._onedal_estimator
+        out = self.__class__()
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "_coef_", "_intercept_"]
+        }
         out._coef_ = converter(self._coef_)
         out._intercept_ = converter(self._intercept_)
         out._initialize_onedal_estimator_from_coefs()

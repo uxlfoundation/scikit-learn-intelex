@@ -202,3 +202,12 @@ def test_move_estimator_to(estimator, array_input_like, array_move_like, with_ar
     assert_same_namespace(pred_orig, array_input_like)
     assert_same_namespace(pred_moved, array_move_like)
     np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
+
+    # Warning is thrown whenever oneDAL hyperparameters (like block sizes)
+    # are accessed through Python
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        attrs_orig = dir(model)
+        attrs_moved = dir(model_moved)
+    for attr in attrs_orig:
+        assert attr in attrs_moved
