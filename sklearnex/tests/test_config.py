@@ -98,9 +98,7 @@ def test_config_context_works():
     with config_context(assume_finite=assume_finite):
         with config_context(target_offload=target_offload):
             with config_context(allow_fallback_to_host=allow_fallback_to_host):
-                with config_context(
-                    allow_sklearn_fallback=allow_sklearn_fallback
-                ):
+                with config_context(allow_sklearn_fallback=allow_sklearn_fallback):
                     config = sklearnex.get_config()
                     onedal_config = onedal._config._get_config()
 
