@@ -25,7 +25,6 @@ import platform as plt
 import re
 import shutil
 import sys
-import time
 from ctypes.util import find_library
 from os.path import join as jp
 from sysconfig import get_config_vars
@@ -86,10 +85,9 @@ if ONEDAL_VERSION < 20250000:
         "OneDAL version is too old. Please use a more recent version (>= 2025.0)."
     )
 
-sklearnex_version = (
-    os.environ["SKLEARNEX_VERSION"]
-    if "SKLEARNEX_VERSION" in os.environ
-    else time.strftime("%Y%m%d.%H%M%S")
+major, minor_update = divmod(ONEDAL_VERSION, 10000)
+sklearnex_version = os.environ.get(
+    "SKLEARNEX_VERSION", "{}.{}.{}".format(major, *divmod(minor_update, 100))
 )
 
 trues = ["true", "True", "TRUE", "1", "t", "T", "y", "Y", "Yes", "yes", "YES"]
