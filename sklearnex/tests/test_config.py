@@ -47,13 +47,13 @@ def test_set_config_works():
     assume_finite = True
     target_offload = "cpu:0"
     allow_fallback_to_host = True
-    allow_sklearn_after_onedal = False
+    allow_sklearn_fallback = False
 
     sklearnex.set_config(
         assume_finite=assume_finite,
         target_offload=target_offload,
         allow_fallback_to_host=allow_fallback_to_host,
-        allow_sklearn_after_onedal=allow_sklearn_after_onedal,
+        allow_sklearn_fallback=allow_sklearn_fallback,
     )
 
     config = sklearnex.get_config()
@@ -66,7 +66,7 @@ def test_set_config_works():
         # If any assertion fails, it will raise an error.
         assert config["target_offload"] == target_offload
         assert config["allow_fallback_to_host"] == allow_fallback_to_host
-        assert config["allow_sklearn_after_onedal"] == allow_sklearn_after_onedal
+        assert config["allow_sklearn_fallback"] == allow_sklearn_fallback
         assert config["assume_finite"] == assume_finite
         assert onedal_config["target_offload"] == target_offload
         assert onedal_config["allow_fallback_to_host"] == allow_fallback_to_host
@@ -90,7 +90,7 @@ def test_config_context_works():
     assume_finite = True
     target_offload = "cpu:0"
     allow_fallback_to_host = True
-    allow_sklearn_after_onedal = False
+    allow_sklearn_fallback = False
 
     # Nested context manager applies the new configuration settings.
     # Each config_context temporarily sets a specific configuration,
@@ -99,14 +99,14 @@ def test_config_context_works():
         with config_context(target_offload=target_offload):
             with config_context(allow_fallback_to_host=allow_fallback_to_host):
                 with config_context(
-                    allow_sklearn_after_onedal=allow_sklearn_after_onedal
+                    allow_sklearn_fallback=allow_sklearn_fallback
                 ):
                     config = sklearnex.get_config()
                     onedal_config = onedal._config._get_config()
 
     assert config["target_offload"] == target_offload
     assert config["allow_fallback_to_host"] == allow_fallback_to_host
-    assert config["allow_sklearn_after_onedal"] == allow_sklearn_after_onedal
+    assert config["allow_sklearn_fallback"] == allow_sklearn_fallback
     assert config["assume_finite"] == assume_finite
     assert onedal_config["target_offload"] == target_offload
     assert onedal_config["allow_fallback_to_host"] == allow_fallback_to_host
@@ -118,7 +118,7 @@ def test_config_context_works():
     for param in [
         "target_offload",
         "allow_fallback_to_host",
-        "allow_sklearn_after_onedal",
+        "allow_sklearn_fallback",
         "assume_finite",
     ]:
         assert default_config_after_cc[param] == default_config[param]
