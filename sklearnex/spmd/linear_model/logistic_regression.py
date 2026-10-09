@@ -16,9 +16,11 @@
 
 from onedal.spmd.linear_model import LogisticRegression as onedal_LogisticRegression
 
+from ...base import onedal_spmd_estimator
 from ...linear_model import LogisticRegression as LogisticRegression_Batch
 
 
+@onedal_spmd_estimator
 class LogisticRegression(LogisticRegression_Batch):
     __doc__ = LogisticRegression_Batch.__doc__
     _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)

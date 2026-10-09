@@ -32,15 +32,15 @@ allow_fallback_to_host:
     If True, allows to fallback computation to host device
     in case particular estimator does not support the selected one.
     Global default: False.
-allow_sklearn_after_onedal:
-    If True, allows to fallback computation to sklearn after onedal
-    backend in case of runtime error on onedal backend computations.
+allow_sklearn_fallback:
+    If True, allows to fallback computation to the sklearn backend in case
+    onedal backend computation is not possible.
     Global default: True.
 """
 _default_global_config = {
     "target_offload": "auto",
     "allow_fallback_to_host": False,
-    "allow_sklearn_after_onedal": True,
+    "allow_sklearn_fallback": True,
 }
 
 _threadlocal = threading.local()

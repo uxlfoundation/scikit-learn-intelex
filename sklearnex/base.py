@@ -23,6 +23,7 @@ from sklearn.utils import Tags as _sklearn_Tags
 @dataclass
 class Tags(_sklearn_Tags):
     onedal_array_api: bool = False
+    onedal_spmd: bool = False
 
 
 class oneDALEstimator:
@@ -83,3 +84,19 @@ class oneDALEstimator:
             url = f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
 
         return url
+
+
+def onedal_spmd_estimator(cls):
+    # This is used to mark an estimator as an spmd estimator without
+    # greatly modifying the inheritance unnecessarily. This is primarily
+    # used internally in _device_offload to prevent sklearn offloading but
+    # is general enough for common use.
+    orig_sklearn_tags = cls.__sklearn_tags__()
+
+    def __sklearn_tags__(self) -> Tags:
+        tags = orig_sklearn_tags()
+        tags.onedal_spmd = True
+        return tags
+
+    cls.__sklearn_tags__ = __sklearn_tags__
+    return cls
