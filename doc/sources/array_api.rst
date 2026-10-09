@@ -183,6 +183,7 @@ This function is only supported for the following estimators from the |sklearnex
 
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
+- :obj:`sklearn.linear_model.DBSCAN`
 
 The following estimators cannot be moved, but when using array API, can be used to make predictions on both CPU and GPU data regardless of the device of the data to which they were fitted:
 
