@@ -197,17 +197,22 @@ def test_move_estimator_to(
     X_move = move_to(X, xp=xp_move, device=device_move)
 
     model = getattr(linear_model, estimator)().fit(X_in, y_in)
-    model_moved = move_estimator_to(model, xp_move, device_move)
+    pred_orig = model.predict(X_in)
 
+    model_moved = move_estimator_to(model, xp_move, device_move)
     assert_same_namespace(model.coef_, array_input_like)
     assert_same_namespace(model_moved.coef_, array_move_like)
 
-    pred_orig = model.predict(X_in)
     pred_moved = model_moved.predict(X_move)
-
     assert_same_namespace(pred_orig, array_input_like)
     assert_same_namespace(pred_moved, array_move_like)
     np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
+
+    pred_orig_after_move = model.predict(X_in)
+    assert_same_namespace(pred_orig_after_move, array_input_like)
+    np.testing.assert_allclose(
+        _as_numpy(pred_orig_after_move), _as_numpy(pred_orig), atol=1e-6
+    )
 
     # Warning is thrown whenever oneDAL hyperparameters (like block sizes)
     # are accessed through Python
