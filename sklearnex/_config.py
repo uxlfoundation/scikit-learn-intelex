@@ -47,7 +47,7 @@ _options_docstring = f"""Parameters
 {tab}
 {tab}    Global default: ``False``.
 {tab}
-{tab}allow_sklearn_after_onedal : bool or None, default=None
+{tab}allow_sklearn_fallback : bool or None, default=None
 {tab}    If ``True``, allows computations to fall back to stock scikit-learn when no
 {tab}    accelered version of the operation is available (see :ref:`algorithms`).
 {tab}
@@ -84,7 +84,7 @@ def get_config():
 def set_config(
     target_offload=None,
     allow_fallback_to_host=None,
-    allow_sklearn_after_onedal=None,
+    allow_sklearn_fallback=None,
     **sklearn_configs,
 ):  # numpydoc ignore=PR01,PR07
     """Set global configuration.
@@ -105,8 +105,8 @@ def set_config(
         local_config["target_offload"] = target_offload
     if allow_fallback_to_host is not None:
         local_config["allow_fallback_to_host"] = allow_fallback_to_host
-    if allow_sklearn_after_onedal is not None:
-        local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
+    if allow_sklearn_fallback is not None:
+        local_config["allow_sklearn_fallback"] = allow_sklearn_fallback
 
 
 if check_can_modify_docstrings():
