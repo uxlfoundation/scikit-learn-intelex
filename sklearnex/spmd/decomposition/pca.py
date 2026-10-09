@@ -16,8 +16,10 @@
 
 from onedal.spmd.decomposition import PCA as onedal_PCA
 
+from ...base import onedal_spmd_estimator
 from ...decomposition import PCA as base_PCA
 
 
+@onedal_spmd_estimator
 class PCA(base_PCA):
     _onedal_PCA = staticmethod(onedal_PCA)
