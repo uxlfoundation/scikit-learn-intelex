@@ -74,6 +74,7 @@ _sklearn_allowed = (
     lambda obj: get_config()["allow_sklearn_fallback"] and not get_tags(obj).onedal_spmd
 )
 
+
 def dispatch(
     obj: type[oneDALEstimator],
     method_name: str,
