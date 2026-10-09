@@ -33,7 +33,7 @@ class _BaseLinearModel(ABC):
                 return self.intercept_ != 0.0
             else:
                 xp, _ = get_namespace(self.coef_)
-                return bool(xp.all(self.intercept_ != 0))
+                return bool(xp.any(self.intercept_ != 0))
 
     def _initialize_onedal_estimator_from_coefs(self) -> None:
         xp, _ = get_namespace(self.coef_)
