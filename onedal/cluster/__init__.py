@@ -21,7 +21,7 @@ from .kmeans_init import KMeansInit, kmeans_plusplus
 
 __all__ = ["DBSCAN", "KMeans", "KMeansInit", "kmeans_plusplus"]
 
-if onedal_check_version(2026, 2, 0):
+if onedal_check_version(2026, 3, 0):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]

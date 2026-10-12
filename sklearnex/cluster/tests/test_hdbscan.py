@@ -27,18 +27,14 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 pytestmark = pytest.mark.skipif(
-    not daal_check_version((2026, "P", 200)),
-    reason="HDBSCAN requires oneDAL >= 2026.2",
+    not daal_check_version((2026, "P", 300)),
+    reason="HDBSCAN requires oneDAL >= 2026.3",
 )
 
 _csr_array = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
 
-# Three tight groups of samples, far apart from each other and lying in clearly
-# different directions as seen from the origin, so that every supported metric,
-# the cosine distance included, has to recover exactly these groups. The data is
-# built here rather than compared against another HDBSCAN implementation: the
-# conformance with scikit-learn's own results is covered by running its test
-# suite against the patched estimator.
+# Three tight groups, far apart and in different directions from the origin, so
+# that every supported metric, cosine included, has to recover exactly them.
 _GROUP_SIZE = 15
 _CENTERS = np.array([[20.0, 1.0], [1.0, 20.0], [-20.0, -20.0]])
 _MIN_CLUSTER_SIZE = 5
