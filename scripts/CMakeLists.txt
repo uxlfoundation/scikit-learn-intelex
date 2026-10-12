@@ -106,7 +106,35 @@ endif()
 
 message(STATUS "oneDAL_USE_PARAMETERS_LIB:" ${oneDAL_USE_PARAMETERS_LIB})
 
-find_package(pybind11 REQUIRED)
+option(SKLEARNEX_FREE_THREADING "Build for a free-threaded Python ABI" OFF)
+message(STATUS "SKLEARNEX_FREE_THREADING:" ${SKLEARNEX_FREE_THREADING})
+if(SKLEARNEX_FREE_THREADING)
+    if(CMAKE_VERSION VERSION_LESS 3.18)
+        message(FATAL_ERROR
+            "Free-threaded Python builds require CMake 3.18 or newer"
+        )
+    endif()
+    set(PYBIND11_FINDPYTHON ON)
+    # Python_EXECUTABLE and Python_ROOT_DIR are supplied by build_backend.py.
+    # FindPython treats them as hints, not requirements, and its own search
+    # prefers a system interpreter over the venv one driving the build - so on a
+    # host with both cp312 and cp314t installed it can still pick the wrong one.
+    # The SOABI check below is what actually makes this fatal rather than
+    # silently producing an unimportable extension.
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
+        message(FATAL_ERROR
+            "CMake selected Python ${Python_EXECUTABLE} with SOABI ${Python_SOABI}, "
+            "but the build was invoked from an interpreter with SOABI ${EXPECTED_PYTHON_SOABI}. "
+            "The resulting extension would not be importable."
+        )
+    endif()
+    message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
+    message(STATUS "Python_SOABI:" ${Python_SOABI})
+    find_package(pybind11 2.13 REQUIRED)
+else()
+    find_package(pybind11 REQUIRED)
+endif()
 
 if(IFACE STREQUAL "host")
     set(TARGET "_onedal_py_host")
