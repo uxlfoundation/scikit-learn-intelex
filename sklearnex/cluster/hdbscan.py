@@ -26,13 +26,10 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 
-if daal_check_version((2026, "P", 200)):
+if daal_check_version((2026, "P", 300)):
     from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 else:
-    # the class below is still defined and still patched, so that this module
-    # imports and the estimator stays visible to the tests that walk the
-    # namespace. Nothing offloads: '_onedal_supported' reports every call
-    # unsupported, which falls back to scikit-learn
+    # the estimator is still patched, '_onedal_supported' then falls back on every call
     onedal_HDBSCAN = None
 
 from .._device_offload import dispatch
@@ -41,11 +38,8 @@ from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
-# scikit-learn's own record layout for a dendrogram, the dtype of
-# 'HDBSCAN._single_linkage_tree_'. Repeated rather than imported from the
-# private 'sklearn.cluster._hdbscan._tree': a rename there would break the
-# import of this module, and so all of the patching, where a change of the
-# layout only breaks 'dbscan_clustering', loudly, on the typed memoryview
+# 'sklearn.cluster._hdbscan._tree.HIERARCHY_dtype', repeated so that a rename in
+# that private module breaks only 'dbscan_clustering', not the whole patching
 _SINGLE_LINKAGE_TREE_DTYPE = np.dtype(
     [
         ("left_node", np.int64),
@@ -70,8 +64,7 @@ def _as_single_linkage_tree(tree):
     tree : ndarray of shape (n_samples - 1,)
         The same merges, in '_SINGLE_LINKAGE_TREE_DTYPE'.
     """
-    # a single observation has nothing to merge, and oneDAL reports no table
-    # at all rather than an empty one, which arrives here as a flat array
+    # oneDAL returns no table for a single sample, which arrives as a flat array
     tree = np.reshape(tree, (-1, 4))
     result = np.empty(tree.shape[0], dtype=_SINGLE_LINKAGE_TREE_DTYPE)
     result["left_node"] = tree[:, 0]
@@ -169,8 +162,8 @@ def _non_finite_rows(X, xp):
     missing : ndarray of int
         Host indices of the samples with a NaN, or with infinities of both signs.
     """
-    # scikit-learn reduces its float64 copy of the data, the reduction is repeated
-    # in float64 where that does not cost a conversion of the device data
+    # scikit-learn sums a float64 copy; device data is summed in its own dtype
+    # to avoid a conversion
     if isinstance(X, np.ndarray):
         reduced = np.sum(X, axis=1, dtype=np.float64)
     else:
@@ -199,14 +192,11 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
     # copied to keep 'control_n_jobs' from modifying scikit-learn's own constraints
     _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
 
-    # scikit-learn's '__init__' is used as-is, all of its parameters are
-    # forwarded to the onedal estimator or checked for oneDAL support
-
     _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
 
     def _onedal_fit(self, X, queue=None):
-        # oneDAL never writes into the data, so 'copy' has no effect here, but the
-        # deprecation of its default has to be repeated for the offloaded path
+        # 'copy' has no effect on oneDAL, but scikit-learn's deprecation warning
+        # for its default still applies
         if (
             sklearn_check_version("1.8")
             and not sklearn_check_version("1.10")
@@ -267,15 +257,13 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
         self._onedal_estimator.fit(X, queue=queue)
 
-        # scikit-learn computes in float64 whatever the input is, and its outputs
-        # are typed accordingly
+        # scikit-learn's outputs are float64 whatever the input dtype
         float64 = _float64(xp, X)
         labels = self._onedal_estimator.labels_
         probabilities = xp.astype(self._onedal_estimator.probabilities_, float64)
 
-        # oneDAL reports no centers when it does not find any cluster, while
-        # scikit-learn returns them empty. 'empty_like' allocates, so that the
-        # estimator is not left holding a view on 'X'
+        # scikit-learn returns empty centers when no cluster is found; 'empty_like'
+        # allocates, so the estimator does not keep a view on 'X'
         if self.store_centers in ("centroid", "both"):
             centroids = self._onedal_estimator.centroids_
             if centroids is None:
@@ -287,9 +275,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                 medoids = xp.empty_like(X[:0, :])
             self.medoids_ = xp.astype(medoids, float64)
 
-        # the hierarchy the flat clustering above was cut out of, in the record
-        # layout scikit-learn's own routines are typed on, so that a caller can
-        # re-cut it at another distance -- see 'dbscan_clustering'
         tree = _as_single_linkage_tree(self._onedal_estimator.single_linkage_tree_)
 
         if all_finite:
@@ -299,7 +284,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
             self._single_linkage_tree_ = tree
             return
 
-        # imported here and not at module scope, see 'dbscan_clustering'
         from sklearn.cluster._hdbscan.hdbscan import (
             _OUTLIER_ENCODING,
             remap_single_linkage_tree,
@@ -310,12 +294,11 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
             {x: y for x, y in enumerate(finite)},
             non_finite=set(np.hstack([infinite, missing])),
         )
-        # host indices of the outliers, which 'dbscan_clustering' labels again
+        # host indices, for 'dbscan_clustering'
         self._onedal_outliers = (infinite, missing)
 
-        # the samples in the order finite, infinite, missing, and their places in
-        # the input, so that the full outputs are one 'take' away: array API
-        # namespaces do not have to support assignment through an index array
+        # outputs are built in the order finite, infinite, missing and put back in
+        # place with one 'take': array API does not require index assignment
         order = np.concatenate([finite, infinite, missing])
         position = np.empty_like(order)
         position[order] = np.arange(n_samples)
@@ -354,8 +337,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        # every case scikit-learn rejects falls back, for scikit-learn to raise
-        # its own error
+        # whatever scikit-learn rejects falls back, so that it raises its own error
         X = data[0]
         dal_ready = patching_status.and_conditions(
             [
@@ -381,8 +363,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         if not dal_ready:
             return patching_status
 
-        # the conversion only serves the checks below, the actual validation of
-        # the data happens in '_onedal_fit'
+        # only for the checks below, '_onedal_fit' validates the data
         try:
             xp, _ = get_namespace(X)
             X = check_array(X, dtype="numeric", ensure_all_finite=False)
@@ -406,8 +387,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                     "values in X.",
                 ),
                 (
-                    # scikit-learn fails on it, indexing the finite samples with
-                    # a mask over all of them
+                    # scikit-learn itself fails on this case
                     n_finite == X.shape[0] or self.store_centers is None,
                     "Centers of data with missing values or infinites are not "
                     "supported.",
@@ -421,8 +401,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
 
     def fit(self, X, y=None):
         self._validate_params()
-        # a refit that falls back must not leave 'dbscan_clustering' on the
-        # outliers of an earlier offloaded fit
+        # a fallback refit must not keep the state of an earlier oneDAL fit
         for attribute in ("_onedal_estimator", "_onedal_outliers"):
             self.__dict__.pop(attribute, None)
 
@@ -444,16 +423,13 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         if not hasattr(self, "_onedal_outliers"):
             return super().dbscan_clustering(cut_distance, min_cluster_size)
 
-        # imported here and not at module scope on purpose: a rename in this
-        # private module must not break the import of this one, and with it all
-        # of the patching
+        # private module, imported here so that a rename does not break the patching
         from sklearn.cluster._hdbscan._tree import labelling_at_cut
 
         labels = labelling_at_cut(
             self._single_linkage_tree_, cut_distance, min_cluster_size
         )
-        # scikit-learn reads the outliers back from 'labels_', which may live on
-        # a device, the ones of an offloaded fit are kept on the host
+        # scikit-learn reads the outliers from 'labels_', which may be on a device
         if self._onedal_outliers is not None:
             from sklearn.cluster._hdbscan.hdbscan import _OUTLIER_ENCODING
 
@@ -465,8 +441,8 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
     dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__
 
     def __sklearn_array_api_convert__(self, converter):
-        # the dendrogram is a record array no other namespace can hold, it stays
-        # on the host with the outliers 'dbscan_clustering' reads next to it
+        # the dendrogram is a record array no other namespace can hold, so it stays
+        # on host together with the outlier indices
         out = self.__class__()
         out.__dict__ = {
             k: converter(v) if k in _MOVABLE_ATTRIBUTES else v
