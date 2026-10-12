@@ -19,7 +19,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy import sparse as sp
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -496,3 +496,140 @@ def test_hdbscan_output_dtypes_match_sklearn(dtype):
         assert getattr(result, attribute).dtype == getattr(expected, attribute).dtype
     assert result._min_samples == expected._min_samples
     assert result._metric_params == expected._metric_params
+
+
+if sklearn_check_version("1.9"):
+    import array_api_strict
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from daal4py.sklearn._utils import _package_check_version
+    from onedal.tests.utils._dataframes_support import (
+        dpnp_available,
+        dpnp_to_strict_working,
+        torch_available,
+        torch_xpu_available,
+    )
+    from onedal.tests.utils._device_selection import (
+        is_sycl_device_available,
+    )
+    from sklearnex.tests.utils.misc import assert_same_namespace
+
+    if dpnp_available:
+        import dpnp
+    if torch_available:
+        import torch
+
+    _ARRAYS_LIKE = (
+        [np.arange(1), array_api_strict.arange(1)]
+        + (
+            [dpnp.arange(1, device="gpu")]
+            if dpnp_available and is_sycl_device_available("gpu")
+            else []
+        )
+        # Note: 'move_to' has issues with Torch inputs
+        # in older sklearn versions.
+        + (
+            [torch.arange(1, device="xpu")]
+            if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+            else []
+        )
+    )
+
+    @pytest.mark.skipif(
+        not sklearn_check_version("1.9"),
+        reason="Functionality introduced in later sklearn versions",
+    )
+    @pytest.mark.skipif(
+        not _package_check_version("2.2", np.__version__),
+        reason="Requires more recent NumPy version",
+    )
+    @pytest.mark.parametrize("non_finite", [False, True])
+    @pytest.mark.parametrize("array_input_like", _ARRAYS_LIKE)
+    @pytest.mark.parametrize("array_move_like", _ARRAYS_LIKE)
+    def test_hdbscan_move_estimator_to(
+        array_input_like, array_move_like, non_finite, with_array_api
+    ):
+        # TODO: remove this skip once issue in sklearn is fixed:
+        # https://github.com/scikit-learn/scikit-learn/issues/35088
+        if (
+            isinstance(array_move_like, array_api_strict._array_object.Array)
+            and dpnp_available
+            and isinstance(array_input_like, dpnp.ndarray)
+            and not dpnp_to_strict_working
+        ):
+            pytest.skip()
+        from sklearnex.cluster import HDBSCAN
+
+        X = _grouped_data()
+        attributes = ["labels_", "probabilities_"]
+        if non_finite:
+            X[0, 0] = np.inf
+            X[1, 1] = np.nan
+            store_centers = None
+        else:
+            # centers of data with non-finite values fall back to scikit-learn
+            store_centers = "both"
+            attributes += ["centroids_", "medoids_"]
+
+        xp_in, _, device_in = get_namespace_and_device(array_input_like)
+        X_in = move_to(X, xp=xp_in, device=device_in)
+
+        model = HDBSCAN(store_centers=store_centers, copy=True).fit(X_in)
+        assert hasattr(model, "_onedal_estimator")
+
+        xp_move, _, device_move = get_namespace_and_device(array_move_like)
+        model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
+
+        # TODO: update this once scikit-learn introduces a config option
+        # to control whether the attributes are always numpy or follow 'X'
+        for attr in attributes:
+            assert_same_namespace(getattr(model, attr), array_input_like)
+            assert_same_namespace(getattr(model_moved, attr), array_move_like)
+            assert_allclose(
+                _as_numpy(getattr(model_moved, attr)),
+                _as_numpy(getattr(model, attr)),
+                rtol=1e-6,
+            )
+
+        # the dendrogram is a record array, it stays on the host
+        assert isinstance(model_moved._single_linkage_tree_, np.ndarray)
+        assert_array_equal(
+            model_moved.dbscan_clustering(0.5), model.dbscan_clustering(0.5)
+        )
+
+        attrs_orig = dir(model)
+        attrs_moved = dir(model_moved)
+        for attr in attrs_orig:
+            if attr != "_onedal_estimator":
+                assert attr in attrs_moved
+
+    @pytest.mark.skipif(
+        not sklearn_check_version("1.9"),
+        reason="Functionality introduced in later sklearn versions",
+    )
+    @pytest.mark.skipif(
+        not _package_check_version("2.2", np.__version__),
+        reason="Requires more recent NumPy version",
+    )
+    @pytest.mark.parametrize("array_move_like", _ARRAYS_LIKE)
+    @pytest.mark.allow_sklearn_fallback
+    def test_hdbscan_move_estimator_to_after_fallback(array_move_like, with_array_api):
+        from sklearnex.cluster import HDBSCAN
+
+        X = _grouped_data()
+        X[0, 0] = np.inf
+        X[1, 1] = np.nan
+        model = HDBSCAN(copy=True).fit(_csr_array(X))
+        assert not hasattr(model, "_onedal_estimator")
+
+        xp_move, _, device_move = get_namespace_and_device(array_move_like)
+        model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
+
+        assert_same_namespace(model_moved.labels_, array_move_like)
+        assert_array_equal(
+            model_moved.dbscan_clustering(0.5), model.dbscan_clustering(0.5)
+        )

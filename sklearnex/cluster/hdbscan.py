@@ -81,6 +81,9 @@ def _as_single_linkage_tree(tree):
     return result
 
 
+# the fitted attributes that follow the namespace and device of the data
+_MOVABLE_ATTRIBUTES = ("labels_", "probabilities_", "centroids_", "medoids_")
+
 # scikit-learn's names of the distances oneDAL computes, as oneDAL names them
 _METRIC_ALIASES = {
     "euclidean": "euclidean",
@@ -438,7 +441,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
     fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
 
     def dbscan_clustering(self, cut_distance, min_cluster_size=5):
-        if not hasattr(self, "_onedal_estimator"):
+        if not hasattr(self, "_onedal_outliers"):
             return super().dbscan_clustering(cut_distance, min_cluster_size)
 
         # imported here and not at module scope on purpose: a rename in this
@@ -460,3 +463,23 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         return labels
 
     dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__
+
+    def __sklearn_array_api_convert__(self, converter):
+        # the dendrogram is a record array no other namespace can hold, it stays
+        # on the host with the outliers 'dbscan_clustering' reads next to it
+        out = self.__class__()
+        out.__dict__ = {
+            k: converter(v) if k in _MOVABLE_ATTRIBUTES else v
+            for k, v in self.__dict__.items()
+            if k != "_onedal_estimator"
+        }
+        # a scikit-learn fit records its outliers only in 'labels_'
+        if hasattr(self, "labels_") and not hasattr(self, "_onedal_outliers"):
+            from sklearn.cluster._hdbscan.hdbscan import _OUTLIER_ENCODING
+
+            labels = np.asarray(self.labels_)
+            out._onedal_outliers = tuple(
+                np.flatnonzero(labels == _OUTLIER_ENCODING[kind]["label"])
+                for kind in ("infinite", "missing")
+            )
+        return out
