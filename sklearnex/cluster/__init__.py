@@ -15,6 +15,7 @@
 # ===============================================================================
 
 from .dbscan import DBSCAN
+from .hdbscan import HDBSCAN
 from .k_means import KMeans
 
-__all__ = ["DBSCAN", "KMeans"]
+__all__ = ["DBSCAN", "HDBSCAN", "KMeans"]
