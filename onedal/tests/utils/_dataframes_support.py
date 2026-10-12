@@ -109,6 +109,7 @@ if dpnp_available:
 
         xp, _, device = get_namespace_and_device(array_api_strict.arange(1))
         _ = move_to(dpnp.arange(1), xp=xp, device=device)
+        dpnp_to_strict_working = True
     except Exception:
         pass
 
