@@ -20,5 +20,6 @@ if [ $# -eq 0 ]; then
   source /opt/intel/oneapi/setvars.sh
 else
   source /opt/intel/oneapi/tbb/latest/env/vars.sh # prepare tbb
+  # mkl is statically linked for the CPU portion of oneDAL
 fi
 source ./__release_lnx/daal/latest/env/vars.sh # prepare oneDAL

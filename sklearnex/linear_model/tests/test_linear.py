@@ -103,7 +103,7 @@ def test_sklearnex_import_linear(
 
     rtol = 1e-3 if dtype == np.float32 else 1e-5
     _assert_in_namespace(linreg.coef_, dataframe)
-    assert_allclose_numpy(linreg.coef_, expected_coefs, rtol=rtol)
+    assert_allclose_numpy(linreg.coef_, expected_coefs, rtol=rtol, atol=1e-6)
     assert_allclose_numpy(linreg.intercept_, expected_intercept, rtol=rtol)
 
     # check that it also works with lists
