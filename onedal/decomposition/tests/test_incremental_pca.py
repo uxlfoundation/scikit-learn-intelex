@@ -18,7 +18,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from daal4py.sklearn._utils import daal_check_version
 from onedal.datatypes import from_table
 from onedal.decomposition import IncrementalPCA
 from onedal.tests.utils._device_selection import get_queues
@@ -88,7 +87,7 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
     assert_allclose(
         result.explained_variance_ratio_, expected_explained_variance_ratio_, atol=tol
     )
-    if is_deterministic and daal_check_version((2024, "P", 500)):
+    if is_deterministic:
         assert_allclose(result.components_, expected_components_, atol=tol)
         assert_allclose(transformed_data, expected_transformed_data, atol=tol)
     else:
@@ -210,10 +209,7 @@ def test_on_random_data(
         scale[scale < min_scale] = np.inf
         expected_transformed_data /= scale
 
-    if daal_check_version((2024, "P", 500)) or not (
-        whiten and queue is not None and queue.sycl_device.device_type.name == "gpu"
-    ):
-        assert_allclose(transformed_data, expected_transformed_data, atol=tol)
+    assert_allclose(transformed_data, expected_transformed_data, atol=tol)
 
 
 @pytest.mark.parametrize("queue", get_queues())

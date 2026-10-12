@@ -14,11 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from daal4py.sklearn._utils import daal_check_version
+from ._classes import SVC, SVR, NuSVC, NuSVR
 
-if daal_check_version((2021, "P", 300)):
-    from ._classes import SVC, SVR, NuSVC, NuSVR
-
-    __all__ = ["SVR", "SVC", "NuSVC", "NuSVR"]
-else:
-    raise ImportError("Sklearnex SVM classes require oneDAL version >= 2021.3.")
+__all__ = ["SVR", "SVC", "NuSVC", "NuSVR"]

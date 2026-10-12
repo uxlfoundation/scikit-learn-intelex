@@ -19,7 +19,6 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
 
-from daal4py.sklearn._utils import daal_check_version
 from onedal.ensemble import RandomForestClassifier, RandomForestRegressor
 from onedal.tests.utils._device_selection import get_queues
 
@@ -54,20 +53,11 @@ def test_rf_regression(queue):
     # GPU and CPU implementations of Random Forest use RNGs differently. They build
     # different ensembles of trees, thereby requiring separate check values.
     if queue and queue.sycl_device.is_gpu:
-        if daal_check_version((2024, "P", 0)):
-            assert_allclose([1.82], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-        else:
-            assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
+        assert_allclose([1.82], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
     else:
-        if daal_check_version((2024, "P", 0)):
-            assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-        else:
-            assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
+        assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
 
 
-@pytest.mark.skipif(
-    not daal_check_version((2023, "P", 101)), reason="requires OneDAL 2023.1.1"
-)
 @pytest.mark.parametrize("queue", get_queues("gpu"))
 def test_rf_classifier_random_splitter(queue):
     X, y = make_classification(
@@ -96,7 +86,4 @@ def test_rf_regression_random_splitter(queue):
     rf = RandomForestRegressor(max_depth=2, random_state=0, splitter_mode="random").fit(
         X, y, queue=queue
     )
-    if daal_check_version((2024, "P", 0)):
-        assert_allclose([-6.88], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-    else:
-        assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
+    assert_allclose([-6.88], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)

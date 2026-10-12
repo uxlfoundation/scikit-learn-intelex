@@ -59,7 +59,7 @@ On Windows, GPU drivers for iGPUs and dGPUs include the required Intel Compute R
 
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
 
-On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs preinstalled, while others require installing them separately.
+On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs (but not for datacenter devices) preinstalled, while others require installing them separately. For Ubuntu server, or if not already pre-installed in an Ubuntu system, see `this link <https://dgpu-docs.intel.com/installation-guides/installing-packages-from-the-intel-ppa.html>`__ for installation instructions (recommended to use the Intel PPA packages).
 
 Debian systems require installing package ``intel-opencl-icd`` (along with its dependencies such as ``intel-compute-runtime`` and ``intel-graphics-compiler``), which is available from Debian's ``main`` repository: ::
 

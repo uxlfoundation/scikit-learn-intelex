@@ -121,15 +121,15 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
 
     %_options_docstring%
 
-    Note
-    ----
-    All settings, not just those presently modified, will be returned to
-    their previous values when the context manager is exited.
-
     See Also
     --------
     set_config : Set global scikit-learn configuration.
     get_config : Retrieve current values of the global configuration.
+
+    Notes
+    -----
+    All settings, not just those presently modified, will be returned to
+    their previous values when the context manager is exited.
     """
     old_config = get_config()
     set_config(**new_config)

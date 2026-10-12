@@ -23,7 +23,7 @@ from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
@@ -69,13 +69,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
-        if not daal_check_version((2024, "P", 400)) and self.assume_centered:
-            xp, _ = get_namespace(self._onedal_estimator.location_)
-            location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += xp.dot(location.T, location)
-            self._onedal_estimator.location_ = xp.zeros_like(
-                self._onedal_estimator.location_
-            )
         self._set_covariance(self._onedal_estimator.covariance_)
         self.location_ = self._onedal_estimator.location_
 

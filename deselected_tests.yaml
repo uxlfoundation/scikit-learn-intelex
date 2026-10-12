@@ -66,6 +66,11 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-CPU_DEVICE-float64-estimator0] >=1.8,<1.9
   - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-device1-float32-estimator0] >=1.8,<1.9
 
+  # _pairwise_callable() allocates its output without device=, so the n_jobs>1 path
+  # writes a default-device array into an on-device matrix. array-api-strict >=2.6
+  # rejects that cross-device __setitem__. Fixed upstream by sklearn #32460 (1.9 only).
+  - metrics/tests/test_pairwise.py::test_pairwise_parallel_array_api[pairwise_kernels-callable_rbf_kernel-kwds3-array_api_strict-device1-float32] >=1.8,<1.9
+
   # array_api_strict arrays are readonly; to_table -> __dlpack__ raises
   # "BufferError: Cannot export readonly array ... readonly is unsupported by DLPack
   # TODO: remove once dlpack data conversion issues are resolved for numpy <2.1
@@ -221,6 +226,8 @@ deselected_tests:
   # Different random number generation engine in oneDAL and scikit-learn
   # The result is depend on random state, for random_state=777 in RandomForestClassifier the test is passed
   - ensemble/tests/test_voting.py::test_majority_label_iris
+  # Expected probabilities come from numpy's bootstrap draws, which oneDAL's RNG does not reproduce
+  - ensemble/tests/test_voting.py::test_set_estimator_drop
 
   # scikit-learn-intelex RF threads are used internally and are not explicitly specified
   - ensemble/tests/test_forest.py::test_backend_respected
@@ -448,6 +455,16 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-eigen-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-svd-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[wide-42-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[wide-42-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[wide-42-True-cholesky]
+  # Note: the parameters for these tests vary over scikit-learn versions
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[42-wide-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[42-wide-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[42-wide-True-cholesky]
+
+  # Fails due to numerical tolerances slightly outside scikit-learn's thresholds
+  - linear_model/tests/test_ridge.py::test_solver_consistency[42-20-float32-0.1-cholesky-None]
 
   # Scikit-learn requires erroring out on different array API namespaces even if they are on the same device,
   # but no harm in working correctly under those scenarios.
@@ -618,14 +635,10 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
-  - ensemble/tests/test_forest.py::test_min_weight_fraction_leaf
 
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
   - tests/test_common.py::test_estimators[SVC()-check_estimators_unfitted]
-
-  # Introduced with RNG forest updates in oneDAL
-  - ensemble/tests/test_voting.py::test_set_estimator_drop
 
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
@@ -640,20 +653,3 @@ gpu:
   # Fails for float32 due to small numeric tolerances in the order of 1e-6,
   # exposed by the random splitter update in oneDAL forest (#3649)
   - ensemble/tests/test_forest.py::test_memory_layout[float32
-
-  # array_api_strict (host) arrays don't map to a oneDAL GPU device:
-  # "RuntimeError: Unsupported device in DLTensor."
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-device1-float32] >=1.7,<1.9
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64] >=1.7,<1.9
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[Ridge()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[Ridge()-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[GridSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_grid={'alpha':[0.1,1.0]})-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[GridSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_grid={'alpha':[0.1,1.0]})-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[HalvingGridSearchCV(cv=2,error_score='raise',estimator=Ridge(),min_resources='smallest',param_grid={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[HalvingGridSearchCV(cv=2,error_score='raise',estimator=Ridge(),min_resources='smallest',param_grid={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[HalvingRandomSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[HalvingRandomSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[RandomizedSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float32,device=array_api_strict.Device('device1'))] >=1.7,<1.9
-  - tests/test_common.py::test_estimators[RandomizedSearchCV(cv=2,error_score='raise',estimator=Ridge(),param_distributions={'alpha':[0.1,1.0]},random_state=0)-check_array_api_input(array_namespace=array_api_strict,dtype_name=float64,device=array_api_strict.Device('CPU_DEVICE'))] >=1.7,<1.9

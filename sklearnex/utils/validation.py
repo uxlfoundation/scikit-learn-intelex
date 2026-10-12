@@ -23,11 +23,11 @@ from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 
 # Note: 'check_feature_names' is reimported from this file elsewhere
 from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
-from onedal.utils.validation import is_contiguous
+from onedal.utils.validation import check_all_finite, is_contiguous
 
 if sklearn_check_version("1.9"):
     from sklearn.utils.validation import _check_estimator_name
@@ -37,31 +37,13 @@ from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 from .._config import get_config as _get_config
 
-if daal_check_version((2024, "P", 700)):
-    from onedal.utils.validation import check_all_finite
 
-    def _onedal_supported_format(X, xp):
-        # data should be checked if contiguous, as oneDAL will only use contiguous
-        # data from sklearnex. Unlike other oneDAL offloading, copying the data is
-        # specifically avoided as it has a non-negligible impact on speed. In that
-        # case use native sklearn ``_assert_all_finite``
-        return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
-
-else:
-    from daal4py.utils.validation import _assert_all_finite as _d4p_assert_all_finite
-    from onedal.utils._array_api import _is_numpy_namespace
-
-    def _onedal_supported_format(X, xp):
-        # daal4py _assert_all_finite only supports numpy namespaces, use internally-
-        # defined check to validate inputs, otherwise offload to sklearn
-        return X.dtype in [xp.float32, xp.float64] and _is_numpy_namespace(xp)
-
-    def check_all_finite(X, allow_nan: bool = False) -> bool:
-        try:
-            _d4p_assert_all_finite(X, allow_nan=allow_nan)
-            return True
-        except ValueError:
-            return False
+def _onedal_supported_format(X, xp):
+    # data should be checked if contiguous, as oneDAL will only use contiguous
+    # data from sklearnex. Unlike other oneDAL offloading, copying the data is
+    # specifically avoided as it has a non-negligible impact on speed. In that
+    # case use native sklearn ``_assert_all_finite``
+    return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 
 def _sklearnex_assert_all_finite(

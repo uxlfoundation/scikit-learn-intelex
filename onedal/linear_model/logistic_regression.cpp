@@ -15,10 +15,6 @@
 *******************************************************************************/
 
 #include "onedal/common.hpp"
-#include "onedal/version.hpp"
-
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
-
 #include "oneapi/dal/algo/logistic_regression.hpp"
 #include "onedal/primitives/optimizers.hpp"
 
@@ -40,9 +36,7 @@ struct method2t {
 
         const auto method = params["method"].cast<std::string>();
         ONEDAL_PARAM_DISPATCH_VALUE(method, "dense_batch", ops, Float, method::dense_batch);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
         ONEDAL_PARAM_DISPATCH_VALUE(method, "sparse", ops, Float, method::sparse);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >=20240700
         ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
@@ -87,11 +81,9 @@ auto get_onedal_result_options(const py::dict& params) {
         else if (option == "iterations_count") {
             onedal_options = onedal_options | result_options::iterations_count;
         }
-#if ONEDAL_VERSION >= 20240300
         else if (option == "inner_iterations_count") {
             onedal_options = onedal_options | result_options::inner_iterations_count;
         }
-#endif
         else {
             ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
         }
@@ -200,9 +192,7 @@ void init_train_result(py::module_& m) {
                    .DEF_ONEDAL_PY_PROPERTY(intercept, result_t)
                    .DEF_ONEDAL_PY_PROPERTY(coefficients, result_t)
                    .DEF_ONEDAL_PY_PROPERTY(iterations_count, result_t)
-#if ONEDAL_VERSION >= 20240300
                    .DEF_ONEDAL_PY_PROPERTY(inner_iterations_count, result_t)
-#endif
                    .DEF_ONEDAL_PY_PROPERTY(packed_coefficients, result_t)
                    .DEF_ONEDAL_PY_PROPERTY(result_options, result_t);
 }
@@ -237,10 +227,8 @@ ONEDAL_PY_INIT_MODULE(logistic_regression) {
     auto sub = m.def_submodule("logistic_regression");
 
 #if defined(ONEDAL_DATA_PARALLEL_SPMD)
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
 #else // ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
@@ -254,5 +242,3 @@ ONEDAL_PY_INIT_MODULE(logistic_regression) {
 ONEDAL_PY_TYPE2STR(dal::logistic_regression::task::classification, "classification");
 
 } // namespace oneapi::dal::python
-
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >=20240001

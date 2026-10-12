@@ -31,6 +31,7 @@ from .base import (
     gen_sparse_dataset,
     sklearn_clone_dict,
 )
+from .misc import *
 
 __all__ = [
     "DTYPES",

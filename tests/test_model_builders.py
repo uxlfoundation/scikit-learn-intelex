@@ -48,11 +48,7 @@ from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import (
-    _package_check_version,
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 
 try:
     import catboost as cb
@@ -71,15 +67,7 @@ except ImportError:
     shap_available = False
 
 
-shap_required_version = (2024, "P", 1)
-shap_api_change_version = (2025, "P", 0)
-shap_supported = daal_check_version(shap_required_version)
-shap_api_changed = daal_check_version(shap_api_change_version)
-shap_not_supported_str = (
-    f"SHAP value calculation only supported for version {shap_required_version} or later"
-)
 shap_unavailable_str = "SHAP Python package not available"
-shap_api_change_str = "SHAP calculation requires 2025.0 API"
 cb_unavailable_str = "CatBoost not available"
 
 # CatBoost's SHAP value calculation seems to be buggy
@@ -318,23 +306,18 @@ def test_xgb_regression_shap(
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            xgb_model.predict(dm_test, pred_contribs=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True),
-            xgb_model.predict(dm_test, pred_interactions=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        xgb_model.predict(dm_test, pred_contribs=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True),
+        xgb_model.predict(dm_test, pred_interactions=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("objective", ["binary:logistic", "binary:logitraw"])
@@ -457,23 +440,18 @@ def test_xgb_binary_classification_shap(
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            xgb_model.predict(dm_test, pred_contribs=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True),
-            xgb_model.predict(dm_test, pred_interactions=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        xgb_model.predict(dm_test, pred_contribs=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True),
+        xgb_model.predict(dm_test, pred_interactions=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("objective", ["multi:softmax", "multi:softprob"])
@@ -532,14 +510,10 @@ def test_xgb_multiclass_classification(
             xgb_model.predict(dm_test),
         )
 
-    if shap_supported:
-        with pytest.raises(TypeError):
-            d4p_model.predict(X_test, pred_contribs=True)
-        with pytest.raises(TypeError):
-            d4p_model.predict(X_test, pred_interactions=True)
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    with pytest.raises(TypeError):
+        d4p_model.predict(X_test, pred_contribs=True)
+    with pytest.raises(TypeError):
+        d4p_model.predict(X_test, pred_interactions=True)
 
 
 def test_xgb_early_stop():
@@ -851,17 +825,12 @@ def test_lgb_regression(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            lgb_model.predict(X_test, pred_contrib=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        lgb_model.predict(X_test, pred_contrib=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.skipif(not shap_available, reason=shap_unavailable_str)
@@ -895,18 +864,13 @@ def test_lgb_regression_interactions(
         X_test[:, 2:] = np.nan
         X_test[-1] = np.nan
 
-    if shap_supported:
-        # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True)[:, :-1, :-1],
-            shap.TreeExplainer(lgb_model).shap_interaction_values(X_test),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True)[:, :-1, :-1],
+        shap.TreeExplainer(lgb_model).shap_interaction_values(X_test),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -954,17 +918,12 @@ def test_lgb_binary_classification(
         np.argmax(d4p_model.predict_proba(X_test), axis=1),
     )
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            lgb_model.predict(X_test, pred_contrib=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        lgb_model.predict(X_test, pred_contrib=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -1317,17 +1276,15 @@ def test_catboost_regression(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        shap_pred = force_shap_predict(d4p_model, X_test)
-        if d4p_model.supports_shap_:
-            assert not np.isnan(shap_pred).any()
-        else:
-            assert np.isnan(shap_pred).any()
+    shap_pred = force_shap_predict(d4p_model, X_test)
+    if d4p_model.supports_shap_:
+        assert not np.isnan(shap_pred).any()
+    else:
+        assert np.isnan(shap_pred).any()
 
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.skipif(catboost_skip_shap, reason=catboost_skip_shap_msg)
-@pytest.mark.skipif(not shap_supported, reason=shap_not_supported_str)
 @pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
 @pytest.mark.parametrize("boost_from_average", [False, True])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
@@ -1415,12 +1372,11 @@ def test_catboost_binary_classification(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        shap_pred = force_shap_predict(d4p_model, X_test)
-        if d4p_model.supports_shap_:
-            assert not np.isnan(shap_pred).any()
-        else:
-            assert np.isnan(shap_pred).any()
+    shap_pred = force_shap_predict(d4p_model, X_test)
+    if d4p_model.supports_shap_:
+        assert not np.isnan(shap_pred).any()
+    else:
+        assert np.isnan(shap_pred).any()
 
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)

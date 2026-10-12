@@ -17,8 +17,6 @@
 #include "oneapi/dal/algo/kmeans.hpp"
 
 #include "onedal/common.hpp"
-#include "onedal/version.hpp"
-
 #include <regex>
 
 namespace py = pybind11;
@@ -38,9 +36,7 @@ struct method2t {
         const auto method = params["method"].cast<std::string>();
         ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_VALUE(method, "lloyd_dense", ops, Float, method::lloyd_dense);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
         ONEDAL_PARAM_DISPATCH_VALUE(method, "lloyd_csr", ops, Float, method::lloyd_csr);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
 
@@ -67,12 +63,10 @@ struct params2desc {
         desc.set_cluster_count(params["cluster_count"].cast<std::int64_t>());
         desc.set_accuracy_threshold(params["accuracy_threshold"].cast<Float>());
         desc.set_max_iteration_count(params["max_iteration_count"].cast<std::int64_t>());
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240200
         auto result_options = params["result_options"].cast<std::string>();
         if (result_options == "compute_exact_objective_function") {
             desc.set_result_options(result_options::compute_exact_objective_function);
         }
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240200
         return desc;
     }
 };
@@ -125,7 +119,6 @@ void init_model(py::module_& m) {
 
     auto cls = py::class_<model_t>(m, "model")
                    .def(py::init())
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
                    .def(py::pickle(
                        [](const model_t& m) {
                            return serialize(m);
@@ -133,7 +126,6 @@ void init_model(py::module_& m) {
                        [](const py::bytes& bytes) {
                            return deserialize<model_t>(bytes);
                        }))
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
                    .DEF_ONEDAL_PY_PROPERTY(centroids, model_t);
 }
 
@@ -178,10 +170,8 @@ ONEDAL_PY_INIT_MODULE(kmeans) {
     auto sub = m.def_submodule("kmeans");
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230200
 #else // ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
