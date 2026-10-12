@@ -165,6 +165,10 @@ Calling such methods from a KNN estimator from the |sklearnex| that was fitted t
 API inputs will work, but it will do so by transferring the data to host if not already
 there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
 
+Likewise, :meth:`sklearn.cluster.HDBSCAN.dbscan_clustering` re-cuts the cluster hierarchy, which
+is always kept on host, and outputs a host NumPy array regardless of the array class to which the
+estimator was fitted.
+
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.
@@ -182,6 +186,7 @@ another.
 
 This function is only supported for the following estimators from the |sklearnex|:
 
+- :obj:`sklearn.cluster.HDBSCAN`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 
