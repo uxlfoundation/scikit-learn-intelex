@@ -231,6 +231,17 @@ Clustering
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - All parameters are supported except:
+
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
+       numbered in the same order, so ``labels_`` and the centers come back
+       permuted with respect to |sklearn|'s.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************
@@ -536,6 +547,17 @@ Clustering
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - All parameters are supported except:
+
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
+       numbered in the same order, so ``labels_`` and the centers come back
+       permuted with respect to |sklearn|'s.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************
@@ -777,6 +799,13 @@ Clustering
 
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
+     - Only dense data is supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - All parameters are supported except:
+
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
      - Only dense data is supported
 
 Dimensionality Reduction
