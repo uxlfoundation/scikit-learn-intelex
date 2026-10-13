@@ -30,7 +30,7 @@ from onedal.tests.utils._dataframes_support import (
 def test_sklearnex_import_dbscan(dataframe, queue):
     from sklearnex.cluster import DBSCAN
 
-    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]])
+    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]]).astype(np.float32)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
     assert "sklearnex" in dbscan.__module__
@@ -113,6 +113,7 @@ if sklearn_check_version("1.9"):
         from sklearnex.cluster import DBSCAN
 
         X, _ = make_blobs(n_samples=20, random_state=123)
+        X = X.astype(np.float32)
 
         xp_in, _, device_in = get_namespace_and_device(array_input_like)
         X_in = move_to(X, xp=xp_in, device=device_in)
