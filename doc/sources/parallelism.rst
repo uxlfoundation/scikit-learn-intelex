@@ -62,8 +62,23 @@ In general, accelerated computations offered by estimators from the |sklearnex|
 do not raise the Python GIL, thus they are not compatible with parallelization
 backends that rely on Python threads. Instead, process-based parallelism is
 recommended, which is the default mode in tools like :mod:`joblib` and by
-extension in metaestimators from |sklearn|. Note that builds of the |sklearnex| for
-free-threaded Python are not offered at this moment.
+extension in metaestimators from |sklearn|.
+
+The |sklearnex| can be built from source for free-threaded CPython (see
+:doc:`installation`), in which case importing it does not re-enable the GIL.
+This only removes the GIL as an obstacle to running Python code in parallel -
+it does **not** lift any of the restrictions described in this section, since
+those come from global state in the |sklearnex| and in the |onedal| rather than
+from the GIL. If anything, they become easier to hit, as Python threads then
+execute concurrently instead of being serialized by the interpreter.
+
+What is supported, on both build flavors, is concurrent use of **separate**
+estimator instances - each one constructed, fitted and used within a single
+thread - subject to the exceptions listed below. Instances that are not shared
+hold no Python state in common, and the underlying |onedal| computations they
+dispatch are themselves thread-safe. On a GIL-enabled build this arrangement
+still yields no parallelism for the computation itself, since the GIL is held
+throughout it; on a free-threaded build the computations do overlap.
 
 Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
 usage in Python threads, even if running under the Python GIL:
@@ -79,6 +94,13 @@ usage in Python threads, even if running under the Python GIL:
   parameter due to usage of other Python-level global state variables.
   Attempting to fit multiple logistic regression estimator objects in parallel
   might result in crashes and incorrect estimations.
+- On free-threaded Python, an estimator instance can only be used safely from
+  one thread at a time - each parallel thread must use its own independent
+  instance. Many estimators modify themselves in-place outside of ``.fit()``,
+  for example by building the |onedal| model from fitted attributes on the
+  first call to ``.predict()``, or by finalizing incremental results when an
+  attribute is first accessed. Under free-threading, concurrent calls on a
+  shared instance can race.
 - While most estimators only set their attributes and internal state during
   calls to ``.fit()`` and then use them without modifications in ``.predict()``
   and similar, estimators based on K-nearest neighbors instead set their
