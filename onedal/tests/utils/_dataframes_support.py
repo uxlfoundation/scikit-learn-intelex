@@ -105,7 +105,6 @@ if torch_available:
 dpnp_to_strict_working: bool = False
 if dpnp_available:
     try:
-        from sklearn import config_context
         from sklearn.utils._array_api import get_namespace_and_device, move_to
 
         with config_context(array_api_dispatch=True):
