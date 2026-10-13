@@ -82,7 +82,7 @@ When an operation is not supported by the |sklearnex|, the original code branche
 In these cases however, there will be no acceleration. The underlying library being used for a given computation can be verified using :doc:`verbose mode <verbose>`. See :doc:`algorithms` for more information about what is covered by the |sklearnex|.
 
 Should I use the |sklearnex| if I already use |sklearn| with :external+numpy:doc:`NumPy <user/whatisnumpy>` and SciPy `backed by oneMKL <https://github.com/intel/optimization-zone/blob/main/software/numpy/README.md>`__?
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Yes - beyond usage of accelerated routines from `oneMKL <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html>`__, the |sklearnex| introduces other forms of optimizations that cannot be replicated by swapping BLAS or LAPACK implementations, such as different parallelization strategies for calculations of covariances and Gram matrices, or usage of more specialized linear algebra factorizations than the ones used by default NumPy solvers whenever applicable.
 
