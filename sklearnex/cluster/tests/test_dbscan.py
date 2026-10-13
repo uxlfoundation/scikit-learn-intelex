@@ -68,10 +68,6 @@ if sklearn_check_version("1.9"):
         import torch
 
     @pytest.mark.skipif(
-        not sklearn_check_version("1.9"),
-        reason="Functionality introduced in later sklearn versions",
-    )
-    @pytest.mark.skipif(
         not _package_check_version("2.2", np.__version__),
         reason="Requires more recent NumPy version",
     )
