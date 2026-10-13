@@ -27,6 +27,8 @@ The |sklearnex| is regularly tested for API compatibility and for correctness ag
 
 The |sklearnex| aims to be compatible with the last 4 minor releases of |sklearn| available at any given time, typically covering a period of approximately 2 years of releases, and ensures this compatibility by offering different code routes according to the |sklearn| version encountered at runtime - for example, if a given attribute of a class is removed in version 1.x of |sklearn|, the |sklearnex| will not set that attribute when running with |sklearn| >=1.x, but will still do so when running with |sklearn| <1.x, in order to guarantee full API compatibility.
 
+See the :doc:`FAQ <faq>` for more information.
+
 Performance of the |sklearnex| is regularly measured and compared against that of other libraries using public and synthetic datasets through `sklbench <https://github.com/IntelPython/scikit-learn_bench>`__, which is also free and fully open-source.
 
 Initially developed by Intel as the Intel Extension for Scikit-learn*, the |sklearnex| and the |onedal| are now projects under the `UXL Foundation <https://uxlfoundation.org>`__ umbrella, and can be built from source to provide accelerated routines for other platforms such as ARM and RISCV - see :doc:`building-from-source` for more information.
