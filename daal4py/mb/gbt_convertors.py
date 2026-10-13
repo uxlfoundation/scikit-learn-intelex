@@ -1096,10 +1096,12 @@ def get_gbt_model_from_treelite(
             class_ids, num_trees_per_class = np.unique(
                 model_json["class_id"], return_counts=True
             )
+            # classes without a single tree are absent from 'class_ids'
+            trees_per_class = dict(zip(class_ids.tolist(), num_trees_per_class.tolist()))
             max_tree_per_class = num_trees_per_class.max()
-            num_tree_add_per_class = max_tree_per_class - num_trees_per_class
             for class_ind in range(num_class):
-                for tree in range(num_tree_add_per_class[class_ind]):
+                num_tree_add = max_tree_per_class - trees_per_class.get(class_ind, 0)
+                for _ in range(num_tree_add):
                     add_empty_tree_to_treelite_json(model_json, class_ind)
 
         tree_class_orders = model_json["class_id"]
