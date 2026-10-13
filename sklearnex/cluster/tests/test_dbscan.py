@@ -51,7 +51,6 @@ if sklearn_check_version("1.9"):
 
     from daal4py.sklearn._utils import _package_check_version
     from onedal.tests.utils._dataframes_support import (
-        _as_numpy,
         dpnp_available,
         dpnp_to_strict_working,
         torch_available,
@@ -118,7 +117,7 @@ if sklearn_check_version("1.9"):
         xp_in, _, device_in = get_namespace_and_device(array_input_like)
         X_in = move_to(X, xp=xp_in, device=device_in)
 
-        model = DBSCAN().fit(X_in)
+        model = DBSCAN(eps=3, min_samples=2).fit(X_in)
 
         xp_move, _, device_move = get_namespace_and_device(array_move_like)
         model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
@@ -128,6 +127,10 @@ if sklearn_check_version("1.9"):
         for attr in ["core_sample_indices_", "components_", "labels_"]:
             assert_same_namespace(getattr(model, attr), array_input_like)
             assert_same_namespace(getattr(model_moved, attr), array_move_like)
+            np.testing.assert_almost_equal(
+                _as_numpy(getattr(model, attr)),
+                _as_numpy(getattr(model_moved, attr)),
+            )
 
         attrs_orig = dir(model)
         attrs_moved = dir(model_moved)
