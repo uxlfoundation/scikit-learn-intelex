@@ -26,10 +26,10 @@ These optimized versions are under an importable module named ``sklearnex`` whic
 
 Is ``sklearnex`` a drop-in replacement for ``sklearn``?
 -------------------------------------------------------
+Depending on usage mode:
+Yes, when applying :doc:`monkeypatching <patching>`, the modified ``sklearn`` module does become a drop-in replacement for stock |sklearn|.
 
-Not entirely, since ``sklearnex`` offers only a subset of the classes and functions from ``sklearn``, but when the same classes and functions are offered (such as ``sklearnex.linear_model.LinearRegression``), they do act as drop-in replacements with the exact same API and behaviors.
-
-However, when applying :doc:`monkeypatching <patching>`, the modified ``sklearn`` module does become a drop-in replacement for stock |sklearn|.
+Not entirely, in case of direct ``sklearnex``  use. ``sklearnex`` offers only a subset of the classes and functions from ``sklearn``, but when the same classes and functions are offered (such as ``sklearnex.linear_model.LinearRegression``), they do act as drop-in replacements with the exact same API and behaviors.
 
 Do I need a specific version of |sklearn| with the |sklearnex|?
 ---------------------------------------------------------------
