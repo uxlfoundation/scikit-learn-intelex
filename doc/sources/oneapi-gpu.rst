@@ -261,10 +261,3 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 
 .. note::
     Not all estimator classes in the |sklearnex| support array API objects - see the list of :ref:`estimators with array API support <array_api_estimators>` for details.
-
-DPNP Arrays
-~~~~~~~~~~~
-
-GPU arrays from |dpnp| are array-API-compliant and are used like any other array API framework: array API dispatch must be enabled through scikit-learn's ``config_context(array_api_dispatch=True)`` for the data to be consumed as-is on the device where it resides. Without array API enabled, |dpnp| arrays are treated as unsupported device inputs and moved to host for computation, with results returned as NumPy arrays.
-
-When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.

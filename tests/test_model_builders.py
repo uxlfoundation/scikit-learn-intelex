@@ -1888,6 +1888,57 @@ def test_treelite_uneven_multiclass():
     )
 
 
+def test_treelite_multiclass_with_empty_class():
+    # Same as the test above, except that class 1 gets no tree at all and is
+    # therefore missing from the class ids that the tree counts come from
+    builder = treelite.model_builder.ModelBuilder(
+        threshold_type="float64",
+        leaf_output_type="float64",
+        metadata=treelite.model_builder.Metadata(
+            num_feature=1,
+            task_type="kMultiClf",
+            average_tree_output=False,
+            num_target=1,
+            num_class=[3],
+            leaf_vector_shape=(1, 1),
+        ),
+        tree_annotation=treelite.model_builder.TreeAnnotation(
+            num_tree=4,
+            target_id=[0, 0, 0, 0],
+            class_id=[0, 0, 0, 2],
+        ),
+        postprocessor=treelite.model_builder.PostProcessorFunc(name="softmax"),
+        base_scores=[0.2, 0.0, 0.3],
+    )
+    for tree_id in range(4):
+        builder.start_tree()
+        builder.start_node(0)
+        builder.numerical_test(
+            feature_id=0,
+            threshold=0.0,
+            default_left=True,
+            opname="<",
+            left_child_key=1,
+            right_child_key=2,
+        )
+        builder.end_node()
+        builder.start_node(1)
+        builder.leaf(0.5 if tree_id < 2 else 0.0)
+        builder.end_node()
+        builder.start_node(2)
+        builder.leaf(1.0 if tree_id == 2 else 0.0)
+        builder.end_node()
+        builder.end_tree()
+    tl_model = builder.commit()
+    d4p_model = d4p.mb.convert_model(tl_model)
+
+    X = np.array([[-1.0], [0.0], [1.0]])
+    np.testing.assert_almost_equal(
+        d4p_model.predict_proba(X),
+        treelite.gtil.predict(tl_model, X)[:, 0, :],
+    )
+
+
 def test_sklearn_conversion_suggests_treelite():
     X, y = make_regression(n_samples=10, n_features=4, random_state=123)
     model = RandomForestRegressor(n_estimators=2).fit(X, y)
