@@ -55,7 +55,7 @@ See the list of :doc:`supported algorithms <algorithms>` for more information ab
 Who develops the |sklearnex|?
 -----------------------------
 
-The |sklearnex| is developed by the `UXL Foundation <https://uxlfoundation.org>`__, a consortium for open multi-vendor standards in accelerated computing. Currently, most of the development is sponsored by `Intel <https://www.intel.com>`__ with contributions also from `Fujitsu <https://global.fujitsu/>`__ and from other unaffiliated parties.
+The |sklearnex| is developed by the `UXL Foundation <https://uxlfoundation.org>`__, a consortium for open multi-vendor standards in accelerated computing. Currently, most of the development is sponsored by Intel with contributions also from Fujitsu and from other unaffiliated parties.
 
 Does patching modify files from |sklearn|?
 ------------------------------------------
