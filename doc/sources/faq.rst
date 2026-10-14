@@ -45,6 +45,15 @@ Runtime version checks performed on the ``sklearn`` module enable dispatching of
 
 The |sklearnex| is regularly tested for both API compatibility and for correctness against |sklearn|'s own test suite (see :ref:`conformance_tests` for more information) to verify this.
 
+Does the |sklearnex| always produce the exact same results as |sklearn|?
+------------------------------------------------------------------------
+
+When accelerated routines from the |sklearnex| are used, results (e.g. numbers returned by ``.predict()``, coefficients fitted by :obj:`sklearn.linear_model.LinearRegression`, etc.) can be expected to match against what would be obtained through |sklearn| up to numerical precision for the floating point type (``float32`` / ``float64``) supplied as input data (note that non-floating point types are casted to ``float64``), but outputs might not necessarily be exactly equal byte-by-byte.
+
+When it comes to procedures that employ random numbers (such as :func:`sklearn.model_selection.train_test_split`), results might differ a bit since the |sklearnex| will generate different sequences of random numbers, but they should match in expectation over large samples.
+
+Additionally, some algorithms might have methodological differences that yield slightly different results - for instance, forest ensembles (such as :obj:`sklearn.ensemble.RandomForestClassifier`) use the histogram method (i.e. features are binned) for calculating splits, which might not always produce the same result on average as the sorted-indices method used by |sklearn|, but should result in observing very similar numbers in cross-validated metrics such as :obj:`~sklearn.metrics.roc_auc_score` or :obj:`sklearn.metrics.r2_score`.
+
 What makes the |sklearnex| faster?
 ----------------------------------
 
