@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
@@ -33,7 +34,6 @@ from onedal.tests.utils._device_selection import (
 )
 
 if sklearn_check_version("1.9"):
-    import array_api_strict
     from sklearn.datasets import make_blobs
     from sklearn.utils._array_api import (
         get_namespace_and_device,
