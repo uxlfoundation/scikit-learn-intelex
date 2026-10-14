@@ -53,7 +53,7 @@ if torch_available:
 def test_sklearnex_import_dbscan(dataframe, queue):
     from sklearnex.cluster import DBSCAN
 
-    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]]).astype(np.float32)
+    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]])
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
     assert "sklearnex" in dbscan.__module__
