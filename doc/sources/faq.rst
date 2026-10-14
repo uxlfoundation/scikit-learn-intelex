@@ -52,7 +52,7 @@ When accelerated routines from the |sklearnex| are used, results (e.g. numbers r
 
 When it comes to procedures that employ random numbers (such as :func:`sklearn.model_selection.train_test_split`), results might differ a bit since the |sklearnex| will generate different sequences of random numbers, but they should match in expectation over large samples.
 
-Additionally, some algorithms might have methodological differences that yield slightly different results - for instance, forest ensembles (such as :obj:`sklearn.ensemble.RandomForestClassifier`) use the histogram method (i.e. features are binned) for calculating splits, which might not always produce the same result on average as the sorted-indices method used by |sklearn|, but should result in observing very similar numbers in cross-validated metrics such as :obj:`~sklearn.metrics.roc_auc_score` or :obj:`sklearn.metrics.r2_score`.
+Additionally, some algorithms might have methodological differences that yield slightly different results - for instance, forest ensembles (such as :obj:`sklearn.ensemble.RandomForestClassifier`) use the histogram method (i.e. features are binned) for calculating splits, which might not always produce the same result on average as the sorted-indices method used by |sklearn|, but should result in observing very similar numbers in cross-validated metrics such as :obj:`~sklearn.metrics.roc_auc_score` or :obj:`~sklearn.metrics.r2_score`.
 
 What makes the |sklearnex| faster?
 ----------------------------------
