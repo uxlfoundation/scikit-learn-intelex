@@ -16,20 +16,27 @@
 
 import numbers
 import warnings
+from copy import copy
 
 import numpy as np
+from sklearn.base import clone
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+from sklearn.cluster._hdbscan.hdbscan import (
+    _OUTLIER_ENCODING,
+    remap_single_linkage_tree,
+)
+from sklearn.utils._array_api import (
+    _estimator_with_converted_arrays,
+    _max_precision_float_dtype,
+)
 from sklearn.utils._array_api import device as _device
 from sklearn.utils.validation import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
-
-if daal_check_version((2026, "P", 300)):
-    from onedal.cluster import HDBSCAN as onedal_HDBSCAN
-else:
-    onedal_HDBSCAN = None
+from onedal.datatypes._dlpack import dlpack_to_numpy
+from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
@@ -72,9 +79,6 @@ def _as_single_linkage_tree(tree):
     result["cluster_size"] = tree[:, 3]
     return result
 
-
-# the fitted attributes that follow the namespace and device of the data
-_MOVABLE_ATTRIBUTES = ("labels_", "probabilities_", "centroids_", "medoids_")
 
 # scikit-learn's names of the distances oneDAL computes, as oneDAL names them
 _METRIC_ALIASES = {
@@ -175,287 +179,264 @@ def _non_finite_rows(X, xp):
     )
 
 
-def _float64(xp, X):
-    """scikit-learn's float64, or the dtype of 'X' on a device without it."""
-    sycl_device = getattr(X, "sycl_device", None)
-    if sycl_device is not None and not sycl_device.has_aspect_fp64:
-        return X.dtype
-    return xp.float64
+__all__ = []
 
+if daal_check_version((2026, "P", 300)):
+    from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 
-@enable_array_api
-@control_n_jobs(decorated_methods=["fit"])
-class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
-    __doc__ = _sklearn_HDBSCAN.__doc__
+    @enable_array_api
+    @control_n_jobs(decorated_methods=["fit"])
+    class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
+        __doc__ = _sklearn_HDBSCAN.__doc__
 
-    # copied to keep 'control_n_jobs' from modifying scikit-learn's own constraints
-    _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
+        # copied to keep 'control_n_jobs' from modifying scikit-learn's own constraints
+        _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
 
-    _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
+        _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
 
-    def _onedal_fit(self, X, queue=None):
-        # 'copy' has no effect on oneDAL, but scikit-learn's deprecation warning
-        # for its default still applies
-        if (
-            sklearn_check_version("1.8")
-            and not sklearn_check_version("1.10")
-            and self.copy == "warn"
-        ):
-            warnings.warn(
-                "The default value of `copy` will change from False to True in 1.10."
-                " Explicitly set a value for `copy` to silence this warning.",
-                FutureWarning,
-            )
+        def _onedal_fit(self, X, queue=None):
+            # 'copy' has no effect on oneDAL, but scikit-learn's deprecation warning
+            # for its default still applies
+            if (
+                sklearn_check_version("1.8")
+                and not sklearn_check_version("1.10")
+                and self.copy == "warn"
+            ):
+                warnings.warn(
+                    "The default value of `copy` will change from False to True in 1.10."
+                    " Explicitly set a value for `copy` to silence this warning.",
+                    FutureWarning,
+                )
 
-        xp, _ = get_namespace(X)
-        X = validate_data(
-            self,
-            X,
-            accept_sparse=False,
-            dtype=[xp.float64, xp.float32],
-            ensure_all_finite=False,
-        )
-        n_samples = X.shape[0]
-        self._metric_params = self.metric_params or {}
-        self._min_samples = (
-            self.min_cluster_size if self.min_samples is None else self.min_samples
-        )
-
-        # as in scikit-learn, the samples with non-finite values are left out of
-        # the clustering and labelled after it
-        finite, infinite, missing = _non_finite_rows(X, xp)
-        all_finite = len(finite) == n_samples
-        if not all_finite:
-            X = xp.take(X, xp.asarray(finite, device=_device(X)), axis=0)
-
-        metric, degree = _onedal_metric(self.metric, self.metric_params, self.algorithm)
-        if self.algorithm == "auto":
-            # oneDAL computes the cosine distance only in its brute force method
-            method = "brute_force" if metric == "cosine" else "kd_tree"
-        elif self.algorithm == "brute":
-            method = "brute_force"
-        else:
-            # 'kd_tree' and 'ball_tree' are named the same way in oneDAL
-            method = self.algorithm
-
-        onedal_params = {
-            "min_cluster_size": self.min_cluster_size,
-            "min_samples": self._min_samples,
-            "metric": metric,
-            "degree": degree,
-            "alpha": self.alpha,
-            "method": method,
-            "leaf_size": self.leaf_size,
-            "cluster_selection": self.cluster_selection_method,
-            "allow_single_cluster": self.allow_single_cluster,
-            "cluster_selection_epsilon": self.cluster_selection_epsilon,
-            # oneDAL takes zero as 'no limit on the size of a cluster'
-            "max_cluster_size": self.max_cluster_size or 0,
-            "store_centers": self.store_centers or "none",
-        }
-        self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
-        self._onedal_estimator.fit(X, queue=queue)
-
-        # scikit-learn returns float64 outputs for any input dtype
-        float64 = _float64(xp, X)
-        labels = self._onedal_estimator.labels_
-        probabilities = xp.astype(self._onedal_estimator.probabilities_, float64)
-
-        # scikit-learn returns empty centers when no cluster is found; 'empty_like'
-        # allocates, so the estimator does not keep a view on 'X'
-        if self.store_centers in ("centroid", "both"):
-            centroids = self._onedal_estimator.centroids_
-            if centroids is None:
-                centroids = xp.empty_like(X[:0, :])
-            self.centroids_ = xp.astype(centroids, float64)
-        if self.store_centers in ("medoid", "both"):
-            medoids = self._onedal_estimator.medoids_
-            if medoids is None:
-                medoids = xp.empty_like(X[:0, :])
-            self.medoids_ = xp.astype(medoids, float64)
-
-        tree = _as_single_linkage_tree(self._onedal_estimator.single_linkage_tree_)
-
-        if all_finite:
-            self._onedal_outliers = None
-            self.labels_ = xp.astype(labels, xp.int64)
-            self.probabilities_ = probabilities
-            self._single_linkage_tree_ = tree
-            return
-
-        from sklearn.cluster._hdbscan.hdbscan import (
-            _OUTLIER_ENCODING,
-            remap_single_linkage_tree,
-        )
-
-        self._single_linkage_tree_ = remap_single_linkage_tree(
-            tree,
-            {x: y for x, y in enumerate(finite)},
-            non_finite=set(np.hstack([infinite, missing])),
-        )
-        # host indices, for 'dbscan_clustering'
-        self._onedal_outliers = (infinite, missing)
-
-        # outputs are built in the order finite, infinite, missing and put back in
-        # place with one 'take': array API does not require index assignment
-        order = np.concatenate([finite, infinite, missing])
-        position = np.empty_like(order)
-        position[order] = np.arange(n_samples)
-        dev = _device(labels)
-        position = xp.asarray(position, device=dev)
-
-        def full(values, dtype, infinite_value, missing_value):
-            parts = [
-                xp.astype(values, dtype),
-                xp.full(len(infinite), infinite_value, dtype=dtype, device=dev),
-                xp.full(len(missing), missing_value, dtype=dtype, device=dev),
-            ]
-            return xp.take(xp.concat(parts), position, axis=0)
-
-        # scikit-learn's own dtypes for this case, int32 for the labels
-        self.labels_ = full(
-            labels,
-            xp.int32,
-            _OUTLIER_ENCODING["infinite"]["label"],
-            _OUTLIER_ENCODING["missing"]["label"],
-        )
-        self.probabilities_ = full(
-            probabilities,
-            float64,
-            _OUTLIER_ENCODING["infinite"]["prob"],
-            _OUTLIER_ENCODING["missing"]["prob"],
-        )
-
-    def _onedal_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.cluster.{class_name}.{method_name}"
-        )
-        if method_name != "fit":
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
-
-        # whatever scikit-learn rejects falls back, so that it raises its own error
-        X = data[0]
-        dal_ready = patching_status.and_conditions(
-            [
-                (
-                    self.algorithm in ("auto", "brute", "kd_tree", "ball_tree"),
-                    f"'{self.algorithm}' algorithm is not supported.",
-                ),
-                (
-                    _onedal_metric(self.metric, self.metric_params, self.algorithm)
-                    is not None,
-                    f"'{self.metric}' metric with metric_params="
-                    f"{self.metric_params} and '{self.algorithm}' algorithm is not "
-                    "supported. Only the euclidean, manhattan, chebyshev, minkowski "
-                    "(p >= 1) and cosine (brute force) distances are supported.",
-                ),
-                (not is_sparse(X), "X is sparse. Sparse input is not supported."),
-            ]
-        )
-        if not dal_ready:
-            return patching_status
-
-        # only for the checks below, '_onedal_fit' validates the data
-        try:
             xp, _ = get_namespace(X)
-            X = check_array(X, dtype="numeric", ensure_all_finite=False)
-            finite, _, _ = _non_finite_rows(X, xp)
-        except (TypeError, ValueError):
+            X = validate_data(
+                self,
+                X,
+                accept_sparse=False,
+                dtype=[xp.float64, xp.float32],
+                ensure_all_finite=False,
+            )
+            n_samples = X.shape[0]
+            self._metric_params = self.metric_params or {}
+            self._min_samples = (
+                self.min_cluster_size if self.min_samples is None else self.min_samples
+            )
+
+            # as in scikit-learn, the samples with non-finite values are left out of
+            # the clustering and labelled after it
+            finite, infinite, missing = _non_finite_rows(X, xp)
+            all_finite = len(finite) == n_samples
+            if not all_finite:
+                X = xp.take(X, xp.asarray(finite, device=_device(X)), axis=0)
+
+            metric, degree = _onedal_metric(
+                self.metric, self.metric_params, self.algorithm
+            )
+            if self.algorithm == "auto":
+                # oneDAL computes the cosine distance only in its brute force method
+                method = "brute_force" if metric == "cosine" else "kd_tree"
+            elif self.algorithm == "brute":
+                method = "brute_force"
+            else:
+                # 'kd_tree' and 'ball_tree' are named the same way in oneDAL
+                method = self.algorithm
+
+            onedal_params = {
+                "min_cluster_size": self.min_cluster_size,
+                "min_samples": self._min_samples,
+                "metric": metric,
+                "degree": degree,
+                "alpha": self.alpha,
+                "method": method,
+                "leaf_size": self.leaf_size,
+                "cluster_selection": self.cluster_selection_method,
+                "allow_single_cluster": self.allow_single_cluster,
+                "cluster_selection_epsilon": self.cluster_selection_epsilon,
+                # oneDAL takes zero as 'no limit on the size of a cluster'
+                "max_cluster_size": self.max_cluster_size or 0,
+                "store_centers": self.store_centers or "none",
+            }
+            self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
+            self._onedal_estimator.fit(X, queue=queue)
+
+            # scikit-learn returns float64 outputs for any input dtype, as far as the
+            # device supports it
+            float64 = _max_precision_float_dtype(xp, _device(X))
+            labels = self._onedal_estimator.labels_
+            probabilities = xp.astype(self._onedal_estimator.probabilities_, float64)
+
+            # scikit-learn returns empty centers when no cluster is found; 'empty_like'
+            # allocates, so the estimator does not keep a view on 'X'
+            if self.store_centers in ("centroid", "both"):
+                centroids = self._onedal_estimator.centroids_
+                if centroids is None:
+                    centroids = xp.empty_like(X[:0, :])
+                self.centroids_ = xp.astype(centroids, float64)
+            if self.store_centers in ("medoid", "both"):
+                medoids = self._onedal_estimator.medoids_
+                if medoids is None:
+                    medoids = xp.empty_like(X[:0, :])
+                self.medoids_ = xp.astype(medoids, float64)
+
+            tree = _as_single_linkage_tree(self._onedal_estimator.single_linkage_tree_)
+
+            if all_finite:
+                self.labels_ = xp.astype(labels, xp.int64)
+                self.probabilities_ = probabilities
+                self._single_linkage_tree_ = tree
+                return
+
+            self._single_linkage_tree_ = remap_single_linkage_tree(
+                tree,
+                {x: y for x, y in enumerate(finite)},
+                non_finite=set(np.hstack([infinite, missing])),
+            )
+
+            # outputs are built in the order finite, infinite, missing and put back in
+            # place with one 'take': array API does not require index assignment
+            order = np.concatenate([finite, infinite, missing])
+            position = np.empty_like(order)
+            position[order] = np.arange(n_samples)
+            dev = _device(labels)
+            position = xp.asarray(position, device=dev)
+
+            def full(values, dtype, infinite_value, missing_value):
+                parts = [
+                    xp.astype(values, dtype),
+                    xp.full(len(infinite), infinite_value, dtype=dtype, device=dev),
+                    xp.full(len(missing), missing_value, dtype=dtype, device=dev),
+                ]
+                return xp.take(xp.concat(parts), position, axis=0)
+
+            # scikit-learn's own dtypes for this case, int32 for the labels
+            self.labels_ = full(
+                labels,
+                xp.int32,
+                _OUTLIER_ENCODING["infinite"]["label"],
+                _OUTLIER_ENCODING["missing"]["label"],
+            )
+            self.probabilities_ = full(
+                probabilities,
+                float64,
+                _OUTLIER_ENCODING["infinite"]["prob"],
+                _OUTLIER_ENCODING["missing"]["prob"],
+            )
+
+        def _onedal_supported(self, method_name, *data):
+            class_name = self.__class__.__name__
+            patching_status = PatchingConditionsChain(
+                f"sklearn.cluster.{class_name}.{method_name}"
+            )
+            if method_name != "fit":
+                raise RuntimeError(
+                    f"Unknown method {method_name} in {self.__class__.__name__}"
+                )
+
+            # whatever scikit-learn rejects falls back, so that it raises its own error
+            X = data[0]
+            dal_ready = patching_status.and_conditions(
+                [
+                    (
+                        self.algorithm in ("auto", "brute", "kd_tree", "ball_tree"),
+                        f"'{self.algorithm}' algorithm is not supported.",
+                    ),
+                    (
+                        _onedal_metric(self.metric, self.metric_params, self.algorithm)
+                        is not None,
+                        f"'{self.metric}' metric with metric_params="
+                        f"{self.metric_params} and '{self.algorithm}' algorithm is not "
+                        "supported. Only the euclidean, manhattan, chebyshev, minkowski "
+                        "(p >= 1) and cosine (brute force) distances are supported.",
+                    ),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
+                ]
+            )
+            if not dal_ready:
+                return patching_status
+
+            # only for the checks below, '_onedal_fit' validates the data
+            try:
+                xp, _ = get_namespace(X)
+                X = check_array(X, dtype="numeric", ensure_all_finite=False)
+                finite, _, _ = _non_finite_rows(X, xp)
+            except (TypeError, ValueError):
+                patching_status.and_conditions(
+                    [(False, "X does not pass the validation of scikit-learn.")]
+                )
+                return patching_status
+
+            n_finite = len(finite)
+            min_samples = (
+                self.min_cluster_size if self.min_samples is None else self.min_samples
+            )
             patching_status.and_conditions(
-                [(False, "X does not pass the validation of scikit-learn.")]
+                [
+                    (n_finite > 1, "X has fewer than two samples with finite values."),
+                    (
+                        min_samples <= n_finite,
+                        "min_samples is larger than the number of samples with finite "
+                        "values in X.",
+                    ),
+                    (
+                        # scikit-learn itself fails on this case
+                        n_finite == X.shape[0] or self.store_centers is None,
+                        "Centers of data with missing values or infinites are not "
+                        "supported.",
+                    ),
+                ]
             )
             return patching_status
 
-        n_finite = len(finite)
-        min_samples = (
-            self.min_cluster_size if self.min_samples is None else self.min_samples
-        )
-        patching_status.and_conditions(
-            [
-                (n_finite > 1, "X has fewer than two samples with finite values."),
-                (
-                    min_samples <= n_finite,
-                    "min_samples is larger than the number of samples with finite "
-                    "values in X.",
-                ),
-                (
-                    # scikit-learn itself fails on this case
-                    n_finite == X.shape[0] or self.store_centers is None,
-                    "Centers of data with missing values or infinites are not "
-                    "supported.",
-                ),
-            ]
-        )
-        return patching_status
+        _onedal_cpu_supported = _onedal_supported
+        _onedal_gpu_supported = _onedal_supported
 
-    _onedal_cpu_supported = _onedal_supported
-    _onedal_gpu_supported = _onedal_supported
+        def fit(self, X, y=None):
+            self._validate_params()
+            # a fallback refit must not keep an earlier oneDAL fit
+            if hasattr(self, "_onedal_estimator"):
+                del self._onedal_estimator
 
-    def fit(self, X, y=None):
-        self._validate_params()
-        # a fallback refit must not keep the state of an earlier oneDAL fit
-        for attribute in ("_onedal_estimator", "_onedal_outliers"):
-            self.__dict__.pop(attribute, None)
-
-        dispatch(
-            self,
-            "fit",
-            {
-                "onedal": self.__class__._onedal_fit,
-                "sklearn": _sklearn_HDBSCAN.fit,
-            },
-            X,
-        )
-
-        return self
-
-    fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
-
-    def dbscan_clustering(self, cut_distance, min_cluster_size=5):
-        if not hasattr(self, "_onedal_outliers"):
-            return super().dbscan_clustering(cut_distance, min_cluster_size)
-
-        # private module, imported here so that a rename does not break the patching
-        from sklearn.cluster._hdbscan._tree import labelling_at_cut
-
-        labels = labelling_at_cut(
-            self._single_linkage_tree_, cut_distance, min_cluster_size
-        )
-        # scikit-learn reads the outliers from 'labels_', which may be on a device
-        if self._onedal_outliers is not None:
-            from sklearn.cluster._hdbscan.hdbscan import _OUTLIER_ENCODING
-
-            infinite, missing = self._onedal_outliers
-            labels[infinite] = _OUTLIER_ENCODING["infinite"]["label"]
-            labels[missing] = _OUTLIER_ENCODING["missing"]["label"]
-        return labels
-
-    dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__
-
-    def __sklearn_array_api_convert__(self, converter):
-        # the dendrogram is a record array no other namespace can hold, so it stays
-        # on host together with the outlier indices
-        out = self.__class__()
-        out.__dict__ = {
-            k: converter(v) if k in _MOVABLE_ATTRIBUTES else v
-            for k, v in self.__dict__.items()
-            if k != "_onedal_estimator"
-        }
-        # a scikit-learn fit records its outliers only in 'labels_'
-        if hasattr(self, "labels_") and not hasattr(self, "_onedal_outliers"):
-            from sklearn.cluster._hdbscan.hdbscan import _OUTLIER_ENCODING
-
-            labels = np.asarray(self.labels_)
-            out._onedal_outliers = tuple(
-                np.flatnonzero(labels == _OUTLIER_ENCODING[kind]["label"])
-                for kind in ("infinite", "missing")
+            dispatch(
+                self,
+                "fit",
+                {
+                    "onedal": self.__class__._onedal_fit,
+                    "sklearn": _sklearn_HDBSCAN.fit,
+                },
+                X,
             )
-        return out
 
+            return self
 
-if onedal_HDBSCAN is None:
-    # an older oneDAL has no HDBSCAN, so there is no estimator to export or patch
-    del HDBSCAN
+        fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
+
+        def dbscan_clustering(self, cut_distance, min_cluster_size=5):
+            # scikit-learn indexes 'labels_' with numpy masks, so device labels go
+            # through host and the result comes back to their namespace and device
+            xp, _ = get_namespace(self.labels_)
+            if _is_numpy_namespace(xp):
+                return super().dbscan_clustering(cut_distance, min_cluster_size)
+            host = copy(self)
+            host.labels_ = dlpack_to_numpy(self.labels_)
+            labels = _sklearn_HDBSCAN.dbscan_clustering(
+                host, cut_distance, min_cluster_size
+            )
+            return xp.asarray(labels, device=_device(self.labels_))
+
+        dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__
+
+        def __sklearn_array_api_convert__(self, converter):
+            # the dendrogram is a record array that no other namespace can hold, so
+            # it stays on host and everything else goes through the default movers
+            state = {
+                k: v
+                for k, v in vars(self).items()
+                if k not in ("_onedal_estimator", "_single_linkage_tree_")
+            }
+            out = clone(self)
+            out.__dict__.update(_estimator_with_converted_arrays(state, converter))
+            if hasattr(self, "_single_linkage_tree_"):
+                out._single_linkage_tree_ = self._single_linkage_tree_
+            return out
+
+    __all__ += ["HDBSCAN"]
