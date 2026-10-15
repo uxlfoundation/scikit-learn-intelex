@@ -113,7 +113,6 @@ def test_dbscan_move_estimator_to(array_input_like, array_move_like, with_array_
     from sklearnex.cluster import DBSCAN
 
     X, _ = make_blobs(n_samples=20, random_state=123)
-    X = X.astype(np.float32)
 
     xp_in, _, device_in = get_namespace_and_device(array_input_like)
     X_in = move_to(X, xp=xp_in, device=device_in)
