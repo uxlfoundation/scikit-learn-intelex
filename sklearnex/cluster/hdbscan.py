@@ -34,7 +34,6 @@ from sklearn.utils.validation import check_array
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
-from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import dispatch
@@ -413,7 +412,7 @@ if daal_check_version((2026, "P", 300)):
             if _is_numpy_namespace(xp):
                 return super().dbscan_clustering(cut_distance, min_cluster_size)
             host = copy(self)
-            host.labels_ = dlpack_to_numpy(self.labels_)
+            host.labels_ = _transfer_to_host(self.labels_)[1][0]
             labels = _sklearn_HDBSCAN.dbscan_clustering(
                 host, cut_distance, min_cluster_size
             )
