@@ -14,8 +14,11 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
+
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.utils._array_api import get_namespace
@@ -61,7 +64,46 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
 
     _parameter_constraints: dict = {**_sklearn_LogisticRegression._parameter_constraints}
 
-    if sklearn_check_version("1.8"):
+    if sklearn_check_version("1.10"):
+
+        def __init__(
+            self,
+            penalty="deprecated",
+            *,
+            alpha=1.0,
+            C="deprecated",
+            l1_ratio=0.0,
+            dual="deprecated",
+            tol=1e-4,
+            fit_intercept=True,
+            intercept_scaling="deprecated",
+            class_weight=None,
+            random_state=None,
+            solver="lbfgs",
+            max_iter=100,
+            verbose=0,
+            warm_start=False,
+            n_jobs=None,
+        ):
+            super().__init__(
+                penalty=penalty,
+                alpha=alpha,
+                C=C,
+                l1_ratio=l1_ratio,
+                dual=dual,
+                tol=tol,
+                fit_intercept=fit_intercept,
+                intercept_scaling=intercept_scaling,
+                class_weight=class_weight,
+                random_state=random_state,
+                solver=solver,
+                max_iter=max_iter,
+                verbose=verbose,
+                warm_start=warm_start,
+                n_jobs=n_jobs,
+            )
+
+    elif sklearn_check_version("1.8"):
 
         def __init__(
             self,
@@ -268,9 +310,9 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
                     in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
                     "Only l2 penalty is supported.",
                 ),
-                (self.dual == False, "dual=True is not supported."),
+                (self.dual in (False, "deprecated"), "dual=True is not supported."),
                 (
-                    self.intercept_scaling == 1,
+                    self.intercept_scaling in (1, "deprecated"),
                     "Intercept scaling is not supported.",
                 ),
                 (self.class_weight is None, "Class weight is not supported"),
@@ -375,9 +417,13 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
     def _onedal_gpu_initialize_estimator(self, override_solver: bool = False):
         # We need to override solver in case the model is only used for inference, since newton-cg is the only supported solver for GPU
         # For example, if we trained model with lbfgs solver (with fall back to stock sklearn) and we want to run the inference on GPU using sklearnex code
+        C = self.C
+        # oneDAL is parametrized by C; sklearn>=1.10 defaults to alpha=1/C instead
+        if C == "deprecated":
+            C = 1.0 / self.alpha if self.alpha else np.inf
         onedal_params = {
             "tol": self.tol,
-            "C": self.C,
+            "C": C,
             "fit_intercept": self.fit_intercept,
             "solver": self.solver if not override_solver else "newton-cg",
             "max_iter": self.max_iter,
@@ -425,6 +471,12 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         self._onedal_gpu_initialize_estimator()
         self._onedal_estimator.fit(X, y_bin, queue=queue)
         self._onedal_gpu_save_attributes()
+
+        if self._onedal_estimator.n_iter_[0] >= self.max_iter:
+            warnings.warn(
+                "newton-cg failed to converge. Increase the number of iterations.",
+                ConvergenceWarning,
+            )
 
     # This should only be called when 'X' is on CPU
     def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
