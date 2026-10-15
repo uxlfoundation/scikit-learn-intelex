@@ -850,18 +850,14 @@ def test_hdbscan_duplicates(algorithm, min_samples):
 
     tree = result._single_linkage_tree_
     _assert_tree_structure(tree)
+    # brute force expands the squared distance into norms and a dot product, in
+    # oneDAL and scikit-learn alike, so copies are only about sqrt(eps * |x|^2) apart
+    atol = 1e-6 if algorithm == "brute" else 0.0
     # while 'min_samples' does not exceed the copies of a sample, its core distance
     # is zero, and so are the merges of its copies
-    n_zero = np.count_nonzero(tree["value"] == 0)
+    n_zero = np.count_nonzero(tree["value"] <= atol)
     assert n_zero == (2 * len(X) // 3 if min_samples <= 3 else 0)
-    # scikit-learn's brute force expands the squared distance into norms and a dot
-    # product too, so its copies are only about sqrt(eps * |x|^2) apart
-    _assert_same_hierarchy(
-        expected._single_linkage_tree_,
-        tree,
-        _RTOL[np.float64],
-        1e-6 if algorithm == "brute" else 0.0,
-    )
+    _assert_same_hierarchy(expected._single_linkage_tree_, tree, _RTOL[np.float64], atol)
     _assert_selection_matches(result)
 
 
