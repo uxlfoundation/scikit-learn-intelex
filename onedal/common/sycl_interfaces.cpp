@@ -14,6 +14,11 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include <algorithm>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 #ifdef ONEDAL_DATA_PARALLEL
 #include <sycl/sycl.hpp>
 #endif // ONEDAL_DATA_PARALLEL
@@ -117,9 +122,118 @@ sycl::queue get_queue_by_pylong_pointer(const py::int_& syclobj) {
     return sycl::queue{ *static_cast<sycl::queue*>(ptr) };
 }
 
+namespace {
+
+struct device_filter {
+    std::optional<sycl::backend> backend;
+    std::optional<sycl::info::device_type> type;
+    std::optional<int> number;
+    int seen = 0;
+};
+
+/// Splits `text` at `separator`, dropping empty parts as the SYCL runtime does.
+std::vector<std::string> split(const std::string& text, char separator) {
+    std::vector<std::string> parts;
+    std::size_t begin = 0;
+    while (begin <= text.size()) {
+        const std::size_t end = std::min(text.find(separator, begin), text.size());
+        if (end > begin) {
+            parts.push_back(text.substr(begin, end - begin));
+        }
+        begin = end + 1;
+    }
+    return parts;
+}
+
+device_filter parse_filter(const std::string& text) {
+    const auto invalid = [] {
+        return sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                               "Invalid filter string! Valid strings conform to "
+                               "BE:DeviceType:DeviceNum, where any are optional");
+    };
+    const auto tokens = split(text, ':');
+    if (tokens.size() > 3) {
+        throw invalid();
+    }
+    device_filter filter;
+    for (const auto& token : tokens) {
+        if (!filter.type && token == "cpu") {
+            filter.type = sycl::info::device_type::cpu;
+        }
+        else if (!filter.type && token == "gpu") {
+            filter.type = sycl::info::device_type::gpu;
+        }
+        else if (!filter.type && token == "accelerator") {
+            filter.type = sycl::info::device_type::accelerator;
+        }
+        else if (!filter.backend && token == "opencl") {
+            filter.backend = sycl::backend::opencl;
+        }
+        else if (!filter.backend && token == "level_zero") {
+            filter.backend = sycl::backend::ext_oneapi_level_zero;
+        }
+        else if (!filter.backend && token == "cuda") {
+            filter.backend = sycl::backend::ext_oneapi_cuda;
+        }
+        else if (!filter.backend && token == "hip") {
+            filter.backend = sycl::backend::ext_oneapi_hip;
+        }
+        else if (!filter.number && token.find_first_not_of("0123456789") == std::string::npos) {
+            try {
+                filter.number = std::stoi(token);
+            }
+            catch (const std::logic_error&) {
+                throw invalid();
+            }
+        }
+        else {
+            throw invalid();
+        }
+    }
+    return filter;
+}
+
+} // namespace
+
+filter_string_selector::filter_string_selector(const std::string& filters) {
+    std::vector<device_filter> parsed;
+    for (const auto& text : split(filters, ',')) {
+        parsed.push_back(parse_filter(text));
+    }
+    // A device is taken by the first filter that matches it, and a filter's number counts only
+    // the devices its backend and type match.
+    for (const auto& device : get_devices()) {
+        for (auto& filter : parsed) {
+            const bool backend_ok = !filter.backend || device.get_backend() == *filter.backend;
+            const bool type_ok =
+                !filter.type || device.get_info<sycl::info::device::device_type>() == *filter.type;
+            bool number_ok = true;
+            if (filter.number && backend_ok && type_ok) {
+                number_ok = filter.seen++ == *filter.number;
+            }
+            if (backend_ok && type_ok && number_ok) {
+                accepted_.push_back(device);
+                break;
+            }
+        }
+    }
+    if (accepted_.empty()) {
+        throw sycl::exception(sycl::make_error_code(sycl::errc::runtime),
+                              "Could not find a device that matches the specified filter(s)!");
+    }
+}
+
+int filter_string_selector::operator()(const sycl::device& device) const {
+    for (const auto& accepted : accepted_) {
+        if (accepted == device) {
+            return sycl::default_selector_v(device);
+        }
+    }
+    return -1;
+}
+
 sycl::queue get_queue_by_filter_string(const std::string& filter) {
-    filter_selector_wrapper selector{ filter };
-    return sycl::queue{ selector };
+    return sycl::queue{ filter_string_selector{ filter } };
 }
 
 sycl::queue get_queue_by_device_id(std::uint32_t id) {
