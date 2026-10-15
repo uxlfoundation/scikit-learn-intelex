@@ -257,15 +257,15 @@ def test_hdbscan_dbscan_clustering(dataframe, queue):
     # the groups are tighter than one unit across and tens of units apart, so a cut
     # anywhere in between has to recover exactly them, and a cut above everything
     # has to put all of the samples together
-    assert_groups_found(hdbscan.dbscan_clustering(cut_distance=5.0))
+    assert_groups_found(_as_numpy(hdbscan.dbscan_clustering(cut_distance=5.0)))
 
-    joined = hdbscan.dbscan_clustering(cut_distance=1000.0)
+    joined = _as_numpy(hdbscan.dbscan_clustering(cut_distance=1000.0))
     assert len(np.unique(joined)) == 1
     assert np.all(joined != -1)
 
     # nothing merges below the within-group spread, so every sample is on its own
     # and no component reaches 'min_cluster_size'
-    assert np.all(hdbscan.dbscan_clustering(cut_distance=1e-6) == -1)
+    assert np.all(_as_numpy(hdbscan.dbscan_clustering(cut_distance=1e-6)) == -1)
 
 
 @pytest.mark.allow_sklearn_fallback
