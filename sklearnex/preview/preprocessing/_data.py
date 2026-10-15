@@ -22,7 +22,7 @@ from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
@@ -54,10 +54,18 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         **_sklearn_MaxAbsScaler._parameter_constraints,
     }
 
-    def __init__(self, *, copy=True, clip=False):
-        self.copy = copy
-        self.clip = clip
-        self._need_to_finalize = False
+    if sklearn_check_version("1.8"):
+
+        def __init__(self, *, copy=True, clip=False):
+            self.copy = copy
+            self.clip = clip
+            self._need_to_finalize = False
+
+    else:
+
+        def __init__(self, *, copy=True):
+            self.copy = copy
+            self._need_to_finalize = False
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
