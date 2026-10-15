@@ -32,7 +32,7 @@ concurrency:
 env:
   DPCTL_VERSION: 0.22.1
   DPNP_VERSION: 0.20.0
-  DPCTL_PY_VERSIONS: '3.10\|3.14'
+  DPCTL_PY_VERSIONS: '3.11\|3.14'
   UXL_PYTHONVERSION: "3.13"
   UXL_SKLEARNVERSION: "1.6"
   ONEDAL_REPO: "uxlfoundation/oneDAL"
@@ -66,11 +66,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PYTHON_VERSION: "3.10"
+          - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.6"
           - PYTHON_VERSION: "3.13"
             SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.14"
+            SKLEARN_VERSION: "1.9"
+          - PYTHON_VERSION: "3.15"
             SKLEARN_VERSION: "1.9"
     name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: ubuntu-26.04
@@ -181,11 +183,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PYTHON_VERSION: "3.10"
+          - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.6"
           - PYTHON_VERSION: "3.13"
             SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.14"
+            SKLEARN_VERSION: "1.9"
+          - PYTHON_VERSION: "3.15"
             SKLEARN_VERSION: "1.9"
     name: WindowsNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: windows-2025
