@@ -15,7 +15,12 @@
 # ===============================================================================
 
 from .dbscan import DBSCAN
-from .hdbscan import HDBSCAN
+from .hdbscan import onedal_HDBSCAN
 from .k_means import KMeans
 
-__all__ = ["DBSCAN", "HDBSCAN", "KMeans"]
+__all__ = ["DBSCAN", "KMeans"]
+
+if onedal_HDBSCAN is not None:
+    from .hdbscan import HDBSCAN
+
+    __all__ += ["HDBSCAN"]

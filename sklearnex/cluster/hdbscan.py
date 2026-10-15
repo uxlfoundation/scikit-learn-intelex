@@ -29,7 +29,6 @@ from onedal._device_offload import _transfer_to_host
 if daal_check_version((2026, "P", 300)):
     from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 else:
-    # then 'sklearnex.dispatcher' leaves HDBSCAN unpatched
     onedal_HDBSCAN = None
 
 from .._device_offload import dispatch
@@ -342,10 +341,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         dal_ready = patching_status.and_conditions(
             [
                 (
-                    onedal_HDBSCAN is not None,
-                    "oneDAL version does not support HDBSCAN.",
-                ),
-                (
                     self.algorithm in ("auto", "brute", "kd_tree", "ball_tree"),
                     f"'{self.algorithm}' algorithm is not supported.",
                 ),
@@ -459,3 +454,8 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                 for kind in ("infinite", "missing")
             )
         return out
+
+
+if onedal_HDBSCAN is None:
+    # an older oneDAL has no HDBSCAN, so there is no estimator to export or patch
+    del HDBSCAN
