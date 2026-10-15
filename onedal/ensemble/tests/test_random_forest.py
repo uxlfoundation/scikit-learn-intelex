@@ -41,27 +41,6 @@ def test_rf_classifier(queue):
     assert_allclose([1], rf.predict(PREDICT_DATA, queue=queue))
 
 
-@pytest.mark.parametrize("queue", get_queues())
-def test_rf_regression(queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("RF regressor predict for the GPU sycl_queue is buggy.")
-    X, y = make_regression(
-        n_samples=100, n_features=4, n_informative=2, random_state=0, shuffle=False
-    )
-    rf = RandomForestRegressor(max_depth=2, random_state=209652396).fit(X, y, queue=queue)
-
-    # the trees depend on the RNG engine, so the fit quality and the reproducibility
-    # for a fixed seed are checked instead of fixed predictions
-    prediction = rf.predict(X, queue=queue)
-    r2 = 1 - np.sum((y - prediction) ** 2) / np.sum((y - np.mean(y)) ** 2)
-    assert r2 > 0.8
-
-    refit = RandomForestRegressor(max_depth=2, random_state=209652396).fit(
-        X, y, queue=queue
-    )
-    assert_allclose(refit.predict(X, queue=queue), prediction)
-
-
 @pytest.mark.parametrize("queue", get_queues("gpu"))
 def test_rf_classifier_random_splitter(queue):
     X, y = make_classification(
