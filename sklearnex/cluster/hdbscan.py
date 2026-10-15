@@ -29,7 +29,7 @@ from onedal._device_offload import _transfer_to_host
 if daal_check_version((2026, "P", 300)):
     from onedal.cluster import HDBSCAN as onedal_HDBSCAN
 else:
-    # the estimator is still patched, '_onedal_supported' then falls back on every call
+    # then 'sklearnex.dispatcher' leaves HDBSCAN unpatched
     onedal_HDBSCAN = None
 
 from .._device_offload import dispatch
