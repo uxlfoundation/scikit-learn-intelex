@@ -714,6 +714,8 @@ def test_standard_estimator_init_signatures(estimator):
     ]:
         for kwarg in ["min_bin_size=1", "max_bins=256"]:
             patched_sig = patched_sig.replace(", " + kwarg, "")
+    if estimator == "IncrementalPCA":
+        patched_sig = patched_sig.replace(", svd_solver='covariance_eigh'", "")
 
     assert (
         patched_sig == unpatched_sig
