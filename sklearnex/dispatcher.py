@@ -222,12 +222,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             DBSCAN_sklearnex,
             DBSCAN_sklearn,
         ),
-        "sklearn.cluster.HDBSCAN": (
-            cluster_module,
-            "HDBSCAN",
-            HDBSCAN_sklearnex,
-            HDBSCAN_sklearn,
-        ),
         "sklearn.cluster.KMeans": (
             cluster_module,
             "KMeans",
@@ -396,6 +390,18 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         IncrementalRidge_sklearnex,
         None,
     )
+
+    # HDBSCAN needs oneDAL 2026.3; with an older oneDAL it is left unpatched instead of
+    # being patched and falling back to scikit-learn on every call
+    from .cluster.hdbscan import onedal_HDBSCAN
+
+    if onedal_HDBSCAN is not None:
+        mapping["sklearn.cluster.HDBSCAN"] = (
+            cluster_module,
+            "HDBSCAN",
+            HDBSCAN_sklearnex,
+            HDBSCAN_sklearn,
+        )
 
     return mapping
 
