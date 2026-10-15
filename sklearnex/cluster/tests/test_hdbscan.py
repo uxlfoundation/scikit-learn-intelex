@@ -421,6 +421,667 @@ def test_hdbscan_non_finite_matches_sklearn(dataframe, queue, algorithm, dtype):
         )
 
 
+def _hierarchy_data(dtype=np.float64):
+    """Groups of different sizes and spreads, and scattered noise around them.
+
+    Unlike '_grouped_data', its merge distances spread over a wide range, so that
+    every parameter of the cluster selection has merges to act on.
+    """
+    generator = np.random.default_rng(0)
+    groups = [
+        ((0, 0, 0), 0.3, 60),
+        ((3, 0, 1), 0.6, 60),
+        ((0, 4, -1), 1.0, 60),
+        ((4, 4, 4), 0.4, 40),
+    ]
+    X = np.concatenate(
+        [generator.normal(center, scale, size=(n, 3)) for center, scale, n in groups]
+        + [generator.uniform(-3, 7, size=(20, 3))]
+    )
+    return X.astype(dtype)
+
+
+# The merge distances of two oneDAL fits computed with the same arithmetic. The
+# float64 bound leaves room for the order of the reductions.
+_RTOL = {np.float32: 5e-6, np.float64: 1e-10}
+# oneDAL's float32 brute force expands the squared distance into norms and a dot
+# product, which loses digits on the smallest distances; scikit-learn and the
+# trees subtract the coordinates.
+_RTOL_BRUTE = {np.float32: 2e-3, np.float64: 1e-10}
+
+
+def _merge_distances(hdbscan):
+    return np.sort(hdbscan._single_linkage_tree_["value"])
+
+
+def _partitions(tree, cuts):
+    """The connected components of a dendrogram below each of the cut distances.
+
+    Unlike the rows of the dendrogram, which order tied merges arbitrarily, these
+    are the same for any two dendrograms of the same hierarchy.
+    """
+    n_samples = len(tree) + 1
+    members = {i: [i] for i in range(n_samples)}
+    component = np.arange(n_samples)
+    partitions, row = [], 0
+    for cut in cuts:
+        while row < len(tree) and tree["value"][row] < cut:
+            node = n_samples + row
+            members[node] = members.pop(tree["left_node"][row]) + members.pop(
+                tree["right_node"][row]
+            )
+            component[members[node]] = node
+            row += 1
+        # numbered by first sample, so that equal partitions compare equal
+        _, first, inverse = np.unique(component, return_index=True, return_inverse=True)
+        partitions.append(np.argsort(np.argsort(first))[inverse])
+    return partitions
+
+
+def _assert_same_hierarchy(expected, result, rtol, atol=0.0):
+    """Two dendrograms with the same merge distances and the same partitions.
+
+    The partitions are compared halfway between consecutive merge distances that
+    are further apart than the tolerance, so a rounding error cannot move a merge
+    across a cut.
+    """
+    distances = np.sort(expected["value"])
+    assert_allclose(np.sort(result["value"]), distances, rtol=rtol, atol=atol)
+    gaps = np.flatnonzero(np.diff(distances) > 4 * (rtol * distances[1:] + atol))
+    cuts = (distances[gaps] + distances[gaps + 1]) / 2
+    for expected_partition, partition in zip(
+        _partitions(expected, cuts), _partitions(result, cuts)
+    ):
+        assert_array_equal(partition, expected_partition)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree"])
+@pytest.mark.parametrize("alpha", [0.5, 2.0])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_alpha_matches_sklearn(dataframe, queue, algorithm, alpha, dtype):
+    """'alpha' must scale the distances the way scikit-learn's same algorithm does."""
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    expected, result = _fit_both(X_df, X, algorithm=algorithm, alpha=alpha)
+    unscaled = HDBSCAN(algorithm=algorithm, copy=False).fit(X_df)
+    assert hasattr(result, "_onedal_estimator")
+
+    rtol = (_RTOL_BRUTE if algorithm == "brute" else _RTOL)[dtype]
+    _assert_same_hierarchy(
+        expected._single_linkage_tree_, result._single_linkage_tree_, rtol
+    )
+
+    distances, unscaled_distances = _merge_distances(result), _merge_distances(unscaled)
+    if algorithm == "brute":
+        # scikit-learn's brute force scales the core distances too, so every merge
+        assert_allclose(distances, unscaled_distances / alpha, rtol=_RTOL[dtype])
+    else:
+        # its trees only scale the distances between samples, not the core ones
+        assert not np.allclose(distances, unscaled_distances)
+        assert not np.allclose(distances, unscaled_distances / alpha)
+
+
+def _tree_to_labels(hdbscan):
+    """scikit-learn's cluster selection, run on the estimator's own dendrogram."""
+    try:
+        from sklearn.cluster._hdbscan._tree import HIERARCHY_dtype, tree_to_labels
+    except ImportError:
+        pytest.skip("scikit-learn moved its private 'tree_to_labels'")
+
+    try:
+        return tree_to_labels(
+            hdbscan._single_linkage_tree_.astype(HIERARCHY_dtype),
+            hdbscan.min_cluster_size,
+            hdbscan.cluster_selection_method,
+            hdbscan.allow_single_cluster,
+            hdbscan.cluster_selection_epsilon,
+            hdbscan.max_cluster_size,
+        )
+    except TypeError:
+        # https://github.com/scikit-learn/scikit-learn/issues/33219
+        if hdbscan.cluster_selection_epsilon == 0:
+            raise
+        pytest.skip("scikit-learn's 'cluster_selection_epsilon' search fails here")
+
+
+def _same_partition(expected, result):
+    try:
+        _assert_same_partition(expected, result)
+    except AssertionError:
+        return False
+    return True
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "cluster_selection_method,params,changes",
+    [
+        ("eom", {"max_cluster_size": 50}, True),
+        # scikit-learn applies 'max_cluster_size' to the excess of mass only
+        ("leaf", {"max_cluster_size": 50}, False),
+        ("eom", {"cluster_selection_epsilon": 2.0}, True),
+        ("leaf", {"cluster_selection_epsilon": 0.5}, True),
+    ],
+)
+def test_hdbscan_cluster_selection_matches_sklearn(
+    dataframe, queue, cluster_selection_method, params, changes
+):
+    """scikit-learn's selection on oneDAL's dendrogram must give the same clusters."""
+    from sklearnex.cluster import HDBSCAN
+
+    X_df = _convert_to_dataframe(_hierarchy_data(), sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(cluster_selection_method=cluster_selection_method, **params)
+    hdbscan.fit(X_df)
+    default = HDBSCAN(cluster_selection_method=cluster_selection_method).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    labels = _as_numpy(hdbscan.labels_)
+    assert _same_partition(_as_numpy(default.labels_), labels) != changes
+
+    expected_labels, expected_probabilities = _tree_to_labels(hdbscan)
+    assert_array_equal(labels, expected_labels)
+    assert_array_equal(_as_numpy(hdbscan.probabilities_), expected_probabilities)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "cluster_selection_method,cluster_selection_epsilon",
+    [("eom", 1.5), ("eom", 2.0), ("leaf", 0.5), ("leaf", 2.0)],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_cluster_selection_epsilon(
+    dataframe, queue, cluster_selection_method, cluster_selection_epsilon, dtype
+):
+    """No two clusters are closer than 'cluster_selection_epsilon'.
+
+    scikit-learn's own selection fails on most values that have an effect (see
+    '_tree_to_labels'), so this checks what the parameter guarantees instead.
+    """
+    from sklearnex.cluster import HDBSCAN
+
+    X_df = _convert_to_dataframe(
+        _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
+    )
+    hdbscan = HDBSCAN(
+        cluster_selection_method=cluster_selection_method,
+        cluster_selection_epsilon=cluster_selection_epsilon,
+    ).fit(X_df)
+    default = HDBSCAN(cluster_selection_method=cluster_selection_method).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    labels, default_labels = _as_numpy(hdbscan.labels_), _as_numpy(default.labels_)
+    assert not _same_partition(default_labels, labels)
+
+    # the samples connected below epsilon are never split between clusters
+    (component,) = _partitions(hdbscan._single_linkage_tree_, [cluster_selection_epsilon])
+    for samples in (component == c for c in np.unique(component)):
+        assert len(np.unique(labels[samples & (labels != -1)])) <= 1
+
+    # epsilon only merges clusters, so the clusters without it are not split either
+    # and their samples stay in a cluster
+    for cluster in np.unique(default_labels[default_labels != -1]):
+        merged = labels[default_labels == cluster]
+        assert np.all(merged != -1)
+        assert len(np.unique(merged)) == 1
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["kd_tree", "ball_tree"])
+@pytest.mark.parametrize("min_samples", [1, None])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_leaf_size(dataframe, queue, algorithm, min_samples, dtype):
+    """'leaf_size' only changes how the neighbors are searched, never the result."""
+    from sklearnex.cluster import HDBSCAN
+
+    X_df = _convert_to_dataframe(
+        _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
+    )
+    brute = HDBSCAN(algorithm="brute", min_samples=min_samples).fit(X_df)
+    results = [
+        HDBSCAN(algorithm=algorithm, leaf_size=leaf_size, min_samples=min_samples).fit(
+            X_df
+        )
+        for leaf_size in (1, 5, 40, 1000)
+    ]
+    reference = results[2]
+    for hdbscan in [brute] + results:
+        assert hasattr(hdbscan, "_onedal_estimator")
+
+    for hdbscan in results:
+        _assert_same_hierarchy(
+            reference._single_linkage_tree_, hdbscan._single_linkage_tree_, _RTOL[dtype]
+        )
+    _assert_same_hierarchy(
+        brute._single_linkage_tree_,
+        reference._single_linkage_tree_,
+        _RTOL_BRUTE[dtype],
+    )
+
+    # 'min_samples=1' makes the mutual reachability the plain distance, which has
+    # no ties here, so the dendrogram and the clusters drawn from it are unique;
+    # with ties only the hierarchy above is
+    if min_samples != 1:
+        return
+    labels = _as_numpy(reference.labels_)
+    probabilities = _as_numpy(reference.probabilities_)
+    for hdbscan in results:
+        _assert_same_partition(labels, hdbscan.labels_)
+        assert_allclose(
+            _as_numpy(hdbscan.probabilities_), probabilities, rtol=_RTOL[dtype]
+        )
+    _assert_same_partition(labels, brute.labels_)
+    assert_allclose(
+        _as_numpy(brute.probabilities_), probabilities, rtol=_RTOL_BRUTE[dtype]
+    )
+
+
+def _assert_tree_structure(tree):
+    """A binary dendrogram in scikit-learn's layout, whatever the order of ties."""
+    from sklearn.cluster._hdbscan._tree import HIERARCHY_dtype
+
+    n_samples = len(tree) + 1
+    assert tree.dtype == HIERARCHY_dtype
+    # infinite for the non-finite samples, merged last
+    assert np.all(tree["value"][1:] >= tree["value"][:-1])
+
+    # row 'i' creates the node 'n_samples + i' out of two earlier nodes, and every
+    # node but the root is merged exactly once
+    children = np.concatenate([tree["left_node"], tree["right_node"]])
+    rows = np.concatenate([np.arange(len(tree))] * 2)
+    assert np.all(children < n_samples + rows)
+    assert_array_equal(np.sort(children), np.arange(2 * n_samples - 2))
+
+    sizes = np.concatenate([np.ones(n_samples, dtype=np.int64), tree["cluster_size"]])
+    assert_array_equal(
+        tree["cluster_size"], sizes[tree["left_node"]] + sizes[tree["right_node"]]
+    )
+    assert tree["cluster_size"][-1] == n_samples
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree", "ball_tree"])
+@pytest.mark.parametrize("min_samples", [1, None, 20])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_single_linkage_tree_structure(
+    dataframe, queue, algorithm, min_samples, dtype
+):
+    """'_single_linkage_tree_' must be a well-formed dendrogram of all the samples."""
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(algorithm=algorithm, min_samples=min_samples).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    tree = hdbscan._single_linkage_tree_
+    assert tree.shape == (len(X) - 1,)
+    _assert_tree_structure(tree)
+    # every merge distance is a mutual reachability distance, so at least the core
+    # distance of a sample, which is positive for these distinct samples unless
+    # 'min_samples' counts only the sample itself
+    assert np.all(np.isfinite(tree["value"]))
+    assert np.all(tree["value"] > 0)
+
+
+# The cosine distance is one minus a dot product, rounded to the absolute precision
+# of float32 however small the distance.
+_ATOL_COSINE = 1e-6
+# the metrics and algorithms oneDAL computes, each with the tolerance of its float32
+# merge distances against scikit-learn's float64 ones
+_METRIC_CASES = [
+    ("euclidean", None, "brute", _RTOL_BRUTE[np.float32]),
+    ("euclidean", None, "kd_tree", _RTOL[np.float32]),
+    ("euclidean", None, "ball_tree", _RTOL[np.float32]),
+    ("manhattan", None, "brute", _RTOL[np.float32]),
+    ("manhattan", None, "kd_tree", _RTOL[np.float32]),
+    ("manhattan", None, "ball_tree", _RTOL[np.float32]),
+    ("chebyshev", None, "brute", _RTOL[np.float32]),
+    ("chebyshev", None, "kd_tree", _RTOL[np.float32]),
+    ("chebyshev", None, "ball_tree", _RTOL[np.float32]),
+    ("minkowski", {"p": 3}, "brute", _RTOL[np.float32]),
+    ("minkowski", {"p": 3}, "kd_tree", _RTOL[np.float32]),
+    ("minkowski", {"p": 3}, "ball_tree", _RTOL[np.float32]),
+    ("cosine", None, "brute", _RTOL[np.float32]),
+]
+
+
+@pytest.mark.parametrize("metric,metric_params,algorithm,rtol32", _METRIC_CASES)
+@pytest.mark.parametrize("min_samples", [1, None, 20])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_hierarchy_matches_sklearn(
+    metric, metric_params, algorithm, rtol32, min_samples, dtype
+):
+    """The merge distances and the partitions between them are scikit-learn's.
+
+    Only the order of tied merges, and so the rows of the dendrogram, may differ.
+    """
+    X = _hierarchy_data(dtype)
+    expected, result = _fit_both(
+        X,
+        metric=metric,
+        metric_params=metric_params,
+        algorithm=algorithm,
+        min_samples=min_samples,
+    )
+    assert hasattr(result, "_onedal_estimator")
+    single = dtype == np.float32
+    _assert_same_hierarchy(
+        expected._single_linkage_tree_,
+        result._single_linkage_tree_,
+        rtol32 if single else _RTOL[np.float64],
+        _ATOL_COSINE if single and metric == "cosine" else 0.0,
+    )
+
+
+def _assert_selection_matches(hdbscan, dtype=np.float64):
+    """'labels_' and 'probabilities_' are scikit-learn's selection on the tree."""
+    labels = _as_numpy(hdbscan.labels_)
+    probabilities = _as_numpy(hdbscan.probabilities_)
+    expected_labels, expected_probabilities = _tree_to_labels(hdbscan)
+    assert_array_equal(labels, expected_labels)
+    # oneDAL computes the strengths in the dtype of the data
+    if dtype == np.float64:
+        assert_array_equal(probabilities, expected_probabilities)
+    else:
+        assert_allclose(probabilities, expected_probabilities, rtol=1e-6, atol=1e-7)
+
+    assert np.all((probabilities >= 0) & (probabilities <= 1))
+    assert np.all(probabilities[labels == -1] == 0)
+    assert np.all(probabilities[labels != -1] > 0)
+    for label in np.unique(labels[labels != -1]):
+        assert_allclose(probabilities[labels == label].max(), 1.0)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("cluster_selection_method", ["eom", "leaf"])
+@pytest.mark.parametrize("allow_single_cluster", [False, True])
+@pytest.mark.parametrize("min_cluster_size,min_samples", [(5, None), (5, 1), (15, 3)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_selection_on_own_tree(
+    dataframe,
+    queue,
+    cluster_selection_method,
+    allow_single_cluster,
+    min_cluster_size,
+    min_samples,
+    dtype,
+):
+    """scikit-learn's selection on oneDAL's dendrogram reproduces oneDAL's clusters."""
+    from sklearnex.cluster import HDBSCAN
+
+    X_df = _convert_to_dataframe(
+        _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
+    )
+    hdbscan = HDBSCAN(
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        cluster_selection_method=cluster_selection_method,
+        allow_single_cluster=allow_single_cluster,
+    ).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    _assert_selection_matches(hdbscan, dtype)
+
+
+def test_hdbscan_allow_single_cluster():
+    """Data with a single cluster is one cluster only if 'allow_single_cluster'."""
+    from sklearnex.cluster import HDBSCAN
+
+    X = np.random.default_rng(0).normal(size=(100, 2))
+    labels = {}
+    for allow_single_cluster in (False, True):
+        hdbscan = HDBSCAN(allow_single_cluster=allow_single_cluster).fit(X)
+        assert hasattr(hdbscan, "_onedal_estimator")
+        _assert_selection_matches(hdbscan)
+        labels[allow_single_cluster] = _as_numpy(hdbscan.labels_)
+    assert set(labels[True].tolist()) <= {-1, 0}
+    assert not _same_partition(labels[False], labels[True])
+
+
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree"])
+@pytest.mark.parametrize("min_samples", [1, 2, 3, 5])
+def test_hdbscan_duplicates(algorithm, min_samples):
+    """Repeated samples merge at distance zero, then as scikit-learn merges them."""
+    X = np.repeat(_hierarchy_data()[::4], 3, axis=0)
+    expected, result = _fit_both(X, algorithm=algorithm, min_samples=min_samples)
+    assert hasattr(result, "_onedal_estimator")
+
+    tree = result._single_linkage_tree_
+    _assert_tree_structure(tree)
+    # while 'min_samples' does not exceed the copies of a sample, its core distance
+    # is zero, and so are the merges of its copies
+    n_zero = np.count_nonzero(tree["value"] == 0)
+    assert n_zero == (2 * len(X) // 3 if min_samples <= 3 else 0)
+    # scikit-learn's brute force expands the squared distance into norms and a dot
+    # product too, so its copies are only about sqrt(eps * |x|^2) apart
+    _assert_same_hierarchy(
+        expected._single_linkage_tree_,
+        tree,
+        _RTOL[np.float64],
+        1e-6 if algorithm == "brute" else 0.0,
+    )
+    _assert_selection_matches(result)
+
+
+@pytest.mark.parametrize(
+    "n_samples,min_cluster_size,min_samples",
+    [(2, 2, 1), (2, 2, None), (3, 2, 1), (3, 2, None), (3, 3, None), (5, 5, None)],
+)
+@pytest.mark.parametrize("allow_single_cluster", [False, True])
+def test_hdbscan_few_samples(
+    n_samples, min_cluster_size, min_samples, allow_single_cluster
+):
+    """The smallest data oneDAL takes still gives scikit-learn's hierarchy."""
+    X = _hierarchy_data()[:: len(_hierarchy_data()) // n_samples][:n_samples]
+    expected, result = _fit_both(
+        X,
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        allow_single_cluster=allow_single_cluster,
+    )
+    assert hasattr(result, "_onedal_estimator")
+    tree = result._single_linkage_tree_
+    assert tree.shape == (n_samples - 1,)
+    _assert_tree_structure(tree)
+    _assert_same_hierarchy(expected._single_linkage_tree_, tree, _RTOL[np.float64])
+    _assert_selection_matches(result)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_non_finite_rows(dataframe, queue, algorithm, dtype):
+    """Non-finite samples are left out, then labelled and merged as scikit-learn does.
+
+    scikit-learn clusters the finite samples alone, labels the samples with an
+    infinite value -2 with a strength of 0 and those with a NaN -3 with a NaN
+    strength, and merges all of them last, at an infinite distance.
+    """
+    from sklearn.cluster._hdbscan.hdbscan import remap_single_linkage_tree
+
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data(dtype)
+    infinite, missing = [7, 50, 130], [3, 99, 200, 201]
+    X[infinite[0], 0] = np.inf
+    X[infinite[1], 1] = -np.inf
+    X[infinite[2]] = np.inf
+    X[missing[0], 2] = np.nan
+    X[missing[1]] = np.nan
+    X[missing[2]] = [np.nan, np.inf, 0]
+    # infinities of both signs sum to NaN, which scikit-learn takes as missing
+    X[missing[3]] = [np.inf, -np.inf, 0]
+    finite = np.setdiff1d(np.arange(len(X)), infinite + missing)
+
+    def fit(data):
+        data = _convert_to_dataframe(data, sycl_queue=queue, target_df=dataframe)
+        hdbscan = HDBSCAN(algorithm=algorithm).fit(data)
+        assert hasattr(hdbscan, "_onedal_estimator")
+        return hdbscan
+
+    result, finite_only = fit(X), fit(X[finite])
+
+    labels = _as_numpy(result.labels_)
+    probabilities = _as_numpy(result.probabilities_)
+    assert_array_equal(labels[infinite], -2)
+    assert_array_equal(probabilities[infinite], 0)
+    assert_array_equal(labels[missing], -3)
+    assert np.all(np.isnan(probabilities[missing]))
+    assert_array_equal(labels[finite], _as_numpy(finite_only.labels_))
+    assert_array_equal(probabilities[finite], _as_numpy(finite_only.probabilities_))
+
+    expected_tree = remap_single_linkage_tree(
+        finite_only._single_linkage_tree_,
+        dict(enumerate(finite)),
+        non_finite=set(infinite + missing),
+    )
+    assert_array_equal(result._single_linkage_tree_, expected_tree)
+    _assert_tree_structure(result._single_linkage_tree_)
+    n_non_finite = len(infinite) + len(missing)
+    assert np.all(np.isinf(result._single_linkage_tree_["value"][-n_non_finite:]))
+
+
+def _components_at(tree, cut_distance, min_cluster_size):
+    """The DBSCAN clustering at a cut: components that are large enough, else noise."""
+    (component,) = _partitions(tree, [cut_distance])
+    sizes = np.bincount(component)
+    return np.where(sizes[component] >= min_cluster_size, component, -1)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("min_cluster_size", [2, 5, 30])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_dbscan_clustering_cuts(dataframe, queue, min_cluster_size, dtype):
+    """'dbscan_clustering' gives the components of the hierarchy below the cut.
+
+    The cuts are halfway between merge distances, where the components are the
+    same whatever the order of tied merges, and so equal scikit-learn's.
+    """
+    from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    result = HDBSCAN().fit(X_df)
+    assert hasattr(result, "_onedal_estimator")
+    expected = _sklearn_HDBSCAN(copy=True).fit(X)
+
+    distances = np.unique(_merge_distances(result))
+    tolerance = _RTOL[dtype] * distances[-1]
+    for quantile in (0.1, 0.3, 0.5, 0.7, 0.9, 0.99):
+        low = distances[int(quantile * (len(distances) - 1))]
+        high = distances[distances > low + 4 * tolerance][0]
+        cut_distance = (low + high) / 2
+        labels = result.dbscan_clustering(cut_distance, min_cluster_size)
+        _assert_same_partition(
+            _components_at(result._single_linkage_tree_, cut_distance, min_cluster_size),
+            labels,
+        )
+        _assert_same_partition(
+            expected.dbscan_clustering(cut_distance, min_cluster_size), labels
+        )
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "metric,metric_params", [("euclidean", None), ("manhattan", None), ("cosine", None)]
+)
+@pytest.mark.parametrize("cluster_selection_method", ["eom", "leaf"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_centers_formulas(
+    dataframe, queue, metric, metric_params, cluster_selection_method, dtype
+):
+    """The centers follow scikit-learn's formulas on oneDAL's own clusters.
+
+    A centroid is the mean of the samples of its cluster weighted by their
+    strengths, a medoid the sample that minimizes the strength-weighted sum of the
+    distances to the others.
+    """
+    from sklearn.metrics import pairwise_distances
+
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    hdbscan = HDBSCAN(
+        metric=metric,
+        metric_params=metric_params,
+        cluster_selection_method=cluster_selection_method,
+        store_centers="both",
+    ).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+
+    labels = _as_numpy(hdbscan.labels_)
+    probabilities = _as_numpy(hdbscan.probabilities_)
+    centroids, medoids = _as_numpy(hdbscan.centroids_), _as_numpy(hdbscan.medoids_)
+    n_clusters = labels.max() + 1
+    assert n_clusters > 1
+    assert centroids.shape == medoids.shape == (n_clusters, X.shape[1])
+
+    X = X.astype(np.float64)
+    for label in range(n_clusters):
+        samples, weights = X[labels == label], probabilities[labels == label]
+        assert_allclose(
+            centroids[label],
+            np.average(samples, weights=weights, axis=0),
+            rtol=_RTOL[dtype],
+            atol=_RTOL[dtype],
+        )
+
+        # the medoid is a sample of the cluster with the smallest cost, up to the
+        # rounding of the costs in the dtype of the data
+        costs = pairwise_distances(samples, metric=metric) @ weights
+        is_medoid = np.all(samples == medoids[label], axis=1)
+        assert is_medoid.any()
+        assert costs[is_medoid].min() <= costs.min() * (1 + 1e-4 * (dtype == np.float32))
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree", "ball_tree"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_deterministic(dataframe, queue, algorithm, dtype):
+    """Two fits on the same data give bitwise the same results."""
+    from sklearnex.cluster import HDBSCAN
+
+    X_df = _convert_to_dataframe(
+        _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
+    )
+    first, second = (
+        HDBSCAN(algorithm=algorithm, store_centers="both").fit(X_df) for _ in range(2)
+    )
+    for hdbscan in (first, second):
+        assert hasattr(hdbscan, "_onedal_estimator")
+    assert_array_equal(first._single_linkage_tree_, second._single_linkage_tree_)
+    for attribute in ("labels_", "probabilities_", "centroids_", "medoids_"):
+        assert_array_equal(
+            _as_numpy(getattr(first, attribute)), _as_numpy(getattr(second, attribute))
+        )
+
+
+@pytest.mark.parametrize("algorithm", ["brute", "kd_tree"])
+def test_hdbscan_float32_matches_float64(algorithm):
+    """float32 data gives the float64 hierarchy, to float32 precision."""
+    from sklearnex.cluster import HDBSCAN
+
+    X = _hierarchy_data()
+    single, double = (
+        HDBSCAN(algorithm=algorithm).fit(X.astype(dtype))
+        for dtype in (np.float32, np.float64)
+    )
+    for hdbscan in (single, double):
+        assert hasattr(hdbscan, "_onedal_estimator")
+        assert hdbscan.probabilities_.dtype == np.float64
+        assert hdbscan._single_linkage_tree_["value"].dtype == np.float64
+    _assert_same_hierarchy(
+        double._single_linkage_tree_,
+        single._single_linkage_tree_,
+        (_RTOL_BRUTE if algorithm == "brute" else _RTOL)[np.float32],
+    )
+
+
 @pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize(
     "X,params",
