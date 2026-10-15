@@ -179,6 +179,8 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.utils.parallel import get_config as parallel_get_config_sklearn
 
     # Classes and functions for patching
+    from daal4py.sklearn._utils import daal_check_version
+
     from ._config import config_context as config_context_sklearnex
     from ._config import get_config as get_config_sklearnex
     from ._config import set_config as set_config_sklearnex
@@ -392,9 +394,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
 
     # HDBSCAN needs oneDAL 2026.3; with an older oneDAL it is left unpatched instead of
     # being patched and falling back to scikit-learn on every call
-    from .cluster.hdbscan import onedal_HDBSCAN
-
-    if onedal_HDBSCAN is not None:
+    if daal_check_version((2026, "P", 300)):
         from .cluster import HDBSCAN as HDBSCAN_sklearnex
 
         mapping["sklearn.cluster.HDBSCAN"] = (
