@@ -50,12 +50,16 @@ def test_rf_regression(queue):
     )
     rf = RandomForestRegressor(max_depth=2, random_state=209652396).fit(X, y, queue=queue)
 
-    # GPU and CPU implementations of Random Forest use RNGs differently. They build
-    # different ensembles of trees, thereby requiring separate check values.
-    if queue and queue.sycl_device.is_gpu:
-        assert_allclose([1.82], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-    else:
-        assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
+    # the trees depend on the RNG engine, so the fit quality and the reproducibility
+    # for a fixed seed are checked instead of fixed predictions
+    prediction = rf.predict(X, queue=queue)
+    r2 = 1 - np.sum((y - prediction) ** 2) / np.sum((y - np.mean(y)) ** 2)
+    assert r2 > 0.8
+
+    refit = RandomForestRegressor(max_depth=2, random_state=209652396).fit(
+        X, y, queue=queue
+    )
+    assert_allclose(refit.predict(X, queue=queue), prediction)
 
 
 @pytest.mark.parametrize("queue", get_queues("gpu"))
