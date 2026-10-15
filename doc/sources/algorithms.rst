@@ -242,7 +242,7 @@ Clustering
        The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
-     - Only dense data is supported
+     - Only dense data is supported. Requires oneDAL 2026.3 or later.
 
 Dimensionality Reduction
 ************************
@@ -559,7 +559,7 @@ Clustering
        The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
-     - Only dense data is supported
+     - Only dense data is supported. Requires oneDAL 2026.3 or later.
 
 Dimensionality Reduction
 ************************
