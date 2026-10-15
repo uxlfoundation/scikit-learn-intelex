@@ -257,7 +257,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
         self._onedal_estimator.fit(X, queue=queue)
 
-        # scikit-learn's outputs are float64 whatever the input dtype
+        # scikit-learn returns float64 outputs for any input dtype
         float64 = _float64(xp, X)
         labels = self._onedal_estimator.labels_
         probabilities = xp.astype(self._onedal_estimator.probabilities_, float64)
