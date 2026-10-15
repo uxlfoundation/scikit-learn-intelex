@@ -396,7 +396,7 @@ def test_hdbscan_non_finite_matches_sklearn(dataframe, queue, algorithm, dtype):
     _assert_same_partition(expected.labels_, labels)
 
     probabilities = _as_numpy(result.probabilities_)
-    assert probabilities.dtype == expected.probabilities_.dtype
+    assert probabilities.dtype == dtype
     assert_array_equal(np.isnan(probabilities), np.isnan(expected.probabilities_))
     # oneDAL computes in the dtype of the data, scikit-learn always in float64,
     # and the strengths are ratios of the small distances within the groups
@@ -1069,9 +1069,9 @@ def test_hdbscan_float32_matches_float64(algorithm):
         HDBSCAN(algorithm=algorithm).fit(X.astype(dtype))
         for dtype in (np.float32, np.float64)
     )
-    for hdbscan in (single, double):
+    for hdbscan, dtype in ((single, np.float32), (double, np.float64)):
         assert hasattr(hdbscan, "_onedal_estimator")
-        assert hdbscan.probabilities_.dtype == np.float64
+        assert hdbscan.probabilities_.dtype == dtype
         assert hdbscan._single_linkage_tree_["value"].dtype == np.float64
     _assert_same_hierarchy(
         double._single_linkage_tree_,
@@ -1135,20 +1135,16 @@ def test_hdbscan_invalid_parameters_match_sklearn(params):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_output_dtypes_match_sklearn(dtype):
-    """scikit-learn computes in float64 whatever the input, and so types its output."""
+    """Labels and the dendrogram are typed as scikit-learn's, the rest as the data."""
     X = _grouped_data(dtype)
     expected, result = _fit_both(
         X, min_cluster_size=_MIN_CLUSTER_SIZE, store_centers="both"
     )
     assert hasattr(result, "_onedal_estimator")
-    for attribute in (
-        "labels_",
-        "probabilities_",
-        "centroids_",
-        "medoids_",
-        "_single_linkage_tree_",
-    ):
+    for attribute in ("labels_", "_single_linkage_tree_"):
         assert getattr(result, attribute).dtype == getattr(expected, attribute).dtype
+    for attribute in ("probabilities_", "centroids_", "medoids_"):
+        assert getattr(result, attribute).dtype == dtype
     assert result._min_samples == expected._min_samples
     assert result._metric_params == expected._metric_params
 

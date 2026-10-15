@@ -27,7 +27,6 @@ from sklearn.cluster._hdbscan.hdbscan import (
 )
 from sklearn.utils._array_api import (
     _estimator_with_converted_arrays,
-    _max_precision_float_dtype,
 )
 from sklearn.utils._array_api import device as _device
 from sklearn.utils.validation import check_array
@@ -259,11 +258,8 @@ if daal_check_version((2026, "P", 300)):
             self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
             self._onedal_estimator.fit(X, queue=queue)
 
-            # scikit-learn returns float64 outputs for any input dtype, as far as the
-            # device supports it
-            float64 = _max_precision_float_dtype(xp, _device(X))
             labels = self._onedal_estimator.labels_
-            probabilities = xp.astype(self._onedal_estimator.probabilities_, float64)
+            probabilities = self._onedal_estimator.probabilities_
 
             # scikit-learn returns empty centers when no cluster is found; 'empty_like'
             # allocates, so the estimator does not keep a view on 'X'
@@ -271,12 +267,12 @@ if daal_check_version((2026, "P", 300)):
                 centroids = self._onedal_estimator.centroids_
                 if centroids is None:
                     centroids = xp.empty_like(X[:0, :])
-                self.centroids_ = xp.astype(centroids, float64)
+                self.centroids_ = centroids
             if self.store_centers in ("medoid", "both"):
                 medoids = self._onedal_estimator.medoids_
                 if medoids is None:
                     medoids = xp.empty_like(X[:0, :])
-                self.medoids_ = xp.astype(medoids, float64)
+                self.medoids_ = medoids
 
             tree = _as_single_linkage_tree(self._onedal_estimator.single_linkage_tree_)
 
@@ -317,7 +313,7 @@ if daal_check_version((2026, "P", 300)):
             )
             self.probabilities_ = full(
                 probabilities,
-                float64,
+                probabilities.dtype,
                 _OUTLIER_ENCODING["infinite"]["prob"],
                 _OUTLIER_ENCODING["missing"]["prob"],
             )
