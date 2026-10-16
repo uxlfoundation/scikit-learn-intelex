@@ -68,10 +68,8 @@ jobs:
         include:
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.6"
-          - PYTHON_VERSION: "3.13"
-            SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.14"
-            SKLEARN_VERSION: "1.9"
+            SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.15"
             SKLEARN_VERSION: "1.9"
     name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
@@ -185,10 +183,8 @@ jobs:
         include:
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.6"
-          - PYTHON_VERSION: "3.13"
-            SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.14"
-            SKLEARN_VERSION: "1.9"
+            SKLEARN_VERSION: "1.8"
           - PYTHON_VERSION: "3.15"
             SKLEARN_VERSION: "1.9"
     name: WindowsNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
