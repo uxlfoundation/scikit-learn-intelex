@@ -23,6 +23,7 @@ from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     dpnp_available,
+    dpnp_to_strict_working,
     torch_available,
     torch_xpu_available,
 )
@@ -176,8 +177,8 @@ def test_move_estimator_to(
     if (
         isinstance(array_move_like, array_api_strict._array_object.Array)
         and dpnp_available
-        and is_sycl_device_available("gpu")
         and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
     ):
         pytest.skip()
     from sklearnex import linear_model
