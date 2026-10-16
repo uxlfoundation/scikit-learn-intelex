@@ -19,10 +19,6 @@ if [ -z "${PYTHON}" ]; then
     export PYTHON=python
 fi
 
-if [ ! -z "${PKG_VERSION}" ]; then
-    export SKLEARNEX_VERSION=$PKG_VERSION
-fi
-
 if [ -z "${DALROOT}" ]; then
     export DALROOT=${PREFIX}
 elif [ "${DALROOT}" != "${CONDA_PREFIX}" ] && [ ! -z "${CONDA_PREFIX}" ]; then
