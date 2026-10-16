@@ -231,6 +231,23 @@ Clustering
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - All parameters are supported except:
+
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``metric_params`` with keys other than ``p``
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
+       numbered in the same order, so ``labels_`` and the centers come back
+       permuted with respect to |sklearn|'s.
+
+       Fits that fall back to |sklearn| run on CPU and return NumPy arrays when
+       using array API inputs. ``_single_linkage_tree_`` is always a NumPy array on host.
+
+       Estimator is **only** available in :doc:`preview mode <preview>`.
+     - Only dense data is supported
 
 Dimensionality Reduction
 ************************
@@ -535,6 +552,23 @@ Clustering
 
        - ``metric`` != `'euclidean'`
        - ``algorithm`` not in [`'brute'`, `'auto'`]
+     - Only dense data is supported
+   * - :obj:`sklearn.cluster.HDBSCAN`
+     - All parameters are supported except:
+
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` = `'cosine'` with ``algorithm`` not in [`'brute'`, `'auto'`]
+       - ``metric_params`` with keys other than ``p``
+       - ``min_samples`` (``min_cluster_size`` if unset) larger than the number of samples
+
+       The clusters are the same as |sklearn|'s, but they are not necessarily
+       numbered in the same order, so ``labels_`` and the centers come back
+       permuted with respect to |sklearn|'s.
+
+       Fits that fall back to |sklearn| run on CPU and return NumPy arrays when
+       using array API inputs. ``_single_linkage_tree_`` is always a NumPy array on host.
+
+       Estimator is **only** available in :doc:`preview mode <preview>`.
      - Only dense data is supported
 
 Dimensionality Reduction
