@@ -130,6 +130,23 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             LogisticRegressionCV_sklearnex,
             LogisticRegressionCV_sklearn,
         )
+
+        # HDBSCAN needs oneDAL 2026.3; with an older oneDAL it is left unpatched instead of
+        # being patched and falling back to scikit-learn on every call
+        from daal4py.sklearn._utils import daal_check_version
+
+        if daal_check_version((2026, "P", 300)):
+            import sklearn.cluster as cluster_module
+            from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
+
+            from .preview.cluster import HDBSCAN as HDBSCAN_sklearnex
+
+            preview_mapping["sklearn.cluster.HDBSCAN"] = (
+                cluster_module,
+                "HDBSCAN",
+                HDBSCAN_sklearnex,
+                HDBSCAN_sklearn,
+            )
         return mapping | preview_mapping
 
     # Scikit-learn* modules
@@ -151,7 +168,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn import get_config as get_config_sklearn
     from sklearn import set_config as set_config_sklearn
     from sklearn.cluster import DBSCAN as DBSCAN_sklearn
-    from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
     from sklearn.cluster import KMeans as KMeans_sklearn
     from sklearn.decomposition import PCA as PCA_sklearn
     from sklearn.dummy import DummyRegressor as DummyRegressor_sklearn
@@ -179,8 +195,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.utils.parallel import get_config as parallel_get_config_sklearn
 
     # Classes and functions for patching
-    from daal4py.sklearn._utils import daal_check_version
-
     from ._config import config_context as config_context_sklearnex
     from ._config import get_config as get_config_sklearnex
     from ._config import set_config as set_config_sklearnex
@@ -391,18 +405,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         IncrementalRidge_sklearnex,
         None,
     )
-
-    # HDBSCAN needs oneDAL 2026.3; with an older oneDAL it is left unpatched instead of
-    # being patched and falling back to scikit-learn on every call
-    if daal_check_version((2026, "P", 300)):
-        from .cluster import HDBSCAN as HDBSCAN_sklearnex
-
-        mapping["sklearn.cluster.HDBSCAN"] = (
-            cluster_module,
-            "HDBSCAN",
-            HDBSCAN_sklearnex,
-            HDBSCAN_sklearn,
-        )
 
     return mapping
 

@@ -242,6 +242,8 @@ Clustering
        The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
+
+       Estimator is **only** available in :doc:`preview mode <preview>`.
      - Only dense data is supported
 
 Dimensionality Reduction
@@ -559,6 +561,8 @@ Clustering
        The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
+
+       Estimator is **only** available in :doc:`preview mode <preview>`.
      - Only dense data is supported
 
 Dimensionality Reduction

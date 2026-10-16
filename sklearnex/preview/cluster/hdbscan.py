@@ -36,11 +36,11 @@ from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
 
-from .._device_offload import dispatch
-from .._utils import PatchingConditionsChain
-from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import validate_data
+from ..._device_offload import dispatch
+from ..._utils import PatchingConditionsChain
+from ...base import oneDALEstimator
+from ...utils._array_api import enable_array_api, get_namespace
+from ...utils.validation import validate_data
 
 # 'sklearn.cluster._hdbscan._tree.HIERARCHY_dtype', repeated so that a rename in
 # that private module breaks only 'dbscan_clustering', not the whole patching

@@ -90,7 +90,7 @@ def _in_group_order(centers):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_import_hdbscan(dataframe, queue, dtype):
     """oneDAL must find the groups the data was built from."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _grouped_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -116,7 +116,7 @@ def test_sklearnex_import_hdbscan(dataframe, queue, dtype):
 )
 def test_hdbscan_metrics(metric, algorithm, metric_params):
     """Every metric and algorithm offloaded to oneDAL must find the groups."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(
         min_cluster_size=_MIN_CLUSTER_SIZE,
@@ -132,7 +132,7 @@ def test_hdbscan_metrics(metric, algorithm, metric_params):
 @pytest.mark.parametrize("store_centers", ["centroid", "medoid", "both"])
 def test_hdbscan_centers(cluster_selection_method, store_centers):
     """oneDAL computes the centers only when it is asked to."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _grouped_data()
     hdbscan = HDBSCAN(
@@ -166,7 +166,7 @@ def test_hdbscan_centers(cluster_selection_method, store_centers):
 
 def test_hdbscan_centers_all_noise():
     """No cluster means no center, reported as scikit-learn reports it."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _grouped_data()
     # a cluster has to hold every sample to be kept, which none of the groups does
@@ -183,7 +183,7 @@ def test_hdbscan_centers_all_noise():
 
 def test_hdbscan_probabilities():
     """'probabilities_' must be a membership strength in the assigned cluster."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_grouped_data())
     assert hasattr(hdbscan, "_onedal_estimator")
@@ -207,7 +207,7 @@ def test_hdbscan_single_linkage_tree_dtype():
     """The record layout must stay the one scikit-learn's own routines are typed on."""
     from sklearn.cluster._hdbscan._tree import HIERARCHY_dtype
 
-    from sklearnex.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
+    from sklearnex.preview.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
 
     assert _SINGLE_LINKAGE_TREE_DTYPE == HIERARCHY_dtype
 
@@ -216,8 +216,8 @@ def test_hdbscan_single_linkage_tree_dtype():
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_single_linkage_tree(dataframe, queue, dtype):
     """'_single_linkage_tree_' must be a dendrogram of the data."""
-    from sklearnex.cluster import HDBSCAN
-    from sklearnex.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
+    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.preview.cluster.hdbscan import _SINGLE_LINKAGE_TREE_DTYPE
 
     X = _grouped_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -246,7 +246,7 @@ def test_hdbscan_dbscan_clustering(dataframe, queue):
     This is the point of exporting it: the DBSCAN clustering at a given epsilon
     comes out of the hierarchy that was already built, without fitting again.
     """
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _grouped_data()
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -271,7 +271,7 @@ def test_hdbscan_dbscan_clustering(dataframe, queue):
 @pytest.mark.allow_sklearn_fallback
 def test_hdbscan_sparse_falls_back():
     """Sparse data is clustered by scikit-learn, which supports it."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_csr_array(_grouped_data()))
     assert not hasattr(hdbscan, "_onedal_estimator")
@@ -288,7 +288,7 @@ def _fit_both(X, X_sklearn=None, **params):
     """
     from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     params.setdefault("copy", False)
     outcomes = []
@@ -348,7 +348,7 @@ def _assert_same_partition(expected, result):
 )
 def test_hdbscan_metric_params_match_sklearn(metric, metric_params, algorithm):
     """Every metric scikit-learn computes identically is offloaded, the rest is not."""
-    from sklearnex.cluster.hdbscan import _onedal_metric
+    from sklearnex.preview.cluster.hdbscan import _onedal_metric
 
     expected, result = _fit_both(
         _grouped_data(),
@@ -501,7 +501,7 @@ def _assert_same_hierarchy(expected, result, rtol, atol=0.0):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_alpha_matches_sklearn(dataframe, queue, algorithm, alpha, dtype):
     """'alpha' must scale the distances the way scikit-learn's same algorithm does."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -570,7 +570,7 @@ def test_hdbscan_cluster_selection_matches_sklearn(
     dataframe, queue, cluster_selection_method, params, changes
 ):
     """scikit-learn's selection on oneDAL's dendrogram must give the same clusters."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X_df = _convert_to_dataframe(_hierarchy_data(), sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(cluster_selection_method=cluster_selection_method, **params)
@@ -600,7 +600,7 @@ def test_hdbscan_cluster_selection_epsilon(
     scikit-learn's own selection fails on most values that have an effect (see
     '_tree_to_labels'), so this checks what the parameter guarantees instead.
     """
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X_df = _convert_to_dataframe(
         _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
@@ -634,7 +634,7 @@ def test_hdbscan_cluster_selection_epsilon(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_leaf_size(dataframe, queue, algorithm, min_samples, dtype):
     """'leaf_size' only changes how the neighbors are searched, never the result."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X_df = _convert_to_dataframe(
         _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
@@ -709,7 +709,7 @@ def test_hdbscan_single_linkage_tree_structure(
     dataframe, queue, algorithm, min_samples, dtype
 ):
     """'_single_linkage_tree_' must be a well-formed dendrogram of all the samples."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -810,7 +810,7 @@ def test_hdbscan_selection_on_own_tree(
     dtype,
 ):
     """scikit-learn's selection on oneDAL's dendrogram reproduces oneDAL's clusters."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X_df = _convert_to_dataframe(
         _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
@@ -827,7 +827,7 @@ def test_hdbscan_selection_on_own_tree(
 
 def test_hdbscan_allow_single_cluster():
     """Data with a single cluster is one cluster only if 'allow_single_cluster'."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = np.random.default_rng(0).normal(size=(100, 2))
     labels = {}
@@ -897,7 +897,7 @@ def test_hdbscan_non_finite_rows(dataframe, queue, algorithm, dtype):
     """
     from sklearn.cluster._hdbscan.hdbscan import remap_single_linkage_tree
 
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data(dtype)
     infinite, missing = [7, 50, 130], [3, 99, 200, 201]
@@ -957,7 +957,7 @@ def test_hdbscan_dbscan_clustering_cuts(dataframe, queue, min_cluster_size, dtyp
     """
     from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -996,7 +996,7 @@ def test_hdbscan_centers_formulas(
     strengths, a medoid the sample that minimizes the strength-weighted sum of the
     distances to the others.
     """
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -1036,7 +1036,7 @@ def test_hdbscan_centers_formulas(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_deterministic(dataframe, queue, algorithm, dtype):
     """Two fits on the same data give bitwise the same results."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X_df = _convert_to_dataframe(
         _hierarchy_data(dtype), sycl_queue=queue, target_df=dataframe
@@ -1058,7 +1058,7 @@ def test_hdbscan_deterministic(dataframe, queue, algorithm, dtype):
 @pytest.mark.parametrize("algorithm", ["brute", "kd_tree"])
 def test_hdbscan_float32_matches_float64(algorithm):
     """float32 data gives the float64 hierarchy, to float32 precision."""
-    from sklearnex.cluster import HDBSCAN
+    from sklearnex.preview.cluster import HDBSCAN
 
     X = _hierarchy_data()
     single, double = (
@@ -1209,7 +1209,7 @@ if sklearn_check_version("1.9"):
             and not dpnp_to_strict_working
         ):
             pytest.skip()
-        from sklearnex.cluster import HDBSCAN
+        from sklearnex.preview.cluster import HDBSCAN
 
         X = _grouped_data()
         attributes = ["labels_", "probabilities_"]
@@ -1266,7 +1266,7 @@ if sklearn_check_version("1.9"):
     @pytest.mark.parametrize("array_move_like", _ARRAYS_LIKE)
     @pytest.mark.allow_sklearn_fallback
     def test_hdbscan_move_estimator_to_after_fallback(array_move_like, with_array_api):
-        from sklearnex.cluster import HDBSCAN
+        from sklearnex.preview.cluster import HDBSCAN
 
         X = _grouped_data()
         X[0, 0] = np.inf
