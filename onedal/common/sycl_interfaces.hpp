@@ -19,6 +19,7 @@
 #include <string>
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 #ifdef ONEDAL_DATA_PARALLEL
 #include <sycl/sycl.hpp>
@@ -54,18 +55,22 @@ std::uint32_t get_device_id(const dp_policy_t& policy);
 std::string get_device_name(const dp_policy_t& policy);
 std::string get_device_name(const sycl::device& device);
 
-/// TODO: This is a workaround class.
-/// It hides deprecated ``sycl::ext::oneapi::filter_selector`` to get rid of build warnings
-/// until a better solution is provided.
-struct filter_selector_wrapper {
-    filter_selector_wrapper(std::string filter) : filter_selector_{ filter } {}
+/// Selects devices by a filter string, with the syntax and matching rules of the deprecated
+/// ``sycl::ext::oneapi::filter_selector``: comma-separated ``backend:device_type:device_num``
+/// filters, each part optional, where the number counts the devices that match the filter's
+/// backend and type.
+class filter_string_selector {
+public:
+    /// @param[in] filters The filter string
+    ///
+    /// @throws sycl::exception with ``errc::invalid`` for a malformed string, and with
+    /// ``errc::runtime`` when no device matches
+    explicit filter_string_selector(const std::string& filters);
 
-    int operator()(const sycl::device& dev) {
-        return filter_selector_(dev);
-    }
+    int operator()(const sycl::device& device) const;
 
 private:
-    sycl::ext::oneapi::filter_selector filter_selector_;
+    std::vector<sycl::device> accepted_;
 };
 
 py::capsule pack_queue(const std::shared_ptr<sycl::queue>& queue);
