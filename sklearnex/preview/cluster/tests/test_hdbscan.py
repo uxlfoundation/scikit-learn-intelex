@@ -23,8 +23,10 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 
 pytestmark = pytest.mark.skipif(
     not daal_check_version((2026, "P", 300)),
@@ -181,11 +183,16 @@ def test_hdbscan_centers_all_noise():
         assert centers.base is None
 
 
-def test_hdbscan_probabilities():
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_probabilities(dataframe, queue, dtype):
     """'probabilities_' must be a membership strength in the assigned cluster."""
     from sklearnex.preview.cluster import HDBSCAN
 
-    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(_grouped_data())
+    X_df = _convert_to_dataframe(
+        _grouped_data(dtype), sycl_queue=queue, target_df=dataframe
+    )
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X_df)
     assert hasattr(hdbscan, "_onedal_estimator")
 
     labels = _as_numpy(hdbscan.labels_)
@@ -1281,3 +1288,183 @@ if sklearn_check_version("1.9"):
         cut = model_moved.dbscan_clustering(0.5)
         assert_same_namespace(cut, array_move_like)
         assert_array_equal(_as_numpy(cut), _as_numpy(model.dbscan_clustering(0.5)))
+
+
+# The shared suites skip the outputs of clusterers, so what array API users get back
+# from HDBSCAN is checked here, for every array class and device the tests support.
+_REQUIRES_SKLEARN_1_9 = pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="array API support of the outputs needs scikit-learn 1.9",
+)
+
+
+def _like(dataframe, X_df, X):
+    """What the outputs follow: the array itself, or NumPy for a dataframe."""
+    from onedal.tests.utils._dataframes_support import array_api_frameworks
+
+    return X_df if dataframe in array_api_frameworks else X
+
+
+@_REQUIRES_SKLEARN_1_9
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_outputs_follow_input(dataframe, queue, dtype):
+    """Every output is in the array class, device and dtype of the data."""
+    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.tests.utils.misc import assert_same_namespace
+
+    X = _grouped_data(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    like = _like(dataframe, X_df, X)
+    params = dict(min_cluster_size=_MIN_CLUSTER_SIZE, store_centers="both")
+
+    hdbscan = HDBSCAN(**params).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    labels = hdbscan.fit_predict(X_df)
+    cut = hdbscan.dbscan_clustering(cut_distance=1.0)
+    outputs = {
+        "labels_": (hdbscan.labels_, np.int64),
+        "fit_predict": (labels, np.int64),
+        "dbscan_clustering": (cut, np.int64),
+        "probabilities_": (hdbscan.probabilities_, dtype),
+        "centroids_": (hdbscan.centroids_, dtype),
+        "medoids_": (hdbscan.medoids_, dtype),
+    }
+    for name, (output, output_dtype) in outputs.items():
+        assert_same_namespace(output, like)
+        assert _as_numpy(output).dtype == output_dtype, name
+    assert isinstance(hdbscan._single_linkage_tree_, np.ndarray)
+
+    # and the same values as a fit on NumPy data
+    reference = HDBSCAN(**params).fit(X)
+    assert_array_equal(_as_numpy(labels), _as_numpy(hdbscan.labels_))
+    _assert_same_partition(reference.labels_, hdbscan.labels_)
+    _assert_same_partition(reference.dbscan_clustering(cut_distance=1.0), cut)
+    assert_allclose(
+        _as_numpy(hdbscan.probabilities_), reference.probabilities_, rtol=_RTOL[dtype]
+    )
+    for centers in ("centroids_", "medoids_"):
+        assert_allclose(
+            _in_group_order(getattr(hdbscan, centers)),
+            _in_group_order(getattr(reference, centers)),
+            rtol=_RTOL[dtype],
+        )
+
+
+@_REQUIRES_SKLEARN_1_9
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("dpnp,array_api,torch")
+)
+@pytest.mark.allow_sklearn_fallback
+def test_hdbscan_fallback_with_array_api_input(dataframe, queue, with_array_api):
+    """A fallback runs scikit-learn on host, which returns NumPy arrays."""
+    from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = _grouped_data()
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    # scikit-learn computes this metric, oneDAL does not
+    params = dict(min_cluster_size=_MIN_CLUSTER_SIZE, metric="braycurtis")
+
+    hdbscan = HDBSCAN(**params).fit(X_df)
+    assert not hasattr(hdbscan, "_onedal_estimator")
+    expected = _sklearn_HDBSCAN(**params).fit(X)
+    for output in (
+        hdbscan.labels_,
+        hdbscan.probabilities_,
+        hdbscan.dbscan_clustering(cut_distance=0.5),
+    ):
+        assert isinstance(output, np.ndarray)
+    assert_array_equal(hdbscan.labels_, expected.labels_)
+    assert_array_equal(hdbscan.probabilities_, expected.probabilities_)
+    assert_array_equal(
+        hdbscan.dbscan_clustering(cut_distance=0.5),
+        expected.dbscan_clustering(cut_distance=0.5),
+    )
+
+
+@pytest.mark.skipif(
+    not is_sycl_device_available(["gpu"]), reason="needs a SYCL GPU device"
+)
+def test_hdbscan_target_offload(caplog):
+    """NumPy data is clustered on the device 'target_offload' names, and stays NumPy."""
+    import logging
+
+    from sklearnex import config_context
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = _grouped_data()
+    params = dict(min_cluster_size=_MIN_CLUSTER_SIZE, store_centers="both")
+    caplog.set_level(logging.INFO, logger="sklearnex")
+    with config_context(target_offload="gpu"):
+        hdbscan = HDBSCAN(**params).fit(X)
+    assert "running accelerated version on GPU" in caplog.text
+    for output in (hdbscan.labels_, hdbscan.probabilities_, hdbscan.centroids_):
+        assert isinstance(output, np.ndarray)
+
+    reference = HDBSCAN(**params).fit(X)
+    _assert_same_partition(reference.labels_, hdbscan.labels_)
+    assert_allclose(hdbscan.probabilities_, reference.probabilities_, rtol=1e-10)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("non_finite", [False, True])
+def test_hdbscan_does_not_modify_input(dataframe, queue, non_finite):
+    """'copy=False' does not make the fit write to the data, read-only or not."""
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = _grouped_data()
+    if non_finite:
+        X[0, 0], X[1, 1], X[2, :] = np.inf, np.nan, -np.inf
+    X_df = _convert_to_dataframe(X.copy(), sycl_queue=queue, target_df=dataframe)
+    if dataframe == "numpy":
+        X_df.setflags(write=False)
+
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE, copy=False).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    assert_array_equal(_as_numpy(X_df), X)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_hdbscan_integer_input(dataframe, queue):
+    """Integer data is clustered as float64, like scikit-learn does."""
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = np.round(_grouped_data() * 100).astype(np.int64)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    hdbscan = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    assert _as_numpy(hdbscan.probabilities_).dtype == np.float64
+    reference = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X.astype(np.float64))
+    _assert_same_partition(reference.labels_, hdbscan.labels_)
+    assert_allclose(
+        _as_numpy(hdbscan.probabilities_), reference.probabilities_, rtol=1e-10
+    )
+
+
+@pytest.mark.skipif(
+    not (dpnp_available and is_sycl_device_available(["gpu"])),
+    reason="needs dpnp and a SYCL GPU device",
+)
+def test_hdbscan_fits_on_two_devices():
+    """Fits on host and on the GPU in turn do not affect each other."""
+    import dpnp
+
+    from sklearnex import config_context
+    from sklearnex.preview.cluster import HDBSCAN
+
+    X = _grouped_data()
+    with config_context(array_api_dispatch=True):
+        on_gpu = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(
+            dpnp.asarray(X, device="gpu")
+        )
+        on_host = HDBSCAN(min_cluster_size=_MIN_CLUSTER_SIZE).fit(X)
+        assert on_gpu.labels_.sycl_device.is_gpu
+        assert isinstance(on_host.labels_, np.ndarray)
+        # the GPU fit keeps its device after another fit ran on host
+        cut = on_gpu.dbscan_clustering(cut_distance=1.0)
+    assert cut.sycl_device.is_gpu
+    _assert_same_partition(on_host.labels_, on_gpu.labels_)
+    _assert_same_partition(on_host.dbscan_clustering(cut_distance=1.0), cut)
