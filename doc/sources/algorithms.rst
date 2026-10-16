@@ -243,6 +243,9 @@ Clustering
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
 
+       Fits that fall back to |sklearn| run on CPU and return NumPy arrays when
+       using array API inputs. ``_single_linkage_tree_`` is always a NumPy array on host.
+
        Estimator is **only** available in :doc:`preview mode <preview>`.
      - Only dense data is supported
 
@@ -561,6 +564,9 @@ Clustering
        The clusters are the same as |sklearn|'s, but they are not necessarily
        numbered in the same order, so ``labels_`` and the centers come back
        permuted with respect to |sklearn|'s.
+
+       Fits that fall back to |sklearn| run on CPU and return NumPy arrays when
+       using array API inputs. ``_single_linkage_tree_`` is always a NumPy array on host.
 
        Estimator is **only** available in :doc:`preview mode <preview>`.
      - Only dense data is supported
