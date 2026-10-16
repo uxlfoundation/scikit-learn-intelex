@@ -250,6 +250,10 @@ deselected_tests:
   - ensemble/tests/test_forest.py::test_warm_start_oob
   - ensemble/tests/test_forest.py::test_distribution
 
+  # The importances of fits with different criteria are compared with a fixed tolerance
+  # that depends on the random number generator
+  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
+
   # Different behavior when 1 class enters the input
   - feature_selection/tests/test_rfe.py::test_rfe_cv_groups
 
