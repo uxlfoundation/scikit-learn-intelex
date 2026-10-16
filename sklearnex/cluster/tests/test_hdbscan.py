@@ -1242,11 +1242,12 @@ if sklearn_check_version("1.9"):
                 rtol=1e-6,
             )
 
-        # the dendrogram is a record array, it stays on the host
+        # the dendrogram is a record array, it stays on the host, while the cut
+        # follows the namespace of 'labels_'
         assert isinstance(model_moved._single_linkage_tree_, np.ndarray)
-        assert_array_equal(
-            model_moved.dbscan_clustering(0.5), model.dbscan_clustering(0.5)
-        )
+        cut = model_moved.dbscan_clustering(0.5)
+        assert_same_namespace(cut, array_move_like)
+        assert_array_equal(_as_numpy(cut), _as_numpy(model.dbscan_clustering(0.5)))
 
         attrs_orig = dir(model)
         attrs_moved = dir(model_moved)
@@ -1277,6 +1278,6 @@ if sklearn_check_version("1.9"):
         model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
 
         assert_same_namespace(model_moved.labels_, array_move_like)
-        assert_array_equal(
-            model_moved.dbscan_clustering(0.5), model.dbscan_clustering(0.5)
-        )
+        cut = model_moved.dbscan_clustering(0.5)
+        assert_same_namespace(cut, array_move_like)
+        assert_array_equal(_as_numpy(cut), _as_numpy(model.dbscan_clustering(0.5)))
