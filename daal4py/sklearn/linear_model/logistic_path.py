@@ -131,6 +131,7 @@ def logistic_regression_path_d4p(
     y,
     classes=None,
     pos_class=None,
+    alphas=None,
     Cs=10,
     fit_intercept=True,
     max_iter=100,
@@ -160,10 +161,21 @@ def logistic_regression_path_d4p(
     # remains as it was before the early offload conditions, so some sections might have
     # become unreachable.
 
-    if isinstance(Cs, numbers.Integral):
-        Cs = np.logspace(-4, 4, Cs)
+    # sklearn>=1.10 parametrizes the path by 'alphas' unless 'Cs' is given explicitly
+    use_alpha = Cs is None
+    if use_alpha:
+        if isinstance(alphas, numbers.Integral):
+            alphas = np.logspace(4, -4, alphas)
+        reg_strengths = alphas
+    else:
+        if isinstance(Cs, numbers.Integral):
+            Cs = np.logspace(-4, 4, Cs)
+        reg_strengths = [1.0 / C for C in Cs]
 
-    solver = _check_solver(solver, penalty, dual)
+    if sklearn_check_version("1.10"):
+        solver, dual = _check_solver(solver, penalty, dual)
+    else:
+        solver = _check_solver(solver, penalty, dual)
 
     # Preprocessing.
     if check_input:
@@ -340,8 +352,8 @@ def logistic_regression_path_d4p(
             hess = _daal4py_grad_hess_
 
     coefs = list()
-    n_iter = np.zeros(len(Cs), dtype=np.int32)
-    for i, C in enumerate(Cs):
+    n_iter = np.zeros(len(reg_strengths), dtype=np.int32)
+    for i, reg_strength in enumerate(reg_strengths):
         if solver == "lbfgs":
             extra_args = daal_extra_args_func(
                 classes.size,
@@ -349,7 +361,7 @@ def logistic_regression_path_d4p(
                 X,
                 target,
                 0.0,
-                1.0 / (2 * C * C_daal_multiplier * sw_sum),
+                reg_strength / (2 * C_daal_multiplier * sw_sum),
                 fit_intercept,
                 value=True,
                 gradient=True,
@@ -393,7 +405,7 @@ def logistic_regression_path_d4p(
         elif solver == "newton-cg":
 
             def make_ncg_funcs(f, value=False, gradient=False, hessian=False):
-                daal_penaltyL2 = 1.0 / (2 * C * C_daal_multiplier * sw_sum)
+                daal_penaltyL2 = reg_strength / (2 * C_daal_multiplier * sw_sum)
                 _obj_, X_, y_, n_samples = daal_extra_args_func(
                     classes.size,
                     w0,
@@ -450,7 +462,12 @@ def logistic_regression_path_d4p(
         for i, ci in enumerate(coefs):
             coefs[i] = np.delete(ci, 0, axis=-1)
 
-    return np.array(coefs), np.array(Cs), n_iter
+    coefs = np.array(coefs)
+    if not sklearn_check_version("1.10"):
+        return coefs, np.array(Cs), n_iter
+    if use_alpha:
+        return coefs, np.asarray(alphas, dtype=X.dtype), None, n_iter
+    return coefs, None, np.asarray(Cs, dtype=X.dtype), n_iter
 
 
 def daal4py_fit(self, X, y, sample_weight=None):
@@ -603,7 +620,109 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-if sklearn_check_version("1.9"):
+if sklearn_check_version("1.10"):
+
+    def logistic_regression_path(
+        X,
+        y,
+        *,
+        classes,
+        alphas=10,
+        Cs=None,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,  # Not supported
+        estimator=None,  # Only used by 'callback_ctx'
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegression.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            alphas=alphas,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+    def logistic_regression_path_cv(
+        X,
+        y,
+        *,
+        classes,
+        alphas=10,
+        Cs=None,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,  # Not supported
+        estimator=None,  # Only used by 'callback_ctx'
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegressionCV.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            alphas=alphas,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+elif sklearn_check_version("1.9"):
 
     def logistic_regression_path(
         X,
@@ -910,6 +1029,7 @@ def logistic_regression_path_dispatcher(
     y,
     classes=None,
     pos_class=None,
+    alphas=None,
     Cs=10,
     fit_intercept=True,
     max_iter=100,
@@ -969,6 +1089,7 @@ def logistic_regression_path_dispatcher(
                 X,
                 y,
                 classes=classes,
+                alphas=alphas,
                 Cs=Cs,
                 fit_intercept=fit_intercept,
                 max_iter=max_iter,
@@ -1039,6 +1160,7 @@ def logistic_regression_path_dispatcher(
         y,
         classes=classes,
         pos_class=pos_class,
+        alphas=alphas,
         Cs=Cs,
         fit_intercept=fit_intercept,
         max_iter=max_iter,

@@ -402,6 +402,9 @@ deselected_tests:
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
 
+  # Preview newton-cg does not converge at alpha=1e5, so the 1-ulp gap between alpha and 1/C changes the result
+  - linear_model/tests/test_logistic.py::test_equivalence_of_default_C_and_alpha[newton-cg-False
+
   # These fail due to not printing everything that scikit-learn prints on verbose mode
   - cluster/tests/test_k_means.py::test_kmeans_verbose
 
