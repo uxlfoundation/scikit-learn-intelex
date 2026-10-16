@@ -107,9 +107,10 @@ if dpnp_available:
     try:
         from sklearn.utils._array_api import get_namespace_and_device, move_to
 
-        xp, _, device = get_namespace_and_device(array_api_strict.arange(1))
-        _ = move_to(dpnp.arange(1), xp=xp, device=device)
-        dpnp_to_strict_working = True
+        with config_context(array_api_dispatch=True):
+            xp, _, device = get_namespace_and_device(array_api_strict.arange(1))
+            _ = move_to(dpnp.arange(1), xp=xp, device=device)
+            dpnp_to_strict_working = True
     except Exception:
         pass
 
