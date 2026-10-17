@@ -18,9 +18,11 @@ from abc import ABC
 
 from onedal.spmd.cluster import DBSCAN as onedal_DBSCAN
 
+from ...base import onedal_spmd_estimator
 from ...cluster import DBSCAN as DBSCAN_Batch
 
 
+@onedal_spmd_estimator
 class DBSCAN(DBSCAN_Batch):
     __doc__ = DBSCAN_Batch.__doc__
     _onedal_dbscan = staticmethod(onedal_DBSCAN)

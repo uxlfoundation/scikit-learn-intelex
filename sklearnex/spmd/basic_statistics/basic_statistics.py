@@ -16,9 +16,11 @@
 
 from onedal.spmd.basic_statistics import BasicStatistics as onedal_BasicStatistics
 
+from ...base import onedal_spmd_estimator
 from ...basic_statistics import BasicStatistics as BasicStatistics_Batch
 
 
+@onedal_spmd_estimator
 class BasicStatistics(BasicStatistics_Batch):
     __doc__ = BasicStatistics_Batch.__doc__
     _onedal_basic_statistics = staticmethod(onedal_BasicStatistics)

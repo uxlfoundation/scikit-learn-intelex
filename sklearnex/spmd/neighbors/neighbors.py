@@ -21,11 +21,13 @@ from onedal.spmd.neighbors import KNeighborsRegressor as onedal_KNeighborsRegres
 from onedal.spmd.neighbors import NearestNeighbors as onedal_NearestNeighbors
 from onedal.utils._array_api import _is_numpy_namespace
 
+from ...base import onedal_spmd_estimator
 from ...neighbors import KNeighborsClassifier as base_KNeighborsClassifier
 from ...neighbors import KNeighborsRegressor as base_KNeighborsRegressor
 from ...neighbors import NearestNeighbors as base_NearestNeighbors
 
 
+@onedal_spmd_estimator
 class KNeighborsClassifier(base_KNeighborsClassifier):
     _onedal_estimator = onedal_KNeighborsClassifier
 
@@ -53,6 +55,7 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
         )
 
 
+@onedal_spmd_estimator
 class KNeighborsRegressor(base_KNeighborsRegressor):
     _onedal_estimator = onedal_KNeighborsRegressor
 
@@ -69,5 +72,6 @@ class KNeighborsRegressor(base_KNeighborsRegressor):
         return self._onedal_estimator.predict(X, queue=queue)
 
 
+@onedal_spmd_estimator
 class NearestNeighbors(base_NearestNeighbors):
     _onedal_estimator = onedal_NearestNeighbors
