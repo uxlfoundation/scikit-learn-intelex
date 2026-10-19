@@ -1661,7 +1661,9 @@ def test_split_threshold(value, split_op, expected):
 
 
 # LightGBM's predictor zeroes feature values this small before comparing them,
-# so observations sitting on a split at +-this value are not routed by it
+# so observations sitting on a split at +-this value are not routed by it:
+# https://github.com/lightgbm-org/LightGBM/blob/v4.7.0/include/LightGBM/meta.h#L57
+# https://github.com/lightgbm-org/LightGBM/blob/v4.7.0/src/c_api.cpp#L2933-L2947
 _LGB_ZERO_THRESHOLD = float(np.float32(1e-35))
 
 
@@ -1922,8 +1924,8 @@ def test_treelite_unsupported():
 # These aren't typically produced by the main libraries targeted by
 # treelite, but can still be specified to be like this when constructing
 # a model through their model builder.
-# 5.0 is exactly representable as a float32; 12345.6789 is not and rounds down
-# to one, which is what catches an exclusive split converted an ulp too low
+# 5.0 is exactly representable as a float32; 12345.6789 is not and rounds down,
+# which allows to test for an exclusive split converted an ulp too low
 @pytest.mark.parametrize("threshold", [5.0, 12345.6789])
 @pytest.mark.parametrize("opname", [">", ">=", "<", "<="])
 def test_treelite_uncommon(opname, threshold):
