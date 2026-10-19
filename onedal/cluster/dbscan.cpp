@@ -68,6 +68,26 @@ auto get_onedal_result_options(const py::dict& params) {
     return onedal_options;
 }
 
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260300
+static dbscan::distance_metric get_onedal_metric(const py::dict& params) {
+    using namespace dal::dbscan;
+
+    const auto metric = params["metric"].cast<std::string>();
+
+    if (metric == "euclidean")
+        return distance_metric::euclidean;
+    if (metric == "manhattan")
+        return distance_metric::manhattan;
+    if (metric == "minkowski")
+        return distance_metric::minkowski;
+    if (metric == "chebyshev")
+        return distance_metric::chebyshev;
+    if (metric == "cosine")
+        return distance_metric::cosine;
+    ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(metric);
+}
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260300
+
 struct params2desc {
     template <typename Float, typename Method, typename Task>
     auto operator()(const pybind11::dict& params) {
@@ -78,6 +98,10 @@ struct params2desc {
         auto desc = descriptor<Float, Method, Task>(epsilon, min_observations);
         desc.set_mem_save_mode(params["mem_save_mode"].cast<bool>());
         desc.set_result_options(get_onedal_result_options(params));
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260300
+        desc.set_metric(get_onedal_metric(params));
+        desc.set_degree(params["degree"].cast<double>());
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260300
 
         return desc;
     }
