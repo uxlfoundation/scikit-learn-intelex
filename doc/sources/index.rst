@@ -22,6 +22,7 @@
    Quick Start <self>
    installation.rst
    about.rst
+   faq.rst
 
 .. toctree::
    :caption: Documentation topics
