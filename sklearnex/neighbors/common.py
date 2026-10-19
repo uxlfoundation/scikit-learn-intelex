@@ -14,11 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 import warnings
 from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
+from sklearn.base import clone
 from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
@@ -733,3 +735,26 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return kneighbors_graph
 
     kneighbors_graph.__doc__ = KNeighborsMixin.kneighbors_graph.__doc__
+
+    def __sklearn_array_api_convert__(self, converter):
+        if not hasattr(self, "_onedal_estimator") or inspect.isclass(
+            self._onedal_estimator
+        ):
+            raise ValueError("Can only move KNN estimators fitted through oneDAL")
+        if hasattr(self, "_fit_method") and self._fit_method != "brute":
+            raise ValueError(
+                "Can only move neighbors estimators fitted with 'algorithm=brute'"
+            )
+        out = clone(self)
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "_fit_X", "_y", "_shape"]
+        }
+        out._fit_X = converter(self._fit_X)
+        if hasattr(self, "_y") and self._y is not None:
+            out._y = converter(self._y)
+        if hasattr(self, "_shape") and self._shape is not None:
+            out._shape = converter(self._shape)
+        out._fit_onedal_estimator()
+        return out

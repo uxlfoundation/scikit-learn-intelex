@@ -166,6 +166,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             accept_sparse="csr",
         )
 
+        self._fit_onedal_estimator(queue=queue)
+        self._save_attributes()
+
+    def _fit_onedal_estimator(self, queue=None):
+        X = self._fit_X
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -180,8 +185,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator.fit(X, y, queue=queue)
-        self._save_attributes()
+        self._onedal_estimator.fit(X, y=None, queue=queue)
 
     def _onedal_predict(self, X, queue=None):
         if X is not None:

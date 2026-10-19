@@ -23,6 +23,7 @@ from sklearn.utils import get_tags
 from sklearn.utils._array_api import get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal import _default_backend
 from onedal._device_offload import _get_host_inputs, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
@@ -276,3 +277,29 @@ def support_input_format(func):
         return result
 
     return wrapper_impl
+
+
+def check_data_is_allocated_on_device(arr) -> bool:
+    """Check if some array input is allocated on a SYCL device.
+
+    Parameters
+    ----------
+    arr : array
+        Array object from an array library like NumPy or DPNP.
+
+    Returns
+    -------
+    bool
+        Whether the data is allocated on a SYCL device or not.
+
+    Notes
+    -----
+    In general, this should be handled through the global queue.
+    This is only for cases where no global queue is used (e.g.
+    `move_estimator_to`)."""
+    if not hasattr(arr, "__dlpack_device__"):
+        return False
+    device = arr.__dlpack_device__()
+    if device is None:
+        return False
+    return device[0] == _default_backend.kDLOneAPI

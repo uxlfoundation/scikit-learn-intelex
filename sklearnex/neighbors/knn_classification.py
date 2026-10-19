@@ -179,10 +179,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             multi_output=True,
         )
 
-        # Process classification targets before passing to onedal
         self._process_classification_targets(X, y, skip_validation=False)
+        self._fit_onedal_estimator(queue=queue)
+        self._save_attributes()
 
-        # Call onedal backend
+    def _fit_onedal_estimator(self, queue=None):
+        X = self._fit_X
+        y = self._y
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -205,11 +209,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator._shape = self._shape
 
         # Reshape encoded labels for C++ backend (always needs (-1, 1) shape)
-        fit_y = xp.reshape(self._y, (-1, 1))
+        xp, _ = get_namespace(y)
+        fit_y = xp.reshape(y, (-1, 1))
         self._onedal_estimator.fit(X, fit_y, queue=queue)
-
-        # Post-processing
-        self._save_attributes()
 
     def _process_classification_targets(self, X, y, skip_validation=False):
         """Process classification targets and set class-related attributes.
