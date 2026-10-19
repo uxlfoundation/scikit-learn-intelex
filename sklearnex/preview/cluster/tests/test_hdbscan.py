@@ -1352,6 +1352,40 @@ def test_hdbscan_outputs_follow_input(dataframe, queue, dtype):
 
 
 @_REQUIRES_SKLEARN_1_9
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_hdbscan_non_finite_outputs_follow_input(dataframe, queue, dtype):
+    """With non-finite rows the outputs also stay in the array class of the data."""
+    from sklearnex.preview.cluster import HDBSCAN
+    from sklearnex.tests.utils.misc import assert_same_namespace
+
+    X = _grouped_data(dtype)
+    X[0, 0], X[1, 1] = np.inf, np.nan
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    like = _like(dataframe, X_df, X)
+    params = dict(min_cluster_size=_MIN_CLUSTER_SIZE)
+
+    hdbscan = HDBSCAN(**params).fit(X_df)
+    assert hasattr(hdbscan, "_onedal_estimator")
+    cut = hdbscan.dbscan_clustering(cut_distance=1.0)
+    # scikit-learn gives int32 labels when some rows are not finite
+    for output, output_dtype in (
+        (hdbscan.labels_, np.int32),
+        (hdbscan.probabilities_, dtype),
+        (cut, np.int64),
+    ):
+        assert_same_namespace(output, like)
+        assert _as_numpy(output).dtype == output_dtype
+
+    reference = HDBSCAN(**params).fit(X)
+    _assert_same_partition(reference.labels_, hdbscan.labels_)
+    _assert_same_partition(reference.dbscan_clustering(cut_distance=1.0), cut)
+    assert_allclose(
+        _as_numpy(hdbscan.probabilities_), reference.probabilities_, rtol=_RTOL[dtype]
+    )
+
+
+@_REQUIRES_SKLEARN_1_9
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("dpnp,array_api,torch")
 )
