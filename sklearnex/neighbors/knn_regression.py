@@ -203,7 +203,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # GPU regression uses full train (needs y reshaped to (-1, 1))
         # CPU regression uses train_search (only needs X, y must be None)
         if gpu_device:
-            xp = get_namespace(y)
+            xp, _ = get_namespace(y)
             fit_y = xp.reshape(y, (-1, 1))
         else:
             fit_y = None
