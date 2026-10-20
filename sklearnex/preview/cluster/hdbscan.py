@@ -27,6 +27,7 @@ from sklearn.cluster._hdbscan.hdbscan import (
 )
 from sklearn.utils._array_api import (
     _estimator_with_converted_arrays,
+    _max_precision_float_dtype,
 )
 from sklearn.utils._array_api import device as _device
 from sklearn.utils.validation import check_array
@@ -258,7 +259,12 @@ if daal_check_version((2026, "P", 300)):
             self._onedal_estimator.fit(X, queue=queue)
 
             labels = self._onedal_estimator.labels_
-            probabilities = self._onedal_estimator.probabilities_
+            # scikit-learn returns float64 for any input; float32 only where the
+            # device has no float64
+            float_dtype = _max_precision_float_dtype(xp, _device(X))
+            probabilities = xp.astype(
+                self._onedal_estimator.probabilities_, float_dtype, copy=False
+            )
 
             # scikit-learn returns empty centers when no cluster is found; 'empty_like'
             # allocates, so the estimator does not keep a view on 'X'
@@ -266,12 +272,12 @@ if daal_check_version((2026, "P", 300)):
                 centroids = self._onedal_estimator.centroids_
                 if centroids is None:
                     centroids = xp.empty_like(X[:0, :])
-                self.centroids_ = centroids
+                self.centroids_ = xp.astype(centroids, float_dtype, copy=False)
             if self.store_centers in ("medoid", "both"):
                 medoids = self._onedal_estimator.medoids_
                 if medoids is None:
                     medoids = xp.empty_like(X[:0, :])
-                self.medoids_ = medoids
+                self.medoids_ = xp.astype(medoids, float_dtype, copy=False)
 
             tree = _as_single_linkage_tree(self._onedal_estimator.single_linkage_tree_)
 
