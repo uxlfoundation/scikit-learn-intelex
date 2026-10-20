@@ -208,9 +208,7 @@ def test_preview_namespace(monkeypatch):
 
     from sklearnex.dispatcher import _is_preview_enabled
 
-    # unpatch_sklearn deletes SKLEARNEX_PREVIEW once patch_sklearn(preview=True) has
-    # written it, so an externally set value has to be taken out of the way here or it
-    # would be destroyed for every test collected after this one.
+    # the default-patching checks below require preview off; monkeypatch restores it
     monkeypatch.delenv("SKLEARNEX_PREVIEW", raising=False)
 
     try:
