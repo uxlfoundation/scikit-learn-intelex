@@ -55,6 +55,9 @@ struct fptype2t {
     Ops ops;
 };
 
+// The *_ops structs below call oneDAL with the GIL released. The descriptor is
+// built from the Python params first; inputs are already tables, and the caller
+// converts the result back to Python objects.
 template <typename Policy, typename Input, typename Ops>
 struct compute_ops {
     using Task = typename Input::task_t;
@@ -67,6 +70,7 @@ struct compute_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::compute(policy, desc, input);
     }
 
@@ -91,6 +95,7 @@ struct compute_ops_with_hyperparams {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::compute(policy, desc, hyperparams, input);
     }
 
@@ -112,6 +117,7 @@ struct train_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::train(policy, desc, input);
     }
 
@@ -136,6 +142,7 @@ struct train_ops_with_hyperparams {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::train(policy, desc, hyperparams, input);
     }
 
@@ -157,6 +164,7 @@ struct infer_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::infer(policy, desc, input);
     }
 
@@ -181,6 +189,7 @@ struct infer_ops_with_hyperparams {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::infer(policy, desc, hyperparams, input);
     }
 
@@ -201,6 +210,7 @@ struct partial_compute_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::partial_compute(policy, desc, input);
     }
 
@@ -220,6 +230,7 @@ struct finalize_compute_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::finalize_compute(policy, desc, input);
     }
 
@@ -239,6 +250,7 @@ struct partial_train_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::partial_train(policy, desc, input);
     }
 
@@ -262,6 +274,7 @@ struct partial_train_ops_with_hyperparams {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::partial_train(policy, desc, hyperparams, input);
     }
 
@@ -282,6 +295,7 @@ struct finalize_train_ops {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::finalize_train(policy, desc, input);
     }
 
@@ -305,6 +319,7 @@ struct finalize_train_ops_with_hyperparams {
     template <typename Float, typename Method, typename... Args>
     auto operator()(const pybind11::dict& params) {
         auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        pybind11::gil_scoped_release release;
         return dal::finalize_train(policy, desc, hyperparams, input);
     }
 

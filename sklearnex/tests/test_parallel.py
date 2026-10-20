@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from threading import Barrier, Thread
+import time
+from threading import Barrier, Event, Thread
 
+import numpy as np
 import pytest
 
 from sklearnex import config_context
@@ -72,3 +74,35 @@ def test_queue_is_thread_local():
     t2.start()
     t1.join()
     t2.join()
+
+
+def test_gil_released_during_onedal_compute():
+    """Another Python thread keeps running while oneDAL computes."""
+    from sklearnex.neighbors import NearestNeighbors
+
+    X = np.random.default_rng(0).random((10000, 32))
+    # brute force 'kneighbors' is a single long oneDAL call
+    model = NearestNeighbors(n_neighbors=5, algorithm="brute").fit(X)
+    assert hasattr(model, "_onedal_estimator")
+
+    ticks = []
+    stop = Event()
+
+    def tick():
+        while not stop.is_set():
+            ticks.append(time.perf_counter())
+            time.sleep(0.001)
+
+    ticker = Thread(target=tick)
+    ticker.start()
+    try:
+        start = time.perf_counter()
+        model.kneighbors(X)
+        end = time.perf_counter()
+    finally:
+        stop.set()
+        ticker.join()
+
+    # with the GIL held the ticker stalls for the whole oneDAL call
+    gaps = np.diff([start] + [t for t in ticks if start < t < end] + [end])
+    assert gaps.max() < 0.5 * (end - start)

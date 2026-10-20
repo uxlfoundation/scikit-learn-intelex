@@ -23,7 +23,7 @@ In general, estimators and functions from the |sklearnex| are sub-classed from t
 Python threads
 --------------
 
-Estimators and functions from the |sklearnex| are not meant to be parallelizable through Python threads, since they do not raise the GIL (global interpreter lock) and in some cases might rely on global variables.
+Estimators and functions from the |sklearnex| are not meant to be parallelizable through Python threads, since in some cases they rely on global variables. The GIL (global interpreter lock) is released only while the |onedal| computes.
 
 Process-based parallelization (the default mode in :mod:`joblib`) is recommended instead, whether through forked processes or through sub-processes. The |sklearnex| is fork-safe and this parallelization mode will usually be faster on Linux*, but note that other libraries that could be used together with it (such as `Polars <https://pola.rs>`__) might not always work correctly under forked processes.
 

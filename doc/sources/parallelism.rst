@@ -58,9 +58,10 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
 Python threads and thread safety
 ================================
 
-In general, accelerated computations offered by estimators from the |sklearnex|
-do not raise the Python GIL, thus they are not compatible with parallelization
-backends that rely on Python threads. Instead, process-based parallelism is
+The |sklearnex| releases the Python GIL while the |onedal| computes, so other
+Python threads keep running during a fit or a prediction. This does not make
+estimators compatible with parallelization backends that rely on Python
+threads, for the reasons listed below. Instead, process-based parallelism is
 recommended, which is the default mode in tools like :mod:`joblib` and by
 extension in metaestimators from |sklearn|.
 
@@ -76,9 +77,9 @@ What is supported, on both build flavors, is concurrent use of **separate**
 estimator instances - each one constructed, fitted and used within a single
 thread - subject to the exceptions listed below. Instances that are not shared
 hold no Python state in common, and the underlying |onedal| computations they
-dispatch are themselves thread-safe. On a GIL-enabled build this arrangement
-still yields no parallelism for the computation itself, since the GIL is held
-throughout it; on a free-threaded build the computations do overlap.
+dispatch are themselves thread-safe. The |onedal| computations overlap on both
+build flavors, while the Python code around them overlaps only on a
+free-threaded build.
 
 Besides GIL usage in the |sklearnex|, there are other considerations with concurrent
 usage in Python threads, even if running under the Python GIL:
