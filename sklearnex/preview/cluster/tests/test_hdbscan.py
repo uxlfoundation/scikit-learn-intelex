@@ -373,6 +373,14 @@ def test_hdbscan_metric_params_match_sklearn(metric, metric_params, algorithm):
     _assert_same_partition(expected.labels_, result.labels_)
 
 
+def _float_dtype(queue):
+    """scikit-learn's float64, unless the device of 'queue' has no float64."""
+    device = getattr(queue, "sycl_device", None)
+    if device is not None and not device.has_aspect_fp64:
+        return np.float32
+    return np.float64
+
+
 def _non_finite_data(dtype=np.float64):
     X = _grouped_data(dtype)
     X[3, 0] = np.nan
@@ -403,7 +411,7 @@ def test_hdbscan_non_finite_matches_sklearn(dataframe, queue, algorithm, dtype):
     _assert_same_partition(expected.labels_, labels)
 
     probabilities = _as_numpy(result.probabilities_)
-    assert probabilities.dtype == dtype
+    assert probabilities.dtype == _float_dtype(queue)
     assert_array_equal(np.isnan(probabilities), np.isnan(expected.probabilities_))
     # oneDAL computes in the dtype of the data, scikit-learn always in float64,
     # and the strengths are ratios of the small distances within the groups
@@ -1072,9 +1080,9 @@ def test_hdbscan_float32_matches_float64(algorithm):
         HDBSCAN(algorithm=algorithm).fit(X.astype(dtype))
         for dtype in (np.float32, np.float64)
     )
-    for hdbscan, dtype in ((single, np.float32), (double, np.float64)):
+    for hdbscan in (single, double):
         assert hasattr(hdbscan, "_onedal_estimator")
-        assert hdbscan.probabilities_.dtype == dtype
+        assert hdbscan.probabilities_.dtype == np.float64
         assert hdbscan._single_linkage_tree_["value"].dtype == np.float64
     _assert_same_hierarchy(
         double._single_linkage_tree_,
@@ -1138,16 +1146,20 @@ def test_hdbscan_invalid_parameters_match_sklearn(params):
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_output_dtypes_match_sklearn(dtype):
-    """Labels and the dendrogram are typed as scikit-learn's, the rest as the data."""
+    """Every output is typed as scikit-learn's, float64 for float32 data too."""
     X = _grouped_data(dtype)
     expected, result = _fit_both(
         X, min_cluster_size=_MIN_CLUSTER_SIZE, store_centers="both"
     )
     assert hasattr(result, "_onedal_estimator")
-    for attribute in ("labels_", "_single_linkage_tree_"):
+    for attribute in (
+        "labels_",
+        "probabilities_",
+        "centroids_",
+        "medoids_",
+        "_single_linkage_tree_",
+    ):
         assert getattr(result, attribute).dtype == getattr(expected, attribute).dtype
-    for attribute in ("probabilities_", "centroids_", "medoids_"):
-        assert getattr(result, attribute).dtype == dtype
     assert result._min_samples == expected._min_samples
     assert result._metric_params == expected._metric_params
 
@@ -1309,7 +1321,7 @@ def _like(dataframe, X_df, X):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_hdbscan_outputs_follow_input(dataframe, queue, dtype):
-    """Every output is in the array class, device and dtype of the data."""
+    """Every output is in the array class and device of the data."""
     from sklearnex.preview.cluster import HDBSCAN
     from sklearnex.tests.utils.misc import assert_same_namespace
 
@@ -1326,9 +1338,9 @@ def test_hdbscan_outputs_follow_input(dataframe, queue, dtype):
         "labels_": (hdbscan.labels_, np.int64),
         "fit_predict": (labels, np.int64),
         "dbscan_clustering": (cut, np.int64),
-        "probabilities_": (hdbscan.probabilities_, dtype),
-        "centroids_": (hdbscan.centroids_, dtype),
-        "medoids_": (hdbscan.medoids_, dtype),
+        "probabilities_": (hdbscan.probabilities_, _float_dtype(queue)),
+        "centroids_": (hdbscan.centroids_, _float_dtype(queue)),
+        "medoids_": (hdbscan.medoids_, _float_dtype(queue)),
     }
     for name, (output, output_dtype) in outputs.items():
         assert_same_namespace(output, like)
@@ -1371,7 +1383,7 @@ def test_hdbscan_non_finite_outputs_follow_input(dataframe, queue, dtype):
     # scikit-learn gives int32 labels when some rows are not finite
     for output, output_dtype in (
         (hdbscan.labels_, np.int32),
-        (hdbscan.probabilities_, dtype),
+        (hdbscan.probabilities_, _float_dtype(queue)),
         (cut, np.int64),
     ):
         assert_same_namespace(output, like)
