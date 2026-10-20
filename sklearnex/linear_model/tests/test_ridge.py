@@ -170,12 +170,13 @@ def test_ridge_predict_before_fit(dataframe, queue):
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 100)), reason="requires onedal 2025.1.0 or higher"
 )
+@pytest.mark.usefixtures("with_preview_mode")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("overdetermined", [True, False])
 @pytest.mark.parametrize("alpha", [0.00001, 0.1, 1.0])
 @pytest.mark.parametrize("fit_intercept", [True, False])
 def test_ridge_overdetermined_system(
-    dataframe, queue, overdetermined, alpha, fit_intercept, with_preview_mode
+    dataframe, queue, overdetermined, alpha, fit_intercept
 ):
     from sklearnex.linear_model import Ridge
 
@@ -232,8 +233,9 @@ def test_multivariate_ridge_scalar_alpha(dataframe, queue, fit_intercept, alpha)
     assert_allclose_numpy(ridge.predict(X_c), predictions_manual, rtol=1e-6, atol=1e-6)
 
 
+@pytest.mark.usefixtures("with_preview_mode")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_underdetermined_positive_alpha_ridge(dataframe, queue, with_preview_mode):
+def test_underdetermined_positive_alpha_ridge(dataframe, queue):
     from sklearn.datasets import make_regression
 
     from sklearnex.linear_model import Ridge
