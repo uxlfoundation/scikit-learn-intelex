@@ -814,19 +814,24 @@ Nearest Neighbors
     but are listed under their corresponding task section instead.
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Only dense data is supported
+     - The following methods are not supported:
+       
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
 
 Other Tasks
 ***********
