@@ -46,11 +46,7 @@ from sklearn.utils.multiclass import check_classification_targets, type_of_targe
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import (
-    daal_check_version,
-    is_sparse,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
@@ -193,13 +189,6 @@ class BaseForest(oneDALEstimator, ABC):
         else:
             self._n_samples_bootstrap = None
 
-        if (self.random_state is not None) and (not daal_check_version((2024, "P", 0))):
-            warnings.warn(
-                "Setting 'random_state' value is not supported. "
-                "State set by oneDAL to default value (777).",
-                RuntimeWarning,
-            )
-
         rs = check_random_state(self.random_state)
         # use numpy here due to lack of array API support in sklearn random state
         # seed is a python integer
@@ -263,12 +252,6 @@ class BaseForest(oneDALEstimator, ABC):
 
         patching_status.and_conditions(
             [
-                (
-                    self.oob_score
-                    and daal_check_version((2021, "P", 500))
-                    or not self.oob_score,
-                    "OOB score is only supported starting from 2021.5 version of oneDAL.",
-                ),
                 (self.warm_start is False, "Warm start is not supported."),
                 (
                     self.ccp_alpha == 0.0,
@@ -359,16 +342,6 @@ class BaseForest(oneDALEstimator, ABC):
         if method_name == "fit":
             patching_status = self._onedal_fit_ready(patching_status, *data)
 
-            patching_status.and_conditions(
-                [
-                    (
-                        daal_check_version((2023, "P", 200))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    )
-                ]
-            )
-
         elif method_name in self._n_jobs_supported_onedal_methods:
             X = data[0]
 
@@ -377,11 +350,6 @@ class BaseForest(oneDALEstimator, ABC):
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 200))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
                     (
                         self.n_outputs_ == 1,
                         f"Number of outputs ({self.n_outputs_}) is not 1.",
@@ -402,16 +370,6 @@ class BaseForest(oneDALEstimator, ABC):
                 )
                 return patching_status
 
-            if method_name == "predict_proba":
-                patching_status.and_conditions(
-                    [
-                        (
-                            daal_check_version((2021, "P", 400)),
-                            "oneDAL version is lower than 2021.4.",
-                        )
-                    ]
-                )
-
         else:
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"
@@ -431,11 +389,6 @@ class BaseForest(oneDALEstimator, ABC):
             patching_status.and_conditions(
                 [
                     (
-                        daal_check_version((2023, "P", 100))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.1",
-                    ),
-                    (
                         not self.oob_score,
                         "oob_scores using r2 or accuracy not implemented.",
                     ),
@@ -453,10 +406,6 @@ class BaseForest(oneDALEstimator, ABC):
                         "X is sparse. Sparse input is not supported.",
                     ),
                     (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 100)),
-                        "ExtraTrees supported starting from oneDAL version 2023.1",
-                    ),
                     (
                         self.n_outputs_ == 1,
                         f"Number of outputs ({self.n_outputs_}) is not 1.",

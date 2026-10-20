@@ -85,7 +85,7 @@ Configurable options
 The files ``run_test.sh`` and ``run_test.bat`` offer configurable behaviors through environment variables and command line arguments:
 
 - Environment variable ``$NO_DIST``, if set, will avoid running distributed mode tests. Note that executing these tests requires additional dependencies, otherwise they will be skipped either way.
-- Environment variable ``$PYTHON`` can be used to set a Python interpreter under an MPI runner to execute distributed tests on Windows* - for example: ``set "PYTHON=mpiexec -n 2 python"``. **This variable is required for distributed mode tests on Windows\*** - if not set, ``NO_DIST`` will be automatically set to 1.
+- Environment variable ``$PYTHON`` can be used to set a Python interpreter under an MPI runner to execute distributed tests on Windows* - for example: ``set "PYTHON=mpiexec -n 2 python"``. **This variable is required for distributed mode tests on Windows\*** - if it does not name an MPI runner (``mpiexec`` or ``mpirun``), ``NO_DIST`` will be automatically set to 1.
 
     - On Linux*, this same variable can be used to set the Python interpreter that will run the tests for patching functionality.
 - Passing argument ``--json-report`` will generate JSON reports of each test component under path ``/.pytest_reports``. Note that, if the folder is not empty, existing files will be deleted.

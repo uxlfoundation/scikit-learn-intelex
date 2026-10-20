@@ -74,7 +74,6 @@ auto get_error_metric_mode(const py::dict& params) {
             result_mode |= error_metric_mode::out_of_bag_error;
         else if (modes[i] == "out_of_bag_error_per_observation")
             result_mode |= error_metric_mode::out_of_bag_error_per_observation;
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
         else if (modes[i] == "out_of_bag_error_accuracy")
             result_mode |= error_metric_mode::out_of_bag_error_accuracy;
         else if (modes[i] == "out_of_bag_error_r2")
@@ -83,7 +82,6 @@ auto get_error_metric_mode(const py::dict& params) {
             result_mode |= error_metric_mode::out_of_bag_error_decision_function;
         else if (modes[i] == "out_of_bag_error_prediction")
             result_mode |= error_metric_mode::out_of_bag_error_prediction;
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20230101
         else
             ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(mode);
     }
@@ -109,7 +107,6 @@ auto get_infer_mode(const py::dict& params) {
     return result_mode;
 }
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
 auto get_splitter_mode(const py::dict& params) {
     using namespace decision_forest;
     auto mode = params["splitter_mode"].cast<std::string>();
@@ -122,7 +119,6 @@ auto get_splitter_mode(const py::dict& params) {
     else
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(mode);
 }
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20230101
 
 auto get_variable_importance_mode(const py::dict& params) {
     using namespace decision_forest;
@@ -185,9 +181,7 @@ struct params2desc {
                         .set_min_bin_size(params["min_bin_size"].cast<std::int64_t>())
                         .set_memory_saving_mode(params["memory_saving_mode"].cast<bool>())
                         .set_bootstrap(params["bootstrap"].cast<bool>())
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
                         .set_splitter_mode(get_splitter_mode(params))
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
                         .set_error_metric_mode(get_error_metric_mode(params))
                         .set_variable_importance_mode(get_variable_importance_mode(params));
 
@@ -197,9 +191,7 @@ struct params2desc {
             desc.set_voting_mode(get_voting_mode(params));
         }
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
         desc.set_seed(params["seed"].cast<std::int64_t>());
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
 
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
         if (params.contains("local_trees_mode")) {
@@ -240,7 +232,6 @@ void init_train_ops(py::module_& m) {
 
 template <typename Policy, typename Task>
 void init_infer_ops(py::module_& m) {
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
     using infer_hyperparams_t = decision_forest::detail::infer_parameters<Task>;
     m.def("infer",
           [](const Policy& policy,
@@ -257,7 +248,6 @@ void init_infer_ops(py::module_& m) {
                                              hyperparams);
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 
     m.def("infer",
           [](const Policy& policy,
@@ -306,12 +296,10 @@ void init_train_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(model, result_t)
         .DEF_ONEDAL_PY_PROPERTY(oob_err, result_t)
         .DEF_ONEDAL_PY_PROPERTY(oob_err_per_observation, result_t)
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
         .DEF_ONEDAL_PY_PROPERTY(oob_err_accuracy, result_t)
         .DEF_ONEDAL_PY_PROPERTY(oob_err_r2, result_t)
         .DEF_ONEDAL_PY_PROPERTY(oob_err_decision_function, result_t)
         .DEF_ONEDAL_PY_PROPERTY(oob_err_prediction, result_t)
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20230101
         .DEF_ONEDAL_PY_PROPERTY(var_importance, result_t);
 }
 
@@ -334,7 +322,6 @@ void init_infer_result(py::module_& m) {
     }
 }
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 template <typename Task>
 void init_infer_hyperparameters(py::module_& m) {
     using namespace dal::decision_forest::detail;
@@ -375,7 +362,6 @@ void init_infer_hyperparameters(py::module_& m) {
                             return self.get_scale_factor_for_vect_parallel_compute();
                         });
 }
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 
 ONEDAL_PY_TYPE2STR(decision_forest::task::classification, "classification");
 ONEDAL_PY_TYPE2STR(decision_forest::task::regression, "regression");
@@ -385,9 +371,7 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_hyperparameters);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 
 ONEDAL_PY_INIT_MODULE(ensemble) {
     using namespace decision_forest;
@@ -407,9 +391,7 @@ ONEDAL_PY_INIT_MODULE(ensemble) {
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
     ONEDAL_PY_INSTANTIATE(init_infer_hyperparameters, sub, task::classification);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240300
 
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 }

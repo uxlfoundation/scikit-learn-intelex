@@ -60,7 +60,8 @@ def check_preview_is_enabled() -> bool:
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues(device_filter_="cpu")
+    "dataframe,queue",
+    get_dataframes_and_queues("numpy,pandas", device_filter_="cpu"),
 )
 def test_sklearnex_multiclass_classification(dataframe, queue):
     from sklearnex.linear_model import LogisticRegression
@@ -72,10 +73,7 @@ def test_sklearnex_multiclass_classification(dataframe, queue):
         X_train, y_train
     )
 
-    if daal_check_version((2024, "P", 1)):
-        assert "sklearnex" in logreg.__module__
-    else:
-        assert "daal4py" in logreg.__module__
+    assert "sklearnex" in logreg.__module__
 
     y_pred = _as_numpy(logreg.predict(X_test))
     assert accuracy_score(y_test, y_pred) > 0.99
@@ -99,16 +97,8 @@ def test_sklearnex_binary_classification(dataframe, queue):
             fit_intercept=True, solver="newton-cg", max_iter=100
         ).fit(X_train, y_train)
 
-    if daal_check_version((2024, "P", 1)):
-        assert "sklearnex" in logreg.__module__
-    else:
-        assert "daal4py" in logreg.__module__
-    if (
-        dataframe != "numpy"
-        and queue is not None
-        and queue.sycl_device.is_gpu
-        and daal_check_version((2024, "P", 1))
-    ):
+    assert "sklearnex" in logreg.__module__
+    if dataframe != "numpy" and queue is not None and queue.sycl_device.is_gpu:
         # fit was done on gpu
         assert hasattr(logreg, "_onedal_estimator")
 
@@ -116,47 +106,43 @@ def test_sklearnex_binary_classification(dataframe, queue):
     assert accuracy_score(y_test, y_pred) > 0.95
 
 
-if daal_check_version((2024, "P", 700)):
+@pytest.mark.parametrize("queue", get_queues("gpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dims", [(3007, 17, 0.05), (50000, 100, 0.01), (512, 10, 0.5)])
+@pytest.mark.allow_sklearn_fallback
+def test_csr(queue, dtype, dims):
+    from sklearnex.linear_model import LogisticRegression
 
-    @pytest.mark.parametrize("queue", get_queues("gpu"))
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    @pytest.mark.parametrize(
-        "dims", [(3007, 17, 0.05), (50000, 100, 0.01), (512, 10, 0.5)]
-    )
-    @pytest.mark.allow_sklearn_fallback
-    def test_csr(queue, dtype, dims):
-        from sklearnex.linear_model import LogisticRegression
+    n, p, density = dims
 
-        n, p, density = dims
+    # Create sparse dataset for classification
+    X, y = make_classification(n, p, random_state=42)
+    X = X.astype(dtype)
+    y = y.astype(dtype)
+    np.random.seed(2007 + n + p)
+    mask = np.random.binomial(1, density, (n, p))
+    X = X * mask
+    X_sp = csr_matrix(X)
 
-        # Create sparse dataset for classification
-        X, y = make_classification(n, p, random_state=42)
-        X = X.astype(dtype)
-        y = y.astype(dtype)
-        np.random.seed(2007 + n + p)
-        mask = np.random.binomial(1, density, (n, p))
-        X = X * mask
-        X_sp = csr_matrix(X)
+    model = LogisticRegression(fit_intercept=True, solver="newton-cg")
+    model_sp = LogisticRegression(fit_intercept=True, solver="newton-cg")
 
-        model = LogisticRegression(fit_intercept=True, solver="newton-cg")
-        model_sp = LogisticRegression(fit_intercept=True, solver="newton-cg")
+    with config_context(target_offload="gpu:0"):
+        model.fit(X, y)
+        pred = model.predict(X)
+        prob = model.predict_proba(X)
+        raw = model.decision_function(X)
+        model_sp.fit(X_sp, y)
+        pred_sp = model_sp.predict(X_sp)
+        prob_sp = model_sp.predict_proba(X_sp)
+        raw_sp = model.decision_function(X_sp)
 
-        with config_context(target_offload="gpu:0"):
-            model.fit(X, y)
-            pred = model.predict(X)
-            prob = model.predict_proba(X)
-            raw = model.decision_function(X)
-            model_sp.fit(X_sp, y)
-            pred_sp = model_sp.predict(X_sp)
-            prob_sp = model_sp.predict_proba(X_sp)
-            raw_sp = model.decision_function(X_sp)
-
-        rtol = 2e-4
-        assert_allclose(pred, pred_sp, rtol=rtol)
-        assert_allclose(prob, prob_sp, rtol=rtol)
-        assert_allclose(raw, raw_sp, rtol=rtol)
-        assert_allclose(model.coef_, model_sp.coef_, rtol=rtol)
-        assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
+    rtol = 2e-4
+    assert_allclose(pred, pred_sp, rtol=rtol)
+    assert_allclose(prob, prob_sp, rtol=rtol)
+    assert_allclose(raw, raw_sp, rtol=rtol)
+    assert_allclose(model.coef_, model_sp.coef_, rtol=rtol)
+    assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
 
 
 # Note: this is adapted from a test in scikit-learn:
@@ -580,7 +566,10 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
 
     model = LogisticRegression(solver="newton-cg").fit(X, y)
     X_problem = 1e10 * _as_numpy(model.coef_).reshape((1, -1))
-    X_problem = np.vstack([X_problem, -X_problem])
+    # predict input must share fit's namespace/device when array_api_dispatch is on
+    X_problem = _convert_to_dataframe(
+        np.vstack([X_problem, -X_problem]), sycl_queue=queue, target_df=dataframe
+    )
 
     pred_log_proba = model.predict_log_proba(X_problem)
     pred_log_proba = _as_numpy(pred_log_proba)

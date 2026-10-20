@@ -14,30 +14,26 @@
 # limitations under the License.
 # ==============================================================================
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn.linear_model.logistic_path import (
+    LogisticRegressionCV as _daal4py_LogisticRegressionCV,
+)
 
-if daal_check_version((2024, "P", 1)):
-    from daal4py.sklearn.linear_model.logistic_path import (
-        LogisticRegressionCV as _daal4py_LogisticRegressionCV,
-    )
+from ...base import Tags
+from ...linear_model.logistic_regression import (
+    LogisticRegression as _sklearnex_LogisticRegression,
+)
 
-    from ...base import Tags
-    from ...linear_model.logistic_regression import (
-        LogisticRegression as _sklearnex_LogisticRegression,
-    )
 
-    # This is necessary due to how sklearn handles array API inputs
-    class LogisticRegressionCV(
-        _daal4py_LogisticRegressionCV, _sklearnex_LogisticRegression
-    ):
-        fit = _daal4py_LogisticRegressionCV.fit
-        predict_proba = _sklearnex_LogisticRegression.predict_proba
-        predict_log_proba = _sklearnex_LogisticRegression.predict_log_proba
-        decision_function = _sklearnex_LogisticRegression.decision_function
+# This is necessary due to how sklearn handles array API inputs
+class LogisticRegressionCV(_daal4py_LogisticRegressionCV, _sklearnex_LogisticRegression):
+    fit = _daal4py_LogisticRegressionCV.fit
+    predict_proba = _sklearnex_LogisticRegression.predict_proba
+    predict_log_proba = _sklearnex_LogisticRegression.predict_log_proba
+    decision_function = _sklearnex_LogisticRegression.decision_function
 
-        __doc__ = _daal4py_LogisticRegressionCV.__doc__
+    __doc__ = _daal4py_LogisticRegressionCV.__doc__
 
-        def __sklearn_tags__(self) -> Tags:
-            tags = super().__sklearn_tags__()
-            tags.onedal_array_api = False
-            return tags
+    def __sklearn_tags__(self) -> Tags:
+        tags = super().__sklearn_tags__()
+        tags.onedal_array_api = False
+        return tags

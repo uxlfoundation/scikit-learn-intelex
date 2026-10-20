@@ -59,7 +59,7 @@ On Windows, GPU drivers for iGPUs and dGPUs include the required Intel Compute R
 
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
 
-On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs preinstalled, while others require installing them separately.
+On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs (but not for datacenter devices) preinstalled, while others require installing them separately. For Ubuntu server, or if not already pre-installed in an Ubuntu system, see `this link <https://dgpu-docs.intel.com/installation-guides/installing-packages-from-the-intel-ppa.html>`__ for installation instructions (recommended to use the Intel PPA packages).
 
 Debian systems require installing package ``intel-opencl-icd`` (along with its dependencies such as ``intel-compute-runtime`` and ``intel-graphics-compiler``), which is available from Debian's ``main`` repository: ::
 
@@ -261,10 +261,3 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 
 .. note::
     Not all estimator classes in the |sklearnex| support array API objects - see the list of :ref:`estimators with array API support <array_api_estimators>` for details.
-
-DPNP Arrays
-~~~~~~~~~~~
-
-GPU arrays from |dpnp| are array-API-compliant and are used like any other array API framework: array API dispatch must be enabled through scikit-learn's ``config_context(array_api_dispatch=True)`` for the data to be consumed as-is on the device where it resides. Without array API enabled, |dpnp| arrays are treated as unsupported device inputs and moved to host for computation, with results returned as NumPy arrays.
-
-When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.

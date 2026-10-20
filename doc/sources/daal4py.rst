@@ -35,8 +35,8 @@ Documentation for functions that control the global thread settings in ``daal4py
 MPI helpers
 -----------
 
-Documentation for helper functions that can be used in distributed mode, particularly when using MPI without |mpi4py|.
-See :ref:`distributed_daal4py` for examples.
+Documentation for helper functions that can be used in distributed mode.
+See :ref:`distributed_daal4py` for usage examples.
 
 .. autofunction:: daal4py.daalfini
 .. autofunction:: daal4py.num_procs

@@ -14,14 +14,39 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
+    dpnp_to_strict_working,
     get_dataframes_and_queues,
+    torch_available,
+    torch_xpu_available,
 )
+from onedal.tests.utils._device_selection import (
+    is_sycl_device_available,
+)
+
+if sklearn_check_version("1.9"):
+    from sklearn.datasets import make_blobs
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from sklearnex.tests.utils.misc import assert_same_namespace
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -33,6 +58,81 @@ def test_sklearnex_import_dbscan(dataframe, queue):
     dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
     assert "sklearnex" in dbscan.__module__
 
-    result = dbscan.labels_
+    result = _as_numpy(dbscan.labels_)
     expected = np.array([0, 0, 0, 1, 1, -1], dtype=np.int32)
     assert_allclose(expected, result)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Requires more recent scikit-learn version"
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_input_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+def test_dbscan_move_estimator_to(array_input_like, array_move_like, with_array_api):
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
+    ):
+        pytest.skip()
+    from sklearnex.cluster import DBSCAN
+
+    X, _ = make_blobs(n_samples=20, random_state=123)
+
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+
+    model = DBSCAN(eps=3, min_samples=2).fit(X_in)
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+    model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
+
+    # TODO: update this once scikit-learn introduces a config option
+    # to control whether the attributes are always numpy or follow 'X'
+    for attr in ["core_sample_indices_", "components_", "labels_"]:
+        assert_same_namespace(getattr(model, attr), array_input_like)
+        assert_same_namespace(getattr(model_moved, attr), array_move_like)
+        np.testing.assert_almost_equal(
+            _as_numpy(getattr(model, attr)),
+            _as_numpy(getattr(model_moved, attr)),
+        )
+
+    attrs_orig = dir(model)
+    attrs_moved = dir(model_moved)
+    for attr in attrs_orig:
+        assert attr in attrs_moved

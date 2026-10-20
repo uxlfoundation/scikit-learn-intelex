@@ -60,11 +60,17 @@ from .wrappers import hpat_types
 cython_header = """
 # distutils: language = c++
 #cython: language_level=2
+{% if free_threading %}
+#cython: freethreading_compatible=True
+{% endif %}
 
 # Import the Python-level symbols of numpy
 import numpy as np
 
 import sys
+from threading import RLock
+
+_daal_global_lock = RLock()
 
 # Import the C-level symbols of numpy
 cimport numpy as npc
@@ -168,7 +174,7 @@ cdef extern from "daal4py_cpp.h":
 
 def daalinit(nthreads: int = -1) -> None:
     '''
-    Set number of threads for daal4py
+    Set number of threads for daal4py.
 
     This modifies the number of threads configured for daal4py, which is a
     global setting - meaning: it is applied to all subsequent calls to daal4py
@@ -179,25 +185,32 @@ def daalinit(nthreads: int = -1) -> None:
 
     :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
 
+    .. note:: This function configures thread settings only. It does not
+              initialize MPI or distributed mode, the transceiver is
+              initialized lazily by the first distributed operation.
+
     :rtype: None
     '''
-    c_daalinit(nthreads)
+    # Serialize concurrent initialization requests against each other. Note this
+    # does not make the underlying global thread count safe to change while
+    # other threads are running computations - see the docs on parallelism.
+    with _daal_global_lock:
+        c_daalinit(nthreads)
 
 def daalfini() -> None:
     '''
-    Finalize MPI environment
+    Release daal4py distributed resources.
 
-    When using distributed mode without ``mpi4py``, this function must be called after
-    the distributed computation calls before accessing the result object from the algorithm
-    that was executed in distributed mode. It has no effect when the python process is not
-    run through MPI (used for distributed mode).
-
-    This is a wrapper over ``MPI_Finalize``. It does not need to be called if ``mpi4py``
-    was imported before, as ``mpi4py`` calls this function upon process exit.
-
-    Note that software ``mpi4py`` calls this function automatically if it is imported, but
-    it only does so upon process exit, so this still needs to be called before accessing
-    the result objects in the process/rank that will use them.
+    Call this after the last distributed computation and before accessing its
+    result objects. It releases daal4py's distributed transceiver. If daal4py
+    initialized MPI, releasing the last transceiver finalizes MPI and another
+    distributed operation cannot be started in the same process. If MPI was
+    initialized by another library, for example |mpi4py|, it remains owned by
+    that library, and later distributed operations can create a new transceiver.
+    There is no function that creates one: as before, the next call to a
+    ``.compute()`` of an algorithm constructed with ``distributed=True`` creates
+    it lazily.
+    This function is a no-op when no daal4py distributed transceiver is active.
 
     :rtype: None
     '''
@@ -546,10 +559,16 @@ cdef class {{flatname}}:
 {% endfor %}
 
     def __setstate__(self, state):
-        if isinstance(state, bytes):
-           self.c_ptr = deserialize_si[{{class_type|flat|strip(' *')}}](state)
-        else:
+        if not isinstance(state, bytes):
            raise ValueError("Invalid state .....")
+        # This object owns c_ptr and deletes it in __dealloc__, so overwriting a
+        # pointer that is already set would leak it. Un-pickling always targets a
+        # freshly allocated object, so this only rejects reuse of a populated one.
+        if self.c_ptr != NULL:
+           raise ValueError(
+               "Cannot unpickle into an already-initialized object."
+           )
+        self.c_ptr = deserialize_si[{{class_type|flat|strip(' *')}}](state)
 
     def __getstate__(self):
         if self.c_ptr == NULL:
@@ -793,7 +812,6 @@ gen_compute_macro = gen_inst_algo + """
 ()
 {% endif %}
     {
-        ThreadAllow _allow_;
         auto algo{{suffix}} = _algo{{suffix}};
 
 {% for ia in input_args %}
@@ -883,6 +901,7 @@ struct {{algo}}_manager{% if template_decl|length != template_args|length %}\
 {{gen_typedefs(ns, template_decl, template_args, mode="Batch")}}
     {{args_all|fmt('{}', 'decl_member', sep=';\n')|indent(4)}};
     daal::services::SharedPtr< algob_type > _algob;
+    std::recursive_mutex _mutex;
 
 {% if streaming.name %}
 {{gen_typedefs(ns, template_decl, template_args, mode="Online", suffix="stream")}}
@@ -963,6 +982,8 @@ private:
             "finalize() not supported in distributed mode"
         );
 {% endif %}
+        ThreadAllow allow_threads;
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         if({{streaming.arg_member}}) {
             _algostream->finalizeCompute();
             return new typename iomb_type::result_type(_algostream->getResult());
@@ -1022,6 +1043,13 @@ public:
         {{input_args|fmt('{}', 'decl_cpp', sep=',\n')|indent(46)}},
         bool setup_only = false)
     {
+        // Detach before waiting for the native mutex to avoid a GIL/mutex
+        // inversion with a thread already computing on this manager. For the
+        // same reason the Cython side must not hold a suspendable Python
+        // critical section across this call: a thread could acquire it while
+        // blocked here and keep the first thread from reattaching.
+        ThreadAllow allow_threads;
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         {{input_args|fmt('{}', 'assign_member', sep=';\n')|indent(8)}};
 
 {% set batchcall = '('+streaming.arg_member+' ? stream() : batch(setup_only))' \
@@ -1038,6 +1066,8 @@ public:
 {% if add_get_result %}
     typename iomb_type::result_type * get_result()
     {
+        ThreadAllow allow_threads;
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
         return new typename iomb_type::result_type(iomb_type::getResult(*_algob));
     }
 {% endif %}
@@ -1452,9 +1482,10 @@ jenv.filters["fmt"] = fmt
 
 
 class wrapper_gen(object):
-    def __init__(self, ac, ifaces):
+    def __init__(self, ac, ifaces, free_threading=False):
         self.algocfg = ac
         self.ifaces = ifaces
+        self.free_threading = free_threading
 
     def gen_headers(self):
         """
@@ -1462,7 +1493,7 @@ class wrapper_gen(object):
         """
         cpp = (
             "#ifndef DAAL4PY_CPP_INC_\n"
-            + "#define DAAL4PY_CPP_INC_\n#include <daal4py_dist.h>\n\n"
+            + "#define DAAL4PY_CPP_INC_\n#include <daal4py_dist.h>\n#include <mutex>\n\n"
         )
         pyx = ""
         for i in self.ifaces:
@@ -1487,7 +1518,10 @@ class wrapper_gen(object):
             t = jenv.from_string(tstr)
             cpp += t.render({"parent": self.ifaces[i][1]}) + "\n"
 
-        return (cpp, cython_header + pyx)
+        header = jenv.from_string(cython_header).render(
+            free_threading=self.free_threading
+        )
+        return (cpp, header + pyx)
 
     ##################################################################################
     def gen_modelmaps(self, ns, algo):
@@ -1499,6 +1533,7 @@ class wrapper_gen(object):
         if len(jparams) > 0:
             jparams["ns"] = ns
             jparams["algo"] = algo
+            jparams["free_threading"] = self.free_threading
             t = jenv.from_string(typemap_wrapper_template)
             return (t.render(**jparams) + "\n").split("%SNIP%")
         return "", "", ""
@@ -1518,6 +1553,7 @@ class wrapper_gen(object):
         if len(jparams) > 0:
             jparams["ns"] = ns
             jparams["algo"] = algo
+            jparams["free_threading"] = self.free_threading
             t = jenv.from_string(typemap_wrapper_template)
             return (t.render(**jparams) + "\n").split("%SNIP%")
         return "", "", ""
@@ -1619,7 +1655,11 @@ class wrapper_gen(object):
         self, no_dist=False, no_stream=False, algos=[], version="", dist_custom_algos=[]
     ):
         t = jenv.from_string(pyx_footer_template)
-        pyx_footer = t.render(algos=algos, version=version)
+        pyx_footer = t.render(
+            algos=algos,
+            version=version,
+            free_threading=self.free_threading,
+        )
         pyx_footer += "__has_dist__ = {}\n\n".format(not no_dist)
 
         if no_dist:

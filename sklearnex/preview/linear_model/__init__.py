@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+from .coordinate_descent import ElasticNet, Lasso
 from .logistic_regression import LogisticRegressionCV
 
-__all__ = ["LogisticRegressionCV"]
+__all__ = ["LogisticRegressionCV", "ElasticNet", "Lasso"]

@@ -61,9 +61,7 @@ from sklearn.linear_model._logistic import (
 from sklearn.linear_model._logistic import (
     LogisticRegressionCV as LogisticRegressionCV_original,
 )
-from sklearn.linear_model._logistic import (
-    _check_solver,
-)
+from sklearn.linear_model._logistic import _check_solver
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
 from sklearn.utils.validation import check_is_fitted

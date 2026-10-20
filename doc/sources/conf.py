@@ -276,6 +276,7 @@ linkcheck_ignore = [
     re.compile(r"https://wiki\.archlinux\.org/.*"),  # Avoid Arch Wiki limit
     re.compile(r"https://w*\.contributor-covenant.org"),  # Times out very frequently
     re.compile(r"https://en\.wikipedia\.org.+"),  # Avoid rate error
+    re.compile(r".*catboost.*"),  # Remove this line once docs are back online
 ]
 
 # Speed up link-check and fail faster

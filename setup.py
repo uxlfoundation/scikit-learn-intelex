@@ -48,9 +48,24 @@ def check_for_build_arg(arg: str) -> bool:
     return False
 
 
-USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath")
+NO_ABS_RPATH: bool = bool(os.environ.get("SKLEARNEX_NO_ABS_RPATH"))
+USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath") and not NO_ABS_RPATH
 DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
+# Which Python ABI the extension modules are built for. It defaults to the
+# interpreter driving the build, but is a build parameter in its own right so
+# that the free-threaded build path - the generator mode, the CMake
+# find_package(Python) branch and the pybind11 2.13 requirement it brings - can
+# be exercised from a regular interpreter as well. Note that the C++ side reads
+# Py_GIL_DISABLED from the Python headers, so forcing this on under a
+# GIL-enabled interpreter selects the free-threaded build configuration, not a
+# free-threaded ABI.
+# check_for_build_arg() has to stay on the left of the 'or': it strips the
+# argument from sys.argv as a side effect, and short-circuiting past it would
+# leave setuptools to abort on an unrecognized argument.
+FREE_THREADING_BUILD: bool = check_for_build_arg("--free-threading") or bool(
+    get_config_vars().get("Py_GIL_DISABLED")
+)
 
 IS_WIN = False
 IS_MAC = False
@@ -80,9 +95,9 @@ ONEDAL_MAJOR_BINARY_VERSION, ONEDAL_MINOR_BINARY_VERSION = get_onedal_version(
     dal_root, "binary"
 )
 ONEDAL_VERSION = get_onedal_version(dal_root)
-if ONEDAL_VERSION < 20210300:
+if ONEDAL_VERSION < 20250000:
     raise ValueError(
-        "OneDAL version is too old. Please use a more recent version (>= 2021.4)."
+        "OneDAL version is too old. Please use a more recent version (>= 2025.0)."
     )
 
 sklearnex_version = (
@@ -110,7 +125,7 @@ dpcpp = (
     and not (IS_WIN and debug_build)
 )
 
-use_parameters_lib = (not IS_WIN) and (ONEDAL_VERSION >= 20240000)
+use_parameters_lib = not IS_WIN
 
 build_distributed = dpcpp and not no_dist and IS_LIN
 
@@ -136,7 +151,7 @@ else:
     DIST_CPPS = ["src/transceiver.cpp"]
     MPI_INCDIRS = [jp(mpi_root, "include")]
     MPI_LIBDIRS = [jp(mpi_root, "lib")]
-    MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
+    MPI_LIBNAME = os.environ.get("MPI_LIBNAME")
     if MPI_LIBNAME:
         MPI_LIBS = [MPI_LIBNAME]
     elif IS_WIN:
@@ -152,15 +167,19 @@ else:
 
 def get_sdl_cflags():
     if IS_LIN or IS_MAC:
-        return DIST_CFLAGS + [
+        sdl_flags = [
             "-fstack-protector-strong",
             "-fPIC",
-            "-D_FORTIFY_SOURCE=2",
             "-Wformat",
             "-Wformat-security",
             "-fno-strict-overflow",
             "-fno-delete-null-pointer-checks",
         ]
+        if not DEBUG_BUILD:
+            sdl_flags += ["-D_FORTIFY_SOURCE=2"]
+        else:
+            sdl_flags += ["-fno-omit-frame-pointer"]
+        return DIST_CFLAGS + sdl_flags
     if IS_WIN:
         return DIST_CFLAGS + ["-GS"]
 
@@ -195,64 +214,17 @@ def get_daal_type_defines():
 
 
 def get_libs(iface="daal"):
-    major_version = ONEDAL_MAJOR_BINARY_VERSION
-    if IS_WIN:
-        libraries_plat = [f"onedal_core_dll.{major_version}"]
-        onedal_lib = [
-            f"onedal_dll.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f"onedal_dpc_dll.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f"onedal_parameters.{major_version}",
-                f"onedal_parameters_dll.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f"onedal_parameters_dpc_dll.{major_version}",
-            ]
-    elif IS_MAC:
-        libraries_plat = [
-            f"onedal_core.{major_version}",
-            f"onedal_thread.{major_version}",
-        ]
-        onedal_lib = [
-            f"onedal.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f"onedal_dpc.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f"onedal_parameters.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f"onedal_parameters_dpc.{major_version}",
-            ]
-    else:
-        libraries_plat = [
-            f":libonedal_core.so.{major_version}",
-            f":libonedal_thread.so.{major_version}",
-        ]
-        onedal_lib = [
-            f":libonedal.so.{major_version}",
-        ]
-        onedal_dpc_lib = [
-            f":libonedal_dpc.so.{major_version}",
-        ]
-        if use_parameters_lib:
-            onedal_lib += [
-                f":libonedal_parameters.so.{major_version}",
-            ]
-            onedal_dpc_lib += [
-                f":libonedal_parameters_dpc.so.{major_version}",
-            ]
-    if iface == "onedal":
-        libraries_plat = onedal_lib + libraries_plat
-    elif iface == "onedal_dpc":
-        libraries_plat = onedal_dpc_lib + libraries_plat
-    return libraries_plat
+    # Naming lives in scripts/build_backend.py, which the CMake backend uses to
+    # locate the same libraries. Keeping one source avoids the two build paths
+    # disagreeing about what oneDAL is called on a given platform.
+    iface_name = {"onedal": "host", "onedal_dpc": "dpc"}.get(iface, iface)
+    return build_backend.get_onedal_libraries(
+        iface_name,
+        ONEDAL_MAJOR_BINARY_VERSION,
+        use_parameters_lib=use_parameters_lib,
+        is_win=IS_WIN,
+        is_mac=IS_MAC,
+    )
 
 
 def get_build_options():
@@ -366,7 +338,9 @@ def getpyexts():
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
         mpi_depens = glob.glob(jp(os.path.abspath("src"), "*.h"))
-        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in MPI_LIBDIRS]
+        # the MPI runtime is a dependency of the built package, so $ORIGIN covers it
+        mpi_rpaths = [] if NO_ABS_RPATH else MPI_LIBDIRS
+        mpi_extra_link = ela + ["-Wl,-rpath,{}".format(x) for x in mpi_rpaths]
         exts.append(
             Extension(
                 "daal4py.mpi_transceiver",
@@ -391,13 +365,23 @@ for key, value in get_config_vars().items():
 
 
 def gen_pyx(odir):
-    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + ["./setup.py"]
+    generation_mode = "free-threaded" if FREE_THREADING_BUILD else "gil-enabled"
+    generation_mode_file = pathlib.Path(odir) / ".daal4py-generation-mode"
+    gtr_files = glob.glob(jp(os.path.abspath("generator"), "*")) + [
+        "./setup.py",
+        "./src/gbt_model_builder.pyx",
+        "./src/log_reg_model_builder.pyx",
+    ]
     src_files = [
         os.path.abspath("build/daal4py_cpp.h"),
         os.path.abspath("build/daal4py_cpp.cpp"),
         os.path.abspath("build/daal4py_cy.pyx"),
     ]
-    if all(os.path.isfile(x) for x in src_files):
+    if (
+        all(os.path.isfile(x) for x in src_files)
+        and generation_mode_file.is_file()
+        and generation_mode_file.read_text() == generation_mode
+    ):
         src_files.sort(key=os.path.getmtime)
         gtr_files.sort(key=os.path.getmtime, reverse=True)
         if os.path.getmtime(src_files[0]) > os.path.getmtime(gtr_files[0]):
@@ -412,7 +396,15 @@ def gen_pyx(odir):
     odir = os.path.abspath(odir)
     if not os.path.isdir(odir):
         os.mkdir(odir)
-    gen_daal4py(dal_root, odir, sklearnex_version, no_dist=no_dist, no_stream=no_stream)
+    gen_daal4py(
+        dal_root,
+        odir,
+        sklearnex_version,
+        no_dist=no_dist,
+        no_stream=no_stream,
+        free_threading=FREE_THREADING_BUILD,
+    )
+    generation_mode_file.write_text(generation_mode)
 
 
 gen_pyx(os.path.abspath("./build"))
@@ -439,14 +431,13 @@ class onedal_build:
         self.onedal_post_build()
         if hasattr(self, "build_lib"):
             # swap out __version__ before install
-            for p in ["onedal", "sklearnex"]:
-                loc = os.sep.join((self.build_lib, p, "__init__.py"))
-                if os.path.isfile(loc):
-                    with open(loc, "r+") as f:
-                        data = f.read().replace("2199.9.9", sklearnex_version)
-                        f.seek(0)
-                        f.write(data)
-                        f.truncate()
+            loc = os.sep.join((self.build_lib, "sklearnex", "__init__.py"))
+            if os.path.isfile(loc):
+                with open(loc, "r+") as f:
+                    data = f.read().replace("2199.9.9", sklearnex_version)
+                    f.seek(0)
+                    f.write(data)
+                    f.truncate()
 
     def onedal_run(self):
         n_threads = self.parallel
@@ -477,6 +468,7 @@ class onedal_build:
             is_lin=IS_LIN,
             debug_build=DEBUG_BUILD,
             using_lld=USING_LLD,
+            free_threading=FREE_THREADING_BUILD,
         )
         build_onedal("host")
         if dpcpp:
@@ -524,12 +516,15 @@ packages_with_tests = [
     "daal4py.sklearn.utils",
     "daal4py.sklearn.model_selection",
     "onedal",
+    "onedal.basic_statistics",
+    "onedal.cluster",
     "onedal.common",
     "onedal.covariance",
     "onedal.datatypes",
     "onedal.decomposition",
     "onedal.dummy",
     "onedal.ensemble",
+    "onedal.linear_model",
     "onedal.neighbors",
     "onedal.primitives",
     "onedal.svm",
@@ -556,38 +551,26 @@ packages_with_tests = [
     "sklearnex.utils",
 ]
 
-if ONEDAL_VERSION >= 20230100:
-    packages_with_tests += ["onedal.basic_statistics", "onedal.linear_model"]
-
-if ONEDAL_VERSION >= 20230200:
-    packages_with_tests += ["onedal.cluster"]
-
 if build_distributed:
     packages_with_tests += [
         "onedal.spmd",
+        "onedal.spmd.basic_statistics",
+        "onedal.spmd.cluster",
         "onedal.spmd.covariance",
         "onedal.spmd.decomposition",
         "onedal.spmd.ensemble",
+        "onedal.spmd.linear_model",
+        "onedal.spmd.neighbors",
         "sklearnex.spmd",
+        "sklearnex.spmd.basic_statistics",
+        "sklearnex.spmd.cluster",
         "sklearnex.spmd.covariance",
         "sklearnex.spmd.decomposition",
         "sklearnex.spmd.ensemble",
+        "sklearnex.spmd.linear_model",
+        "sklearnex.spmd.neighbors",
+        "sklearnex.spmd.preprocessing",
     ]
-    if ONEDAL_VERSION >= 20230100:
-        packages_with_tests += [
-            "onedal.spmd.basic_statistics",
-            "onedal.spmd.linear_model",
-            "onedal.spmd.neighbors",
-            "sklearnex.spmd.basic_statistics",
-            "sklearnex.spmd.linear_model",
-            "sklearnex.spmd.neighbors",
-        ]
-    if ONEDAL_VERSION >= 20230200:
-        packages_with_tests += [
-            "onedal.spmd.cluster",
-            "sklearnex.spmd.cluster",
-            "sklearnex.spmd.preprocessing",
-        ]
 
 setup(
     name="scikit-learn-intelex",

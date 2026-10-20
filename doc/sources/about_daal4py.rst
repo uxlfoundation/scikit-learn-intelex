@@ -160,7 +160,9 @@ Distributed mode
 Many algorithms in ``daal4py`` accept an argument ``distributed=True``, which allows
 running computations in a distributed compute nodes using the MPI framework.
 
-See the section :ref:`distributed_daal4py` for more details.
+See the section :ref:`distributed_daal4py` for more details, including how MPI
+initialization and finalization are shared with libraries such as |mpi4py|, and how
+environment variable ``D4P_TRANSCEIVER`` selects the communication backend.
 
 Documentation
 *************

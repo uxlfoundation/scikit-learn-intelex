@@ -28,10 +28,11 @@ from sklearn.covariance.tests.test_covariance import (
 from sklearn.datasets import load_diabetes
 from sklearn.decomposition import PCA
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
+    _assert_in_namespace,
     _convert_to_dataframe,
+    assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
 )
@@ -42,11 +43,6 @@ from onedal.tests.utils._device_selection import is_sycl_device_available
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("assume_centered", [True, False])
 def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_centered):
-    is_gpu = queue is not None and queue.sycl_device.is_gpu
-    if assume_centered and is_gpu and not daal_check_version((2025, "P", 0)):
-        pytest.skip(
-            "Due to a bug on oneDAL side, means are not set to zero when assume_centered=True"
-        )
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
     X = np.array([[0, 1], [0, 1]])
@@ -67,8 +63,9 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[0, 0], [0, 0]])
         expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
     X = np.array([[1, 2], [3, 6]])
     X = X.astype(dtype)
@@ -88,8 +85,8 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_cent
         expected_covariance = np.array([[1, 2], [2, 4]])
         expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -110,8 +107,9 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
     )
     expected_means = np.array([0, 0.5, 1, 1.5])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_)
+    assert_allclose_numpy(expected_means, result.location_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -140,8 +138,9 @@ def test_sklearnex_partial_fit_on_random_data(
     expected_covariance = np.cov(X.T, bias=1)
     expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -153,11 +152,6 @@ def test_sklearnex_partial_fit_on_random_data(
 def test_sklearnex_fit_on_random_data(
     dataframe, queue, num_batches, row_count, column_count, dtype, assume_centered
 ):
-    is_gpu = queue is not None and queue.sycl_device.is_gpu
-    if assume_centered and is_gpu and not daal_check_version((2025, "P", 0)):
-        pytest.skip(
-            "Due to a bug on oneDAL side, means are not set to zero when assume_centered=True"
-        )
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
     seed = 77
@@ -179,8 +173,9 @@ def test_sklearnex_fit_on_random_data(
         expected_covariance = np.cov(X.T, bias=1)
         expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+    _assert_in_namespace(result.covariance_, dataframe)
+    assert_allclose_numpy(expected_covariance, result.covariance_, atol=1e-6)
+    assert_allclose_numpy(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -213,11 +208,15 @@ def test_whitened_toy_score(dataframe, queue):
         # fit data; location_ approximately zero (10,), covariance_ identity (10,10)
         est = IncrementalEmpiricalCovariance()
         est.fit(X_df)
-        result = _as_numpy(est.score(X_df))
-    assert_allclose(expected_result, result, atol=1e-6)
+        score = est.score(X_df)
+        _assert_in_namespace(score, dataframe)
+    assert_allclose_numpy(expected_result, score, atol=1e-6)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# dpnp excluded: SYCL-queue-backed arrays are not picklable.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,array_api")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle
@@ -284,6 +283,9 @@ def test_IncrementalEmpiricalCovariance_against_sklearn(monkeypatch, sklearn_tes
     sklearn_test()
 
 
+# Manages array_api_dispatch itself; exempt from the autouse dispatch fixture so the
+# dispatch=False branch still exercises the host-transfer path.
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize("dispatch", [True, False])
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_score_verify_namespace(dispatch, dataframe, queue):

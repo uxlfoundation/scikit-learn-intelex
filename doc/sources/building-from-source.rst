@@ -64,7 +64,7 @@ To install the necessary Python dependencies:
 Non-Python dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Apart from Python libraries and from the |onedal| (version ``2021.4`` or higher), the following dependencies are needed in order to compile the |sklearnex|:
+Apart from Python libraries and from the |onedal| (version ``2025.0`` or higher), the following dependencies are needed in order to compile the |sklearnex|:
 
 - A C++ compiler.
 - clang-format.
@@ -244,7 +244,7 @@ Environment variables
 
 The following environment variables can be used to control setup aspects:
 
-- ``SKLEARNEX_VERSION``: sets the package version.
+- ``SKLEARNEX_VERSION``: sets the ``__version__`` attribute for the ``sklearnex`` module. Note that the ``onedal_py_*`` and ``daal4py`` modules instead determine their ``__version__`` string at runtime according to the version from |onedal| that gets loaded.
 - ``DALROOT``: sets the |onedal| path.
 - ``MKLROOT``: path to the oneMKL runtime libraries, which are used for the DPC module. This variable is optional and only has an effect when using the option ``abs-rpath`` on Linux* (see the rest of this page for details).
 - ``MPIROOT``: sets the path to the MPI library. If this variable is not set but ``I_MPI_ROOT`` is found, will use ``I_MPI_ROOT`` instead. Not used when using ``NO_DIST=1``.
@@ -252,7 +252,7 @@ The following environment variables can be used to control setup aspects:
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
 - ``NO_DPC``: set to '1', 'yes' or alike to build without support of the |onedal| DPC++ interfaces (GPU). Note that building the DPC++ component (default) of this library requires also the DPC++ components of the |onedal| (packages ``dal-gpu`` / ``daal-gpu`` if installing it from ``conda`` or ``pip``).
 - ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
-- ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to stop ``conda-recipe/build.sh`` from adding ``--abs-rpath`` when ``$DALROOT`` points outside of the active conda environment. Intended for builds whose artifacts are redistributed, where the absolute ``$DALROOT`` path only exists on the build machine. Has no effect on direct calls to ``setup.py``.
+- ``SKLEARNEX_NO_ABS_RPATH``: set to a non-empty value to cancel the ``--abs-rpath`` option and to omit the MPI library folders from the rpath of ``daal4py.mpi_transceiver``, leaving only relative (``$ORIGIN``-based) entries in the resulting shared objects. Intended for builds whose artifacts are redistributed, where absolute paths from the build machine do not exist on the target. Note that ``conda`` interpreters carry an additional ``-Wl,-rpath`` entry pointing at the build environment in ``LDSHARED``/``LDCXXSHARED`` and in ``$LDFLAGS``; those are outside the control of this option and require post-processing of the built objects to remove.
 
 .. note:: The ``-j`` flag in the ``MAKEFLAGS`` environment variable is superseded in ``setup.py`` modes which support the ``--parallel`` and ``-j`` command line flags.
 
@@ -263,6 +263,7 @@ The following additional arguments are accepted in calls to the ``setup.py`` scr
 
 - ``--abs-rpath`` (Linux*-only): will make it add the absolute path to the |onedal| shared objects (``.so`` files) to the rpath of the |sklearnex| shared object files in order to load them automatically, as well as the absolute path to the oneMKL shared objects (required for the DPC and SPMD modules only) if defined by environment variable ``$MKLROOT``. This is not necessary when installing through ``pip`` or ``conda``, but can be helpful for development purposes when using a from-source build of the |onedal| that resides in a custom folder, as it won't assume that its files will be found under default system paths.
 - ``--debug``: builds modules with debugging symbols and assertions enabled. Note that on Windows*, this will only add debugging symbols for the ``_onedal_py`` extension modules, but not for the ``daal4py`` extension module.
+- ``--free-threading``: builds the ``daal4py`` module and the |onedal| backends in their free-threaded configuration. It defaults to whether the interpreter running the build is itself free-threaded, so it is only needed when building for a free-threaded interpreter from a GIL-enabled one.
 - ``--using-lld`` (Linux*-only): makes the setup script avoid passing arguments that are not supported by LLVM's LLD linker, such as strong stack protection. This flag is required when building with the LLD linker (which can be achieved by setting environment variable ``$LDFLAGS="-fuse-ld=lld"``), but note that it **does not make the build script use LLD**, only avoids adding arguments that it doesn't support.
 
 Apart from these, standard arguments recognized by the build libraries can also be passed in the same call - for example, to install without checking for dependencies:

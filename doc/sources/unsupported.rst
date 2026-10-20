@@ -23,11 +23,22 @@ In general, estimators and functions from the |sklearnex| are sub-classed from t
 Python threads
 --------------
 
-Estimators and functions from the |sklearnex| are not meant to be parallelizable through Python threads, since they do not raise the GIL (global interpreter lock) and in some cases might rely on global variables. Note that, at this moment, the |sklearnex| does not provide builds for free-threaded Python that could be used without the GIL.
+Estimators and functions from the |sklearnex| are not meant to be parallelizable through Python threads, since they do not raise the GIL (global interpreter lock) and in some cases might rely on global variables.
 
 Process-based parallelization (the default mode in :mod:`joblib`) is recommended instead, whether through forked processes or through sub-processes. The |sklearnex| is fork-safe and this parallelization mode will usually be faster on Linux*, but note that other libraries that could be used together with it (such as `Polars <https://pola.rs>`__) might not always work correctly under forked processes.
 
 See :doc:`parallelism` for more details.
+
+Free-threaded Python
+--------------------
+
+Free-threaded CPython (see :doc:`installation`) is experimental and is only
+validated on Linux* for CPU execution. GPU execution (including the SPMD
+interfaces) and Windows* builds are not yet validated with free-threaded Python.
+Note that being importable without re-enabling the GIL does not make the
+estimators safe for concurrent use - all of the restrictions
+described in :doc:`parallelism` continue to apply, and process-based parallelism
+remains the recommended way to run concurrent estimator calls.
 
 .. _config_unsupported:
 
@@ -58,4 +69,4 @@ Callback functions (an experimental feature introduced in version 1.9 of |sklear
 Moving estimators
 -----------------
 
-Function ``sklearn.utils._array_api.move_estimator_to`` is currently not supported for estimator objects from the |sklearnex|. See :doc:`array_api` for more details.
+Function ``sklearn.utils._array_api.move_estimator_to`` is only supported for a subset of the estimators with array API support from the |sklearnex|. See :doc:`array_api` for more details.

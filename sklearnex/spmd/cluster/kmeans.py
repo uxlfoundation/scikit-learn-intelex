@@ -20,6 +20,11 @@ from ...cluster import KMeans as base_KMeans
 
 
 class KMeans(base_KMeans):
+    def _warn_on_degenerate_clustering(self):
+        # labels_ only covers this rank's shard, so a cluster missing from it means no
+        # point of that cluster landed here -- not that the global clustering degenerated.
+        pass
+
     def _initialize_onedal_estimator(self):
         """Override to use SPMD backend instead of batch backend."""
         onedal_params = {

@@ -84,8 +84,8 @@ same algorithms to much larger problem sizes.
 Using distributed mode
 ----------------------
 
-In order to use distributed mode, the code to execute must be saved in a Python file,
-and this Python file must be executed through an MPI runner (``mpiexec`` / ``mpirun``).
+To run distributed code across multiple processes, store the code in a Python file and
+execute that file through an MPI runner (``mpiexec`` / ``mpirun``).
 The MPI runner in turn is the software that handles aspects like which nodes to use,
 inter-node communication, and so on. The same Python code in the file will be executed
 on all nodes, so the Python code may contain some logic to load the right subset of the
@@ -95,6 +95,14 @@ From the ``daal4py`` side, in order to use distributed mode, algorithm construct
 be passed argument ``distributed=True``, method ``.compute()`` should be passed the right
 subset of the data for each node, and after the distributed computations are finalized,
 function :obj:`daal4py.daalfini` must be called before accessing the results object.
+For this multi-process execution, user code does not need to call ``MPI_Init``
+or :obj:`daal4py.daalinit`: the first distributed operation initializes its
+transceiver lazily. If an MPI runtime was already initialized, for example by
+|mpi4py|, ``daal4py`` uses it and :obj:`daal4py.daalfini` leaves finalization
+to its initializer. Otherwise, :obj:`daal4py.daalfini` finalizes the MPI runtime that
+``daal4py`` initialized. No particular communicator has to be set up for this:
+``daal4py`` only checks whether MPI has been initialized at all, and runs its
+own collectives on ``MPI_COMM_WORLD``.
 
 Example:
 
@@ -114,7 +122,9 @@ Example:
     qr_algo = daal4py.qr(distributed=True)
     qr_result = qr_algo.compute(X_node)
 
-    daal4py.daalfini() # call before accessing the results
+    # Releases daal4py's transceiver before accessing the results. This does
+    # not finalize MPI when mpi4py or another library initialized it.
+    daal4py.daalfini()
 
     # Matrix R (shape=[ncols, ncols]) is common for all nodes
     np.testing.assert_almost_equal(
@@ -186,7 +196,8 @@ Same example calling MPI functionalities from ``mpi4py`` instead:
     qr_algo = daal4py.qr(distributed=True)
     qr_result = qr_algo.compute(X_node)
 
-    daal4py.daalfini() # call before accessing results
+    # Releases daal4py's transceiver, mpi4py retains ownership of MPI.
+    daal4py.daalfini()
 
     # Matrix R (shape=[ncols, ncols]) is common for all nodes
     np.testing.assert_almost_equal(
@@ -204,6 +215,33 @@ Same example calling MPI functionalities from ``mpi4py`` instead:
 Can be executed the same way as before: ::
 
     mpirun -n 2 python distributed_qr_mpi4py.py
+
+
+Selecting the communication backend
+-----------------------------------
+
+Communication between nodes is performed by a 'transceiver', which ``daal4py``
+creates when the first distributed operation runs. By default it is the MPI
+transceiver built into the package, ``daal4py.mpi_transceiver``.
+
+Environment variable ``D4P_TRANSCEIVER`` overrides that choice with the name of
+another importable Python module, which lets a different communication backend be
+used without rebuilding ``daal4py``: ::
+
+    D4P_TRANSCEIVER=my_package.my_transceiver mpirun -n 2 python my_script.py
+
+Such a module must expose an attribute named ``transceiver``, holding an integer
+that is the address of a ``std::shared_ptr<transceiver_iface>`` owned by that
+module, where ``transceiver_iface`` is the C++ interface declared in
+``src/transceiver.h``. The module is imported, and the attribute read, once per
+transceiver creation.
+
+.. warning::
+    This is an advanced, unsupported extension point aimed at out-of-tree
+    backends - no module implementing it is distributed with |sklearnex|. The type
+    that has to be exported is a C++ implementation detail rather than a stable
+    interface, and it is expected to change: see
+    `issue #3375 <https://github.com/uxlfoundation/scikit-learn-intelex/issues/3375>`__.
 
 
 Supported algorithms

@@ -24,6 +24,17 @@ also made available through the same channels - see :doc:`oneapi-gpu` for more i
 Binary wheels and conda packages are provided for the x86-64 architecture, for both Windows* and Linux*, for the
 Python versions supported by current versions of |sklearn| - see :doc:`about` for more information.
 
+Free-threaded Python
+--------------------
+
+.. note:: Support for free-threaded Python is experimental.
+
+Source builds for free-threaded Python are possible starting with CPython 3.14 on
+Linux* for CPU execution, and importing the native CPU extensions does not
+re-enable the GIL. Availability of free-threaded binary wheels is
+release-dependent. See :doc:`unsupported` and :doc:`parallelism` for current
+platform and execution-mode limitations.
+
 Installing from PyPI
 --------------------
 
@@ -88,6 +99,22 @@ As an alternative, pip-compatible versions of NumPy and SciPy that would use one
 .. code-block:: bash
 
     pip install --index-url https://software.repos.intel.com/python/pypi numpy scipy
+
+.. hint::
+
+  On Linux*, using the NumPy and SciPy wheels from the Intel index together with |sklearn| requires changing the threading backend of MKL to be compatible with the PyPI wheel of |sklearn|:
+
+  .. code-block:: bash
+
+    export MKL_THREADING_LAYER=GNU
+
+  Or to make it permanent:
+
+  .. code-block:: bash
+
+    printf "MKL_THREADING_LAYER=GNU\n" | sudo tee -a /etc/environment
+
+See the full `documentation <https://intel.github.io/optimization-zone/software/numpy/>`__ about setup of these packages.
 
 On Windows*, DLL loading does not bring global symbols into a process in the same way as Linux*, so there should be no potential symbol resolution conflicts from different BLAS / LAPACK providers when using Python libraries.
 

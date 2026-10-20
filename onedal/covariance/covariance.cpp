@@ -51,23 +51,18 @@ struct params2desc {
         auto desc = dal::covariance::descriptor<Float, Method>{};
         desc.set_result_options(dal::covariance::result_options::cov_matrix |
                                 dal::covariance::result_options::means);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
         if (params.contains("bias")) {
             desc.set_bias(params["bias"].cast<bool>());
         }
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240001
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240400
         if (params.contains("assumeCentered")) {
             desc.set_assume_centered(params["assumeCentered"].cast<bool>());
         }
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240400
         return desc;
     }
 };
 
 template <typename Policy, typename Task>
 void init_compute_ops(py::module_& m) {
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
     using compute_hyperparams_t = dal::covariance::detail::compute_parameters<Task>;
     m.def("compute",
           [](const Policy& policy,
@@ -80,7 +75,6 @@ void init_compute_ops(py::module_& m) {
               compute_ops_with_hyperparams ops(policy, input_t{ data }, params2desc{}, hyperparams);
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
     m.def("compute", [](const Policy& policy, const py::dict& params, const table& data) {
         using namespace dal::covariance;
         using input_t = compute_input<Task>;
@@ -160,8 +154,6 @@ inline void init_partial_compute_result(pybind11::module_& m) {
             }));
 }
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
-
 template <typename Task>
 void init_compute_hyperparameters(py::module_& m) {
     using namespace dal::covariance::detail;
@@ -189,16 +181,12 @@ void init_compute_hyperparameters(py::module_& m) {
         ;
 }
 
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
-
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_partial_compute_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_partial_compute_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_finalize_compute_ops);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_hyperparameters);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
 } //namespace covariance
 
 ONEDAL_PY_INIT_MODULE(covariance) {
@@ -217,9 +205,7 @@ ONEDAL_PY_INIT_MODULE(covariance) {
     ONEDAL_PY_INSTANTIATE(init_finalize_compute_ops, sub, policy_list, task::compute);
     ONEDAL_PY_INSTANTIATE(init_compute_result, sub, task::compute);
     ONEDAL_PY_INSTANTIATE(init_partial_compute_result, sub, task::compute);
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
     ONEDAL_PY_INSTANTIATE(init_compute_hyperparameters, sub, task::compute);
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
 #endif
 }
 

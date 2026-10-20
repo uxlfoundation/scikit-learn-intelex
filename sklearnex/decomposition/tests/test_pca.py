@@ -37,6 +37,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    skip_array_api_strict_readonly,
     torch_available,
     torch_xpu_available,
 )
@@ -67,6 +68,7 @@ def hyperparameters(request):
 @pytest.mark.parametrize("macro_block", [None, 2])
 @pytest.mark.parametrize("grain_size", [None, 2])
 def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_size):
+    skip_array_api_strict_readonly(dataframe)
 
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)

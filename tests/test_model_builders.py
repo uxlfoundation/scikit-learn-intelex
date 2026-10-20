@@ -17,6 +17,7 @@
 import contextlib
 import gc
 import itertools
+import json
 import pickle
 import unittest
 import warnings
@@ -48,11 +49,7 @@ from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import (
-    _package_check_version,
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 
 try:
     import catboost as cb
@@ -71,15 +68,7 @@ except ImportError:
     shap_available = False
 
 
-shap_required_version = (2024, "P", 1)
-shap_api_change_version = (2025, "P", 0)
-shap_supported = daal_check_version(shap_required_version)
-shap_api_changed = daal_check_version(shap_api_change_version)
-shap_not_supported_str = (
-    f"SHAP value calculation only supported for version {shap_required_version} or later"
-)
 shap_unavailable_str = "SHAP Python package not available"
-shap_api_change_str = "SHAP calculation requires 2025.0 API"
 cb_unavailable_str = "CatBoost not available"
 
 # CatBoost's SHAP value calculation seems to be buggy
@@ -318,23 +307,18 @@ def test_xgb_regression_shap(
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            xgb_model.predict(dm_test, pred_contribs=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True),
-            xgb_model.predict(dm_test, pred_interactions=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        xgb_model.predict(dm_test, pred_contribs=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True),
+        xgb_model.predict(dm_test, pred_interactions=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("objective", ["binary:logistic", "binary:logitraw"])
@@ -457,23 +441,18 @@ def test_xgb_binary_classification_shap(
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            xgb_model.predict(dm_test, pred_contribs=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True),
-            xgb_model.predict(dm_test, pred_interactions=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        xgb_model.predict(dm_test, pred_contribs=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True),
+        xgb_model.predict(dm_test, pred_interactions=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("objective", ["multi:softmax", "multi:softprob"])
@@ -532,14 +511,10 @@ def test_xgb_multiclass_classification(
             xgb_model.predict(dm_test),
         )
 
-    if shap_supported:
-        with pytest.raises(TypeError):
-            d4p_model.predict(X_test, pred_contribs=True)
-        with pytest.raises(TypeError):
-            d4p_model.predict(X_test, pred_interactions=True)
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    with pytest.raises(TypeError):
+        d4p_model.predict(X_test, pred_contribs=True)
+    with pytest.raises(TypeError):
+        d4p_model.predict(X_test, pred_interactions=True)
 
 
 def test_xgb_early_stop():
@@ -851,17 +826,12 @@ def test_lgb_regression(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            lgb_model.predict(X_test, pred_contrib=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        lgb_model.predict(X_test, pred_contrib=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.skipif(not shap_available, reason=shap_unavailable_str)
@@ -895,18 +865,13 @@ def test_lgb_regression_interactions(
         X_test[:, 2:] = np.nan
         X_test[-1] = np.nan
 
-    if shap_supported:
-        # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_interactions=True)[:, :-1, :-1],
-            shap.TreeExplainer(lgb_model).shap_interaction_values(X_test),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_interactions=True)[:, :-1, :-1],
+        shap.TreeExplainer(lgb_model).shap_interaction_values(X_test),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -954,17 +919,12 @@ def test_lgb_binary_classification(
         np.argmax(d4p_model.predict_proba(X_test), axis=1),
     )
 
-    if shap_supported:
-        np.testing.assert_allclose(
-            d4p_model.predict(X_test, pred_contribs=True),
-            lgb_model.predict(X_test, pred_contrib=True),
-            atol=1e-5,
-            rtol=1e-5,
-        )
-
-    elif not shap_api_changed:
-        with pytest.raises(NotImplementedError):
-            d4p_model.predict(X_test, pred_contribs=True)
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        lgb_model.predict(X_test, pred_contrib=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
 
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -1125,6 +1085,8 @@ def test_lgb_unsupported():
             "deterministic": True,
         },
     )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(lgb_model)
 
 
 def make_cb_model(
@@ -1317,17 +1279,15 @@ def test_catboost_regression(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        shap_pred = force_shap_predict(d4p_model, X_test)
-        if d4p_model.supports_shap_:
-            assert not np.isnan(shap_pred).any()
-        else:
-            assert np.isnan(shap_pred).any()
+    shap_pred = force_shap_predict(d4p_model, X_test)
+    if d4p_model.supports_shap_:
+        assert not np.isnan(shap_pred).any()
+    else:
+        assert np.isnan(shap_pred).any()
 
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.skipif(catboost_skip_shap, reason=catboost_skip_shap_msg)
-@pytest.mark.skipif(not shap_supported, reason=shap_not_supported_str)
 @pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
 @pytest.mark.parametrize("boost_from_average", [False, True])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
@@ -1415,12 +1375,11 @@ def test_catboost_binary_classification(
         rtol=1e-5,
     )
 
-    if shap_supported:
-        shap_pred = force_shap_predict(d4p_model, X_test)
-        if d4p_model.supports_shap_:
-            assert not np.isnan(shap_pred).any()
-        else:
-            assert np.isnan(shap_pred).any()
+    shap_pred = force_shap_predict(d4p_model, X_test)
+    if d4p_model.supports_shap_:
+        assert not np.isnan(shap_pred).any()
+    else:
+        assert np.isnan(shap_pred).any()
 
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
@@ -1622,6 +1581,124 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
+@pytest.mark.parametrize(
+    "value,split_op,expected",
+    [
+        # a threshold that is exactly representable as a float32 only needs to
+        # be stepped down when an observation equal to it belongs on the right
+        (0.5, "<", 0.4999999701976776),
+        (0.5, "<=", 0.5),
+        # when rounding to float32 goes up, the rounded threshold would take in
+        # observations that the model leaves out, so both splits step down
+        (0.1, "<", 0.09999999403953552),
+        (0.1, "<=", 0.09999999403953552),
+        (-12345.6789, "<", -12345.6796875),
+        (-12345.6789, "<=", -12345.6796875),
+        # when it goes down, the rounded threshold already excludes what the
+        # model excludes, so both splits keep it instead of stepping again
+        (-0.1, "<", -0.10000000149011612),
+        (-0.1, "<=", -0.10000000149011612),
+        (12345.6789, "<", 12345.6787109375),
+        (12345.6789, "<=", 12345.6787109375),
+        (1e10 + 0.5, "<", 10000000000.0),
+        (1e10 + 0.5, "<=", 10000000000.0),
+    ],
+)
+def test_split_threshold(value, split_op, expected):
+    node = gbt_convertors.Node(
+        cover=1.0,
+        is_leaf=False,
+        default_left=False,
+        feature=0,
+        value=value,
+        split_op=split_op,
+    )
+    assert float(node.get_split_threshold()) == expected
+
+
+# LightGBM's predictor zeroes feature values this small before comparing them,
+# so observations sitting on a split at +-this value are not routed by it:
+# https://github.com/lightgbm-org/LightGBM/blob/v4.7.0/include/LightGBM/meta.h#L57
+# https://github.com/lightgbm-org/LightGBM/blob/v4.7.0/src/c_api.cpp#L2933-L2947
+_LGB_ZERO_THRESHOLD = float(np.float32(1e-35))
+
+
+@pytest.mark.parametrize(
+    "booster_kind,from_treelite",
+    [
+        ("xgboost", False),
+        ("xgboost", True),
+        ("lightgbm", False),
+        ("lightgbm", True),
+        # only convertible through treelite, and their thresholds are bin
+        # midpoints that no float32 represents exactly; forests take a separate
+        # path from boosters, averaging their trees rather than summing them
+        ("sklearn", True),
+        ("sklearn_forest", True),
+    ],
+)
+def test_predictions_of_observations_on_split_thresholds(booster_kind, from_treelite):
+    # Only observations sitting exactly on a threshold can tell '<' from '<=',
+    # and random data almost never lands on one, so build them from the
+    # thresholds instead.
+    X, y = make_regression(n_samples=200, n_features=5, random_state=42)
+    if booster_kind == "xgboost":
+        booster = xgb.train(
+            params={"objective": "reg:squarederror", "max_depth": 4, "seed": 42},
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=5,
+        )
+        tl_model = treelite.frontend.from_xgboost(booster)
+    elif booster_kind == "lightgbm":
+        booster = (
+            lgb.LGBMRegressor(n_estimators=10, num_leaves=31, random_state=42, verbose=-1)
+            .fit(X, y)
+            .booster_
+        )
+        tl_model = treelite.frontend.from_lightgbm(booster)
+    else:
+        estimator = (
+            RandomForestRegressor(n_estimators=5, max_depth=4, random_state=42)
+            if booster_kind == "sklearn_forest"
+            else GradientBoostingRegressor(n_estimators=5, max_depth=4, random_state=42)
+        )
+        tl_model = treelite.sklearn.import_model(estimator.fit(X, y))
+
+    model_json = json.loads(tl_model.dump_as_json(pretty_print=False))
+    splits = [
+        (node["split_feature_id"], node["threshold"])
+        for tree in model_json["trees"]
+        for node in tree["nodes"]
+        if "threshold" in node and abs(node["threshold"]) > _LGB_ZERO_THRESHOLD
+    ]
+    assert len(splits) > 20, "model to test has too few splits to be meaningful"
+    # XGBoost's thresholds are already float32, so rounding cannot apply; for
+    # the rest, an all-representable model would quietly stop testing anything
+    if booster_kind != "xgboost":
+        assert any(
+            float(np.float32(threshold)) != threshold for _, threshold in splits
+        ), "no threshold of the model to test exercises rounding to float32"
+
+    # one observation per split, on top of an average one so that they reach
+    # varied parts of the trees instead of all taking the same path down
+    X_test = np.tile(X.mean(axis=0), (len(splits), 1))
+    for row, (feature, threshold) in enumerate(splits):
+        X_test[row, feature] = np.float32(threshold)
+
+    if from_treelite:
+        model = tl_model
+        expected = treelite.gtil.predict(model, X_test, pred_margin=True).reshape(-1)
+    elif booster_kind == "xgboost":
+        model = booster
+        expected = booster.predict(xgb.DMatrix(X_test), output_margin=True)
+    else:
+        model = booster
+        expected = booster.predict(X_test, raw_score=True)
+
+    d4p_model = d4p.mb.convert_model(model)
+    np.testing.assert_allclose(d4p_model.predict(X_test), expected, atol=1e-5, rtol=1e-5)
+
+
 @pytest.mark.skip(reason="causes timeouts in CI")
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_unsupported_multiclass(from_treelite):
@@ -1803,8 +1880,11 @@ def test_treelite_unsupported():
 # These aren't typically produced by the main libraries targeted by
 # treelite, but can still be specified to be like this when constructing
 # a model through their model builder.
+# 5.0 is exactly representable as a float32; 12345.6789 is not and rounds down,
+# which allows to test for an exclusive split converted an ulp too low
+@pytest.mark.parametrize("threshold", [5.0, 12345.6789])
 @pytest.mark.parametrize("opname", [">", ">=", "<", "<="])
-def test_treelite_uncommon(opname):
+def test_treelite_uncommon(opname, threshold):
     # Taken from their example with a modified op:
     # https://treelite.readthedocs.io/en/latest/tutorials/builder.html
     builder = treelite.model_builder.ModelBuilder(
@@ -1828,7 +1908,7 @@ def test_treelite_uncommon(opname):
     builder.start_node(0)
     builder.numerical_test(
         feature_id=0,
-        threshold=5.0,
+        threshold=threshold,
         default_left=True,
         opname=opname,
         left_child_key=1,
@@ -1859,20 +1939,35 @@ def test_treelite_uncommon(opname):
     tl_model = builder.commit()
     d4p_model = d4p.mb.convert_model(tl_model)
 
+    # 'on' is the float32 of the threshold rather than the threshold itself: a
+    # float64 closer than a float32 step is outside what the conversion promises
+    lo, on, hi = threshold - 5.0, float(np.float32(threshold)), threshold + 5.0
     X = np.array(
         [
-            [0.0, 0.0, -5.0],
-            [0.0, 0.0, -2.0],
-            [0.0, 0.0, 1.0],
-            [0.0, 5.0, -5.0],
-            [0.0, 5.0, -2.0],
-            [0.0, 5.0, 1.0],
-            [10.0, 0.0, -5.0],
-            [10.0, 0.0, -2.0],
-            [10.0, 0.0, 1.0],
-            [10.0, 5.0, -5.0],
-            [10.0, 5.0, -2.0],
-            [10.0, 5.0, 1.0],
+            [lo, 0.0, -5.0],
+            [lo, 0.0, -2.0],
+            [lo, 0.0, 1.0],
+            [lo, 5.0, -5.0],
+            [lo, 5.0, -2.0],
+            [lo, 5.0, 1.0],
+            [hi, 0.0, -5.0],
+            [hi, 0.0, -2.0],
+            [hi, 0.0, 1.0],
+            [hi, 5.0, -5.0],
+            [hi, 5.0, -2.0],
+            [hi, 5.0, 1.0],
+            # sitting exactly on each threshold, the only observations that
+            # tell the strict operators from the inclusive ones
+            [on, 0.0, -3.0],
+            [on, 0.0, 1.0],
+            [lo, 0.0, -3.0],
+            [hi, 0.0, -3.0],
+            # taking a default branch, whose direction is swapped along with
+            # the children of a '>' or '>=' split
+            [np.nan, 0.0, -5.0],
+            [np.nan, 0.0, 1.0],
+            [lo, 0.0, np.nan],
+            [hi, 0.0, np.nan],
         ]
     )
     np.testing.assert_almost_equal(
@@ -1899,6 +1994,57 @@ def test_treelite_uneven_multiclass():
             num_tree=4,
             target_id=[0, 0, 0, 0],
             class_id=[0, 1, 2, 1],
+        ),
+        postprocessor=treelite.model_builder.PostProcessorFunc(name="softmax"),
+        base_scores=[0.2, 0.0, 0.3],
+    )
+    for tree_id in range(4):
+        builder.start_tree()
+        builder.start_node(0)
+        builder.numerical_test(
+            feature_id=0,
+            threshold=0.0,
+            default_left=True,
+            opname="<",
+            left_child_key=1,
+            right_child_key=2,
+        )
+        builder.end_node()
+        builder.start_node(1)
+        builder.leaf(0.5 if tree_id < 2 else 0.0)
+        builder.end_node()
+        builder.start_node(2)
+        builder.leaf(1.0 if tree_id == 2 else 0.0)
+        builder.end_node()
+        builder.end_tree()
+    tl_model = builder.commit()
+    d4p_model = d4p.mb.convert_model(tl_model)
+
+    X = np.array([[-1.0], [0.0], [1.0]])
+    np.testing.assert_almost_equal(
+        d4p_model.predict_proba(X),
+        treelite.gtil.predict(tl_model, X)[:, 0, :],
+    )
+
+
+def test_treelite_multiclass_with_empty_class():
+    # Same as the test above, except that class 1 gets no tree at all and is
+    # therefore missing from the class ids that the tree counts come from
+    builder = treelite.model_builder.ModelBuilder(
+        threshold_type="float64",
+        leaf_output_type="float64",
+        metadata=treelite.model_builder.Metadata(
+            num_feature=1,
+            task_type="kMultiClf",
+            average_tree_output=False,
+            num_target=1,
+            num_class=[3],
+            leaf_vector_shape=(1, 1),
+        ),
+        tree_annotation=treelite.model_builder.TreeAnnotation(
+            num_tree=4,
+            target_id=[0, 0, 0, 0],
+            class_id=[0, 0, 0, 2],
         ),
         postprocessor=treelite.model_builder.PostProcessorFunc(name="softmax"),
         base_scores=[0.2, 0.0, 0.3],
