@@ -487,7 +487,8 @@ def patch_sklearn(
     preview : bool
         Whether to include the :doc:`preview estimators <preview>` in the patching.
 
-        Note that this will forcibly set the environment variable ``SKLEARNEX_PREVIEW``.
+        Note that this will set the environment variable ``SKLEARNEX_PREVIEW`` if it
+        is not already set.
 
         If environment variable ``SKLEARNEX_PREVIEW`` is set at the moment this function
         is called, preview estimators will be patched regardless.
@@ -514,7 +515,7 @@ def patch_sklearn(
     >>> from sklearn.linear_model import LinearRegression # now calls sklearnex
     >>> is_patched_instance(LinearRegression())
     True"""
-    if preview:
+    if preview and not _is_preview_enabled():
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
 
     if global_patch:
@@ -556,7 +557,8 @@ def unpatch_sklearn(
 
     .. Note
         If preview mode was enabled through ``patch_sklearn(preview=True)``, it will
-        modify the environment variable ``SKLEARNEX_PREVIEW``, by deleting it.
+        delete the environment variable ``SKLEARNEX_PREVIEW``. A value set by the user
+        before calling ``patch_sklearn`` is left untouched.
 
     Parameters
     ----------
