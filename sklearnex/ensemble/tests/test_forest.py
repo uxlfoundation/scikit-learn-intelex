@@ -364,3 +364,37 @@ def test_predict_with_nan(estimator_class):
     if not is_regressor(model):
         proba = model.predict_proba(X_nan)
         assert not np.any(np.isnan(proba))
+
+
+@pytest.mark.parametrize(
+    "estimator_class",
+    [
+        "RandomForestClassifier",
+        "ExtraTreesClassifier",
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_predict_proba_multiclass_tolerance(estimator_class, dtype):
+    from sklearn.metrics import roc_auc_score
+
+    from sklearnex import ensemble
+
+    X, y = make_classification(
+        n_samples=2000,
+        n_features=15,
+        n_informative=8,
+        n_classes=5,
+        random_state=42,
+    )
+    X = X.astype(dtype)
+
+    model = getattr(ensemble, estimator_class)(n_estimators=20, random_state=42)
+    model.fit(X, y)
+
+    proba = model.predict_proba(X)
+    proba_np = _as_numpy(proba)
+    row_sums = np.sum(proba_np, axis=1)
+
+    assert np.allclose(1.0, row_sums)
+    score = roc_auc_score(y, proba_np, multi_class="ovr")
+    assert 0.0 <= score <= 1.0

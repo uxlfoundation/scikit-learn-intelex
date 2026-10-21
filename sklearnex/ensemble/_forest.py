@@ -845,7 +845,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
         out = self._onedal_estimator.predict_proba(X, queue=queue)
-        return xp.clip(out, 0.0, 1.0)
+        out = xp.clip(out, 0.0, 1.0)
+        normalizer = xp.sum(out, axis=1, keepdims=True)
+        normalizer = xp.where(normalizer == 0.0, 1.0, normalizer)
+        return out / normalizer
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return accuracy_score(
