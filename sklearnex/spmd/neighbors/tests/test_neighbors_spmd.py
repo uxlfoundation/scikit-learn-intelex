@@ -473,9 +473,9 @@ def test_knn_spmd_not_movable(dataframe, queue, estimator):
     estimator.fit(local_X, local_y)
     xp, _, device = get_namespace_and_device(np.zeros(1))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot move SPMD estimators in the KNN family"):
         move_estimator_to(estimator, xp=xp, device=device)
 
     xp_gpu, _, device_gpu = get_namespace_and_device(local_X)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot move SPMD estimators in the KNN family"):
         move_estimator_to(estimator, xp=xp_gpu, device=device_gpu)
