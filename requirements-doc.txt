@@ -42,7 +42,7 @@ ptyprocess==0.7.0
 Pygments==2.20.0
 pyparsing==3.3.2
 pyrsistent==0.20.0
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
 pytz==2026.2
 PyYAML==6.0.3
 pyzmq==27.1.0
