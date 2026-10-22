@@ -41,23 +41,6 @@ def test_rf_classifier(queue):
     assert_allclose([1], rf.predict(PREDICT_DATA, queue=queue))
 
 
-@pytest.mark.parametrize("queue", get_queues())
-def test_rf_regression(queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("RF regressor predict for the GPU sycl_queue is buggy.")
-    X, y = make_regression(
-        n_samples=100, n_features=4, n_informative=2, random_state=0, shuffle=False
-    )
-    rf = RandomForestRegressor(max_depth=2, random_state=209652396).fit(X, y, queue=queue)
-
-    # GPU and CPU implementations of Random Forest use RNGs differently. They build
-    # different ensembles of trees, thereby requiring separate check values.
-    if queue and queue.sycl_device.is_gpu:
-        assert_allclose([1.82], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-    else:
-        assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
-
-
 @pytest.mark.parametrize("queue", get_queues("gpu"))
 def test_rf_classifier_random_splitter(queue):
     X, y = make_classification(

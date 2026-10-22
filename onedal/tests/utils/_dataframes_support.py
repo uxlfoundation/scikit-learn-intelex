@@ -100,6 +100,20 @@ if torch_available:
     except Exception:
         pass
 
+# Bug in scikit-learn:
+# https://github.com/scikit-learn/scikit-learn/issues/35088
+dpnp_to_strict_working: bool = False
+if dpnp_available:
+    try:
+        from sklearn.utils._array_api import get_namespace_and_device, move_to
+
+        with config_context(array_api_dispatch=True):
+            xp, _, device = get_namespace_and_device(array_api_strict.arange(1))
+            _ = move_to(dpnp.arange(1), xp=xp, device=device)
+            dpnp_to_strict_working = True
+    except Exception:
+        pass
+
 
 def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     """Get supported dataframes for testing.
