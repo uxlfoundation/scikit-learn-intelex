@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -31,6 +32,9 @@ from sklearnex.tests.utils.spmd import (
     _mpi_libs_and_gpu_available,
     _spmd_assert_allclose,
 )
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import get_namespace_and_device, move_estimator_to
 
 
 @pytest.mark.skipif(
@@ -429,3 +433,49 @@ def test_knn_spmd_empty_kneighbors(dataframe, queue):
 
         _spmd_assert_allclose(spmd_indcs, batch_indcs)
         _spmd_assert_allclose(spmd_dists, batch_dists)
+
+
+@pytest.mark.mpi
+@pytest.mark.skipif(
+    not _mpi_libs_and_gpu_available,
+    reason="GPU device and MPI libs required for test",
+)
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Requires newer scikit-learn version"
+)
+@pytest.mark.parametrize(
+    "dataframe,queue",
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        "NearestNeighbors",
+        "KNeighborsClassifier",
+        "KNeighborsRegressor",
+    ],
+)
+def test_knn_spmd_not_movable(dataframe, queue, estimator):
+    from sklearnex.spmd import neighbors
+
+    estimator = getattr(neighbors, estimator)(n_neighbors=2, algorithm="brute")
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3))
+    y = rng.integers(2, size=X.shape[0])
+
+    local_X = _convert_to_dataframe(
+        _get_local_tensor(X), sycl_queue=queue, target_df=dataframe
+    )
+    local_y = _convert_to_dataframe(
+        _get_local_tensor(y), sycl_queue=queue, target_df=dataframe
+    )
+    estimator.fit(local_X, local_y)
+    xp, _, device = get_namespace_and_device(np.zeros(1))
+
+    with pytest.raises(ValueError):
+        move_estimator_to(estimator, xp=xp, device=device)
+
+    xp_gpu, _, device_gpu = get_namespace_and_device(local_X)
+    with pytest.raises(ValueError):
+        move_estimator_to(estimator, xp=xp_gpu, device=device_gpu)
