@@ -46,14 +46,17 @@ class BaseLinearRegression(metaclass=ABCMeta):
     @bind_default_backend("linear_model.regression")
     def model(self): ...
 
-    def _get_onedal_params(self, dtype):
+    # Note: 'alpha' is not needed for predictions. Scikit-learn might
+    # have arrays as 'alpha' when fallbacks happen, so this allows to
+    # fill that 'alpha' slot with something else just to predict.
+    def _get_onedal_params(self, dtype, override_alpha=False):
         intercept = "intercept|" if self.fit_intercept else ""
         return {
             "fptype": dtype,
             "method": self.algorithm,
             "intercept": self.fit_intercept,
             "result_option": (intercept + "coefficients"),
-            "alpha": self.alpha,
+            "alpha": self.alpha if not override_alpha else 1.0,
         }
 
     def _create_model(self, coef_, intercept_, xp) -> None:
@@ -153,7 +156,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
         _check_n_features(self, X, False)
 
         X_table = to_table(X, queue=queue)
-        params = self._get_onedal_params(X_table.dtype)
+        params = self._get_onedal_params(X_table.dtype, override_alpha=True)
         result = self.infer(params, self._onedal_model, X_table)
         y = from_table(result.responses, like=X)
 

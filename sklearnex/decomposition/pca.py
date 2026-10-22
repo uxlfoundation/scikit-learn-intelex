@@ -212,15 +212,6 @@ class PCA(oneDALEstimator, _sklearn_PCA):
         return self
 
     def _onedal_fit(self, X, queue=None):
-        xp, _ = get_namespace(X)
-        X = validate_data(
-            self,
-            X,
-            dtype=[xp.float64, xp.float32],
-            ensure_2d=True,
-            copy=self.copy,
-        )
-
         if self._fit_svd_solver == "full" and self.svd_solver == "auto":
             self._fit_svd_solver = "covariance_eigh"
             # warning should only be emitted if to be offloaded to oneDAL
@@ -229,6 +220,15 @@ class PCA(oneDALEstimator, _sklearn_PCA):
                 "when `svd_solver` parameter is set to `auto` "
                 "for performance purposes."
             )
+
+        xp, _ = get_namespace(X)
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            ensure_2d=True,
+            copy=self._fit_svd_solver == "full",
+        )
 
         if self.n_components is not None:
             self._validate_n_components(X)

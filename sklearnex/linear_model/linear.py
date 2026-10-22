@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import logging
-
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils._array_api import get_namespace
