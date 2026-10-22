@@ -116,8 +116,12 @@ class BaseForest(ABC):
             "impurity_threshold": float(
                 0.0 if self.min_impurity_split is None else self.min_impurity_split
             ),
-            "min_weight_fraction_in_leaf_node": self.min_weight_fraction_leaf,
-            "min_impurity_decrease_in_split_node": self.min_impurity_decrease,
+            "min_weight_fraction_in_leaf_node": (
+                self.min_weight_fraction_leaf * self.observations_per_tree_fraction
+            ),
+            "min_impurity_decrease_in_split_node": (
+                self.min_impurity_decrease * self.observations_per_tree_fraction
+            ),
             "tree_count": int(self.n_estimators),
             "features_per_node": self._to_absolute_max_features(n_features),
             "max_tree_depth": int(0 if self.max_depth is None else self.max_depth),

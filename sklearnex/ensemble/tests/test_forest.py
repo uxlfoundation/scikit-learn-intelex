@@ -364,3 +364,40 @@ def test_predict_with_nan(estimator_class):
     if not is_regressor(model):
         proba = model.predict_proba(X_nan)
         assert not np.any(np.isnan(proba))
+
+
+@pytest.mark.parametrize(
+    "estimator_class",
+    [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+    ],
+)
+@pytest.mark.parametrize("max_samples", [0.5, 0.7])
+def test_min_weight_fraction_leaf_with_max_samples(estimator_class, max_samples):
+    from sklearnex import ensemble
+
+    n_samples = 1000
+    min_weight_fraction_leaf = 0.1
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal(size=(n_samples, 10))
+
+    if estimator_class == "RandomForestRegressor":
+        y = rng.standard_normal(size=n_samples)
+    else:
+        y = rng.integers(2, size=n_samples)
+
+    model = getattr(ensemble, estimator_class)(
+        n_estimators=5,
+        random_state=0,
+        max_samples=max_samples,
+        min_weight_fraction_leaf=min_weight_fraction_leaf,
+    )
+    model.fit(X, y)
+
+    expected_min_leaf_weight = min_weight_fraction_leaf * (max_samples * n_samples)
+    for est in model.estimators_:
+        leaf_mask = est.tree_.children_left == -1
+        leaf_weights = est.tree_.weighted_n_node_samples[leaf_mask]
+        assert np.all(leaf_weights >= expected_min_leaf_weight)
+        assert leaf_weights.min() < min_weight_fraction_leaf * n_samples
