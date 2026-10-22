@@ -494,6 +494,9 @@ def test_knn_move_estimator_to(
     attrs_moved = dir(estimator_moved)
     for attr in attrs_orig:
         assert attr in attrs_moved
+        if getattr(estimator, attr).__class__ != getattr(estimator_moved, attr).__class__:
+            assert_same_namespace(getattr(estimator, attr), array_input_like)
+            assert_same_namespace(getattr(estimator_moved, attr), array_move_like)
 
 
 @pytest.mark.allow_sklearn_fallback
