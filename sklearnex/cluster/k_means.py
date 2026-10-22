@@ -500,6 +500,9 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
         }
         out.cluster_centers_ = converter(self.cluster_centers_)
         out.labels_ = converter(self.labels_)
+        if not isinstance(self.init, str) and not callable(self.init):
+            # This only happens when there are sklearn fallbacks
+            out.init = converter(out.init)
         out._initialize_onedal_estimator()
         out._onedal_estimator._create_model(
             out.cluster_centers_,
