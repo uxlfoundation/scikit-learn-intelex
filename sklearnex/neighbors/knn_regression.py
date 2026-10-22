@@ -28,11 +28,11 @@ from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._device_offload import (
-    check_data_is_allocated_on_device,
     dispatch,
     wrap_output_data,
 )
 from ..utils._array_api import enable_array_api
+from ..utils.devices import check_data_is_allocated_on_device
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
