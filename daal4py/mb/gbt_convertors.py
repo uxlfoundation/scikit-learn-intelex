@@ -115,6 +115,7 @@ class Node:
         default_left: bool,
         feature: int,
         value: float,
+        split_op: Optional[str] = None,
         n_children: int = 0,
         left_child: "Optional[Node]" = None,
         right_child: "Optional[Node]" = None,
@@ -126,6 +127,7 @@ class Node:
         self.default_left = default_left
         self.__feature = feature
         self.value = value
+        self.split_op = split_op
         self.n_children = n_children
         self.left_child = left_child
         self.right_child = right_child
@@ -153,12 +155,19 @@ class Node:
         feature = input_dict.get("split")
         if feature:
             feature = feature_names_to_indices[feature]
+        if is_leaf:
+            value = input_dict["leaf"]
+        else:
+            # XGBoost dumps its float32 thresholds as longer decimals, e.g.
+            # 0.99734545 as '0.997345448', so round back to the one it splits on
+            value = float(np.float32(input_dict["split_condition"]))
         return Node(
             cover=input_dict["cover"],
             is_leaf=is_leaf,
             default_left=default_left,
             feature=feature,
-            value=input_dict["leaf"] if is_leaf else input_dict["split_condition"],
+            value=value,
+            split_op=None if is_leaf else "<",
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
@@ -184,6 +193,10 @@ class Node:
             right_child = None
 
         is_leaf = "leaf_value" in tree
+        if not is_leaf and tree.get("decision_type", "<=") != "<=":
+            # '==' marks a categorical split, whose threshold is a category list
+            raise TypeError("Models with categorical features are not supported.")
+
         # get cover and value for leaf nodes or internal nodes
         cover = tree.get("leaf_count", 0) or tree.get("internal_count", 0)
         value = tree.get("leaf_value", 0) or tree.get("threshold", 0)
@@ -193,6 +206,7 @@ class Node:
             default_left=tree.get("default_left", 0),
             feature=tree.get("split_feature"),
             value=value,
+            split_op=None if is_leaf else "<=",
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
@@ -219,18 +233,18 @@ class Node:
             right_child = None
 
         value = this_node["leaf_value"] if is_leaf else this_node["threshold"]
+        split_op = None
         if not is_leaf:
-            comp = this_node["comparison_op"]
-            if comp == "<=":
-                value = float(np.nextafter(value, np.inf))
-            elif comp in [">", ">="]:
+            split_op = this_node["comparison_op"]
+            if split_op in (">", ">="):
+                # oneDAL always keeps the lower values in the left child, so
+                # swap the children and rewrite the split to match
                 left_child, right_child = right_child, left_child
                 default_left = not default_left
-                if comp == ">":
-                    value = float(np.nextafter(value, -np.inf))
-            elif comp != "<":
+                split_op = "<=" if split_op == ">" else "<"
+            elif split_op not in ("<", "<="):
                 raise TypeError(
-                    f"Model to convert contains unsupported split type: {comp}."
+                    f"Model to convert contains unsupported split type: {split_op}."
                 )
 
         return Node(
@@ -239,14 +253,32 @@ class Node:
             default_left=default_left,
             feature=this_node.get("split_feature_id"),
             value=value,
+            split_op=split_op,
             n_children=n_children,
             left_child=left_child,
             right_child=right_child,
         )
 
-    def get_value_closest_float_downward(self) -> np.float64:
-        """Get the closest exact fp value smaller than self.value"""
-        return np.nextafter(np.single(self.value), np.single(-np.inf))
+    def get_split_threshold(self) -> np.float32:
+        """Get the float32 threshold this node's split becomes in oneDAL
+
+        The node sends an observation left when 'x < value' or 'x <= value'
+        holds, whichever 'split_op' names; oneDAL sends it left when
+        'x <= threshold'. This returns the largest float32 that agrees with the
+        node for every float32 observation - float64 ones lying between it and
+        'value' do not survive the conversion.
+        """
+        # a rounded value that no longer goes left would take in observations
+        # that the split sends right
+        rounded = np.float32(self.value)
+        rounded_goes_left = (
+            float(rounded) <= self.value
+            if self.split_op == "<="
+            else float(rounded) < self.value
+        )
+        if rounded_goes_left:
+            return rounded
+        return np.nextafter(rounded, np.float32(-np.inf))
 
     def get_children(self) -> "Optional[Tuple[Node, Node]]":
         if not self.left_child or not self.right_child:
@@ -433,7 +465,7 @@ def get_gbt_model_from_tree_list(
         parent_id = mb.add_split(
             tree_id=tree_id,
             feature_index=root_node.feature,
-            feature_value=root_node.get_value_closest_float_downward(),
+            feature_value=root_node.get_split_threshold(),
             cover=root_node.cover,
             default_left=root_node.default_left,
         )
@@ -464,7 +496,7 @@ def get_gbt_model_from_tree_list(
                 parent_id = mb.add_split(
                     tree_id=tree_id,
                     feature_index=node.feature,
-                    feature_value=node.get_value_closest_float_downward(),
+                    feature_value=node.get_split_threshold(),
                     cover=node.cover,
                     default_left=node.default_left,
                     parent_id=node.parent_id,

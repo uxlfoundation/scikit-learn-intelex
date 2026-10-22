@@ -86,6 +86,12 @@ def test_sklearnex_multiclass_classification(dataframe, queue):
 def test_sklearnex_binary_classification(dataframe, queue):
     if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
         pytest.skip("Functionality in preview")
+    if (not queue or queue.sycl_device.is_cpu) and dataframe in (
+        "array_api",
+        "dpnp",
+        "torch",
+    ):
+        pytest.skip("CPU solver does not support array API inputs")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = load_breast_cancer(return_X_y=True)
@@ -558,6 +564,12 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
 def test_log_proba_doesnt_return_inf(dataframe, queue):
     if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
         pytest.skip("Functionality in preview mode")
+    if (not queue or queue.sycl_device.is_cpu) and dataframe in (
+        "array_api",
+        "dpnp",
+        "torch",
+    ):
+        pytest.skip("CPU solver does not support array API inputs")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = make_classification(random_state=123)

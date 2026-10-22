@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import os
 import platform
 import subprocess
 from functools import partial
@@ -48,6 +47,7 @@ from sklearnex import (
     unpatch_sklearn,
 )
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
+from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.dummy import DummyRegressor
 from sklearnex.linear_model import LogisticRegression
 from sklearnex.neighbors import (
@@ -58,7 +58,28 @@ from sklearnex.neighbors import (
 )
 from sklearnex.svm import SVC, NuSVC
 
-TEST_PREVIEW_ESTIMATORS: bool = "SKLEARNEX_PREVIEW" in os.environ
+# Single source of truth for whether the centralized tests are running with preview
+# estimators in scope. It is read once at import so that the estimator dictionaries
+# below and the design rule checks cannot disagree about it mid-session.
+PREVIEW_ENABLED: bool = _is_preview_enabled()
+
+
+def is_preview_exempt(obj) -> bool:
+    """Whether a preview estimator is excused from the repository-wide design rules.
+
+    Parameters
+    ----------
+    obj : class or instance
+        sklearn or sklearnex estimator
+
+    Returns
+    -------
+    bool
+        True when ``obj`` is defined in ``sklearnex.preview`` and preview mode is
+        not enabled. Enabling preview mode holds preview estimators to the same
+        design rules as the rest of sklearnex.
+    """
+    return "preview" in obj.__module__ and not PREVIEW_ENABLED
 
 
 def _load_all_models(with_sklearnex=True, estimator=True):
@@ -84,7 +105,7 @@ def _load_all_models(with_sklearnex=True, estimator=True):
     already_patched = any(already_patched_map.values())
     try:
         if with_sklearnex:
-            patch_sklearn(preview=TEST_PREVIEW_ESTIMATORS)
+            patch_sklearn()
         elif already_patched:
             unpatch_sklearn()
 
