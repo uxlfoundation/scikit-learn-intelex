@@ -63,7 +63,11 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
-    from sklearnex.tests.utils.misc import assert_same_namespace
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -490,13 +494,9 @@ def test_knn_move_estimator_to(
         assert_same_namespace(pred_moved, array_move_like)
         np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
 
-    attrs_orig = dir(estimator)
-    attrs_moved = dir(estimator_moved)
-    for attr in attrs_orig:
-        assert attr in attrs_moved
-        if getattr(estimator, attr).__class__ != getattr(estimator_moved, attr).__class__:
-            assert_same_namespace(getattr(estimator, attr), array_input_like)
-            assert_same_namespace(getattr(estimator_moved, attr), array_move_like)
+    assert_same_attributes(estimator_moved, estimator)
+    assert_public_attributes_are_in_namespace(estimator, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(estimator_moved, xp_move, device_move)
 
 
 @pytest.mark.allow_sklearn_fallback
