@@ -74,10 +74,20 @@ def test_sklearnex_import_linear(
     X = rng.standard_normal(size=(10, 20) if not overdetermined else (20, 5))
     y = rng.standard_normal(size=(X.shape[0], 3) if multi_output else X.shape[0])
 
-    Xi = np.c_[X, np.ones((X.shape[0], 1))]
-    expected_coefs = lstsq(Xi, y)[0]
-    expected_intercept = expected_coefs[-1]
-    expected_coefs = expected_coefs[: X.shape[1]]
+    if not overdetermined and not (queue and queue.sycl_device.is_gpu):
+        # On CPU, underdetermined problems are solved through the dual system
+        # (Xc * Xc^t) * alpha = yc on centered data, coef = Xc^t * alpha.
+        X_mean = X.mean(axis=0)
+        y_mean = y.mean(axis=0)
+        Xc = X - X_mean
+        dual_coefs = lstsq(Xc @ Xc.T, y - y_mean)[0]
+        expected_coefs = Xc.T @ dual_coefs
+        expected_intercept = y_mean - X_mean @ expected_coefs
+    else:
+        Xi = np.c_[X, np.ones((X.shape[0], 1))]
+        expected_coefs = lstsq(Xi, y)[0]
+        expected_intercept = expected_coefs[-1]
+        expected_coefs = expected_coefs[: X.shape[1]]
     if multi_output:
         expected_coefs = expected_coefs.T
 
