@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+from .devices import check_data_is_allocated_on_device
 from .validation import assert_all_finite
 
-__all__ = ["assert_all_finite"]
+__all__ = ["assert_all_finite", "check_data_is_allocated_on_device"]
