@@ -74,12 +74,26 @@ def test_sklearnex_import_linear(
     X = rng.standard_normal(size=(10, 20) if not overdetermined else (20, 5))
     y = rng.standard_normal(size=(X.shape[0], 3) if multi_output else X.shape[0])
 
-    Xi = np.c_[X, np.ones((X.shape[0], 1))]
-    expected_coefs = lstsq(Xi, y)[0]
-    expected_intercept = expected_coefs[-1]
-    expected_coefs = expected_coefs[: X.shape[1]]
-    if multi_output:
-        expected_coefs = expected_coefs.T
+    if (
+        not overdetermined
+        and not (queue and queue.sycl_device.is_gpu)
+        and daal_check_version((2026, "P", 300))
+    ):
+        # On CPU, the solution was aligned with scikit-learn's LinearRegression
+        # that uses dual system for underdetermined problems.
+        from sklearn.linear_model import LinearRegression as _reference_LinearRegression
+
+        ref_linreg = _reference_LinearRegression()
+        ref_linreg.fit(X, y)
+        expected_coefs = ref_linreg.coef_
+        expected_intercept = ref_linreg.intercept_
+    else:
+        Xi = np.c_[X, np.ones((X.shape[0], 1))]
+        expected_coefs = lstsq(Xi, y)[0]
+        expected_intercept = expected_coefs[-1]
+        expected_coefs = expected_coefs[: X.shape[1]]
+        if multi_output:
+            expected_coefs = expected_coefs.T
 
     linreg = LinearRegression()
     if macro_block is not None:
