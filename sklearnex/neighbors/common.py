@@ -590,7 +590,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # and produce wrong results, so these cases must be handled by sklearn.
         # The user-provided 'metric_params' is inspected rather than
         # 'effective_metric_params_', because the latter is rebuilt without them.
-        unsupported_metric_params = sorted(set(self.metric_params or {}) - {"p"})
+        unsupported_metric_params = (self.metric_params or {}).keys() - {"p"}
         if not patching_status.and_condition(
             not unsupported_metric_params,
             f"Metric parameters {unsupported_metric_params} are not supported.",
