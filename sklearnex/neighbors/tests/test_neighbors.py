@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
+from scipy.spatial.distance import cdist
 from sklearn import datasets
 from sklearn.base import is_regressor
 
@@ -219,8 +220,8 @@ def test_minkowski_weights_in_metric_params_are_respected(algorithm, p):
         algorithm=algorithm,
     )
 
-    # Weighted minkowski distance computed by hand.
-    dist = (w * np.abs(X_test[:, None, :] - X[None, :, :]) ** p).sum(axis=-1) ** (1 / p)
+    # Reference weighted minkowski distances between the query and training points.
+    dist = cdist(X_test, X, metric="minkowski", p=p, w=w)
     expected_idx = np.argsort(dist, axis=1)[:, :n_neighbors]
     expected_dist = np.take_along_axis(dist, expected_idx, axis=1)
 
