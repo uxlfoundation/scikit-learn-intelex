@@ -74,7 +74,11 @@ def test_sklearnex_import_linear(
     X = rng.standard_normal(size=(10, 20) if not overdetermined else (20, 5))
     y = rng.standard_normal(size=(X.shape[0], 3) if multi_output else X.shape[0])
 
-    if not overdetermined and not (queue and queue.sycl_device.is_gpu):
+    if (
+        not overdetermined
+        and not (queue and queue.sycl_device.is_gpu)
+        and daal_check_version((2026, "P", 300))
+    ):
         # On CPU, underdetermined problems are solved through the dual system
         # (Xc * Xc^t) * alpha = yc on centered data, coef = Xc^t * alpha.
         X_mean = X.mean(axis=0)
