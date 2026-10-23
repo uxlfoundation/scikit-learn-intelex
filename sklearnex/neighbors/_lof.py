@@ -129,8 +129,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
     def fit(self, X, y=None):
         xp, is_array_api = get_namespace(X)
-        if hasattr(self, "_onedal_estimator"):
-            del self._onedal_estimator
+        if "_onedal_estimator" in self.__dict__:
+            del self.__dict__["_onedal_estimator"]
         dispatch(
             self,
             "fit",
