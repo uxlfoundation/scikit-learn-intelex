@@ -756,7 +756,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             out._y = converter(self._y)
         if hasattr(self, "_shape") and self._shape is not None:
             if not isinstance(self._shape, (tuple, list)):
-                out._shape = converter(self)
+                out._shape = converter(self._shape)
             else:
                 out._shape = self._shape
         out._fit_onedal_estimator()
