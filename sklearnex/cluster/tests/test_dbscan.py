@@ -41,7 +41,11 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
-    from sklearnex.tests.utils.misc import assert_same_namespace
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 if dpnp_available:
     import dpnp
@@ -122,17 +126,6 @@ def test_dbscan_move_estimator_to(array_input_like, array_move_like, with_array_
     xp_move, _, device_move = get_namespace_and_device(array_move_like)
     model_moved = move_estimator_to(model, xp=xp_move, device=device_move)
 
-    # TODO: update this once scikit-learn introduces a config option
-    # to control whether the attributes are always numpy or follow 'X'
-    for attr in ["core_sample_indices_", "components_", "labels_"]:
-        assert_same_namespace(getattr(model, attr), array_input_like)
-        assert_same_namespace(getattr(model_moved, attr), array_move_like)
-        np.testing.assert_almost_equal(
-            _as_numpy(getattr(model, attr)),
-            _as_numpy(getattr(model_moved, attr)),
-        )
-
-    attrs_orig = dir(model)
-    attrs_moved = dir(model_moved)
-    for attr in attrs_orig:
-        assert attr in attrs_moved
+    assert_same_attributes(model_moved, model)
+    assert_public_attributes_are_in_namespace(model, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(model_moved, xp_move, device_move)

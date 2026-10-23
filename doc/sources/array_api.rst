@@ -184,6 +184,19 @@ This function is only supported for the following estimators from the |sklearnex
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.neighbors.NearestNeighbors`
+- :obj:`sklearn.neighbors.KNeighborsRegressor`
+- :obj:`sklearn.neighbors.KNeighborsClassifier`
+- :obj:`sklearn.neighbors.LocalOutlierFactor`
+
+In the cases of KNN classes (:obj:`~sklearn.neighbors.NearestNeighbors`,
+:obj:`~sklearn.neighbors.KNeighborsRegressor`,
+:obj:`~sklearn.neighbors.KNeighborsClassifier`,
+:obj:`~sklearn.neighbors.LocalOutlierFactor`), estimators can only be moved if they were
+fitted with constructor parameters with :ref:`GPU support <algorithms>` - e.g. an
+estimator like ``NearestNeighbors(algorithm="brute")`` is movable, whereas
+``NearestNeighbors(algorithm="kd_tree")`` is not. :ref:`SPMD estimators <distributed-mode>`
+of the KNN family cannot be moved.
 
 The following estimators cannot be moved, but when using array API, can be used to make predictions on both CPU and GPU data regardless of the device of the data to which they were fitted:
 
