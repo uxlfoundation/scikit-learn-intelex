@@ -13,7 +13,7 @@ Converts NumPy, SciPy sparse, SYCL USM (dpnp), and DLPack inputs to oneDAL table
 ## Rules
 
 - Never hold a bare owned `PyObject*`. Wrap it in `py::reinterpret_steal<py::object>(...)` as soon as it is created, so every throwing path releases it. Note that `convert_to_numpy_impl`, `PyArray_New`, and `need_mutable_data()` can all throw.
-- Only steal references you own. Borrowed references (attributes of user-provided objects, `PyTuple_GetItem`) use `py::reinterpret_borrow`.
+- Only steal references you own. Borrowed references (function arguments, `PyTuple_GetItem`) use `py::reinterpret_borrow`. `PyObject_GetAttr*` returns a new reference, so steal it; prefer `py::getattr`, which already returns an owning `py::object`.
 - Check `NULL` returns from the C API (`PyTuple_New`, `PyArray_New`) before using the result.
 - `dal::array::wrap` on a `const_cast` pointer produces a non-owning array, so `need_mutable_data()` doesn't copy and the result aliases the source buffer. Whatever owns that buffer must outlive every array built from it.
 - Don't call `np.asarray()` on device arrays; it forces a host copy and breaks SYCL/array API inputs. Use `from_dlpack` with an explicit device.

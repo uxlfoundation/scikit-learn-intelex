@@ -1,7 +1,7 @@
 # AGENTS.md - daal4py Layer
 
 ## Purpose
-Native Python interface to oneDAL with three APIs: native oneDAL algorithms, sklearn-compatible wrappers, and model builders for external ML frameworks.
+Python interface to oneDAL's DAAL API, the legacy CPU-only part of oneDAL. DAAL algorithms and data types (`NumericTable`) are not interchangeable with the oneAPI ones used by `onedal/` (`table`). Three APIs: native DAAL algorithms, sklearn-compatible wrappers, and model builders for external ML frameworks.
 
 ## Three APIs
 
@@ -162,7 +162,6 @@ Run pytest on `daal4py/sklearn/` and `tests/` for validation. MPI tests require 
 ## Key Implementation Patterns
 - Native API provides explicit control, sklearn API provides compatibility
 - Model builders accelerate inference of externally trained models
-- Monkeypatch system enables transparent acceleration via condition checking
 - SPMD mode requires MPI for distributed execution across multiple nodes
 - Check algorithm availability in oneDAL C++ before attempting wrapper
 - Generated code in build directories, templates in generator/

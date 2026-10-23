@@ -9,7 +9,7 @@ These come from recurring review comments; each one has been asked for on severa
 - One PR, one logical change. Drive-by fixes, renames, and mechanical changes (formatting, codegen, mass renames) go in their own PRs.
 - Search before adding a helper, fixture, constant table, or validation routine. Extend the existing one, and name it in the PR description.
 - Don't add a lock, guard, `try`/`except`, or redundant check unless you can name the failure it prevents.
-- A bug fix comes with a test that fails without the fix.
+- A bug fix comes with a test that fails without the fix. Prefer extending an existing sklearnex test, or un-deselecting the scikit-learn test that already covers it, over adding a new one.
 - Don't hardcode versions, URLs, or paths that a source-of-truth file or Renovate already tracks.
 - New functions get full type hints and a numpydoc docstring.
 - Keep the layering: scikit-learn conformance goes in the `sklearnex/` estimator, oneDAL calls in `onedal/`, and the queue comes from the input data (see `sklearnex/AGENTS.md`).
@@ -34,6 +34,7 @@ sklearnex/  ->  daal4py/ (Cython)  -> DAAL C++
 - `sklearnex/_device_offload.py`: device selection and offloading
 - `sklearnex/_config.py`: `config_context` options
 - `onedal/__init__.py`: backend selection (DPC++/host)
+- `sklearnex/dummy/_dummy.py`, `onedal/dummy/`: annotated reference estimator; start here when adding a new one
 
 ## Version Floors
 The floors are enforced in code; read them there rather than trusting prose:
@@ -43,7 +44,7 @@ The floors are enforced in code; read them there rather than trusting prose:
 - Test and build dependencies: `requirements-test.txt`, `dependencies-dev`
 
 ## Code Generation
-`generator/` generates daal4py's Cython bindings from DAAL C++ headers. Modify `generator/wrappers.py` to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.
+`generator/` generates daal4py's Cython bindings from DAAL C++ headers. Modify `generator/wrappers.py` to expose a DAAL algorithm; use direct Python implementation for sklearn compatibility layers.
 
 Never edit the generated `build/daal4py_cy.pyx`; change `generator/` and rebuild.
 
