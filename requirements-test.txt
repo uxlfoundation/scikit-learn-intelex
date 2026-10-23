@@ -5,7 +5,7 @@ pytest-mock==3.17.0
 numpy>=1.23.5 ; python_version == '3.11'
 numpy>=2.0.0 ; python_version >= '3.12'
 scikit-learn==1.9.1
-pandas==3.0.6
+pandas==3.1.0
 xgboost==3.2.0 ; python_version <= '3.11'
 xgboost==3.4.1 ; python_version >= '3.12'
 lightgbm==4.7.0
