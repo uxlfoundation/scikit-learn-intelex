@@ -73,6 +73,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             xp, is_array_api = get_namespace(X)
             device = getattr(X, "device", None)
 
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+
         dispatch(
             self,
             "fit",
