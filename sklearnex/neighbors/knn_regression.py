@@ -82,8 +82,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         else:
             xp, is_array_api = get_namespace(X)
             device = getattr(X, "device", None)
-        if hasattr(self, "_onedal_estimator"):
-            del self._onedal_estimator
+        if "_onedal_estimator" in self.__dict__:
+            del self.__dict__["_onedal_estimator"]
         dispatch(
             self,
             "fit",
