@@ -302,6 +302,11 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 ),
             ]
         )
+        if method_name == "score" and len(data) > 2:
+            sample_weight = data[2]
+            patching_status.and_conditions(
+                [(sample_weight is None, "Sample weights are not supported")]
+            )
 
         return patching_status
 
