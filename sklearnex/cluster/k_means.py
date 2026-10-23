@@ -134,6 +134,9 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
     def fit(self, X, y=None, sample_weight=None):
         self._validate_params()
 
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+
         dispatch(
             self,
             "fit",
