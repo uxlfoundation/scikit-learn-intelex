@@ -9,7 +9,7 @@ Native Python interface to oneDAL with three APIs: native oneDAL algorithms, skl
 Direct access to oneDAL algorithms with explicit setup/compute/finalize phases. Provides maximum control and performance. Import via `import daal4py as d4p`.
 
 ### 2. sklearn-Compatible API
-Drop-in replacements for sklearn estimators in `daal4py/sklearn/`, imported directly (`from daal4py.sklearn import ...`). daal4py's own patching was removed in #3371; `patch_sklearn()` lives in `sklearnex/dispatcher.py` and does not route here.
+Drop-in replacements for sklearn estimators in `daal4py/sklearn/`, imported directly (`from daal4py.sklearn import ...`). `patch_sklearn()` lives in `sklearnex/dispatcher.py` and does not route here.
 
 ### 3. Model Builders API
 Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`.

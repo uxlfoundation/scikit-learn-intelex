@@ -21,11 +21,11 @@ Report source-confirmed problems with correctness, layering, reference ownership
 
 ## Architecture
 ```text
-sklearnex/  ->  daal4py/ (Cython)  -> oneDAL C++
+sklearnex/  ->  daal4py/ (Cython)  -> DAAL C++
             ->  onedal/  (pybind11) -> oneDAL C++
 ```
 - `sklearnex/`: scikit-learn API, patching, dispatch between oneDAL and scikit-learn
-- `daal4py/`: Cython bindings generated from oneDAL headers, model builders
+- `daal4py/`: Cython bindings generated from DAAL headers, model builders
 - `onedal/`: pybind11 bindings, data conversion, CPU/GPU backend selection
 - `src/`: C++/Cython core shared by both bindings
 
@@ -43,7 +43,7 @@ The floors are enforced in code; read them there rather than trusting prose:
 - Test and build dependencies: `requirements-test.txt`, `dependencies-dev`
 
 ## Code Generation
-`generator/` generates daal4py's Cython bindings from oneDAL C++ headers. Modify `generator/wrappers.py` to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.
+`generator/` generates daal4py's Cython bindings from DAAL C++ headers. Modify `generator/wrappers.py` to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.
 
 Never edit the generated `build/daal4py_cy.pyx`; change `generator/` and rebuild.
 
@@ -65,7 +65,7 @@ pytest --pyargs sklearnex                # one package, as conda-recipe/run_test
 ## Directory Guides
 Read the `AGENTS.md` nearest the files you change. When editing these files, every command, path and snippet must match the repository; delete what can't be verified rather than soften it.
 - `sklearnex/AGENTS.md`: API patterns, device offloading
-- `daal4py/AGENTS.md`: Native oneDAL bindings, model builders
+- `daal4py/AGENTS.md`: Legacy oneDAL bindings, model builders
 - `onedal/AGENTS.md`: Pybind11 implementation, memory management
 - `onedal/datatypes/AGENTS.md`: Data conversion, Python C-API reference ownership
 - `src/AGENTS.md`: C++/Cython core, distributed computing
