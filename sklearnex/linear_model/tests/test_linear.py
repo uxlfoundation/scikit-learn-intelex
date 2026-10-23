@@ -81,9 +81,9 @@ def test_sklearnex_import_linear(
     ):
         # On CPU, the solution was aligned with scikit-learn's LinearRegression
         # that uses dual system for underdetermined problems.
-        from sklearn.linear_model import LinearRegression as reference_LinearRegression
+        from sklearn.linear_model import LinearRegression as _reference_LinearRegression
 
-        ref_linreg = reference_LinearRegression()
+        ref_linreg = _reference_LinearRegression()
         ref_linreg.fit(X, y)
         expected_coefs = ref_linreg.coef_
         expected_intercept = ref_linreg.intercept_
