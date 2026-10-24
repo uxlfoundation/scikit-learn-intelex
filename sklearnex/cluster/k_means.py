@@ -279,10 +279,6 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
             f"sklearn.cluster.{class_name}.{method_name}"
         )
 
-        X = data[0]
-
-        is_data_supported = _is_csr(X) or not is_sparse(X)
-
         supported_algs = ["lloyd", "elkan"]
         if self.algorithm == "elkan":
             logging.getLogger("sklearnex").info(
@@ -296,10 +292,6 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                     "Only 'lloyd' algorithm is supported, 'elkan' is computed using lloyd.",
                 ),
                 (self.n_clusters != 1, "n_clusters=1 is not supported"),
-                (
-                    is_data_supported,
-                    "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",
-                ),
             ]
         )
         if method_name == "score" and len(data) > 2:
