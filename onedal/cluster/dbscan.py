@@ -52,6 +52,9 @@ class DBSCAN:
             "method": "by_default",
             "min_observations": int(self.min_samples),
             "epsilon": float(self.eps),
+            # oneDAL's metric names; oneDAL before 2026.3 ignores both and uses euclidean
+            "metric": self.metric,
+            "degree": 2.0 if self.p is None else float(self.p),
             "mem_save_mode": False,
             "result_options": "core_observation_indices|responses",
         }
