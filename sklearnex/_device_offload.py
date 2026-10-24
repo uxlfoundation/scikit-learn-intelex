@@ -70,6 +70,10 @@ if "array_api_dispatch" in get_config():
 else:
     _array_api_offload = lambda: False
 
+_sklearn_allowed = (
+    lambda obj: get_config()["allow_sklearn_fallback"] and not get_tags(obj).onedal_spmd
+)
+
 
 def dispatch(
     obj: type[oneDALEstimator],
@@ -144,6 +148,8 @@ def dispatch(
                 patching_status.write_log(queue=queue, transferred_to_host=False)
                 return branches["onedal"](obj, *args, **kwargs, queue=queue)
             elif sklearn_array_api and backend is False:
+                if not _sklearn_allowed(obj):
+                    RuntimeError("Desired functionality is not available via oneDAL")
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
@@ -162,6 +168,8 @@ def dispatch(
             patching_status.write_log(queue=queue, transferred_to_host=False)
             return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
+            if not _sklearn_allowed(obj):
+                RuntimeError("Desired functionality is not available via oneDAL")
             if sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)

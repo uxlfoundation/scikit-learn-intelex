@@ -45,7 +45,7 @@ with config_context(target_offload="gpu"):
 
 **Fallback Control:**
 - `allow_fallback_to_host`: `bool` (default `True`) - Enable GPU → CPU fallback
-- `allow_sklearn_after_onedal`: `bool` (default `True`) - Enable oneDAL → sklearn fallback
+- `allow_sklearn_fallback`: `bool` (default `True`) - Enable sklearn fallback when onedal is not supported
 
 **Advanced:**
 - `array_api_dispatch`: `bool` - Enable Array API namespace dispatch, should be set to `True` when running GPU algorithms to run data validation without host transfers
