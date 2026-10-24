@@ -13,7 +13,7 @@ lightgbm==4.7.0
 catboost==1.2.10 ; python_version < '3.15'
 shap==0.51.0 ; python_version == '3.11'
 shap==0.54.1 ; python_version >= '3.12'
-treelite==4.7.2
+treelite==4.8.0
 array-api-compat==1.15.0
 array-api-strict==2.6.1
 polars==2.0.0
