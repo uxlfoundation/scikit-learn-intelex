@@ -192,6 +192,11 @@ The following estimators cannot be moved, but when using array API, can be used 
 - :obj:`sklearn.ensemble.RandomForestClassifier`
 - :obj:`sklearn.ensemble.RandomForestRegressor`
 
+Sparse arrays
+~~~~~~~~~~~~~
+
+Currently, sparse arrays from libraries other than SciPy (e.g. ``torch.sparse``) are not supported.
+
 Example usage
 =============
 
