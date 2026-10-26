@@ -107,8 +107,6 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
         is_data_supported = _is_csr(X) or not is_sparse(X)
 
-        _acceptable_sample_weights = self._validate_sample_weight(sample_weight, X)
-
         patching_status.and_conditions(
             [
                 (
@@ -118,8 +116,8 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 (self.n_clusters != 1, "n_clusters=1 is not supported"),
                 (correct_count, "n_clusters is smaller than number of samples"),
                 (
-                    _acceptable_sample_weights,
-                    "oneDAL doesn't support sample_weight. Accepted options are None, constant, or equal weights.",
+                    sample_weight is None,
+                    "Sample weights are not supported.",
                 ),
                 (
                     is_data_supported,
@@ -253,25 +251,6 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
         self._save_attributes()
 
-    def _validate_sample_weight(self, sample_weight, X):
-        """Check if sample_weight is acceptable for oneDAL.
-
-        oneDAL only supports None or uniform weights. Validates shape
-        and uniformity using xp ops for array API compatibility.
-        """
-        if sample_weight is None:
-            return True
-        if isinstance(sample_weight, numbers.Number) or isinstance(sample_weight, str):
-            return True
-        try:
-            xp, _ = get_namespace(sample_weight)
-            sw = xp.asarray(sample_weight)
-            if sw.ndim != 1 or sw.shape[0] != X.shape[0]:
-                return False
-            return bool(xp.all(sw == sw[0])) and (sw[0] != 0)
-        except (TypeError, IndexError, AttributeError, ValueError):
-            return False
-
     def _onedal_predict_supported(self, method_name, *data):
         class_name = self.__class__.__name__
 
@@ -302,6 +281,11 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 ),
             ]
         )
+        if method_name == "score" and len(data) > 2:
+            sample_weight = data[2]
+            patching_status.and_conditions(
+                [(sample_weight is None, "Sample weights are not supported")]
+            )
 
         return patching_status
 
