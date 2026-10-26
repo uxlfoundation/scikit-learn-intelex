@@ -221,10 +221,9 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
@@ -525,11 +524,10 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = ``'k-means++'`` falls back to CPU
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
@@ -767,11 +765,10 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
