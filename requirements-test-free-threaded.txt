@@ -25,7 +25,7 @@ scikit-learn==1.9.1
 pandas==3.1.0
 xgboost==3.4.1
 lightgbm==4.7.0
-treelite==4.7.2
+treelite==4.8.0
 array-api-compat==1.15.0
 array-api-strict==2.6.1
 packaging==26.3
