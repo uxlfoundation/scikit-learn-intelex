@@ -20,6 +20,7 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.exceptions import NotFittedError
 
+from daal4py.sklearn._utils import _package_check_version
 from onedal.tests.utils._dataframes_support import (
     _assert_in_namespace,
     _convert_to_dataframe,

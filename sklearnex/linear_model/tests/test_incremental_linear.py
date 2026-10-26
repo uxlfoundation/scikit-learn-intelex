@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+from daal4py.sklearn._utils import _package_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _assert_in_namespace,
