@@ -62,6 +62,9 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
+# These are meant only for jobs in the main repository, not conda-forge
+export RUN_BUILD_TESTS=1
+
 PYTEST_CONFIG="-c ${sklex_root}/setup.cfg"
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
