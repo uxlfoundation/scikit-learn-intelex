@@ -31,6 +31,7 @@ https://github.com/uxlfoundation/scikit-learn-intelex/issues/3518
 
 import os
 
+# TODO: remove this one a better solution is found for conda-forge tests
 if os.getenv("RUN_BUILD_TESTS", False):
     import importlib.util
     import re
