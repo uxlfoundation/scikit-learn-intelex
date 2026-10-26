@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
+from scipy.spatial.distance import cdist
 from sklearn import datasets
 from sklearn.base import is_regressor
 
@@ -196,6 +197,41 @@ def test_p_present_if_metric_is_minkowski():
     assert knn.effective_metric_ == "minkowski"
     assert "p" in knn.effective_metric_params_
     assert knn.effective_metric_params_["p"] == 3
+
+
+# oneDAL only receives 'p' from the metric parameters, so the feature weights 'w'
+# of the minkowski metric must trigger a fallback to sklearn instead of being
+# silently ignored.
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("algorithm", ["auto", "brute"])
+@pytest.mark.parametrize("p", [1, 2, 3])
+def test_minkowski_weights_in_metric_params_are_respected(algorithm, p):
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(40, 4))
+    X_test = rng.standard_normal(size=(10, 4))
+    y = rng.standard_normal(size=X.shape[0])
+    n_neighbors = 3
+    w = np.array([100.0, 1.0, 1.0, 1.0])
+    params = dict(
+        n_neighbors=n_neighbors,
+        metric="minkowski",
+        p=p,
+        metric_params={"w": w},
+        algorithm=algorithm,
+    )
+
+    # Reference weighted minkowski distances between the query and training points.
+    dist = cdist(X_test, X, metric="minkowski", p=p, w=w)
+    expected_idx = np.argsort(dist, axis=1)[:, :n_neighbors]
+    expected_dist = np.take_along_axis(dist, expected_idx, axis=1)
+
+    nn = NearestNeighbors(**params).fit(X)
+    result_dist, result_idx = nn.kneighbors(X_test)
+    assert_array_equal(result_idx, expected_idx)
+    assert_allclose(result_dist, expected_dist)
+
+    knn = KNeighborsRegressor(**params).fit(X, y)
+    assert_allclose(knn.predict(X_test), y[expected_idx].mean(axis=1))
 
 
 # This triggers a fallback on the call to 'predict' by passing
