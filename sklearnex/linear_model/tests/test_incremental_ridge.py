@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
@@ -181,6 +182,10 @@ def test_inc_ridge_predict_after_fit(dataframe, queue, fit_intercept):
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):
+    if dataframe == "array_api" and not _package_check_version(
+        "2.4", array_api_strict.__version__
+    ):
+        pytest.skip("Bug in old array-api-strict")
     import pickle
 
     from sklearnex.linear_model import IncrementalRidge
