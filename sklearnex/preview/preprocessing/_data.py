@@ -185,8 +185,9 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
-    def fit(self, X, y=None):
-        self._validate_params()
+    # Note: scikit-learn defines '_reset' in the base class,
+    # avoid overriding it as it gets called internally.
+    def _reset_state(self):
         if hasattr(self, "_onedal_estimator"):
             # Note: scikit-learn has a 'reset' method which checks for the
             # existence of `scale_`, but this class defines it conditionally
@@ -200,6 +201,10 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             self._reset()
             del self._scale_
 
+    def fit(self, X, y=None):
+        self._validate_params()
+        self._reset_state()
+
         dispatch(
             self,
             "fit",
@@ -212,8 +217,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         return self
 
     def fit_transform(self, X, y=None, **fit_params):
-        if hasattr(self, "_onedal_estimator"):
-            del self._onedal_estimator
+        self._reset_state()
         return super().fit_transform(X, y, **fit_params)
 
     # transform is inherited unchanged from scikit-learn: it relies only on the fitted
