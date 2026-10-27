@@ -32,6 +32,11 @@ from onedal.tests.utils._dataframes_support import (
 from sklearnex import config_context
 from sklearnex.preview.preprocessing import MaxAbsScaler
 
+if hasattr(sp, "csr_array"):
+    CSR_CTOR = sp.csr_array
+else:
+    CSR_CTOR = sp.matrix
+
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_MaxAbsScaler(dataframe, queue):
@@ -147,3 +152,21 @@ def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     # Testing that after artificially modifying the scaler properties, the transform
     # executes normally (just returns the raw variables over 1.0 logic).
     assert_allclose(X_np, X_trans_modified_np)
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_refitting_resets_estimator():
+    rng = np.random.default_rng(seed=42)
+    X = rng.standard_gamma(1, size=(10, 4))
+    X_sp = CSR_CTOR(X / 100)
+
+    ref_estimator = _sklearn_MaxAbsScaler().fit(X_sp)
+
+    estimator = MaxAbsScaler()
+    estimator.fit(X[:2]).partial_fit(X[2:])
+    assert estimator._need_to_finalize
+
+    # This should fall back to scikit-learn, starting from
+    # a blank state with no leftovers
+    estimator.fit(X_sp)
+    np.testing.assert_almost_equal(estimator.max_abs_, ref_estimator.max_abs_)

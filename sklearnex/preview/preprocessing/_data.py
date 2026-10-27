@@ -197,6 +197,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             # through oneDAL which was not finalized.
             if self._need_to_finalize:
                 self._scale_ = None
+                self._max_abs_ = None
             del self._onedal_estimator
             self._reset()
 
