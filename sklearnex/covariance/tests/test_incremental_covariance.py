@@ -16,6 +16,7 @@
 
 from contextlib import nullcontext
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.linalg import slogdet
@@ -28,7 +29,7 @@ from sklearn.covariance.tests.test_covariance import (
 from sklearn.datasets import load_diabetes
 from sklearn.decomposition import PCA
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _assert_in_namespace,
     _convert_to_dataframe,
@@ -219,6 +220,10 @@ def test_whitened_toy_score(dataframe, queue):
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
+    if dataframe == "array_api" and not _package_check_version(
+        "2.4", array_api_strict.__version__
+    ):
+        pytest.skip("Bug in old array-api-strict")
     import pickle
 
     from sklearnex.covariance import IncrementalEmpiricalCovariance
