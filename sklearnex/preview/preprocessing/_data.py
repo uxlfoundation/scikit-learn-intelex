@@ -156,7 +156,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             ensure_all_finite=False,
         )
 
-        self.n_samples_seen_ = 0
+        self._reset()  # <- method comes from scikit-learn
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
