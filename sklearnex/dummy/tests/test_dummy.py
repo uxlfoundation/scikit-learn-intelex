@@ -44,7 +44,7 @@ def test_sklearnex_import_DummyRegressor(dataframe, queue):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
-def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
+def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue, with_array_api):
     rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
@@ -52,10 +52,36 @@ def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
-    with config_context(array_api_dispatch=True):
-        est = DummyRegressor(strategy="constant", constant=np.e).fit(X, y)
-        pred = _as_numpy(est.predict(X_test))
+    est = DummyRegressor(strategy="constant", constant=np.e).fit(X, y)
+    pred = _as_numpy(est.predict(X_test))
 
     np.testing.assert_array_equal(np.full(pred.shape, np.e), pred)
     est.constant_ = np.ones(est.constant_.shape)
     np.testing.assert_array_equal(np.ones(pred.shape), _as_numpy(est.predict(X_test)))
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("n_targets", [1, 2])
+def test_model_recreation_after_fallback(n_targets):
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(20, 3))
+    y = rng.standard_gamma(1, size=(X.shape[0], n_targets))
+    if y.shape[1] == 1:
+        y = y.reshape(-1)
+
+    # Strategy 'median' is not supported by oneDAL, so this
+    # should fall back to scikit-learn
+    estimator = DummyRegressor(strategy="median").fit(X, y)
+    assert not hasattr(estimator, "_onedal_estimator")
+
+    # During predictions, it should be able to create a oneDAL
+    # estimator on-the-fly based on scikit-learn's attributes
+    # when predictions are supported through oneDAL
+    pred = estimator.predict(X)
+    if n_targets == 1:
+        assert hasattr(estimator, "_onedal_estimator")
+
+    reference = np.tile(np.median(y, axis=0), X.shape[0])
+    if n_targets > 1:
+        reference = reference.reshape((X.shape[0], -1))
+    np.testing.assert_almost_equal(pred, reference)

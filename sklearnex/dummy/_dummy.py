@@ -21,12 +21,13 @@ comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
 
 import numpy as np
+from sklearn.base import clone
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, is_sparse
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
 from .._device_offload import dispatch, support_input_format
@@ -34,6 +35,13 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
 
 ################
 # IMPORT NOTES #
@@ -173,7 +181,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # results, and methods).
     #
     # These 3 objects interact in the following way: sklearnex estimators
-    # will create another estimator, defined in the ``onedal`` module, for
+    # will create another estimator (always as an attribute under name
+    # ``_onedal_estimator``), defined in the ``onedal`` module, for
     # having a Python interface with oneDAL. Finally, this Python object
     # will use pybind11 to call oneDAL directly via pybind11-generated
     # objects and functions This is known as the ``backend``. These are
@@ -214,7 +223,6 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # defined or calculated by the oneDAL estimator still must be set in the
     # scikit-learn-intelex estimator to plausible values. These can be either
     # derived from available oneDAL estimator data or set to hardcoded values.
-    #
     #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
@@ -293,14 +301,43 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # fitting data, the returned onedal estimator object is stored as the
     # ``_onedal_estimator`` attribute.
     #
-    # 5) Result data is returned from the estimator if necessary. Attributes
+    # 5) Regardless of which route is taken (oneDAL / scikit-learn), previous
+    # instances of a ``_onedal_estimator`` must be removed from the sklearnex
+    # object attributes before refitting, in order to avoid using leftovers
+    # from a previous fit after fallbacks. This includes calls to ``.fit()``
+    # and derived methods like ``.fit_transform()`` or ``.fit_predict()``.
+    # This step may be skipped in estimators that have no scikit-learn analog,
+    # or which offer no prediction-related methods, since there is no
+    # scikit-learn branches there that could modify fitted attributes.
+    #
+    # 6) If the ``_onedal_estimator`` object can be created from attributes
+    # produced by scikit-learn (e.g. arrays of coefficients in linear models),
+    # then it should be created as necessary after a fallback during subsequent
+    # calls to methods such as ``.predict()`` whenever the oneDAL branch is
+    # supported for that method.
+    #
+    # 7) Result data is returned from the estimator if necessary. Attributes
     # from the onedal estimator are copied over to the sklearnex estimator.
+    #
+    # 8) In cases where there is GPU support and the oneDAL object can be
+    # created out of attributes, the sklearnex estimator should implement
+    # device movement logic for ``move_estimator_to`` by implementing a method
+    # ``__sklearn_array_api_convert__``. This method should crete a new
+    # sklearnex object with a fresh oneDAL estimator in the target device,
+    # moving all attributes that are needed by the oneDAL object as well as
+    # public attributes as applicable (e.g. numeric arrays), without touching
+    # the attributes or the oneDAL estimator of the original object.
 
     def fit(self, X, y, sample_weight=None):
         # Parameter validation must be done before calls to dispatch. This
         # guarantees that the sklearn and onedal use of parameters are
         # properly typed and valued.
         self._validate_params()
+
+        # Previous instances of oneDAL estimators must be removed to
+        # avoid using leftovers during multiple fits.
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
 
         # only arguments from the method signature are passed to
         # ``_onedal_*_supported`` and not kwargs. The parameters of the
@@ -339,6 +376,11 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # No need to do another parameter check. While they are modifiable
         # in sklearn and in sklearnex, the parameters should never be
         # changed by hand.
+
+        # Under array API and depending on scikit-learn version,
+        # need to verify that the namespaces match.
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="constant_", method="predict")
         return dispatch(
             self,
             "predict",
@@ -360,7 +402,10 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # The first step is to always acquire the namespace of input data
         # This is important for getting the proper data types and possibly
         # other conversions.
-        xp, _ = get_namespace(X, y)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X, y)
 
         # The second step must always be to validate the data.
         # This algorithm can accept 2d y inputs (by setting multi_output).
@@ -387,6 +432,16 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # step. This is not guaranteed and requires care by the developer.
         # For example, ``ensure_all_finite`` is set to false in this case
         # for the nature of the class, but would otherwise be unset.
+        # Note that, if the data is sparse and this data format is supported
+        # by oneDAL, it must be passed in CSR format to the internal estimator.
+        # Appropriate conversion between sparse formats is handled by
+        # `validate_data` through parameter `accept_sparse="csr"`.
+
+        # Depending on scikit-learn version, the 'y' variable might need to
+        # be converted to match the namespace of 'X' when using array API,
+        # if array API is supported by the estimator.
+        if sklearn_check_version("1.9"):
+            y = move_to(y, xp=xp, device=device)
 
         # Conformance to sklearn's DummyRegressor
         if y.ndim == 1:
@@ -405,7 +460,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # Below is only an example, but should be all the attributes
         # available from the same sklearn estimator (if not sklearnex-only)
         # after fitting.
-        self.constant_ = self._onedal_estimator.constant_
+        self._constant_ = self._onedal_estimator.constant_
         # See sklearn conventions about trailing underscores for fitted
         # values.
 
@@ -431,6 +486,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             reset=False,
             ensure_2d=True,
         )
+
+        # OneDAL estimator must be constructed from attributes when
+        # a fallback occurs.
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator_from_constant()
+
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
@@ -507,11 +568,11 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
             patching_status.and_conditions(
                 [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
                         not is_sparse(X),
                         "sparse data is not supported",
                     ),
+                    (self.constant_.shape[1] == 1, "Multi-output is not supported"),
                 ]
             )
 
@@ -557,11 +618,11 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
             patching_status.and_conditions(
                 [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
                         not is_sparse(X),
                         "sparse data is not supported",
                     ),
+                    (self.constant_.shape[1] == 1, "Multi-output is not supported"),
                 ]
             )
 
@@ -590,12 +651,37 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     def constant_(self, value):
         self._constant_ = value
         if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator._onedal_model = None
-            self._onedal_estimator.constant_ = value
+            del self._onedal_estimator
 
     @constant_.deleter
     def constant_(self):
         del self._constant_
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+
+    def _initialize_onedal_estimator_from_constant(self):
+        self._onedal_estimator = self._onedal_DummyEstimator(
+            constant=self.constant_[0, 0]
+        )
+        self._onedal_estimator.constant_ = self.constant_
+
+    # Here it should be careful about different variants of 'constant': the one
+    # with two underscores defines the rest in both the sklearnex case and in the
+    # oneDAL case, hence it's the one that should be moved. Since `constant_` is
+    # a property, it will not be in the `__dict__` attribute.
+    def __sklearn_array_api_convert__(self, converter):
+        out = clone(self)
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "_constant_"]
+        }
+        out._constant_ = converter(self._constant_)
+        # Not all resulting objects will be supported by oneDAL,
+        # but when they do, they should re-create the estimator
+        if out._constant_.shape[1] == 1:
+            out._initialize_onedal_estimator_from_constant()
+        return out
 
     # score is a tier 3 method in this case. Wrap with ``support_input_format`` for array
     # api support.

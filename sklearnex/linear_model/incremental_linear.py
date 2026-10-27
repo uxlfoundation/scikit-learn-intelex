@@ -203,7 +203,7 @@ class IncrementalLinearRegression(
 
         if check_input:
             if sklearn_check_version("1.9"):
-                xp, _ = get_namespace(X)
+                xp, _, device = get_namespace_and_device(X)
             else:
                 xp, _ = get_namespace(X, y)
             X, y = validate_data(
@@ -216,6 +216,8 @@ class IncrementalLinearRegression(
                 multi_output=True,
                 y_numeric=True,
             )
+            if sklearn_check_version("1.9"):
+                y = move_to(y, xp=xp, device=device)
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -258,7 +260,7 @@ class IncrementalLinearRegression(
     def _onedal_fit(self, X, y, queue=None):
 
         if sklearn_check_version("1.9"):
-            xp, _ = get_namespace(X)
+            xp, _, device = get_namespace_and_device(X)
         else:
             xp, _ = get_namespace(X, y)
 
@@ -271,6 +273,8 @@ class IncrementalLinearRegression(
             multi_output=True,
             y_numeric=True,
         )
+        if sklearn_check_version("1.9"):
+            y = move_to(y, xp=xp, device=device)
 
         n_samples, n_features = X.shape
 
