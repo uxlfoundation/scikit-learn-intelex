@@ -199,7 +199,6 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
                 self._scale_ = None
             del self._onedal_estimator
             self._reset()
-            del self._scale_
 
     def fit(self, X, y=None):
         self._validate_params()
