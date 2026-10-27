@@ -312,10 +312,6 @@ def test_sklearnex_partial_fit_on_random_data(
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,pandas"))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
-    if dataframe == "array_api" and not _package_check_version(
-        "2.4", array_api_strict.__version__
-    ):
-        pytest.skip("Bug in old array-api-strict")
     import pickle
 
     incpca = IncrementalPCA()
