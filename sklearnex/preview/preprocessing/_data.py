@@ -188,7 +188,17 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     def fit(self, X, y=None):
         self._validate_params()
         if hasattr(self, "_onedal_estimator"):
+            # Note: scikit-learn has a 'reset' method which checks for the
+            # existence of `scale_`, but this class defines it conditionally
+            # as `@property` that might need to be recalculated. This temporary
+            # workaround ensures that scikit-learn will reset the object
+            # correctly if there was a leftover from a previous `partial_fit`
+            # through oneDAL which was not finalized.
+            if self._need_to_finalize:
+                self._scale_ = None
             del self._onedal_estimator
+            self._reset()
+            del self._scale_
 
         dispatch(
             self,
