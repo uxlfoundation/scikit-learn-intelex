@@ -22,11 +22,11 @@ pytest-cov==7.1.0
 pytest-mock==3.17.0
 numpy>=2.0.0
 scikit-learn==1.9.1
-pandas==3.0.6
+pandas==3.1.0
 xgboost==3.4.1
 lightgbm==4.7.0
-treelite==4.7.2
-array-api-compat==1.15.0
+treelite==4.8.0
+array-api-compat==1.16.0
 array-api-strict==2.6.1
 packaging==26.3
 pyyaml==6.0.3

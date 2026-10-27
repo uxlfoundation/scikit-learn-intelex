@@ -14,7 +14,7 @@ docutils~=0.21.2
 entrypoints==0.4
 idna==3.17
 imagesize==2.0.0
-importlib-metadata==9.0.0
+importlib-metadata==10.1.0
 importlib-resources==7.1.0
 ipython==9.14.0
 ipython-genutils==0.2.0
@@ -27,7 +27,7 @@ jupyterlab-pygments==0.3.0
 MarkupSafe==3.0.3
 mistune==3.3.3
 nbclient==0.10.4
-nbconvert==7.17.1
+nbconvert==7.17.2
 nbformat==5.10.4
 nbsphinx==0.9.8
 nest-asyncio==1.6.0
@@ -42,7 +42,7 @@ ptyprocess==0.7.0
 Pygments==2.20.0
 pyparsing==3.3.2
 pyrsistent==0.20.0
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
 pytz==2026.2
 PyYAML==6.0.3
 pyzmq==27.1.0
