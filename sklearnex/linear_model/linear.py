@@ -240,7 +240,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
         assert sample_weight is None
 
         if sklearn_check_version("1.9"):
-            xp, _, device = get_namespace_and_device(X)
+            xp, _ = get_namespace(X)
         else:
             xp, _ = get_namespace(X, y)
 
@@ -254,9 +254,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
             y_numeric=True,
             multi_output=supports_multi_output,
         )
-
-        if sklearn_check_version("1.9"):
-            y = move_to(y, xp=xp, device=device)
 
         self._initialize_onedal_estimator()
 

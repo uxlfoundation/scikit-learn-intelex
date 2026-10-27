@@ -171,10 +171,10 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
     def _onedal_partial_fit(self, X, y, check_input=True, queue=None):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if sklearn_check_version("1.9"):
-            xp, _, device = get_namespace_and_device(X)
         if check_input:
-            if not sklearn_check_version("1.9"):
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(X)
+            else:
                 xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
@@ -186,8 +186,6 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
                 multi_output=True,
                 y_numeric=True,
             )
-        if sklearn_check_version("1.9"):
-            y = move_to(y, xp=xp, device=device)
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]

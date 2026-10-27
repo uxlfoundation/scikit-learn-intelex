@@ -437,11 +437,9 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # Appropriate conversion between sparse formats is handled by
         # `validate_data` through parameter `accept_sparse="csr"`.
 
-        # Depending on scikit-learn version, the 'y' variable might need to
-        # be converted to match the namespace of 'X' when using array API,
-        # if array API is supported by the estimator.
-        if sklearn_check_version("1.9"):
-            y = move_to(y, xp=xp, device=device)
+        # Note that passing 'y_numeric=True' ensures that 'y' is moved
+        # to the namespace and device of 'X', but for classifiers, this
+        # would need to be done on the encoded 'y' produced later.
 
         # Conformance to sklearn's DummyRegressor
         if y.ndim == 1:
