@@ -163,7 +163,7 @@ def test_refitting_resets_estimator():
     ref_estimator = _sklearn_MaxAbsScaler().fit(X_sp)
 
     estimator = MaxAbsScaler()
-    estimator.fit(X[:2]).partial_fit(X[2:])
+    estimator.partial_fit(X)
     assert estimator._need_to_finalize
 
     # This should fall back to scikit-learn, starting from
