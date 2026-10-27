@@ -20,7 +20,6 @@ This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
 
-import numpy as np
 from sklearn.base import clone
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils._array_api import check_same_namespace, get_namespace
