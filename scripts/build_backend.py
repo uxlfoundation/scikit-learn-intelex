@@ -22,7 +22,7 @@ import platform as plt
 import subprocess
 import sys
 from os.path import join as jp
-from sysconfig import get_config_var, get_paths
+from sysconfig import get_config_var
 
 import numpy as np
 
@@ -187,9 +187,6 @@ def custom_build_cmake_clib(
     logger.info(f"Install directory: {install_directory}")
 
     cmake_generator = "-GNinja" if is_win else ""
-    python_include = get_paths()["include"]
-    win_python_path_lib = os.path.abspath(jp(get_config_var("LIBDEST"), "..", "libs"))
-    python_library_dir = win_python_path_lib if is_win else get_config_var("LIBDIR")
     numpy_include = np.get_include()
 
     cxx = os.getenv("CXX")
@@ -255,9 +252,7 @@ def custom_build_cmake_clib(
         "-DCMAKE_PREFIX_PATH=" + install_directory,
         "-DIFACE=" + iface,
         "-DONEDAL_MAJOR_BINARY=" + str(onedal_major_binary_version),
-        "-DPYTHON_INCLUDE_DIR=" + python_include,
         "-DNUMPY_INCLUDE_DIRS=" + numpy_include,
-        "-DPYTHON_LIBRARY_DIR=" + python_library_dir,
         "-DoneDAL_INCLUDE_DIRS=" + jp(os.environ["DALROOT"], "include"),
         "-DoneDAL_LIBRARY_DIR=" + onedal_library_dir,
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
@@ -276,7 +271,10 @@ def custom_build_cmake_clib(
     # before 3.13 on Windows, so there the hint is all CMake gets.
     cmake_args += [
         "-DPython_EXECUTABLE=" + sys.executable,
-        "-DPython_ROOT_DIR=" + sys.prefix,
+        # FindPython reads the headers and library location from the
+        # interpreter itself; base_prefix is an extra root for venvs, whose
+        # prefix holds no headers or (on Windows) pythonXY.lib.
+        "-DPython_ROOT_DIR=" + ";".join(dict.fromkeys([sys.prefix, sys.base_prefix])),
     ]
     python_soabi = get_config_var("SOABI")
     if python_soabi:

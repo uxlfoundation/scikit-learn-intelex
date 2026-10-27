@@ -200,7 +200,8 @@ def test_unsupported_backend_is_rejected():
         get_onedal_libraries("host_dpc", MAJOR_VERSION)
 
 
-def test_cmake_is_pointed_at_the_running_interpreter(monkeypatch, tmp_path):
+@pytest.mark.parametrize("in_venv", [True, False])
+def test_cmake_is_pointed_at_the_running_interpreter(monkeypatch, tmp_path, in_venv):
     # FindPython prefers a system interpreter over the one driving the build,
     # so every build - not only free-threaded ones - must pass it explicitly,
     # together with the SOABI that scripts/CMakeLists.txt cross-checks.
@@ -217,11 +218,17 @@ def test_cmake_is_pointed_at_the_running_interpreter(monkeypatch, tmp_path):
     monkeypatch.setattr(
         build_backend.subprocess, "check_call", lambda args, **k: calls.append(args)
     )
+    prefix = str(tmp_path / "venv")
+    base_prefix = str(tmp_path / "base") if in_venv else prefix
+    monkeypatch.setattr(build_backend.sys, "prefix", prefix)
+    monkeypatch.setattr(build_backend.sys, "base_prefix", base_prefix)
     build_backend.custom_build_cmake_clib("host", is_lin=True)
 
     configure = calls[0]
     assert "-DPython_EXECUTABLE=" + build_backend.sys.executable in configure
-    assert "-DPython_ROOT_DIR=" + build_backend.sys.prefix in configure
+    expected_roots = f"{prefix};{base_prefix}" if in_venv else prefix
+    assert "-DPython_ROOT_DIR=" + expected_roots in configure
+    assert not any(a.startswith("-DPYTHON_INCLUDE_DIR") for a in configure)
     soabi = build_backend.get_config_var("SOABI")
     if soabi:
         assert "-DEXPECTED_PYTHON_SOABI=" + soabi in configure
