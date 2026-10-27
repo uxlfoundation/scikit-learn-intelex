@@ -14,6 +14,13 @@
 # limitations under the License.
 #===============================================================================
 steps:
+  # Hosted-agent only: the test env otherwise fills the disk (same dirs as conda-smithy's free_disk_space.sh).
+  - script: |
+      df -h /
+      sudo rm -rf /opt/ghc /opt/hostedtoolcache/CodeQL /usr/lib/jvm /usr/local/.ghcup \
+        /usr/local/lib/android /usr/local/share/powershell /usr/share/dotnet /usr/share/swift
+      df -h /
+    displayName: "Free disk space"
   - script: |
       echo -e "default_channels:\n  - https://conda.anaconda.org/conda-forge" >> ~/.condarc
       conda config --add channels conda-forge
