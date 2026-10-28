@@ -321,19 +321,9 @@ deselected_tests:
   - model_selection/tests/test_classification_threshold.py::test_fit_and_score_over_thresholds_sample_weight >=1.5
   - model_selection/tests/test_classification_threshold.py::test_tuned_threshold_classifier_cv_zeros_sample_weights_equivalence >=1.5
 
-  # Deselections for 2025.0
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0.01-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-100-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
   # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
   # Probably can also removed the kmeans ones above once these are fixed.
   - cluster/tests/test_k_means.py::test_float_precision
-  - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
