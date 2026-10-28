@@ -39,12 +39,12 @@ from sklearn.utils.validation import validate_data as _sklearn_validate_data
 from .._config import get_config as _get_config
 
 
-def _onedal_supported_format(X, xp, is_numpy_namespace):
+def _onedal_supported_format(X, xp):
     # data should be checked if contiguous, as oneDAL will only use contiguous
     # data from sklearnex. Unlike other oneDAL offloading, copying the data is
     # specifically avoided as it has a non-negligible impact on speed. In that
     # case use native sklearn ``_assert_all_finite``
-    if not is_numpy_namespace and hasattr(X, "__dlpack__"):
+    if hasattr(X, "__dlpack__"):
         dlpack_capsule = X.__dlpack__()
         if hasattr(dlpack_capsule, "device"):
             if dlpack_capsule.device[0] not in [
