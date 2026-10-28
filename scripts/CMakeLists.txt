@@ -14,7 +14,7 @@
 # limitations under the License.
 #===============================================================================
 
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project("oneDAL python interface"
     LANGUAGES CXX
@@ -83,8 +83,6 @@ message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
 # find_package(oneDAL REQUIRED)
 message(STATUS "oneDAL_INCLUDE_DIRS:" ${oneDAL_INCLUDE_DIRS})
 message(STATUS "oneDAL_LIBRARY_DIR:" ${oneDAL_LIBRARY_DIR})
-message(STATUS "PYTHON_INCLUDE_DIR:" ${PYTHON_INCLUDE_DIR})
-message(STATUS "PYTHON_LIBRARY_DIR:" ${PYTHON_LIBRARY_DIR})
 message(STATUS "NUMPY_INCLUDE_DIRS:" ${NUMPY_INCLUDE_DIRS})
 
 if(IFACE STREQUAL "dpc")
@@ -106,35 +104,28 @@ endif()
 
 message(STATUS "oneDAL_USE_PARAMETERS_LIB:" ${oneDAL_USE_PARAMETERS_LIB})
 
-option(SKLEARNEX_FREE_THREADING "Build for a free-threaded Python ABI" OFF)
-message(STATUS "SKLEARNEX_FREE_THREADING:" ${SKLEARNEX_FREE_THREADING})
-if(SKLEARNEX_FREE_THREADING)
-    if(CMAKE_VERSION VERSION_LESS 3.18)
-        message(FATAL_ERROR
-            "Free-threaded Python builds require CMake 3.18 or newer"
-        )
-    endif()
-    set(PYBIND11_FINDPYTHON ON)
-    # Python_EXECUTABLE and Python_ROOT_DIR are supplied by build_backend.py.
-    # FindPython treats them as hints, not requirements, and its own search
-    # prefers a system interpreter over the venv one driving the build - so on a
-    # host with both cp312 and cp314t installed it can still pick the wrong one.
-    # The SOABI check below is what actually makes this fatal rather than
-    # silently producing an unimportable extension.
-    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-    if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
-        message(FATAL_ERROR
-            "CMake selected Python ${Python_EXECUTABLE} with SOABI ${Python_SOABI}, "
-            "but the build was invoked from an interpreter with SOABI ${EXPECTED_PYTHON_SOABI}. "
-            "The resulting extension would not be importable."
-        )
-    endif()
-    message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
-    message(STATUS "Python_SOABI:" ${Python_SOABI})
-    find_package(pybind11 2.13 REQUIRED)
-else()
-    find_package(pybind11 REQUIRED)
+# Every build goes through FindPython. Without PYBIND11_FINDPYTHON, pybind11
+# falls back to its FindPythonLibsNew module, which relies on the deprecated
+# FindPythonInterp/FindPythonLibs (CMake policy CMP0148).
+set(PYBIND11_FINDPYTHON ON)
+# Python_EXECUTABLE and Python_ROOT_DIR are supplied by build_backend.py.
+# FindPython treats them as hints, not requirements, and its own search
+# prefers a system interpreter over the venv one driving the build - so on a
+# host with both cp312 and cp314t installed it can still pick the wrong one.
+# The SOABI check below is what actually makes this fatal rather than
+# silently producing an unimportable extension. It runs only where sysconfig
+# defines SOABI (not on GIL-enabled CPython before 3.13 on Windows).
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+if(DEFINED EXPECTED_PYTHON_SOABI AND EXPECTED_PYTHON_SOABI AND NOT Python_SOABI STREQUAL EXPECTED_PYTHON_SOABI)
+    message(FATAL_ERROR
+        "CMake selected Python ${Python_EXECUTABLE} with SOABI ${Python_SOABI}, "
+        "but the build was invoked from an interpreter with SOABI ${EXPECTED_PYTHON_SOABI}. "
+        "The resulting extension would not be importable."
+    )
 endif()
+message(STATUS "Python_EXECUTABLE:" ${Python_EXECUTABLE})
+message(STATUS "Python_SOABI:" ${Python_SOABI})
+find_package(pybind11 2.13 REQUIRED)
 
 if(IFACE STREQUAL "host")
     set(TARGET "_onedal_py_host")
@@ -265,7 +256,6 @@ pybind11_add_module(${TARGET} ${sources})
 
 set(EXTERNAL_INCLUDE_DIRECTORIES
     ${PYTHON_ONEDAL}../
-    ${PYTHON_INCLUDE_DIR}
     ${NUMPY_INCLUDE_DIRS}
 )
 
@@ -281,7 +271,9 @@ else()
 list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
 endif()
 
-set(EXTERNAL_LINK_DIRECTORIES ${PYTHON_LIBRARY_DIR} ${oneDAL_LIBRARY_DIR})
+# Python headers and, on Windows, the import library come from Python::Module,
+# which pybind11_add_module links.
+set(EXTERNAL_LINK_DIRECTORIES ${oneDAL_LIBRARY_DIR})
 set(EXTERNAL_LINK_LIBRARIES ${ONEDAL_LIBRARIES})
 
 if(IFACE_IS_SPMD_DPC)
