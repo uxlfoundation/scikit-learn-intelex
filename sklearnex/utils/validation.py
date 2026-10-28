@@ -45,13 +45,16 @@ def _onedal_supported_format(X, xp):
     # specifically avoided as it has a non-negligible impact on speed. In that
     # case use native sklearn ``_assert_all_finite``
     if hasattr(X, "__dlpack__"):
-        dlpack_capsule = X.__dlpack__()
-        if hasattr(dlpack_capsule, "device"):
-            if dlpack_capsule.device[0] not in [
-                _default_backend.kDLCPU,
-                _default_backend.kDLOneAPI,
-            ]:
-                return False
+        try:
+            dlpack_capsule = X.__dlpack__()
+            if hasattr(dlpack_capsule, "device"):
+                if dlpack_capsule.device[0] not in [
+                    _default_backend.kDLCPU,
+                    _default_backend.kDLOneAPI,
+                ]:
+                    return False
+        except BufferError:
+            pass
     return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 
