@@ -23,7 +23,7 @@ pertinent to the derivative implementation."""
 from sklearn.base import clone
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils._array_api import get_namespace
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
@@ -653,10 +653,10 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             del self._onedal_estimator
 
     def _initialize_onedal_estimator_from_constant(self):
-        self._onedal_estimator = self._onedal_DummyEstimator(
-            constant=self.constant_[0, 0]
-        )
-        self._onedal_estimator.constant_ = self.constant_
+        xp, _ = get_namespace(self.constant_)
+        constant = check_array(self.constant_, dtype=[xp.float32, xp.float64])
+        self._onedal_estimator = self._onedal_DummyEstimator(constant=constant[0, 0])
+        self._onedal_estimator.constant_ = constant
 
     # Here it should be careful about different variants of 'constant': the one
     # with two underscores defines the rest in both the sklearnex case and in the
