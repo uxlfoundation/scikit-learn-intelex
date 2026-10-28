@@ -22,7 +22,7 @@ pertinent to the derivative implementation."""
 
 from sklearn.base import clone
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
-from sklearn.utils._array_api import check_same_namespace, get_namespace
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -34,6 +34,9 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace
 
 ################
 # IMPORT NOTES #
