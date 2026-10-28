@@ -140,7 +140,8 @@ jobs:
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
-          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
+          # oneAPI runtime comes from apt; the pip runtime wheels need --no-deps or they would load a second, potentially mismatched copy
+          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install --no-deps dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
       - name: Sklearnex testing
         run: |
