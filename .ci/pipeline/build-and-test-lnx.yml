@@ -79,7 +79,7 @@ steps:
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
-      DPCTL_VERSION: 0.22.1
+      DPCTL_VERSION: 0.23.0
       DPNP_VERSION: 0.20.0
     displayName: "Install testing requirements"
   - script: |
