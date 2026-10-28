@@ -27,8 +27,12 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.utils._array_api import _is_numpy_namespace
 
-from .._device_offload import dispatch, wrap_output_data
+from .._device_offload import (
+    dispatch,
+    wrap_output_data,
+)
 from ..utils._array_api import enable_array_api
+from ..utils.devices import check_data_is_allocated_on_device
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
@@ -78,6 +82,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         else:
             xp, is_array_api = get_namespace(X)
             device = getattr(X, "device", None)
+        if "_onedal_estimator" in self.__dict__:
+            del self.__dict__["_onedal_estimator"]
         dispatch(
             self,
             "fit",
@@ -166,6 +172,17 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             y = move_to(y, xp=xp, device=device)
 
         self._process_regression_targets(y)
+        self._fit_onedal_estimator(check_X_device=False, queue=queue)
+        self._save_attributes()
+
+    def _fit_onedal_estimator(self, check_X_device=True, queue=None):
+        X = self._fit_X
+        y = self._y
+        if check_X_device:
+            gpu_device = check_data_is_allocated_on_device(X)
+        else:
+            gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -187,14 +204,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
         # GPU regression uses full train (needs y reshaped to (-1, 1))
         # CPU regression uses train_search (only needs X, y must be None)
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         if gpu_device:
+            xp, _ = get_namespace(y)
             fit_y = xp.reshape(y, (-1, 1))
         else:
             fit_y = None
         self._onedal_estimator.fit(X, fit_y, queue=queue)
-
-        self._save_attributes()
 
     def _process_regression_targets(self, y):
         """Process regression targets and set shape-related attributes.
