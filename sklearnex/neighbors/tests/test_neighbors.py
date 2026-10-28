@@ -24,7 +24,7 @@ import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy.spatial.distance import cdist
 from sklearn import datasets
-from sklearn.base import is_regressor
+from sklearn.base import is_classifier, is_outlier_detector, is_regressor
 
 if hasattr(sp, "csr_array"):
     CSR_CTOR = sp.csr_array
@@ -36,11 +36,13 @@ from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     dpnp_available,
+    dpnp_to_strict_working,
     get_dataframes_and_queues,
     host_df_modules,
     host_df_to_torch_working,
     mixed_device_params,
     torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.neighbors import (
@@ -54,6 +56,19 @@ if dpnp_available:
     import dpnp
 if torch_available:
     import torch
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -400,3 +415,165 @@ def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array
         proba = estimator.predict_proba(X)
         assert proba.__class__ == X.__class__
     _ = estimator.score(X, y)
+
+
+# TODO: update this once scikit-learn introduces a config option
+# to control whether the attributes are always numpy or follow 'X'
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_input_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        NearestNeighbors(algorithm="brute", n_neighbors=2),
+        LocalOutlierFactor(algorithm="brute", n_neighbors=2, novelty=True),
+        KNeighborsRegressor(algorithm="brute", n_neighbors=2),
+        KNeighborsClassifier(algorithm="brute", n_neighbors=2),
+    ],
+)
+def test_knn_move_estimator_to(
+    array_input_like, array_move_like, estimator, with_array_api
+):
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
+    ):
+        pytest.skip()
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+    y_in = move_to(y, xp=xp_in, device=device_in)
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+    X_move = move_to(X, xp=xp_move, device=device_move)
+
+    estimator.fit(X_in, y_in)
+    estimator_moved = move_estimator_to(estimator, xp_move, device_move)
+
+    dist_orig, ind_orig = estimator.kneighbors(X_in)
+    dist_moved, ind_moved = estimator_moved.kneighbors(X_move)
+
+    if (
+        is_regressor(estimator)
+        or is_classifier(estimator)
+        or is_outlier_detector(estimator)
+    ):
+        if is_regressor(estimator):
+            pred_orig = estimator.predict(X_in)
+        elif is_outlier_detector(estimator):
+            pred_orig = estimator.score_samples(X_in)
+        else:
+            pred_orig = estimator.predict_proba(X_in)
+        assert_same_namespace(pred_orig, array_input_like)
+
+    assert_same_namespace(dist_orig, array_input_like)
+    assert_same_namespace(ind_orig, array_input_like)
+    assert_same_namespace(dist_moved, array_move_like)
+    assert_same_namespace(ind_moved, array_move_like)
+    np.testing.assert_allclose(_as_numpy(dist_orig), _as_numpy(dist_moved), atol=1e-6)
+    np.testing.assert_array_equal(_as_numpy(ind_orig), _as_numpy(ind_moved))
+
+    if (
+        is_regressor(estimator)
+        or is_classifier(estimator)
+        or is_outlier_detector(estimator)
+    ):
+        if is_regressor(estimator):
+            pred_moved = estimator_moved.predict(X_move)
+        elif is_outlier_detector(estimator):
+            pred_moved = estimator_moved.score_samples(X_move)
+        else:
+            pred_moved = estimator_moved.predict_proba(X_move)
+        assert_same_namespace(pred_moved, array_move_like)
+        np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
+
+    assert_same_attributes(estimator_moved, estimator)
+    assert_public_attributes_are_in_namespace(estimator, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(estimator_moved, xp_move, device_move)
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        NearestNeighbors(algorithm="brute", n_neighbors=2, metric="nan_euclidean"),
+        LocalOutlierFactor(algorithm="brute", n_neighbors=2, metric="nan_euclidean"),
+        KNeighborsRegressor(algorithm="brute", n_neighbors=2, metric="nan_euclidean"),
+        KNeighborsClassifier(algorithm="brute", n_neighbors=2, metric="nan_euclidean"),
+        NearestNeighbors(algorithm="kd_tree", n_neighbors=2, metric="euclidean"),
+    ],
+)
+def test_unsupported_move_fails(array_move_like, estimator, with_array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+
+    estimator.fit(X, y)
+    with pytest.raises((ValueError, RuntimeError)):
+        move_estimator_to(estimator, xp=xp_move, device=device_move)
