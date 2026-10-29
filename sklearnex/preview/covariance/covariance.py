@@ -117,6 +117,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def fit(self, X, y=None):
         self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",

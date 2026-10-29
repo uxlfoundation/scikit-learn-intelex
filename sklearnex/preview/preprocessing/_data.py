@@ -156,7 +156,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             ensure_all_finite=False,
         )
 
-        self.n_samples_seen_ = 0
+        self._reset()  # <- method comes from scikit-learn
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
@@ -185,8 +185,25 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
+    # Note: scikit-learn defines '_reset' in the base class,
+    # avoid overriding it as it gets called internally.
+    def _reset_state(self):
+        if hasattr(self, "_onedal_estimator"):
+            # Note: scikit-learn has a 'reset' method which checks for the
+            # existence of `scale_`, but this class defines it conditionally
+            # as `@property` that might need to be recalculated. This temporary
+            # workaround ensures that scikit-learn will reset the object
+            # correctly if there was a leftover from a previous `partial_fit`
+            # through oneDAL which was not finalized.
+            if self._need_to_finalize:
+                self._scale_ = None
+                self._max_abs_ = None
+            del self._onedal_estimator
+            self._reset()
+
     def fit(self, X, y=None):
         self._validate_params()
+        self._reset_state()
 
         dispatch(
             self,
@@ -199,10 +216,15 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
+    def fit_transform(self, X, y=None, **fit_params):
+        self._reset_state()
+        return super().fit_transform(X, y, **fit_params)
+
     # transform is inherited unchanged from scikit-learn: it relies only on the fitted
     # scale vectors and array API operations, so no oneDAL override is needed.
 
     fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
+    fit_transform.__doc__ = _sklearn_MaxAbsScaler.fit_transform.__doc__
     partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
