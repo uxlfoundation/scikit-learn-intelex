@@ -38,6 +38,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     assert_allclose_numpy,
     dpnp_available,
+    dpnp_to_strict_working,
     get_dataframes_and_queues,
     get_queues,
     torch_available,
@@ -55,6 +56,15 @@ if dpnp_available:
     import dpnp
 if torch_available:
     import torch
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from sklearnex.tests.utils.misc import assert_same_namespace
 
 
 def generate_dense_dataset(n_samples, n_features, density, n_clusters):
@@ -387,3 +397,88 @@ def test_array_api_dispatch_results(xp, device, with_array_api):
     assert type(km.transform(X)) == type(X)
     assert type(km.cluster_centers_) == type(X)
     _check_kmeans_results(km, X, X_np)
+
+
+# TODO: update this once scikit-learn introduces a config option
+# to control whether the attributes are always numpy or follow 'X'
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_input_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+def test_km_move_estimator_to(array_input_like, array_move_like, with_array_api):
+    from sklearnex.cluster import KMeans
+
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
+    ):
+        pytest.skip()
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
+
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+    X_move = move_to(X, xp=xp_move, device=device_move)
+
+    km = KMeans(n_clusters=3).fit(X_in)
+    km_moved = move_estimator_to(km, xp=xp_move, device=device_move)
+
+    pred = km.predict(X_in)
+    transf = km.transform(X_in)
+    score = km.score(X_in)
+
+    assert isinstance(score, float)
+    assert_same_namespace(pred, array_input_like)
+    assert_same_namespace(transf, array_input_like)
+
+    pred_moved = km_moved.predict(X_move)
+    transf_moved = km_moved.transform(X_move)
+    score_moved = km_moved.score(X_move)
+
+    assert isinstance(score_moved, float)
+    assert_same_namespace(pred_moved, array_move_like)
+    assert_same_namespace(transf_moved, array_move_like)
+
+    np.testing.assert_array_equal(_as_numpy(pred_moved), _as_numpy(pred))
+    np.testing.assert_allclose(_as_numpy(transf_moved), _as_numpy(transf), atol=1e-6)
