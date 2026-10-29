@@ -537,10 +537,6 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                         "only the constant strategy is supported",
                     ),
                     (
-                        not hasattr(X, "dtype") or X.dtype in (xp.float64, xp.float32),
-                        "oneDAL operates with float64 and float32 inputs",
-                    ),
-                    (
                         isinstance(self.constant, (int, float)),
                         "only basic Python types are supported",
                     ),
