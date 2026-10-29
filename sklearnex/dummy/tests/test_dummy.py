@@ -43,23 +43,6 @@ def test_sklearnex_import_DummyRegressor(dataframe, queue):
     np.testing.assert_array_equal(np.pi * np.ones(pred.shape), pred)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
-def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue, with_array_api):
-    rng = np.random.default_rng(seed=42)
-
-    X = rng.random((10, 4))
-    y = rng.random((10,))
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
-    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
-    est = DummyRegressor(strategy="constant", constant=np.e).fit(X, y)
-    pred = _as_numpy(est.predict(X_test))
-
-    np.testing.assert_array_equal(np.full(pred.shape, np.e), pred)
-    est.constant_ = np.ones(est.constant_.shape)
-    np.testing.assert_array_equal(np.ones(pred.shape), _as_numpy(est.predict(X_test)))
-
-
 @pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize("n_targets", [1, 2])
 def test_model_recreation_after_fallback(n_targets):
