@@ -44,15 +44,14 @@ def _onedal_supported_format(X, xp):
     # data from sklearnex. Unlike other oneDAL offloading, copying the data is
     # specifically avoided as it has a non-negligible impact on speed. In that
     # case use native sklearn ``_assert_all_finite``
-    if hasattr(X, "__dlpack__"):
+    if hasattr(X, "__dlpack_device__"):
         try:
-            dlpack_capsule = X.__dlpack__()
-            if hasattr(dlpack_capsule, "device"):
-                if dlpack_capsule.device[0] not in [
-                    _default_backend.kDLCPU,
-                    _default_backend.kDLOneAPI,
-                ]:
-                    return False
+            device = X.__dlpack_device__()[0]
+            if device not in [
+                _default_backend.kDLCPU,
+                _default_backend.kDLOneAPI,
+            ]:
+                return False
         except BufferError:
             pass
     return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
