@@ -650,7 +650,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
     def _initialize_onedal_estimator_from_constant(self):
         xp, _ = get_namespace(self.constant_)
-        constant = check_array(self.constant_, dtype=[xp.float32, xp.float64])
+        constant = check_array(self.constant_, dtype=[xp.float64, xp.float32])
         self._onedal_estimator = self._onedal_DummyEstimator(constant=constant[0, 0])
         self._onedal_estimator.constant_ = constant
 
