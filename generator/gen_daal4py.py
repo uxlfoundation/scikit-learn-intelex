@@ -1290,6 +1290,11 @@ def gen_daal4py(
     if "algorithms::tree_utils" in iface.namespace_dict:
         with open(jp("src", "gettree.pyx"), "r") as f:
             pyx_gettree = f.read()
+    pyx_df_model_builder = ''
+    if 'algorithms::decision_forest::classification' in iface.namespace_dict and 'ModelBuilder' in \
+        iface.namespace_dict['algorithms::decision_forest::classification'].classes:
+        with open(jp('src', 'df_model_builder.pyx'), 'r') as f:
+            pyx_df_model_builder = f.read()
 
     with open(jp(outdir, "daal4py_cy.pyx"), "w") as f:
         f.write(pyx_file)
@@ -1297,3 +1302,4 @@ def gen_daal4py(
         f.write(pyx_gbt_model_builder)
         f.write(pyx_log_reg_model_builder)
         f.write(pyx_gbt_generators)
+        f.write(pyx_df_model_builder)
