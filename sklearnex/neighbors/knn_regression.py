@@ -175,6 +175,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._fit_onedal_estimator(check_X_device=False, queue=queue)
         self._save_attributes()
 
+    # Note: this method has a different signature from the other classes
+    # because it needs to access different data when running on GPU than
+    # when running on CPU, and needs to determine the device differently
+    # depending on where it is called (from data vs. from queue).
     def _fit_onedal_estimator(self, check_X_device=True, queue=None):
         X = self._fit_X
         y = self._y
