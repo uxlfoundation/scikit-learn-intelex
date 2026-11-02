@@ -20,6 +20,7 @@ import warnings
 
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.base import clone
 from sklearn.cluster import KMeans as _sklearn_KMeans
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances as _sklearn_euclidean_distances
@@ -130,6 +131,9 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
     def fit(self, X, y=None, sample_weight=None):
         self._validate_params()
+
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
 
         dispatch(
             self,
@@ -313,6 +317,12 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 check_same_namespace(
                     X, self, attribute="cluster_centers_", method="predict"
                 )
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator()
+            self._onedal_estimator._create_model(
+                self.cluster_centers_,
+                self.labels_,
+            )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_supported(self, method_name, *data):
@@ -428,6 +438,12 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 check_same_namespace(
                     X, self, attribute="cluster_centers_", method="score"
                 )
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator()
+            self._onedal_estimator._create_model(
+                self.cluster_centers_,
+                self.labels_,
+            )
         return self._onedal_estimator.score(X, queue=queue)
 
     def _save_attributes(self):
@@ -453,6 +469,25 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 ConvergenceWarning,
                 stacklevel=2,
             )
+
+    def __sklearn_array_api_convert__(self, converter):
+        out = clone(self)
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "cluster_centers_", "labels_"]
+        }
+        out.cluster_centers_ = converter(self.cluster_centers_)
+        out.labels_ = converter(self.labels_)
+        if hasattr(out.init, "__dlpack__") or hasattr(out.init, "shape"):
+            # This only happens when there are sklearn fallbacks
+            out.init = converter(out.init)
+        out._initialize_onedal_estimator()
+        out._onedal_estimator._create_model(
+            out.cluster_centers_,
+            out.labels_,
+        )
+        return out
 
     fit.__doc__ = _sklearn_KMeans.fit.__doc__
     predict.__doc__ = _sklearn_KMeans.predict.__doc__

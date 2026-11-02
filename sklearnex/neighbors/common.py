@@ -19,6 +19,7 @@ from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
+from sklearn.base import is_classifier, is_regressor
 from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
@@ -531,9 +532,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._fit_validation(data[0], data[1])
 
         class_name = self.__class__.__name__
-        is_classifier = "Classifier" in class_name
-        is_regressor = "Regressor" in class_name
-        is_unsupervised = not (is_classifier or is_regressor)
+        is_classifier_ = is_classifier(self)
+        is_regressor_ = is_regressor(self)
+        is_unsupervised_ = not (is_classifier_ or is_regressor_)
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
         )
@@ -602,9 +603,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         ):
             return patching_status
 
-        if not is_unsupervised:
+        if not is_unsupervised_:
             is_valid_weights = self.weights in ["uniform", "distance"]
-            if is_classifier:
+            if is_classifier_:
                 class_count = 1
             is_single_output = False
             y = None
@@ -614,7 +615,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 y_input = data[1]
                 xp, is_array_api = get_namespace(y_input)
                 y = xp.asarray(y_input)
-                if is_classifier:
+                if is_classifier_:
                     class_count = (
                         xp.unique_values(y).shape[0]
                         if is_array_api
@@ -659,7 +660,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             f"{result_method} with {self.effective_metric_} metric is not supported.",
         ):
             return patching_status
-        if not is_unsupervised:
+        if not is_unsupervised_:
             if not patching_status.and_conditions(
                 [
                     (is_single_output, "Only single output is supported."),
@@ -671,7 +672,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             ):
                 return patching_status
         if method_name == "fit":
-            if is_classifier:
+            if is_classifier_:
                 patching_status.and_condition(
                     class_count >= 2, "One-class case is not supported."
                 )
