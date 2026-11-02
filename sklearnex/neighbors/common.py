@@ -25,6 +25,7 @@ from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
+from sklearn.utils import get_tags
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
@@ -748,6 +749,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     kneighbors_graph.__doc__ = KNeighborsMixin.kneighbors_graph.__doc__
 
+    # TODO: update this if scikit-learn introduces support for array API
     def __sklearn_array_api_convert__(self, converter):
         if not hasattr(self, "_onedal_estimator") or inspect.isclass(
             self._onedal_estimator
