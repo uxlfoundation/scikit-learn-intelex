@@ -190,7 +190,7 @@ def test_patching_checker():
         assert not status
 
 
-def test_preview_namespace():
+def test_preview_namespace(monkeypatch):
     def get_estimators():
         from sklearn.cluster import DBSCAN
         from sklearn.decomposition import PCA
@@ -207,6 +207,9 @@ def test_preview_namespace():
         )
 
     from sklearnex.dispatcher import _is_preview_enabled
+
+    # the default-patching checks below require preview off; monkeypatch restores it
+    monkeypatch.delenv("SKLEARNEX_PREVIEW", raising=False)
 
     try:
         sklearnex.patch_sklearn(preview=True)

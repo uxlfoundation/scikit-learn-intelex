@@ -20,6 +20,7 @@ import warnings
 
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.base import clone
 from sklearn.cluster import KMeans as _sklearn_KMeans
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances as _sklearn_euclidean_distances
@@ -107,8 +108,6 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
         is_data_supported = _is_csr(X) or not is_sparse(X)
 
-        _acceptable_sample_weights = self._validate_sample_weight(sample_weight, X)
-
         patching_status.and_conditions(
             [
                 (
@@ -118,8 +117,8 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 (self.n_clusters != 1, "n_clusters=1 is not supported"),
                 (correct_count, "n_clusters is smaller than number of samples"),
                 (
-                    _acceptable_sample_weights,
-                    "oneDAL doesn't support sample_weight. Accepted options are None, constant, or equal weights.",
+                    sample_weight is None,
+                    "Sample weights are not supported.",
                 ),
                 (
                     is_data_supported,
@@ -132,6 +131,9 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
     def fit(self, X, y=None, sample_weight=None):
         self._validate_params()
+
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
 
         dispatch(
             self,
@@ -253,35 +255,12 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
 
         self._save_attributes()
 
-    def _validate_sample_weight(self, sample_weight, X):
-        """Check if sample_weight is acceptable for oneDAL.
-
-        oneDAL only supports None or uniform weights. Validates shape
-        and uniformity using xp ops for array API compatibility.
-        """
-        if sample_weight is None:
-            return True
-        if isinstance(sample_weight, numbers.Number) or isinstance(sample_weight, str):
-            return True
-        try:
-            xp, _ = get_namespace(sample_weight)
-            sw = xp.asarray(sample_weight)
-            if sw.ndim != 1 or sw.shape[0] != X.shape[0]:
-                return False
-            return bool(xp.all(sw == sw[0])) and (sw[0] != 0)
-        except (TypeError, IndexError, AttributeError, ValueError):
-            return False
-
     def _onedal_predict_supported(self, method_name, *data):
         class_name = self.__class__.__name__
 
         patching_status = PatchingConditionsChain(
             f"sklearn.cluster.{class_name}.{method_name}"
         )
-
-        X = data[0]
-
-        is_data_supported = _is_csr(X) or not is_sparse(X)
 
         supported_algs = ["lloyd", "elkan"]
         if self.algorithm == "elkan":
@@ -296,12 +275,13 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                     "Only 'lloyd' algorithm is supported, 'elkan' is computed using lloyd.",
                 ),
                 (self.n_clusters != 1, "n_clusters=1 is not supported"),
-                (
-                    is_data_supported,
-                    "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",
-                ),
             ]
         )
+        if method_name == "score" and len(data) > 2:
+            sample_weight = data[2]
+            patching_status.and_conditions(
+                [(sample_weight is None, "Sample weights are not supported")]
+            )
 
         return patching_status
 
@@ -337,6 +317,12 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 check_same_namespace(
                     X, self, attribute="cluster_centers_", method="predict"
                 )
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator()
+            self._onedal_estimator._create_model(
+                self.cluster_centers_,
+                self.labels_,
+            )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_supported(self, method_name, *data):
@@ -452,6 +438,12 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 check_same_namespace(
                     X, self, attribute="cluster_centers_", method="score"
                 )
+        if not hasattr(self, "_onedal_estimator"):
+            self._initialize_onedal_estimator()
+            self._onedal_estimator._create_model(
+                self.cluster_centers_,
+                self.labels_,
+            )
         return self._onedal_estimator.score(X, queue=queue)
 
     def _save_attributes(self):
@@ -477,6 +469,25 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
                 ConvergenceWarning,
                 stacklevel=2,
             )
+
+    def __sklearn_array_api_convert__(self, converter):
+        out = clone(self)
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "cluster_centers_", "labels_"]
+        }
+        out.cluster_centers_ = converter(self.cluster_centers_)
+        out.labels_ = converter(self.labels_)
+        if hasattr(out.init, "__dlpack__") or hasattr(out.init, "shape"):
+            # This only happens when there are sklearn fallbacks
+            out.init = converter(out.init)
+        out._initialize_onedal_estimator()
+        out._onedal_estimator._create_model(
+            out.cluster_centers_,
+            out.labels_,
+        )
+        return out
 
     fit.__doc__ = _sklearn_KMeans.fit.__doc__
     predict.__doc__ = _sklearn_KMeans.predict.__doc__

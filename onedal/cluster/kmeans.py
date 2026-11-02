@@ -62,6 +62,9 @@ class KMeans(ABC):
     @bind_default_backend("kmeans.clustering")
     def infer(self, params, model, X_table): ...
 
+    @bind_default_backend("kmeans.clustering")
+    def model(self): ...
+
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
@@ -292,6 +295,13 @@ class KMeans(ABC):
     @cluster_centers_.deleter
     def cluster_centers_(self):
         self._cluster_centers_ = None
+
+    def _create_model(self, cluster_centers, labels) -> None:
+        self.model_ = self.model()
+        self._cluster_centers_ = cluster_centers
+        self.model_.centroids = to_table(self._cluster_centers_)
+        self.n_features_in_ = self.model_.centroids.column_count
+        self.labels_ = labels
 
     @supports_queue
     def predict(self, X, queue=None):
