@@ -157,8 +157,6 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
 
         self._reset()  # <- method comes from scikit-learn
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator._reset()
 
         # Execute partial fit just once on the entire dataset.
         self._onedal_partial_fit(X, queue=queue, check_input=False)
@@ -185,25 +183,21 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
-    # Note: scikit-learn defines '_reset' in the base class,
-    # avoid overriding it as it gets called internally.
-    def _reset_state(self):
+    # Note: this overrides a method from scikit-learn, which makes
+    # the assumption that existence of 'scale_' implies existence
+    # of other attributes, but this class defines it as '@property'.
+    def _reset(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._scale_ = None
+            self._max_abs_ = None
+            self._need_to_finalize = False
         if hasattr(self, "_onedal_estimator"):
-            # Note: scikit-learn has a 'reset' method which checks for the
-            # existence of `scale_`, but this class defines it conditionally
-            # as `@property` that might need to be recalculated. This temporary
-            # workaround ensures that scikit-learn will reset the object
-            # correctly if there was a leftover from a previous `partial_fit`
-            # through oneDAL which was not finalized.
-            if self._need_to_finalize:
-                self._scale_ = None
-                self._max_abs_ = None
             del self._onedal_estimator
-            self._reset()
+        super()._reset()
 
     def fit(self, X, y=None):
         self._validate_params()
-        self._reset_state()
+        self._reset()
 
         dispatch(
             self,
@@ -217,7 +211,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         return self
 
     def fit_transform(self, X, y=None, **fit_params):
-        self._reset_state()
+        self._reset()
         return super().fit_transform(X, y, **fit_params)
 
     # transform is inherited unchanged from scikit-learn: it relies only on the fitted
