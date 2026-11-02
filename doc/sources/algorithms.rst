@@ -289,6 +289,10 @@ Anomaly Detection
 Nearest Neighbors
 *****************
 
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
+
 .. list-table::
    :widths: 10 30 20
    :header-rows: 1
@@ -581,6 +585,10 @@ Anomaly Detection
 Nearest Neighbors
 *****************
 
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
+
 .. list-table::
    :widths: 10 30 20
    :header-rows: 1
@@ -600,12 +608,6 @@ Nearest Neighbors
        array API inputs:
        :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
        :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
-   * - :obj:`sklearn.neighbors.LocalOutlierFactor`
-     - All parameters are supported except:
-
-       - ``algorithm`` != ``'brute'``
-       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-     - Only dense data is supported.
 
 Other Tasks
 ***********
@@ -804,20 +806,29 @@ Dimensionality Reduction
 Nearest Neighbors
 *****************
 
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
+
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Only dense data is supported
+     - The following methods are not supported:
+       
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
 
 Other Tasks
 ***********
