@@ -24,6 +24,17 @@ also made available through the same channels - see :doc:`oneapi-gpu` for more i
 Binary wheels and conda packages are provided for the x86-64 architecture, for both Windows* and Linux*, for the
 Python versions supported by current versions of |sklearn| - see :doc:`about` for more information.
 
+Free-threaded Python
+--------------------
+
+.. note:: Support for free-threaded Python is experimental.
+
+Source builds for free-threaded Python are possible starting with CPython 3.14 on
+Linux* for CPU execution, and importing the native CPU extensions does not
+re-enable the GIL. Availability of free-threaded binary wheels is
+release-dependent. See :doc:`unsupported` and :doc:`parallelism` for current
+platform and execution-mode limitations.
+
 Installing from PyPI
 --------------------
 

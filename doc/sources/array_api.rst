@@ -154,7 +154,7 @@ accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the comput
 Calling methods such as ``.apply()`` from a ``RandomForestClassifier`` from the |sklearnex|
 that was fitted to array API inputs will work, but it will do so by transferring the data
 to host if not already there, passing the intermediate object to |sklearn|, and outputting
-a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
+a host NumPy array.
 
 Similarly, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
 :meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors` and
@@ -179,10 +179,19 @@ Starting with version 1.9, |sklearn| provides an experimental utility ``sklearn.
 which can be used to move an estimator that was fitted with one array API library namespace and device to
 another.
 
-This function is not supported with estimators from the |sklearnex| at the moment. This lack of support
-also extends to cases where :doc:`patching <patching>` is applied, but the ``.fit()`` routine is handled
-through |sklearn| as a fallback (see :doc:`algorithms` for details) - meaning: ``move_estimator_to`` cannot
-be used with classes from the |sklearnex| regardless of which backend was used to fit the estimator.
+This function is only supported for the following estimators from the |sklearnex|:
+
+- :obj:`sklearn.linear_model.LinearRegression`
+- :obj:`sklearn.linear_model.Ridge`
+- :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.cluster.KMeans`
+
+The following estimators cannot be moved, but when using array API, can be used to make predictions on both CPU and GPU data regardless of the device of the data to which they were fitted:
+
+- :obj:`sklearn.ensemble.ExtraTreesClassifier`
+- :obj:`sklearn.ensemble.ExtraTreesRegressor`
+- :obj:`sklearn.ensemble.RandomForestClassifier`
+- :obj:`sklearn.ensemble.RandomForestRegressor`
 
 Example usage
 =============

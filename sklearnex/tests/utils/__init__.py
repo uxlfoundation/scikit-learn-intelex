@@ -18,6 +18,7 @@ from .base import (
     DTYPES,
     PATCHED_FUNCTIONS,
     PATCHED_MODELS,
+    PREVIEW_ENABLED,
     SPECIAL_INSTANCES,
     UNPATCHED_FUNCTIONS,
     UNPATCHED_MODELS,
@@ -29,13 +30,16 @@ from .base import (
     gen_dataset,
     gen_models_info,
     gen_sparse_dataset,
+    is_preview_exempt,
     sklearn_clone_dict,
 )
+from .misc import *
 
 __all__ = [
     "DTYPES",
     "PATCHED_FUNCTIONS",
     "PATCHED_MODELS",
+    "PREVIEW_ENABLED",
     "UNPATCHED_FUNCTIONS",
     "UNPATCHED_MODELS",
     "SPECIAL_INSTANCES",
@@ -45,6 +49,7 @@ __all__ = [
     "gen_models_info",
     "gen_dataset",
     "gen_sparse_dataset",
+    "is_preview_exempt",
     "sklearn_clone_dict",
     "DummyEstimator",
 ]
