@@ -17,6 +17,7 @@
 from onedal.spmd.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.spmd.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 
+from ...base import onedal_spmd_estimator
 from ...ensemble import RandomForestClassifier as RandomForestClassifier_Batch
 from ...ensemble import RandomForestRegressor as RandomForestRegressor_Batch
 
@@ -30,6 +31,7 @@ def local_trees_wrapper(factor_cls, local_trees_mode):
     return WrappedFactory
 
 
+@onedal_spmd_estimator
 class RandomForestClassifier(RandomForestClassifier_Batch):
     __doc__ = RandomForestClassifier_Batch.__doc__
     _onedal_factory_cls = onedal_RandomForestClassifier
@@ -113,6 +115,7 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
         return ready
 
 
+@onedal_spmd_estimator
 class RandomForestRegressor(RandomForestRegressor_Batch):
     __doc__ = RandomForestRegressor_Batch.__doc__
     _onedal_factory_cls = onedal_RandomForestRegressor

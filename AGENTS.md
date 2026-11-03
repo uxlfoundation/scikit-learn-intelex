@@ -99,7 +99,7 @@ oneDAL acceleration requires:
 - **CPU Only**:  Ridge, IncrementalPCA
 
 ### Error Handling
-Fallback chain: oneDAL → sklearn → error. Configurable via allow_sklearn_after_onedal setting.
+Fallback chain: oneDAL → sklearn → error. Configurable via allow_sklearn_fallback setting.
 
 ### Memory Requirements
 oneDAL requires contiguous data for zero-copy operations. C-contiguous preferred over Fortran-contiguous.

@@ -16,9 +16,11 @@
 
 from onedal.spmd.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 
+from ...base import onedal_spmd_estimator
 from ...preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
 
 
+@onedal_spmd_estimator
 class EmpiricalCovariance(EmpiricalCovariance_Batch):
     __doc__ = EmpiricalCovariance_Batch.__doc__
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)

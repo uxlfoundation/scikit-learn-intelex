@@ -16,8 +16,10 @@
 
 from onedal.spmd.decomposition import IncrementalPCA as onedalSPMD_IncrementalPCA
 
+from ...base import onedal_spmd_estimator
 from ...preview.decomposition import IncrementalPCA as base_IncrementalPCA
 
 
+@onedal_spmd_estimator
 class IncrementalPCA(base_IncrementalPCA):
     _onedal_incremental_pca = staticmethod(onedalSPMD_IncrementalPCA)
