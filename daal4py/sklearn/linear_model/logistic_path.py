@@ -172,9 +172,8 @@ def logistic_regression_path_d4p(
             Cs = np.logspace(-4, 4, Cs)
         reg_strengths = [1.0 / C for C in Cs]
 
-    if sklearn_check_version("1.10"):
-        solver, dual = _check_solver(solver, penalty, dual)
-    else:
+    # sklearn>=1.10 resolves and validates the solver in 'fit' before calling the path
+    if not sklearn_check_version("1.10"):
         solver = _check_solver(solver, penalty, dual)
 
     # Preprocessing.
@@ -636,16 +635,15 @@ if sklearn_check_version("1.10"):
         solver="lbfgs",
         coef=None,
         dual=False,
-        penalty="l2",
         intercept_scaling=1.0,
         random_state=None,
         check_input=True,
         max_squared_sum=None,
         sample_weight=None,
-        l1_ratio=None,
+        l1_ratio=0.0,
         n_threads=1,
-        callback_ctx=None,  # Not supported
-        estimator=None,  # Only used by 'callback_ctx'
+        callback_ctx=None,
+        estimator=None,
     ):
         return logistic_regression_path_dispatcher(
             "sklearn.linear_model.LogisticRegression.fit",
@@ -662,7 +660,6 @@ if sklearn_check_version("1.10"):
             solver=solver,
             coef=coef,
             dual=dual,
-            penalty=penalty,
             intercept_scaling=intercept_scaling,
             random_state=random_state,
             check_input=check_input,
@@ -670,6 +667,8 @@ if sklearn_check_version("1.10"):
             sample_weight=sample_weight,
             l1_ratio=l1_ratio,
             n_threads=n_threads,
+            callback_ctx=callback_ctx,
+            estimator=estimator,
         )
 
     def logistic_regression_path_cv(
@@ -686,16 +685,15 @@ if sklearn_check_version("1.10"):
         solver="lbfgs",
         coef=None,
         dual=False,
-        penalty="l2",
         intercept_scaling=1.0,
         random_state=None,
         check_input=True,
         max_squared_sum=None,
         sample_weight=None,
-        l1_ratio=None,
+        l1_ratio=0.0,
         n_threads=1,
-        callback_ctx=None,  # Not supported
-        estimator=None,  # Only used by 'callback_ctx'
+        callback_ctx=None,
+        estimator=None,
     ):
         return logistic_regression_path_dispatcher(
             "sklearn.linear_model.LogisticRegressionCV.fit",
@@ -712,7 +710,6 @@ if sklearn_check_version("1.10"):
             solver=solver,
             coef=coef,
             dual=dual,
-            penalty=penalty,
             intercept_scaling=intercept_scaling,
             random_state=random_state,
             check_input=check_input,
@@ -720,6 +717,8 @@ if sklearn_check_version("1.10"):
             sample_weight=sample_weight,
             l1_ratio=l1_ratio,
             n_threads=n_threads,
+            callback_ctx=callback_ctx,
+            estimator=estimator,
         )
 
 elif sklearn_check_version("1.9"):
@@ -1048,6 +1047,8 @@ def logistic_regression_path_dispatcher(
     sample_weight=None,
     l1_ratio=None,
     n_threads=1,
+    callback_ctx=None,
+    estimator=None,
 ):
 
     _patching_status = PatchingConditionsChain(patching_log_class_name)
@@ -1068,7 +1069,8 @@ def logistic_regression_path_dispatcher(
             (sample_weight is None, "Sample weights are not supported."),
             (class_weight is None, "Class weights are not supported."),
             (
-                penalty
+                sklearn_check_version("1.10")
+                or penalty
                 in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
                 "Penalties other than l2 are not supported.",
             ),
@@ -1079,6 +1081,10 @@ def logistic_regression_path_dispatcher(
             ),
             (not dual, "Dual problem formulation is not supported."),
             (max_squared_sum is None, "'max_squared_sum' is not supported."),
+            (
+                callback_ctx is None or not hasattr(estimator, "_skl_callbacks"),
+                "Callbacks are not supported.",
+            ),
         ]
     )
     if not _dal_ready:
@@ -1098,7 +1104,6 @@ def logistic_regression_path_dispatcher(
                 solver=solver,
                 coef=coef,
                 dual=dual,
-                penalty=penalty,
                 intercept_scaling=intercept_scaling,
                 random_state=random_state,
                 check_input=check_input,
@@ -1106,6 +1111,8 @@ def logistic_regression_path_dispatcher(
                 sample_weight=sample_weight,
                 l1_ratio=l1_ratio,
                 n_threads=n_threads,
+                callback_ctx=callback_ctx,
+                estimator=estimator,
             )
         elif sklearn_check_version("1.8"):
             return lr_path_original(

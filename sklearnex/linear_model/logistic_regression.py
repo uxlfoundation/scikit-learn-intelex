@@ -68,7 +68,6 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
 
         def __init__(
             self,
-            penalty="deprecated",
             *,
             alpha=1.0,
             C="deprecated",
@@ -79,14 +78,12 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             intercept_scaling="deprecated",
             class_weight=None,
             random_state=None,
-            solver="lbfgs",
+            solver="auto",
             max_iter=100,
             verbose=0,
             warm_start=False,
-            n_jobs=None,
         ):
             super().__init__(
-                penalty=penalty,
                 alpha=alpha,
                 C=C,
                 l1_ratio=l1_ratio,
@@ -100,7 +97,6 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
                 max_iter=max_iter,
                 verbose=verbose,
                 warm_start=warm_start,
-                n_jobs=n_jobs,
             )
 
     elif sklearn_check_version("1.8"):
@@ -306,7 +302,8 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         patching_status.and_conditions(
             [
                 (
-                    self.penalty
+                    sklearn_check_version("1.10")
+                    or self.penalty
                     in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
                     "Only l2 penalty is supported.",
                 ),
