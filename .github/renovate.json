@@ -18,7 +18,7 @@
       "matchFileNames": ["requirements-doc.txt"]
     },
     {
-      "groupName": "dpctl and dpnp",
+      "groupName": "dppy",
       "matchDatasources": ["pypi"],
       "matchDepNames": ["dpctl", "dpnp"]
     }
