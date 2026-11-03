@@ -1,0 +1,87 @@
+#===============================================================================
+# Copyright contributors to the oneDAL project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#===============================================================================
+
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Only non-default settings, plus a few defaults the review workflow relies on.
+# Reference: https://docs.coderabbit.ai/reference/configuration
+
+inheritance: false
+
+reviews:
+  profile: chill
+
+  # Keep the PR description author-owned; pr-checklist.yml reads it
+  high_level_summary_in_walkthrough: true
+  sequence_diagrams: false
+  related_prs: false
+  # CODEOWNERS assigns reviewers
+  suggested_reviewers: false
+  in_progress_fortune: false
+
+  path_filters:
+    - "!**/*.csv"
+
+  auto_review:
+    # Review once when the PR opens or leaves draft; later pushes only on `@coderabbitai review`
+    auto_incremental_review: false
+    drafts: false
+    ignore_usernames:
+      - "renovate[bot]"
+      - "dependabot[bot]"
+      - "mergify[bot]"
+
+  # Tests and docstrings stay author-written
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: "off"
+
+  tools:
+    # pre-commit (black, isort, numpydoc, codespell) is the lint gate in CI
+    ruff:
+      enabled: false
+    flake8:
+      enabled: false
+    pylint:
+      enabled: false
+    # Prose linters; grammar nits in docs and comments are noise
+    languagetool:
+      enabled: false
+    vale:
+      enabled: false
+
+chat:
+  art: false
+
+knowledge_base:
+  # Reads AGENTS.md, CLAUDE.md and Copilot instruction files (default)
+  code_guidelines:
+    enabled: true
+  linked_repositories:
+    - repository: "uxlfoundation/oneDAL"
+      instructions: >-
+        C++ backend for this repo; onedal/ binds its C++ API with pybind11 and daal4py
+        wraps its DAAL interface. Check that called oneDAL APIs, parameters and behaviors
+        exist and match, and that new features are guarded by the oneDAL version that adds them.
+        .github/workflows/ci.yml downloads build and oneDAL_env artifacts from oneDAL's
+        nightly-build.yml by workflow and artifact name.
