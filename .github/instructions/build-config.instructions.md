@@ -32,7 +32,7 @@ Build system configuration for Extension for scikit-learn using setup.py, conda,
 - `setup.py` - Python version classifiers and compatibility
 
 **Key requirements:**
-- Python 3.10+ (see `setup.py` for supported versions)
+- Python 3.11+ (see `setup.py` for supported versions)
 - oneDAL (see `requirements-test.txt` for version)
 - scikit-learn (see `requirements-test.txt` for version)
 

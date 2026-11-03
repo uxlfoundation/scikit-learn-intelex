@@ -65,9 +65,10 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       bash .ci/scripts/setup_sklearn.sh $(SKLEARN_VERSION)
-      # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.14 build.
+      # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.15 build.
       # conda install runs before pip so that pip's pins (incl. the numpy 1.x runtime version) take final precedence.
-      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
+      # -x: whole-version match, so the free-threaded 3.14t job doesn't match 3.14.
+      if [ $(echo $(PYTHON_VERSION) | grep -x '3.11\|3.12\|3.13\|3.14') ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
       if [[ "$(PYTHON_VERSION)" == *t ]]; then
         # polars has no free-threaded wheel on PyPI - see requirements-test-free-threaded.txt
         conda install -q -y -c conda-forge polars=$(sed -n 's/^polars==//p' requirements-test.txt)
