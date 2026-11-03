@@ -26,7 +26,7 @@
   "pre-commit": {
     "enabled": true
   },
-"customManagers": [
+  "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": [
