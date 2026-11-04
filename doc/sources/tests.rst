@@ -90,6 +90,7 @@ The files ``run_test.sh`` and ``run_test.bat`` offer configurable behaviors thro
     - On Linux*, this same variable can be used to set the Python interpreter that will run the tests for patching functionality.
 - Passing argument ``--json-report`` will generate JSON reports of each test component under path ``/.pytest_reports``. Note that, if the folder is not empty, existing files will be deleted.
 - Environment variable ``$COVERAGE_RCFILE``, if set, will make it generate coverage reports under the path specified from this variable.
+- Environment variable ``$SKLEARNEX_PREVIEW``, if set, adds the :doc:`preview estimators <preview>` to the patching map. The centralized tests under ``sklearnex/tests`` discover the estimators they exercise from that map, so setting it expands them to cover preview estimators and also holds those estimators to the same design rules as the rest of the |sklearnex|. Preview estimators are exempt from those rules when it is not set.
 
 Running distributed mode examples
 ---------------------------------
@@ -166,7 +167,7 @@ The tests can also be made to run on GPU, either by passing argument ``gpu`` to 
 Preview mode
 ************
 
-Note that :doc:`preview mode <preview>` is not tested by default - in order to test it, it's necessary to set environment variable ``SKLEARNEX_PREVIEW=1`` to enable patching of such functionalities before executing either of these scripts (``.sh`` / ``.py``). The ``.sh`` script by default will take care of deselecting tests that require preview mode for patching when this environment variable is not set.
+Note that :doc:`preview mode <preview>` is not tested by default - in order to test it, it's necessary to set environment variable ``SKLEARNEX_PREVIEW=1`` to enable patching of such functionalities before executing either of these scripts (``.sh`` / ``.py``). When that variable is set, the ``.sh`` script additionally deselects the tests listed under a ``preview`` section of ``deselected_tests.yaml``, which is where cases that are known to fail only under preview patching belong.
 
 Producing a test report
 ~~~~~~~~~~~~~~~~~~~~~~~

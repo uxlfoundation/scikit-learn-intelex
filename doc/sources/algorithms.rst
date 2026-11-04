@@ -221,10 +221,9 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
@@ -291,6 +290,10 @@ Anomaly Detection
 
 Nearest Neighbors
 *****************
+
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
 
 .. list-table::
    :widths: 10 30 20
@@ -527,11 +530,10 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = ``'k-means++'`` falls back to CPU
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
@@ -587,6 +589,10 @@ Anomaly Detection
 Nearest Neighbors
 *****************
 
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
+
 .. list-table::
    :widths: 10 30 20
    :header-rows: 1
@@ -606,12 +612,6 @@ Nearest Neighbors
        array API inputs:
        :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
        :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
-   * - :obj:`sklearn.neighbors.LocalOutlierFactor`
-     - All parameters are supported except:
-
-       - ``algorithm`` != ``'brute'``
-       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-     - Only dense data is supported.
 
 Other Tasks
 ***********
@@ -771,11 +771,10 @@ Clustering
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
-       - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
        - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
          inertia numbers, not 'convergence achieved' messages.
-     - No limitations
+     - Sample weights are not supported.
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
@@ -813,20 +812,29 @@ Dimensionality Reduction
 Nearest Neighbors
 *****************
 
+.. note::
+    Nearest neighbor classes for other tasks (e.g. :obj:`~sklearn.neighbors.KNeighborsClassifier`) are also supported,
+    but are listed under their corresponding task section instead.
+
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 30 20 20
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Only dense data is supported
+     - The following methods are not supported:
+       
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
+       - :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
 
 Other Tasks
 ***********
