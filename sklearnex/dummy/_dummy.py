@@ -578,7 +578,10 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         )
         if method_name == "fit":
             X, y, sample_weight = data
-            xp, _ = get_namespace(X, y)
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(X)
+            else:
+                xp, _ = get_namespace(X, y)
 
             patching_status.and_conditions(
                 [
