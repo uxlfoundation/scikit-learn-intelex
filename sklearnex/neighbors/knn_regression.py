@@ -32,7 +32,6 @@ from .._device_offload import (
     wrap_output_data,
 )
 from ..utils._array_api import enable_array_api
-from ..utils.devices import check_data_is_allocated_on_device
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
@@ -172,20 +171,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             y = move_to(y, xp=xp, device=device)
 
         self._process_regression_targets(y)
-        self._fit_onedal_estimator(check_X_device=False, queue=queue)
+        self._fit_onedal_estimator(queue=queue)
         self._save_attributes()
 
-    # Note: this method has a different signature from the other classes
-    # because it needs to access different data when running on GPU than
-    # when running on CPU, and needs to determine the device differently
-    # depending on where it is called (from data vs. from queue).
-    def _fit_onedal_estimator(self, check_X_device=True, queue=None):
+    def _fit_onedal_estimator(self, queue=None):
         X = self._fit_X
         y = self._y
-        if check_X_device:
-            gpu_device = check_data_is_allocated_on_device(X)
-        else:
-            gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
         onedal_params = {
             "n_neighbors": self.n_neighbors,

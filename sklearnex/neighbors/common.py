@@ -37,6 +37,7 @@ if sklearn_check_version("1.9"):
 
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes._dlpack import dlpack_to_numpy
+from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features, _num_samples
 
@@ -766,12 +767,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if k not in ["_onedal_estimator", "_fit_X", "_y", "_shape"]
         }
         out._fit_X = converter(self._fit_X)
+        has_y = False
         if hasattr(self, "_y") and self._y is not None:
             out._y = converter(self._y)
+            has_y = True
         if hasattr(self, "_shape") and self._shape is not None:
             if not isinstance(self._shape, (tuple, list)):
                 out._shape = converter(self._shape)
             else:
                 out._shape = self._shape
-        out._fit_onedal_estimator()
+        data = (out._fit_X,) if not has_y else (out._fit_X, out._y)
+        with QM.manage_global_queue(None, *data) as queue:
+            out._fit_onedal_estimator(queue=queue)
         return out
