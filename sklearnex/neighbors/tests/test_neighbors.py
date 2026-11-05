@@ -26,12 +26,8 @@ from scipy.spatial.distance import cdist
 from sklearn import datasets
 from sklearn.base import is_regressor
 
-if hasattr(sp, "csr_array"):
-    CSR_CTOR = sp.csr_array
-else:
-    CSR_CTOR = sp.csr_matrix
-
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
+from onedal.datatypes import csr_array
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -243,7 +239,7 @@ def test_no_metric_args_warning_on_fallback():
     X = rng.standard_normal(size=(25, 3))
     y = rng.standard_normal(size=X.shape[0])
 
-    X_sp = CSR_CTOR(X)
+    X_sp = csr_array(X)
 
     knn = KNeighborsRegressor(algorithm="brute").fit(X, y)
     with warnings.catch_warnings():

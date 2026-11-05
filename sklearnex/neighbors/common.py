@@ -34,6 +34,7 @@ if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 from onedal._device_offload import _transfer_to_host
+from onedal.datatypes import csr_array
 from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features, _num_samples
@@ -732,14 +733,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_nonzero = n_queries * n_neighbors
         A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
-        if sklearn_check_version("1.9"):
-            _csr_container = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
-        else:
-            _csr_container = sp.csr_matrix
-        kneighbors_graph = _csr_container(
+        kneighbors_graph = csr_array(
             (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
-
         if sklearn_check_version("1.9"):
             kneighbors_graph = _align_api_if_sparse(kneighbors_graph)
 

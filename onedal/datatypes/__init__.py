@@ -14,11 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
+import scipy.sparse as sp
+
 from ._data_conversion import from_table, return_type_constructor, to_table
 from ._dlpack import dlpack_to_numpy, get_torch_queue
 
+# This is a workaround in order to support both classes from
+# SciPy. Can be removed once the minimum supported SciPy has
+# dropped or deprecated 'csr_matrix'.
+if hasattr(sp, "csr_array"):
+    csr_array = sp.csr_array
+else:
+    csr_array = sp.csr_matrix
+
 __all__ = [
     "dlpack_to_numpy",
+    "csr_array",
     "from_table",
     "get_torch_queue",
     "to_table",
