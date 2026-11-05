@@ -16,15 +16,23 @@
 
 import scipy.sparse as sp
 
+from daal4py.sklearn._utils import sklearn_check_version
+
 from ._data_conversion import from_table, return_type_constructor, to_table
 from ._dlpack import dlpack_to_numpy, get_torch_queue
 
 # This is a workaround in order to support both classes from
 # SciPy. Can be removed once the minimum supported SciPy has
 # dropped or deprecated 'csr_matrix'.
-if hasattr(sp, "csr_array"):
+# Note that some tests from earlier scikit-learn versions (particularly
+# in cases that instantiate KNN estimators) assume that the returned type
+# is matrix when they use it in other operations.
+if hasattr(sp, "csr_array") and sklearn_check_version("1.9"):
     csr_array = sp.csr_array
 else:
+    # If this attribute gets removed and there are version constraints
+    # between scikit-learn and SciPy, one of them will need to get
+    # increases to a higher minimum version.
     csr_array = sp.csr_matrix
 
 __all__ = [
