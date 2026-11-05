@@ -26,9 +26,15 @@ from numpy.testing import assert_allclose, assert_array_almost_equal
 from sklearn.base import is_classifier
 from sklearn.datasets import load_diabetes, load_iris, make_classification
 
-from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
-from onedal.datatypes import csr_array
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
+from sklearnex import config_context
+
+try:
+    from scipy.sparse import csr_array as csr_class
+except ImportError:
+    from scipy.sparse import csr_matrix as csr_class
+
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -44,7 +50,6 @@ from onedal.tests.utils._device_selection import (
     is_sycl_device_available,
     pass_if_not_implemented_for_gpu,
 )
-from sklearnex import config_context
 
 if dpnp_available:
     import dpnp
@@ -188,7 +193,7 @@ def test_diabetes(kernel):
 def test_works_with_unsorted_indices():
     from sklearnex.svm import SVC
 
-    X = csr_array(
+    X = csr_class(
         (
             np.array(
                 [0.44943642, 0.6316672, 0.6316672, 0.44943642, 0.6316672, 0.6316672]

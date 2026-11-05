@@ -25,9 +25,13 @@ import scipy.sparse as sp
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_blobs
 
+if hasattr(sp, "csr_array"):
+    CSR_CTOR = sp.csr_array
+else:
+    CSR_CTOR = sp.csr_matrix
+
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal import _dpc_backend
-from onedal.datatypes import csr_array
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _assert_in_namespace,
@@ -100,7 +104,7 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
     from sklearnex.cluster import KMeans
 
     X_dense = generate_dense_dataset(1000, 10, 0.5, 3)
-    X_sparse = csr_array(X_dense)
+    X_sparse = CSR_CTOR(X_dense)
 
     kmeans_sparse = KMeans(
         n_clusters=3, random_state=0, algorithm=algorithm, init=init
@@ -152,7 +156,7 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     # For higher level of sparsity (smaller density) the test may fail
     n_samples, n_features, density, n_clusters = dims
     X_dense = generate_dense_dataset(n_samples, n_features, density, n_clusters)
-    X_sparse = csr_array(X_dense)
+    X_sparse = CSR_CTOR(X_dense)
 
     if init == "arraylike":
         np.random.seed(2024 + n_samples + n_features + n_clusters)
@@ -270,7 +274,7 @@ def test_cov_error_on_incompatible_devices(with_array_api):
 def test_sparse_predict_on_dense_fit(array_api):
     rng = np.random.default_rng(seed=123)
     X = rng.random(size=(50, 3), dtype=np.float32)
-    X_sp = csr_array(X)
+    X_sp = CSR_CTOR(X)
 
     with config_context(array_api_dispatch=array_api):
         model = KMeans().fit(X)

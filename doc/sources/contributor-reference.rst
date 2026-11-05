@@ -123,8 +123,6 @@ For example:
         # branch for scipy<1.14
         ...
 
-In the specific case of SciPy, one of the most common checks is for availabily of sparse matrix (old) and sparse array (new) classes. To decide between them, instead of checking the SciPy version, class ``onedal.datatypes.csr_array`` should be used which will pick the array variant when available; and if the result is returned to the user instead of just being an internal attribute, then on scikit-learn 1.9 and above, ``sklearn.utils._sparse._align_api_if_sparse`` should be called on the result before returning it for conformance.
-
 Test helpers
 ------------
 
