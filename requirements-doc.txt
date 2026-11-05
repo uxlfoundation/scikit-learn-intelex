@@ -5,7 +5,7 @@ Babel==2.18.0
 backcall==0.2.0
 beautifulsoup4==4.14.3
 bleach==6.4.0
-certifi==2026.5.20
+certifi==2026.10.19
 charset-normalizer==3.4.7
 click==8.4.1
 decorator==5.3.1
@@ -14,7 +14,7 @@ docutils~=0.21.2
 entrypoints==0.4
 idna==3.17
 imagesize==2.0.0
-importlib-metadata==9.0.0
+importlib-metadata==10.1.0
 importlib-resources==7.1.0
 ipython==9.14.0
 ipython-genutils==0.2.0
@@ -27,7 +27,7 @@ jupyterlab-pygments==0.3.0
 MarkupSafe==3.0.3
 mistune==3.3.3
 nbclient==0.10.4
-nbconvert==7.17.1
+nbconvert==7.17.2
 nbformat==5.10.4
 nbsphinx==0.9.8
 nest-asyncio==1.6.0
@@ -42,7 +42,7 @@ ptyprocess==0.7.0
 Pygments==2.20.0
 pyparsing==3.3.2
 pyrsistent==0.20.0
-python-dateutil==2.9.0.post0
+python-dateutil==4.0.0
 pytz==2026.2
 PyYAML==6.0.3
 pyzmq==27.1.0
@@ -50,7 +50,7 @@ requests==2.34.2
 six==1.17.0
 scikit-learn==1.9.0
 snowballstemmer==3.1.0
-soupsieve==3.0.2
+soupsieve==4.0
 Sphinx==8.2.3
 sphinx-design==0.7.0
 sphinx_copybutton==0.5.2
@@ -61,11 +61,11 @@ sphinx_rtd_theme==3.1.0
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
-sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-jsmath==2.0.0
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
 testpath==0.6.0
-tornado==6.5.9
+tornado==6.6
 traitlets==5.15.0
 typing-extensions==4.15.0
 urllib3==2.8.0

@@ -102,7 +102,7 @@ outputs:
         # outside certain versions. Renovate is used to lockstep with
         # requirements-test.txt
         # renovate: datasource=conda depName=conda-forge/scikit-learn
-        - "scikit-learn <=1.9.0"
+        - "scikit-learn <=1.9.1"
         - pyyaml
         - mpi * impi  # [not win]
         - mpi4py  # [not win]
@@ -114,7 +114,7 @@ outputs:
         - xgboost
         - lightgbm
         - shap
-        - catboost
+        - catboost  # [py<315]
         - treelite
         - array-api-compat
         - array-api-strict

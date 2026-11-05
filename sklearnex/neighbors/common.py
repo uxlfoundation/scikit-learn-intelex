@@ -20,11 +20,12 @@ from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import clone
+from sklearn.base import clone, is_classifier, is_regressor
 from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
+from sklearn.utils import get_tags
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_array, check_is_fitted
 
@@ -36,6 +37,7 @@ if sklearn_check_version("1.9"):
 
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes._dlpack import dlpack_to_numpy
+from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features, _num_samples
 
@@ -533,9 +535,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._fit_validation(data[0], data[1])
 
         class_name = self.__class__.__name__
-        is_classifier = "Classifier" in class_name
-        is_regressor = "Regressor" in class_name
-        is_unsupervised = not (is_classifier or is_regressor)
+        is_classifier_ = is_classifier(self)
+        is_regressor_ = is_regressor(self)
+        is_unsupervised_ = not (is_classifier_ or is_regressor_)
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
         )
@@ -587,14 +589,26 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         ):
             return patching_status
 
+        # Only 'p' is forwarded to oneDAL. Any other metric parameter (for example
+        # the feature weights 'w' of the minkowski metric) would be silently ignored
+        # and produce wrong results, so these cases must be handled by sklearn.
+        # The user-provided 'metric_params' is inspected rather than
+        # 'effective_metric_params_', because the latter is rebuilt without them.
+        unsupported_metric_params = (self.metric_params or {}).keys() - {"p"}
+        if not patching_status.and_condition(
+            not unsupported_metric_params,
+            f"Metric parameters {unsupported_metric_params} are not supported.",
+        ):
+            return patching_status
+
         if not patching_status.and_condition(
             not is_sparse(data[0]), "Sparse input is not supported."
         ):
             return patching_status
 
-        if not is_unsupervised:
+        if not is_unsupervised_:
             is_valid_weights = self.weights in ["uniform", "distance"]
-            if is_classifier:
+            if is_classifier_:
                 class_count = 1
             is_single_output = False
             y = None
@@ -604,7 +618,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 y_input = data[1]
                 xp, is_array_api = get_namespace(y_input)
                 y = xp.asarray(y_input)
-                if is_classifier:
+                if is_classifier_:
                     class_count = (
                         xp.unique_values(y).shape[0]
                         if is_array_api
@@ -649,7 +663,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             f"{result_method} with {self.effective_metric_} metric is not supported.",
         ):
             return patching_status
-        if not is_unsupervised:
+        if not is_unsupervised_:
             if not patching_status.and_conditions(
                 [
                     (is_single_output, "Only single output is supported."),
@@ -661,7 +675,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             ):
                 return patching_status
         if method_name == "fit":
-            if is_classifier:
+            if is_classifier_:
                 patching_status.and_condition(
                     class_count >= 2, "One-class case is not supported."
                 )
@@ -736,6 +750,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     kneighbors_graph.__doc__ = KNeighborsMixin.kneighbors_graph.__doc__
 
+    # TODO: update this if scikit-learn introduces support for array API
     def __sklearn_array_api_convert__(self, converter):
         if not hasattr(self, "_onedal_estimator") or inspect.isclass(
             self._onedal_estimator
@@ -752,12 +767,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if k not in ["_onedal_estimator", "_fit_X", "_y", "_shape"]
         }
         out._fit_X = converter(self._fit_X)
+        has_y = False
         if hasattr(self, "_y") and self._y is not None:
             out._y = converter(self._y)
+            has_y = True
         if hasattr(self, "_shape") and self._shape is not None:
             if not isinstance(self._shape, (tuple, list)):
                 out._shape = converter(self._shape)
             else:
                 out._shape = self._shape
-        out._fit_onedal_estimator()
+        data = (out._fit_X,) if not has_y else (out._fit_X, out._y)
+        with QM.manage_global_queue(None, *data) as queue:
+            out._fit_onedal_estimator(queue=queue)
         return out
