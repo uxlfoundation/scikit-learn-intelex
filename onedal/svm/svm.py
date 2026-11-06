@@ -111,7 +111,13 @@ class BaseSVM(ABC):
 
         if self._sparse:
             self.dual_coef_ = _csr_array(from_table(result.coeffs).T)
-            self.support_vectors_ = _csr_array(from_table(result.support_vectors))
+            if result.support_vectors.shape[0]:
+                self.support_vectors_ = _csr_array(from_table(result.support_vectors))
+            else:
+                # An SVR can end up with no support vectors. oneDAL then gives
+                # back an empty table that does not convert to a CSR matrix of
+                # the right width, so build the empty matrix directly.
+                self.support_vectors_ = _csr_array((0, X.shape[1]), dtype=X.dtype)
         else:
             self.dual_coef_ = from_table(result.coeffs, like=X).T
             self.support_vectors_ = from_table(result.support_vectors, like=X)
@@ -145,8 +151,9 @@ class BaseSVM(ABC):
         self.class_count_ = dual_coef_.shape[0] + 1
 
         if support_vectors_.shape[0] == 0:
-            # oneDAL tables cannot be empty. Only an SVR can end up without
-            # support vectors, and SVR.predict handles it without a model.
+            # oneDAL cannot build a model from empty support vectors, dense or
+            # sparse. Only an SVR can end up without support vectors, and
+            # SVR.predict handles it without a model.
             self._onedal_model = None
             return
 

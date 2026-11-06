@@ -18,6 +18,7 @@ import pickle
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
 from sklearn.metrics import r2_score
@@ -109,14 +110,18 @@ def test_predict(queue):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 @pytest.mark.parametrize("sample_weight", [None, [0, 1, 1, 1]])
+@pytest.mark.parametrize("sparse", [False, True])
 def test_predict_empty_support_vectors(
     queue: "SyclQueue | None",
     dtype: type[np.floating],
     kernel: str,
     sample_weight: "list[int] | None",
+    sparse: bool,
 ) -> None:
     """Predict the intercept of a fitted SVR without support vectors."""
     X = np.array([[-2, -1], [-1, -2], [1, 2], [2, 1]], dtype=dtype)
+    if sparse:
+        X = sp.csr_matrix(X)
     y = np.array([2, 3, 4, 5], dtype=dtype)
     if sample_weight is not None:
         sample_weight = np.asarray(sample_weight, dtype=dtype)
@@ -124,8 +129,9 @@ def test_predict_empty_support_vectors(
     reference = SklearnSVR(kernel=kernel, gamma=0.5, epsilon=2).fit(
         X, y, sample_weight=sample_weight
     )
-    assert reg.support_vectors_.size == 0
-    assert reference.support_vectors_.size == 0
+    assert reg.support_vectors_.shape == (0, X.shape[1])
+    assert reference.support_vectors_.shape == (0, X.shape[1])
+    assert sp.issparse(reg.support_vectors_) == sparse
     assert_allclose(reg.intercept_, reference.intercept_)
 
     # A model built from scikit-learn's fitted attributes takes the same path.
