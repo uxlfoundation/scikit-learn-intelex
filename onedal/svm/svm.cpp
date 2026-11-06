@@ -161,7 +161,6 @@ struct regression_infer_ops {
     template <typename Float, typename Method, typename Kernel>
     auto operator()(const py::dict& params) {
         using namespace dal::svm;
-        auto desc = params2desc{}.template operator()<Float, Method, task::regression, Kernel>(params);
         const auto support_vectors = model.get_support_vectors();
         const auto biases = model.get_biases();
         if (data.has_data() && model.get_support_vector_count() == 0 &&
@@ -173,8 +172,8 @@ struct regression_infer_ops {
 #ifdef ONEDAL_DATA_PARALLEL
             if constexpr (std::is_same_v<Policy, dal::detail::data_parallel_policy>) {
                 bias = dal::row_accessor<const Float>{ biases }.pull(policy.get_queue(),
-                                                                    { 0, 1 },
-                                                                    sycl::usm::alloc::host);
+                                                                     { 0, 1 },
+                                                                     sycl::usm::alloc::host);
             }
             else
 #endif
@@ -186,9 +185,8 @@ struct regression_infer_ops {
                 dal::array<Float> responses;
 #ifdef ONEDAL_DATA_PARALLEL
                 if constexpr (std::is_same_v<Policy, dal::detail::data_parallel_policy>) {
-                    responses = dal::array<Float>::full(policy.get_queue(),
-                                                       data.get_row_count(),
-                                                       bias[0]);
+                    responses =
+                        dal::array<Float>::full(policy.get_queue(), data.get_row_count(), bias[0]);
                 }
                 else
 #endif
@@ -199,6 +197,8 @@ struct regression_infer_ops {
                     dal::homogen_table::wrap(responses, data.get_row_count(), 1));
             }
         }
+        auto desc =
+            params2desc{}.template operator()<Float, Method, task::regression, Kernel>(params);
         return dal::infer(policy, desc, infer_input<task::regression>{ model, data });
     }
 };

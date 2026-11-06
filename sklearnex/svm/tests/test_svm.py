@@ -218,7 +218,9 @@ def test_svr_empty_support_vectors_grid_search(queue: SyclQueue | None) -> None:
 
         assert_allclose(searches[0].predict(X), searches[1].predict(X))
         for score in ("split0_test_score", "split1_test_score", "mean_test_score"):
-            assert_allclose(searches[0].cv_results_[score], searches[1].cv_results_[score])
+            assert_allclose(
+                searches[0].cv_results_[score], searches[1].cv_results_[score]
+            )
         with pytest.raises(ValueError, match="features"):
             searches[0].predict(X[:, :1])
         for value in (np.nan, np.inf):
