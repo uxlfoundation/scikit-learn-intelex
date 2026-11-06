@@ -35,8 +35,8 @@ reviews:
     - "!**/*.csv"
 
   auto_review:
-    # Review once when the PR opens or leaves draft; later pushes only on `@coderabbitai review`
-    auto_incremental_review: false
+    # Re-review on each push
+    auto_incremental_review: true
     drafts: false
     ignore_usernames:
       - "renovate[bot]"
@@ -71,6 +71,8 @@ reviews:
       enabled: false
 
 chat:
+  # Reply in review threads without an explicit @coderabbitai mention
+  auto_reply: true
   art: false
 
 knowledge_base:
