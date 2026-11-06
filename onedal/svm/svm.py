@@ -120,7 +120,12 @@ class BaseSVM(ABC):
                 self.support_vectors_ = _csr_array((0, X.shape[1]), dtype=X.dtype)
         else:
             self.dual_coef_ = from_table(result.coeffs, like=X).T
-            self.support_vectors_ = from_table(result.support_vectors, like=X)
+            if result.support_vectors.shape[0]:
+                self.support_vectors_ = from_table(result.support_vectors, like=X)
+            else:
+                # The empty table also loses its width when converted, so take
+                # an empty (0, n_features) slice of X with its type and device.
+                self.support_vectors_ = X[:0]
 
         self.intercept_ = from_table(result.biases, like=X)
 
