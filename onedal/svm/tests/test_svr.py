@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
+import pickle
+
 import numpy as np
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
 from sklearn.metrics import r2_score
@@ -101,6 +104,50 @@ def test_predict(queue):
     rbfs = rbf_kernel(X, reg.support_vectors_, gamma=reg.gamma)
     dec = np.dot(rbfs, reg.dual_coef_.T) + reg.intercept_
     assert_array_almost_equal(dec.ravel(), reg.predict(X, queue=queue).ravel())
+
+
+@pytest.mark.parametrize("queue", get_queues("cpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
+@pytest.mark.parametrize("sample_weight", [None, [0, 1, 1, 1]])
+@pytest.mark.parametrize("sparse", [False, True])
+def test_predict_empty_support_vectors(
+    queue: "SyclQueue | None",
+    dtype: type[np.floating],
+    kernel: str,
+    sample_weight: "list[int] | None",
+    sparse: bool,
+) -> None:
+    """Predict the intercept of a fitted SVR without support vectors."""
+    X = np.array([[-2, -1], [-1, -2], [1, 2], [2, 1]], dtype=dtype)
+    if sparse:
+        X = sp.csr_matrix(X)
+    y = np.array([2, 3, 4, 5], dtype=dtype)
+    if sample_weight is not None:
+        sample_weight = np.asarray(sample_weight, dtype=dtype)
+    reg = SVR(kernel=kernel, gamma=0.5, epsilon=2).fit(X, y, sample_weight, queue=queue)
+    reference = SklearnSVR(kernel=kernel, gamma=0.5, epsilon=2).fit(
+        X, y, sample_weight=sample_weight
+    )
+    assert reg.support_vectors_.shape == (0, X.shape[1])
+    assert reference.support_vectors_.shape == (0, X.shape[1])
+    assert sp.issparse(reg.support_vectors_) == sparse
+    assert_allclose(reg.intercept_, reference.intercept_)
+
+    # A model built from scikit-learn's fitted attributes takes the same path.
+    from_reference = SVR(kernel=kernel, gamma=0.5, epsilon=2)
+    from_reference._create_model(
+        reference.support_vectors_, reference.dual_coef_, reference.intercept_
+    )
+
+    # nosec B301: the input is pickle.dumps of the model fitted above.
+    for model in (reg, pickle.loads(pickle.dumps(reg)), from_reference):  # nosec
+        for X_test in (X, X[:2]):
+            prediction = model.predict(X_test, queue=queue)
+            assert prediction.shape == (X_test.shape[0],)
+            assert prediction.dtype == dtype
+            assert_allclose(prediction, np.full(X_test.shape[0], reg.intercept_[0]))
+            assert_allclose(prediction, reference.predict(X_test))
 
 
 def _test_diabetes_compare_with_sklearn(queue, kernel):
