@@ -26,7 +26,12 @@ from ...neighbors import KNeighborsRegressor as base_KNeighborsRegressor
 from ...neighbors import NearestNeighbors as base_NearestNeighbors
 
 
-class KNeighborsClassifier(base_KNeighborsClassifier):
+class BaseSPMDKNN:
+    def __sklearn_array_api_convert__(self, converter):
+        raise ValueError("Cannot move SPMD estimators in the KNN family")
+
+
+class KNeighborsClassifier(BaseSPMDKNN, base_KNeighborsClassifier):
     _onedal_estimator = onedal_KNeighborsClassifier
 
     def _onedal_predict(self, X, queue=None):
@@ -53,7 +58,7 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
         )
 
 
-class KNeighborsRegressor(base_KNeighborsRegressor):
+class KNeighborsRegressor(BaseSPMDKNN, base_KNeighborsRegressor):
     _onedal_estimator = onedal_KNeighborsRegressor
 
     def _onedal_fit(self, X, y, queue=None):
@@ -69,5 +74,5 @@ class KNeighborsRegressor(base_KNeighborsRegressor):
         return self._onedal_estimator.predict(X, queue=queue)
 
 
-class NearestNeighbors(base_NearestNeighbors):
+class NearestNeighbors(BaseSPMDKNN, base_NearestNeighbors):
     _onedal_estimator = onedal_NearestNeighbors
