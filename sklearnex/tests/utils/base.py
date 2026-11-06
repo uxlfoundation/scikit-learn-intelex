@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
 import platform
 import subprocess
 from functools import partial
@@ -62,6 +63,11 @@ from sklearnex.svm import SVC, NuSVC
 # estimators in scope. It is read once at import so that the estimator dictionaries
 # below and the design rule checks cannot disagree about it mid-session.
 PREVIEW_ENABLED: bool = _is_preview_enabled()
+
+# This is meant to be enabled whenever centralized tests are run.
+# They all import from this file so this ensures it gets enabled
+# before patching happens when running tests by name.
+os.environ["SKLEARNEX_ENABLE_DUMMY"] = "1"
 
 
 def is_preview_exempt(obj) -> bool:

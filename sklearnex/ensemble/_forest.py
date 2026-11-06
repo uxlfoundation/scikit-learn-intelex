@@ -732,6 +732,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     "`max_sample=None`."
                 )
 
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -979,6 +981,8 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                     "`max_sample=None`."
                 )
 
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",

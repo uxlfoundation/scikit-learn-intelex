@@ -27,6 +27,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 # Note: 'check_feature_names' is reimported from this file elsewhere
 from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
+from onedal import _default_backend
 from onedal.utils.validation import check_all_finite, is_contiguous
 
 if sklearn_check_version("1.9"):
@@ -43,6 +44,16 @@ def _onedal_supported_format(X, xp):
     # data from sklearnex. Unlike other oneDAL offloading, copying the data is
     # specifically avoided as it has a non-negligible impact on speed. In that
     # case use native sklearn ``_assert_all_finite``
+    if hasattr(X, "__dlpack_device__"):
+        try:
+            device = X.__dlpack_device__()[0]
+            if device not in [
+                _default_backend.kDLCPU,
+                _default_backend.kDLOneAPI,
+            ]:
+                return False
+        except BufferError:
+            pass
     return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 
