@@ -17,6 +17,7 @@
 from abc import ABC, abstractmethod
 from math import sqrt
 
+import numpy as np
 from scipy import sparse as sp
 
 from daal4py.sklearn._utils import is_sparse
@@ -143,6 +144,12 @@ class BaseSVM(ABC):
         self._sparse = is_sparse(support_vectors_)
         self.class_count_ = dual_coef_.shape[0] + 1
 
+        if support_vectors_.shape[0] == 0:
+            # oneDAL tables cannot be empty. Only an SVR can end up without
+            # support vectors, and SVR.predict handles it without a model.
+            self._onedal_model = None
+            return
+
         m.support_vectors = to_table(support_vectors_)
         m.biases = to_table(intercept_)
         if sp.issparse(dual_coef_):
@@ -225,6 +232,37 @@ class SVR(BaseSVM):
         # The nu parameter is not set
         params.pop("nu")
         return params
+
+    def fit(self, X, y, sample_weight=None, queue=None):
+        super().fit(X, y, sample_weight, queue=queue)
+        if self.support_vectors_.shape[0] == 0:
+            # When every target fits inside the epsilon tube, all dual
+            # coefficients are zero and oneDAL returns an empty model without
+            # the bias its solver computed. With no free support vectors, that
+            # bias (as in libsvm) is the midpoint of the targets that have a
+            # positive weight, so it is recovered here.
+            y_host = from_table(to_table(y, queue=queue)).reshape(-1)
+            if sample_weight is not None:
+                weights = from_table(to_table(sample_weight, queue=queue)).reshape(-1)
+                y_host = y_host[weights > 0]
+            bias = 0.5 * (y_host.max() + y_host.min())
+            self.intercept_ = from_table(
+                to_table(np.full((1, 1), bias, dtype=y_host.dtype)), like=X
+            )[:, 0]
+            self._onedal_model = None
+        return self
+
+    def predict(self, X, queue=None):
+        if self.support_vectors_.shape[0] != 0:
+            return super().predict(X, queue=queue)
+        # oneDAL inference rejects models without support vectors, but such a
+        # model is a valid constant regressor that predicts its intercept.
+        _check_is_fitted(self)
+        X_table = to_table(X, queue=queue)
+        responses = np.full(
+            (X_table.shape[0], 1), float(self.intercept_[0]), dtype=X_table.dtype
+        )
+        return from_table(to_table(responses, queue=queue), like=X)[:, 0]
 
 
 class SVC(BaseSVM):

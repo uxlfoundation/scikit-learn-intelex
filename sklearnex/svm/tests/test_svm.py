@@ -31,7 +31,6 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVR as SklearnSVR
 
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
-from onedal.utils._third_party import SyclQueue
 from sklearnex import config_context
 
 try:
@@ -195,7 +194,7 @@ def test_diabetes(kernel):
 
 
 @pytest.mark.parametrize("queue", get_queues("cpu"))
-def test_svr_empty_support_vectors_grid_search(queue: SyclQueue | None) -> None:
+def test_svr_empty_support_vectors_grid_search(queue: "SyclQueue | None") -> None:
     """Score and refit an intercept-only SVR with transformed targets."""
     from sklearnex.svm import SVR
 
@@ -221,12 +220,17 @@ def test_svr_empty_support_vectors_grid_search(queue: SyclQueue | None) -> None:
             assert_allclose(
                 searches[0].cv_results_[score], searches[1].cv_results_[score]
             )
-        with pytest.raises(ValueError, match="features"):
+        with pytest.raises(
+            ValueError, match="X has 1 features, but SVR is expecting 2 features"
+        ):
             searches[0].predict(X[:, :1])
-        for value in (np.nan, np.inf):
+        for value, message in (
+            (np.nan, "Input X contains NaN"),
+            (np.inf, "Input X contains infinity"),
+        ):
             X_invalid = X.astype(float)
             X_invalid[0, 0] = value
-            with pytest.raises(ValueError, match="NaN|infinity|finite"):
+            with pytest.raises(ValueError, match=message):
                 searches[0].predict(X_invalid)
 
 
