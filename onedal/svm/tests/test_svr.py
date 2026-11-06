@@ -29,7 +29,6 @@ from onedal.tests.utils._device_selection import (
     get_queues,
     pass_if_not_implemented_for_gpu,
 )
-from onedal.utils._third_party import SyclQueue
 
 synth_params = {"n_samples": 500, "n_features": 100, "random_state": 42}
 
@@ -110,7 +109,7 @@ def test_predict(queue):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_predict_empty_support_vectors(
-    queue: SyclQueue | None, dtype: type[np.floating], kernel: str
+    queue: "SyclQueue | None", dtype: type[np.floating], kernel: str
 ) -> None:
     """Predict the intercept of a fitted SVR without support vectors."""
     X = np.array([[-2, -1], [-1, -2], [1, 2], [2, 1]], dtype=dtype)
