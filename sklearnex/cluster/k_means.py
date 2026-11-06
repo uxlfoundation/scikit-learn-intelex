@@ -36,6 +36,7 @@ from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster import KMeans as onedal_KMeans
 from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
+from .. import config_context
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -471,23 +472,24 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
             )
 
     def __sklearn_array_api_convert__(self, converter):
-        out = clone(self)
-        out.__dict__ = {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in ["_onedal_estimator", "cluster_centers_", "labels_"]
-        }
-        out.cluster_centers_ = converter(self.cluster_centers_)
-        out.labels_ = converter(self.labels_)
-        if hasattr(out.init, "__dlpack__") or hasattr(out.init, "shape"):
-            # This only happens when there are sklearn fallbacks
-            out.init = converter(out.init)
-        out._initialize_onedal_estimator()
-        out._onedal_estimator._create_model(
-            out.cluster_centers_,
-            out.labels_,
-        )
-        return out
+        with config_context(target_offload=None):
+            out = clone(self)
+            out.__dict__ = {
+                k: v
+                for k, v in self.__dict__.items()
+                if k not in ["_onedal_estimator", "cluster_centers_", "labels_"]
+            }
+            out.cluster_centers_ = converter(self.cluster_centers_)
+            out.labels_ = converter(self.labels_)
+            if hasattr(out.init, "__dlpack__") or hasattr(out.init, "shape"):
+                # This only happens when there are sklearn fallbacks
+                out.init = converter(out.init)
+            out._initialize_onedal_estimator()
+            out._onedal_estimator._create_model(
+                out.cluster_centers_,
+                out.labels_,
+            )
+            return out
 
     fit.__doc__ = _sklearn_KMeans.fit.__doc__
     predict.__doc__ = _sklearn_KMeans.predict.__doc__
