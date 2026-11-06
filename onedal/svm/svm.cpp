@@ -15,6 +15,9 @@
 *******************************************************************************/
 
 #include "oneapi/dal/algo/svm.hpp"
+#include "oneapi/dal/table/row_accessor.hpp"
+
+#include <cmath>
 
 #include "onedal/common.hpp"
 #include "onedal/primitives/kernel_functions.hpp"
@@ -149,6 +152,57 @@ void init_train_ops(py::module_& m) {
           });
 }
 
+template <typename Policy>
+struct regression_infer_ops {
+    const Policy& policy;
+    const dal::svm::model<dal::svm::task::regression>& model;
+    const table& data;
+
+    template <typename Float, typename Method, typename Kernel>
+    auto operator()(const py::dict& params) {
+        using namespace dal::svm;
+        auto desc = params2desc{}.template operator()<Float, Method, task::regression, Kernel>(params);
+        const auto support_vectors = model.get_support_vectors();
+        const auto biases = model.get_biases();
+        if (data.has_data() && model.get_support_vector_count() == 0 &&
+            model.get_coeffs().get_row_count() == 0 && biases.get_row_count() == 1 &&
+            biases.get_column_count() == 1 &&
+            (support_vectors.get_column_count() == 0 ||
+             support_vectors.get_column_count() == data.get_column_count())) {
+            dal::array<Float> bias;
+#ifdef ONEDAL_DATA_PARALLEL
+            if constexpr (std::is_same_v<Policy, dal::detail::data_parallel_policy>) {
+                bias = dal::row_accessor<const Float>{ biases }.pull(policy.get_queue(),
+                                                                    { 0, 1 },
+                                                                    sycl::usm::alloc::host);
+            }
+            else
+#endif
+            {
+                bias = dal::row_accessor<const Float>{ biases }.pull({ 0, 1 });
+            }
+            if (std::isfinite(bias[0])) {
+                // oneDAL rejects valid intercept-only regression models.
+                dal::array<Float> responses;
+#ifdef ONEDAL_DATA_PARALLEL
+                if constexpr (std::is_same_v<Policy, dal::detail::data_parallel_policy>) {
+                    responses = dal::array<Float>::full(policy.get_queue(),
+                                                       data.get_row_count(),
+                                                       bias[0]);
+                }
+                else
+#endif
+                {
+                    responses = dal::array<Float>::full(data.get_row_count(), bias[0]);
+                }
+                return infer_result<task::regression>{}.set_responses(
+                    dal::homogen_table::wrap(responses, data.get_row_count(), 1));
+            }
+        }
+        return dal::infer(policy, desc, infer_input<task::regression>{ model, data });
+    }
+};
+
 template <typename Policy, typename Task>
 void init_infer_ops(py::module_& m) {
     m.def("infer",
@@ -159,8 +213,14 @@ void init_infer_ops(py::module_& m) {
               using namespace dal::svm;
               using input_t = infer_input<Task>;
 
-              infer_ops ops(policy, input_t{ model, data }, params2desc{});
-              return fptype2t{ method2t{ Task{}, kernel2t{ ops } } }(params);
+              if constexpr (std::is_same_v<Task, task::regression>) {
+                  regression_infer_ops<Policy> ops{ policy, model, data };
+                  return fptype2t{ method2t{ Task{}, kernel2t{ ops } } }(params);
+              }
+              else {
+                  infer_ops ops(policy, input_t{ model, data }, params2desc{});
+                  return fptype2t{ method2t{ Task{}, kernel2t{ ops } } }(params);
+              }
           });
 }
 

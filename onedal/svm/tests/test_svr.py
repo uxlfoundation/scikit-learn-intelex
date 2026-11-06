@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import pickle
+
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
@@ -27,6 +29,7 @@ from onedal.tests.utils._device_selection import (
     get_queues,
     pass_if_not_implemented_for_gpu,
 )
+from onedal.utils._third_party import SyclQueue
 
 synth_params = {"n_samples": 500, "n_features": 100, "random_state": 42}
 
@@ -101,6 +104,29 @@ def test_predict(queue):
     rbfs = rbf_kernel(X, reg.support_vectors_, gamma=reg.gamma)
     dec = np.dot(rbfs, reg.dual_coef_.T) + reg.intercept_
     assert_array_almost_equal(dec.ravel(), reg.predict(X, queue=queue).ravel())
+
+
+@pytest.mark.parametrize("queue", get_queues("cpu"))
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
+def test_predict_empty_support_vectors(
+    queue: SyclQueue | None, dtype: type[np.floating], kernel: str
+) -> None:
+    """Predict the intercept of a fitted SVR without support vectors."""
+    X = np.array([[-2, -1], [-1, -2], [1, 2], [2, 1]], dtype=dtype)
+    y = np.array([2, 3, 4, 5], dtype=dtype)
+    reg = SVR(kernel=kernel, gamma=0.5, epsilon=2).fit(X, y, queue=queue)
+    reference = SklearnSVR(kernel=kernel, gamma=0.5, epsilon=2).fit(X, y)
+    assert reg.support_vectors_.size == 0
+    assert reference.support_vectors_.size == 0
+
+    for model in (reg, pickle.loads(pickle.dumps(reg))):
+        for X_test in (X, X[:2]):
+            prediction = model.predict(X_test, queue=queue)
+            assert prediction.shape == (X_test.shape[0],)
+            assert prediction.dtype == dtype
+            assert_allclose(prediction, np.full(X_test.shape[0], reg.intercept_[0]))
+            assert_allclose(prediction, reference.predict(X_test))
 
 
 def _test_diabetes_compare_with_sklearn(queue, kernel):

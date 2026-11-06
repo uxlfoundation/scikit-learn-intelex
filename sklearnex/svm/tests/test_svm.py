@@ -24,9 +24,14 @@ import scipy
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_almost_equal
 from sklearn.base import is_classifier
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.datasets import load_diabetes, load_iris, make_classification
+from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVR as SklearnSVR
 
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
+from onedal.utils._third_party import SyclQueue
 from sklearnex import config_context
 
 try:
@@ -187,6 +192,40 @@ def test_diabetes(kernel):
     clf0 = SVR(kernel=kernel, C=0.1)
     clf1 = SVR(kernel=kernel, C=0.1)
     check_svm_model_equal(None, clf0, clf1, *dataset)
+
+
+@pytest.mark.parametrize("queue", get_queues("cpu"))
+def test_svr_empty_support_vectors_grid_search(queue: SyclQueue | None) -> None:
+    """Score and refit an intercept-only SVR with transformed targets."""
+    from sklearnex.svm import SVR
+
+    X = np.array([[-3, -1], [-2, -2], [-1, -3], [1, 3], [2, 2], [3, 1]])
+    y = np.array([2, 3, 4, 5, 6, 7])
+    searches = []
+    with config_context(target_offload=queue):
+        for estimator in (SVR, SklearnSVR):
+            search = GridSearchCV(
+                TransformedTargetRegressor(
+                    regressor=estimator(gamma=0.5), transformer=MinMaxScaler()
+                ),
+                {"regressor__epsilon": [0.5]},
+                cv=KFold(n_splits=2),
+                error_score="raise",
+            ).fit(X, y)
+            assert search.best_estimator_.regressor_.support_vectors_.size == 0
+            assert np.isfinite(search.cv_results_["mean_test_score"]).all()
+            searches.append(search)
+
+        assert_allclose(searches[0].predict(X), searches[1].predict(X))
+        for score in ("split0_test_score", "split1_test_score", "mean_test_score"):
+            assert_allclose(searches[0].cv_results_[score], searches[1].cv_results_[score])
+        with pytest.raises(ValueError, match="features"):
+            searches[0].predict(X[:, :1])
+        for value in (np.nan, np.inf):
+            X_invalid = X.astype(float)
+            X_invalid[0, 0] = value
+            with pytest.raises(ValueError, match="NaN|infinity|finite"):
+                searches[0].predict(X_invalid)
 
 
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
