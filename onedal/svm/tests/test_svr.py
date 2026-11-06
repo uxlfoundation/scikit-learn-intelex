@@ -119,7 +119,8 @@ def test_predict_empty_support_vectors(
     assert reg.support_vectors_.size == 0
     assert reference.support_vectors_.size == 0
 
-    for model in (reg, pickle.loads(pickle.dumps(reg))):
+    # nosec B301: the input is pickle.dumps of the model fitted above.
+    for model in (reg, pickle.loads(pickle.dumps(reg))):  # nosec
         for X_test in (X, X[:2]):
             prediction = model.predict(X_test, queue=queue)
             assert prediction.shape == (X_test.shape[0],)
