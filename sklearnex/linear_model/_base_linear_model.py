@@ -18,8 +18,6 @@ from abc import ABC, abstractmethod
 from sklearn.base import clone
 from sklearn.utils._array_api import get_namespace
 
-from .. import config_context
-
 
 # Adds common methods to create oneDAL objects after a fallback
 class _BaseLinearModel(ABC):
@@ -43,14 +41,13 @@ class _BaseLinearModel(ABC):
         self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
 
     def __sklearn_array_api_convert__(self, converter):
-        with config_context(target_offload=None):
-            out = clone(self)
-            out.__dict__ = {
-                k: v
-                for k, v in self.__dict__.items()
-                if k not in ["_onedal_estimator", "_coef_", "_intercept_"]
-            }
-            out._coef_ = converter(self._coef_)
-            out._intercept_ = converter(self._intercept_)
-            out._initialize_onedal_estimator_from_coefs()
-            return out
+        out = clone(self)
+        out.__dict__ = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in ["_onedal_estimator", "_coef_", "_intercept_"]
+        }
+        out._coef_ = converter(self._coef_)
+        out._intercept_ = converter(self._intercept_)
+        out._initialize_onedal_estimator_from_coefs()
+        return out

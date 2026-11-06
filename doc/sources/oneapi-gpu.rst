@@ -184,9 +184,10 @@ Example:
 
 The result from a model that was fitted under ``target_offload`` can be moved to
 a different device under :doc:`array API <array_api>` using the function
-``sklearn.utils._array_api.move_estimator_to`` when supported (``target_offload``
-option is ignored when moving the estimator). The resulting moved estimator
-should be used without ``target_offload`` - example:
+``sklearn.utils._array_api.move_estimator_to`` when supported, but this function
+must be called outside of the configuration context or with the ``target_offload``
+option disabled. The resulting moved estimator will also need to be used without
+``target_offload`` - example:
 
 .. code-block:: python
 
@@ -201,14 +202,15 @@ should be used without ``target_offload`` - example:
     X, y = make_regression()
     model_gpu = LinearRegression()
 
-    # If fitted under `target_offload="gpu"`, estimator
-    # should always be used under the same option
+    # If fitted under `target_offload="gpu"`, should
+    # always be used under the same option
     with config_context(target_offload="gpu"):
         model_gpu.fit(X, y)
         pred = model_gpu.predict(X)
     
-    # If the estimator is moved to a different device, the
-    # result should be used without any 'target_offload'
+    # If the estimator is to be moved, the move should
+    # happen without `target_offload`, and the result
+    # should also be used without it
     model_cpu = move_estimator_to(model_gpu, xp=np, device="cpu")
     pred_cpu = model_cpu.predict(X)
 
