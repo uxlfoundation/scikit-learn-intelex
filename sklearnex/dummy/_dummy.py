@@ -29,6 +29,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
+from .. import config_context
 from .._device_offload import dispatch, support_input_format
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -662,18 +663,19 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # oneDAL case, hence it's the one that should be moved. Since `constant_` is
     # a property, it will not be in the `__dict__` attribute.
     def __sklearn_array_api_convert__(self, converter):
-        out = clone(self)
-        out.__dict__ = {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in ["_onedal_estimator", "_constant_"]
-        }
-        out._constant_ = converter(self._constant_)
-        # Not all resulting objects will be supported by oneDAL,
-        # but when they do, they should re-create the estimator
-        if out._constant_.shape[1] == 1:
-            out._initialize_onedal_estimator_from_constant()
-        return out
+        with config_context(target_offload=None):
+            out = clone(self)
+            out.__dict__ = {
+                k: v
+                for k, v in self.__dict__.items()
+                if k not in ["_onedal_estimator", "_constant_"]
+            }
+            out._constant_ = converter(self._constant_)
+            # Not all resulting objects will be supported by oneDAL,
+            # but when they do, they should re-create the estimator
+            if out._constant_.shape[1] == 1:
+                out._initialize_onedal_estimator_from_constant()
+            return out
 
     # score is a tier 3 method in this case. Wrap with ``support_input_format`` for array
     # api support.
