@@ -54,6 +54,9 @@ rem meta.yaml marks mpi, mpi4py and pytest-mpi as "# [not win]".
 echo %PYTHON% | findstr /i /c:"mpiexec" /c:"mpirun" >nul
 if errorlevel 1 set NO_DIST=1
 
+rem These are meant only for jobs in the main repository, not conda-forge
+set RUN_BUILD_TESTS=1
+
 echo "NO_DIST=%NO_DIST%"
 setlocal enabledelayedexpansion
 pytest %PYTEST_CONFIG% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
