@@ -100,6 +100,7 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearnex.basic_statistics.BasicStatistics`
 - :obj:`sklearnex.basic_statistics.IncrementalBasicStatistics`
 - :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.cluster.HDBSCAN`
 - :obj:`sklearn.cluster.KMeans`
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
@@ -164,6 +165,9 @@ Calling such methods from a KNN estimator from the |sklearnex| that was fitted t
 API inputs will work, but it will do so by transferring the data to host if not already
 there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
 
+Likewise, :meth:`sklearn.cluster.HDBSCAN.dbscan_clustering` re-cuts the cluster hierarchy on host,
+where it is always kept, but returns the labels in the array class and on the device of ``labels_``.
+
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.
@@ -181,6 +185,7 @@ another.
 
 This function is only supported for the following estimators from the |sklearnex|:
 
+- :obj:`sklearn.cluster.HDBSCAN`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearn.cluster.DBSCAN`
