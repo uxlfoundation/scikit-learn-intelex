@@ -27,6 +27,8 @@ from its cause. Those are what this file pins down.
 
 import importlib.util
 import re
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -196,3 +198,51 @@ def test_windows_library_names_match_cmake():
 def test_unsupported_backend_is_rejected():
     with pytest.raises(ValueError, match="Unsupported oneDAL backend"):
         get_onedal_libraries("host_dpc", MAJOR_VERSION)
+
+
+@pytest.mark.parametrize("in_venv", [True, False])
+def test_cmake_is_pointed_at_the_running_interpreter(monkeypatch, tmp_path, in_venv):
+    # FindPython prefers a system interpreter over the one driving the build,
+    # so every build - not only free-threaded ones - must pass it explicitly,
+    # together with the SOABI that scripts/CMakeLists.txt cross-checks.
+    calls = []
+    monkeypatch.setitem(
+        sys.modules,
+        "pybind11",
+        types.SimpleNamespace(get_cmake_dir=lambda: str(tmp_path)),
+    )
+    monkeypatch.setenv("DALROOT", str(tmp_path))
+    monkeypatch.setattr(
+        build_backend, "_get_onedal_library_dir", lambda *a, **k: str(tmp_path)
+    )
+    monkeypatch.setattr(
+        build_backend.subprocess, "check_call", lambda args, **k: calls.append(args)
+    )
+    prefix = str(tmp_path / "venv")
+    base_prefix = str(tmp_path / "base") if in_venv else prefix
+    monkeypatch.setattr(build_backend.sys, "prefix", prefix)
+    monkeypatch.setattr(build_backend.sys, "base_prefix", base_prefix)
+    build_backend.custom_build_cmake_clib("host", is_lin=True)
+
+    configure = calls[0]
+    assert "-DPython_EXECUTABLE=" + build_backend.sys.executable in configure
+    expected_roots = f"{prefix};{base_prefix}" if in_venv else prefix
+    assert "-DPython_ROOT_DIR=" + expected_roots in configure
+    assert not any(a.startswith("-DPYTHON_INCLUDE_DIR") for a in configure)
+    soabi = build_backend.get_config_var("SOABI")
+    if soabi:
+        assert "-DEXPECTED_PYTHON_SOABI=" + soabi in configure
+
+
+def test_cmake_finds_python_through_findpython():
+    # Without PYBIND11_FINDPYTHON, pybind11 falls back to FindPythonLibsNew and
+    # the deprecated FindPythonInterp/FindPythonLibs modules (CMP0148).
+    cmake_text = (REPO_ROOT / "scripts" / "CMakeLists.txt").read_text()
+    findpython = cmake_text.find("set(PYBIND11_FINDPYTHON ON)")
+    find_python = cmake_text.find(
+        "find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)"
+    )
+    find_pybind11 = cmake_text.find("find_package(pybind11")
+    assert -1 < findpython < find_pybind11
+    assert -1 < find_python < find_pybind11
+    assert "if(SKLEARNEX_FREE_THREADING)" not in cmake_text
