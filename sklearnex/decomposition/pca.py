@@ -21,7 +21,6 @@ import numpy as np
 from sklearn.decomposition import PCA as _sklearn_PCA
 from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils._array_api import get_namespace
-from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -38,7 +37,9 @@ from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import check_same_namespace
+    from sklearn.utils._array_api import check_same_namespace, get_namespace_and_device
+else:
+    from sklearn.utils.extmath import stable_cumsum
 
 
 @enable_array_api
@@ -154,12 +155,25 @@ class PCA(oneDALEstimator, _sklearn_PCA):
             )
         else:
             ratio = self._onedal_estimator.explained_variance_ratio_
-            if not isinstance(ratio, np.ndarray):
-                # this is suboptimal, but the implementation in sklearn is not much
-                # better/ does the same thing.
-                _, (ratio,) = _transfer_to_host(ratio)
-            ratio_cumsum = stable_cumsum(ratio)
-            return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
+            if sklearn_check_version("1.9"):
+                xp, _, device = get_namespace_and_device(ratio)
+                ratio_cumsum = xp.cumulative_sum(ratio)
+                n_components = (
+                    xp.searchsorted(
+                        ratio_cumsum,
+                        xp.asarray(n_components, device=device),
+                        side="right",
+                    )
+                    + 1
+                )
+                return n_components
+            else:
+                if not isinstance(ratio, np.ndarray):
+                    # this is suboptimal, but the implementation in sklearn is not much
+                    # better/ does the same thing.
+                    _, (ratio,) = _transfer_to_host(ratio)
+                ratio_cumsum = stable_cumsum(ratio)
+                return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
     def _compute_noise_variance(self, n_sf_min, xp):
         # generally replicates capability seen in sklearn.PCA._fit_full
