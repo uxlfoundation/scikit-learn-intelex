@@ -437,11 +437,34 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             # TODO add array-api support for CPU
             return self._onedal_cpu_fit(X, y, sample_weight)
         assert sample_weight is None
-        # Mirrors sklearn's fit check, which the GPU path bypasses
-        if sklearn_check_version("1.10") and self.C != "deprecated" and self.alpha != 1.0:
-            raise ValueError(
-                "You must set either 'alpha' or the deprecated 'C', but not both."
-            )
+        # Mirrors sklearn's fit checks, which the GPU path bypasses
+        if sklearn_check_version("1.10"):
+            if self.C != "deprecated":
+                if self.alpha != 1.0:
+                    raise ValueError(
+                        "You must set either 'alpha' or the deprecated 'C', but not both."
+                    )
+                warnings.warn(
+                    "'C' was deprecated in version 1.10 and will be removed in 1.14. "
+                    "Use alpha instead. "
+                    "Note that setting the new parameter alpha=1/C gives the same "
+                    "results as the old C. "
+                    "You can avoid this warning by setting alpha and leaving C to "
+                    "its default.",
+                    FutureWarning,
+                )
+            if self.intercept_scaling != "deprecated":
+                warnings.warn(
+                    "The parameter 'intercept_scaling' was deprecated in version 1.10 "
+                    "and will be removed in 1.12.",
+                    FutureWarning,
+                )
+            if self.dual != "deprecated":
+                warnings.warn(
+                    "The parameter 'dual' was deprecated in version 1.10 and will "
+                    "be removed in 1.12.",
+                    FutureWarning,
+                )
         xp, is_array_api = get_namespace(X)
         xp_y, is_array_api_compliant_y = get_namespace(y)
 
