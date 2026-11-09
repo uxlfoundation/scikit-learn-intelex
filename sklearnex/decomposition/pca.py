@@ -161,7 +161,7 @@ class PCA(oneDALEstimator, _sklearn_PCA):
                 n_components = (
                     xp.searchsorted(
                         ratio_cumsum,
-                        xp.asarray(n_components, device=device),
+                        xp.asarray(self.n_components, device=device),
                         side="right",
                     )
                     + 1
