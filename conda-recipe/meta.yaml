@@ -150,7 +150,8 @@ outputs:
         - mpi * impi  # [not win]
       run:
         - {{ pin_subpackage('scikit-learn-intelex', exact=True) }}
-        - dal-gpu
+        # Unpinned, the solver can pick an older dal-gpu than the one built against.
+        - {{ pin_compatible('dal-gpu', max_pin='x') }}
         # intel-sycl-rt injected automatically via dpcpp compiler run_exports.
     test:
       requires:
