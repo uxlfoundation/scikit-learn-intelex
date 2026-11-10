@@ -193,6 +193,6 @@ def test_linear_move_estimator_to(
     assert_same_namespace(pred_moved, array_move_like)
 
     # Note: previous versions of oneDAL had a bug that made the tests fail
-    if daal_check_version(2026, "P", 300):
+    if daal_check_version((2026, "P", 300)):
         np.testing.assert_allclose(_as_numpy(pred_orig), _as_numpy(pref_ref), atol=1e-6)
         np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pref_ref), atol=1e-6)
