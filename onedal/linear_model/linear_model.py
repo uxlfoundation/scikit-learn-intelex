@@ -83,10 +83,11 @@ class BaseLinearRegression(metaclass=ABCMeta):
                 packed_coefficients = xp.zeros((dim0, coef_.shape[1] + 1))
             packed_coefficients[:, 1:] = coef_
 
-        # packed_coefficients = xp.reshape(packed_coefficients, (1, -1))
         model.packed_coefficients = to_table(packed_coefficients)
-        self.coef_ = coef_
-        self.intercept_ = intercept_
+        self.coef_, self.intercept_ = (
+            packed_coefficients[:, 1:],
+            packed_coefficients[:, 0],
+        )
         self._onedal_model = model
 
     @supports_queue

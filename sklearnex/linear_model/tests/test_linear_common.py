@@ -229,3 +229,23 @@ def test_linear_move_estimator_to(
         attrs_moved = dir(model_moved)
     for attr in attrs_orig:
         assert attr in attrs_moved
+
+    # After the move, the oneDAL object and the sklearnex object should both
+    # share the same memory for the coefficients, which involves creating a
+    # new array after the move to hold the 'packed' form with the intercepts.
+    if isinstance(array_move_like, np.ndarray):
+        ptr_coefs_sklearnex = model_moved.coef_.__array_interface__["data"][0]
+        ptr_coefs_onedal = model_moved._onedal_estimator.coef_.__array_interface__[
+            "data"
+        ][0]
+        assert ptr_coefs_sklearnex == ptr_coefs_onedal
+
+        # When both the coefficients and intercepts are arrays,
+        # they should be allocated in a single memory chunk as
+        # part of a broader oneDAL array
+        if num_targets > 1:
+            ptr_intercept = model_moved.intercept_.__array_interface__["data"][0]
+            assert (
+                ptr_coefs_sklearnex
+                == ptr_intercept + model_moved.intercept_.dtype.itemsize
+            )
