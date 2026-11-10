@@ -35,8 +35,6 @@ reviews:
     - "!**/*.csv"
 
   auto_review:
-    # Re-review on each push
-    auto_incremental_review: true
     drafts: false
     ignore_usernames:
       - "renovate[bot]"
@@ -71,8 +69,6 @@ reviews:
       enabled: false
 
 chat:
-  # Reply in review threads without an explicit @coderabbitai mention
-  auto_reply: true
   art: false
 
 knowledge_base:
