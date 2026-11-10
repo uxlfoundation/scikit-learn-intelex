@@ -647,6 +647,11 @@ SPMD Support
 Classification
 **************
 
+.. important::
+
+    When using SPMD classifiers, each rank must have instances of every class in the supplied
+    data, as they will encode the 'y' variable independently with no coordination.
+
 .. list-table::
    :widths: 10 40 10 10
    :header-rows: 1
