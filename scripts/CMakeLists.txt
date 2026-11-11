@@ -276,7 +276,7 @@ set(ONEDAL_SYSTEM_INCLUDE_DIRECTORIES
 
 # TODO: remove this workaround when oneDAL CMake config is fixed
 if(WIN32)
-list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
+list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
 else()
 list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
 endif()

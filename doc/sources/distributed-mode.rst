@@ -74,6 +74,11 @@ data on device without this may lead to a runtime error): ::
 SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
 desired, and should be transferred to a |dpnp_array| before being passed to the estimator.
 
+.. important::
+
+    For classification problems (e.g. :obj:`~sklearn.linear_model.LogisticRegression`), each rank must have instances of every class,
+    as they will encode the 'y' variable independently with no coordination.
+
 Note that SPMD estimators allow an additional argument ``queue`` in their ``.fit`` / ``.predict`` methods, which accept :obj:`dpctl.SyclQueue` objects. For example, while the signature for :obj:`sklearn.linear_model.LinearRegression.predict` would be
 
 .. code-block:: python

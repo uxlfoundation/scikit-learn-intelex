@@ -155,7 +155,7 @@ accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the comput
 Calling methods such as ``.apply()`` from a ``RandomForestClassifier`` from the |sklearnex|
 that was fitted to array API inputs will work, but it will do so by transferring the data
 to host if not already there, passing the intermediate object to |sklearn|, and outputting
-a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
+a host NumPy array.
 
 Similarly, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
 :meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors` and
@@ -189,6 +189,7 @@ This function is only supported for the following estimators from the |sklearnex
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.cluster.KMeans`
 
 The following estimators cannot be moved, but when using array API, can be used to make predictions on both CPU and GPU data regardless of the device of the data to which they were fitted:
 
