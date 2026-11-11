@@ -43,7 +43,7 @@ steps:
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DALROOT: ${{ variables.DALROOT }}
-      DPCPP_VERSION: 2026.0.0
+      DPCPP_VERSION: 2026.2.0
     displayName: "Install develop requirements"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
