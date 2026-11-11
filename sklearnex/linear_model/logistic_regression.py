@@ -496,6 +496,8 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         self._onedal_gpu_initialize_estimator()
         self._onedal_estimator.fit(X, y_bin, queue=queue)
         self._onedal_gpu_save_attributes()
+        if sklearn_check_version("1.10"):
+            self.solver_ = "newton-cg"
 
         if self._onedal_estimator.n_iter_[0] >= self.max_iter:
             warnings.warn(
