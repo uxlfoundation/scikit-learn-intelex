@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
+
 import array_api_strict
 import numpy as np
 import pytest
@@ -165,7 +167,7 @@ def _assert_same_clustering(expected, result, check_core_samples=True):
         )
     labels = _as_numpy(result.labels_)
     assert_array_equal(labels == -1, expected.labels_ == -1)
-    pairs = set(zip(expected.labels_.tolist(), labels.tolist()))
+    pairs = set(zip(expected.labels_.tolist(), labels.tolist(), strict=True))
     assert len(pairs) == len(set(expected.labels_.tolist())) == len(set(labels.tolist()))
 
 
@@ -210,13 +212,90 @@ def test_dbscan_metrics(dataframe, queue, metric, p, eps):
     _assert_same_clustering(expected, result, check_core_samples=not on_gpu)
 
 
+@pytest.mark.skipif(
+    not daal_check_version((2026, "P", 300)),
+    reason="oneDAL computes only the euclidean distance before 2026.3",
+)
+@pytest.mark.parametrize(
+    "metric_params,eps",
+    [({"p": 1}, 2.5), ({"p": 3}, 1.5), ({"p": np.inf}, 1.0)],
+)
+@pytest.mark.parametrize("p", [None, 2])
+def test_dbscan_minkowski_degree_in_metric_params(metric_params, eps, p):
+    from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
+
+    from sklearnex.cluster import DBSCAN
+
+    X = _metric_data()
+    params = {"eps": eps, "min_samples": 5, "metric": "minkowski", "p": p}
+    params["metric_params"] = metric_params
+    with warnings.catch_warnings(record=True) as expected_warnings:
+        warnings.simplefilter("always")
+        expected = _sklearn_DBSCAN(**params).fit(X)
+    with warnings.catch_warnings(record=True) as result_warnings:
+        warnings.simplefilter("always")
+        result = DBSCAN(**params).fit(X)
+    assert hasattr(result, "_onedal_estimator")
+    _assert_same_clustering(expected, result)
+    # scikit-learn warns that metric_params overrides p; so must the oneDAL path
+    assert [type(w.message) for w in result_warnings] == [
+        type(w.message) for w in expected_warnings
+    ]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"metric": "minkowski", "p": 2},
+        {"metric": "minkowski", "metric_params": {"p": 2}},
+        {"metric": "minkowski", "p": 2, "metric_params": {"p": 2}},
+    ],
+)
+def test_dbscan_minkowski_degree_2_uses_onedal(params):
+    from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
+
+    from sklearnex.cluster import DBSCAN
+
+    X = _metric_data()
+    params = {"eps": 1.5, "min_samples": 5, **params}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        expected = _sklearn_DBSCAN(**params).fit(X)
+        result = DBSCAN(**params).fit(X)
+    # the euclidean distance runs in oneDAL with every supported version
+    assert hasattr(result, "_onedal_estimator")
+    _assert_same_clustering(expected, result)
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"metric": "minkowski"},
+        {"metric": "euclidean", "metric_params": {"p": 3}},
+    ],
+)
+def test_dbscan_metrics_raise_as_sklearn(params):
+    from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
+
+    from sklearnex.cluster import DBSCAN
+
+    X = _metric_data()
+    with pytest.raises(TypeError) as expected:
+        _sklearn_DBSCAN(**params).fit(X)
+    with pytest.raises(TypeError) as result:
+        DBSCAN(**params).fit(X)
+    assert str(result.value) == str(expected.value)
+
+
 @pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize(
     "params",
     [
         {"metric": lambda a, b: np.abs(a - b).sum()},
         {"metric": "minkowski", "p": 0.5},
-        {"metric": "minkowski", "p": 2, "metric_params": {"p": 1}},
+        {"metric": "minkowski", "p": 3, "metric_params": {"w": np.arange(1.0, 4.0)}},
+        {"metric": "minkowski", "metric_params": {"p": 3, "w": np.ones(3)}},
         {"metric": "manhattan", "algorithm": "kd_tree"},
         {"metric": "sqeuclidean"},
     ],
@@ -246,4 +325,29 @@ def test_dbscan_precomputed_falls_back():
     expected = _sklearn_DBSCAN(**params).fit(D)
     result = DBSCAN(**params).fit(D)
     assert not hasattr(result, "_onedal_estimator")
+    _assert_same_clustering(expected, result)
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize(
+    "params,uses_onedal",
+    [
+        ({"metric": "euclidean"}, True),
+        ({"metric": "minkowski", "metric_params": {"p": 2}}, True),
+        ({"metric": "manhattan"}, False),
+        ({"metric": "minkowski", "p": 3}, False),
+    ],
+)
+def test_dbscan_metrics_before_onedal_2026_3(monkeypatch, params, uses_onedal):
+    from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
+
+    from sklearnex.cluster import DBSCAN
+    from sklearnex.cluster import dbscan as dbscan_module
+
+    monkeypatch.setattr(dbscan_module, "_ONEDAL_HAS_METRICS", False)
+    X = _metric_data()
+    params = {"eps": 2.5, "min_samples": 5, **params}
+    expected = _sklearn_DBSCAN(**params).fit(X)
+    result = DBSCAN(**params).fit(X)
+    assert hasattr(result, "_onedal_estimator") == uses_onedal
     _assert_same_clustering(expected, result)

@@ -14,7 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
+import warnings
 
 from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
 from sklearn.utils._array_api import get_namespace
@@ -43,15 +45,10 @@ _METRIC_ALIASES = {
 }
 
 # the degrees for which the Minkowski distance is one of the dedicated metrics
-_MINKOWSKI_DEGREES = {1: "manhattan", 2: "euclidean"}
+_MINKOWSKI_DEGREES = {1: "manhattan", 2: "euclidean", math.inf: "chebyshev"}
 
 # oneDAL computes only the euclidean distance before 2026.3
 _ONEDAL_HAS_METRICS = daal_check_version((2026, "P", 300))
-_SUPPORTED_METRICS = (
-    "the euclidean, manhattan, chebyshev, minkowski (p >= 1) and cosine distances"
-    if _ONEDAL_HAS_METRICS
-    else "'euclidean' or 'minkowski' with p=2 metrics"
-)
 
 
 def _onedal_metric(metric, p, metric_params):
@@ -64,7 +61,8 @@ def _onedal_metric(metric, p, metric_params):
     p : float or None
         The ``p`` parameter of the estimator.
     metric_params : dict or None
-        The ``metric_params`` parameter of the estimator.
+        The ``metric_params`` parameter of the estimator. As in scikit-learn,
+        its ``'p'`` replaces ``p``.
 
     Returns
     -------
@@ -72,16 +70,15 @@ def _onedal_metric(metric, p, metric_params):
         oneDAL's metric and Minkowski degree, or None when scikit-learn's result
         or error cannot be reproduced.
     """
-    if metric_params:
-        return None
-    if not _ONEDAL_HAS_METRICS:
-        if metric == "euclidean" or (metric == "minkowski" and p == 2):
-            return "euclidean", 2.0
-        return None
     if not isinstance(metric, str) or metric not in _METRIC_ALIASES:
         return None
-
     name = _METRIC_ALIASES[metric]
+    if metric_params:
+        # other parameters, such as the Minkowski weights 'w', are not passed to oneDAL;
+        # scikit-learn raises for 'p' with any other metric
+        if name != "minkowski" or metric_params.keys() != {"p"}:
+            return None
+        p = metric_params["p"]
     if name != "minkowski":
         return name, 2.0
     # scikit-learn raises for 'p=None' and warns for 'p < 1'
@@ -140,6 +137,14 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
                 sample_weight, X, dtype=[xp.float64, xp.float32]
             )
 
+        if self.metric_params and self.p is not None:
+            # scikit-learn's NearestNeighbors gives the same warning
+            warnings.warn(
+                "Parameter p is found in metric_params. "
+                "The corresponding parameter from __init__ is ignored.",
+                SyntaxWarning,
+                stacklevel=2,
+            )
         metric, degree = _onedal_metric(self.metric, self.p, self.metric_params)
         onedal_params = {
             "eps": self.eps,
@@ -173,6 +178,7 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
         )
         if method_name == "fit":
             X = data[0]
+            metric = _onedal_metric(self.metric, self.p, self.metric_params)
             patching_status.and_conditions(
                 [
                     (
@@ -181,11 +187,16 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
                         "Only 'auto' and 'brute' algorithms are supported",
                     ),
                     (
-                        _onedal_metric(self.metric, self.p, self.metric_params)
-                        is not None,
+                        metric is not None,
                         f"'{self.metric}' metric with p={self.p} and metric_params="
-                        f"{self.metric_params} is not supported. Only "
-                        f"{_SUPPORTED_METRICS} without metric_params are supported.",
+                        f"{self.metric_params} is not supported. Only the euclidean, "
+                        "manhattan, chebyshev, minkowski (p >= 1) and cosine distances "
+                        "are supported, with no metric_params other than 'p'.",
+                    ),
+                    (
+                        _ONEDAL_HAS_METRICS or metric is None or metric[0] == "euclidean",
+                        f"'{self.metric}' metric with p={self.p} requires oneDAL 2026.3 "
+                        "or later. Only the euclidean distance is supported before it.",
                     ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]

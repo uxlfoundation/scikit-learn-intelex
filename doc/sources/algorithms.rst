@@ -228,8 +228,9 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
-       - ``metric`` = `'minkowski'` with ``p`` < `1`
-       - ``metric_params`` != `None`
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
@@ -538,8 +539,9 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
-       - ``metric`` = `'minkowski'` with ``p`` < `1`
-       - ``metric_params`` != `None`
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
@@ -784,8 +786,9 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
-       - ``metric`` = `'minkowski'` with ``p`` < `1`
-       - ``metric_params`` != `None`
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
