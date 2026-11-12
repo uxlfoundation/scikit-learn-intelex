@@ -299,6 +299,11 @@ class BaseForest(oneDALEstimator, ABC):
                     ),
                     "Fractional 'max_samples' beyond 1.0 are not supported",
                 ),
+                (
+                    not hasattr(self, "categorical_features")
+                    or self.categorical_features is None,
+                    "Categorical features are not supported",
+                ),
             ]
         )
 
@@ -353,6 +358,11 @@ class BaseForest(oneDALEstimator, ABC):
                     (
                         self.n_outputs_ == 1,
                         f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
+                    (
+                        not hasattr(self, "categorical_features")
+                        or self.categorical_features is None,
+                        "Categorical features are not supported",
                     ),
                 ]
             )
@@ -409,6 +419,11 @@ class BaseForest(oneDALEstimator, ABC):
                     (
                         self.n_outputs_ == 1,
                         f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
+                    (
+                        not hasattr(self, "categorical_features")
+                        or self.categorical_features is None,
+                        "Categorical features are not supported",
                     ),
                 ]
             )
@@ -1062,69 +1077,140 @@ class RandomForestClassifier(ForestClassifier):
         "min_bin_size": [Interval(numbers.Integral, 1, None, closed="left")],
     }
 
-    def __init__(
-        self,
-        n_estimators=100,
-        *,
-        criterion="gini",
-        max_depth=None,
-        min_samples_split=2,
-        min_samples_leaf=1,
-        min_weight_fraction_leaf=0.0,
-        max_features="sqrt",
-        max_leaf_nodes=None,
-        min_impurity_decrease=0.0,
-        bootstrap=True,
-        oob_score=False,
-        n_jobs=None,
-        random_state=None,
-        verbose=0,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
-        max_samples=None,
-        monotonic_cst=None,
-        max_bins=256,
-        min_bin_size=1,
-    ):
-        super().__init__(
-            DecisionTreeClassifier(),
-            n_estimators,
-            estimator_params=(
-                "criterion",
-                "max_depth",
-                "min_samples_split",
-                "min_samples_leaf",
-                "min_weight_fraction_leaf",
-                "max_features",
-                "max_leaf_nodes",
-                "min_impurity_decrease",
-                "random_state",
-                "ccp_alpha",
-                "monotonic_cst",
-            ),
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            max_samples=max_samples,
-        )
+    if sklearn_check_version("1.10"):
 
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_weight_fraction_leaf = min_weight_fraction_leaf
-        self.max_features = max_features
-        self.max_leaf_nodes = max_leaf_nodes
-        self.min_impurity_decrease = min_impurity_decrease
-        self.ccp_alpha = ccp_alpha
-        self.max_bins = max_bins
-        self.min_bin_size = min_bin_size
-        self.monotonic_cst = monotonic_cst
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="gini",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features="sqrt",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            class_weight=None,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            categorical_features=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            super().__init__(
+                DecisionTreeClassifier(),
+                n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                    "categorical_features",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                class_weight=class_weight,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
+            self.categorical_features = categorical_features
+
+    else:
+
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="gini",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features="sqrt",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            class_weight=None,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            super().__init__(
+                DecisionTreeClassifier(),
+                n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                class_weight=class_weight,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
 
 
 @enable_array_api
@@ -1139,68 +1225,138 @@ class RandomForestRegressor(ForestRegressor):
         "min_bin_size": [Interval(numbers.Integral, 1, None, closed="left")],
     }
 
-    def __init__(
-        self,
-        n_estimators=100,
-        *,
-        criterion="squared_error",
-        max_depth=None,
-        min_samples_split=2,
-        min_samples_leaf=1,
-        min_weight_fraction_leaf=0.0,
-        max_features=1.0,
-        max_leaf_nodes=None,
-        min_impurity_decrease=0.0,
-        bootstrap=True,
-        oob_score=False,
-        n_jobs=None,
-        random_state=None,
-        verbose=0,
-        warm_start=False,
-        ccp_alpha=0.0,
-        max_samples=None,
-        monotonic_cst=None,
-        max_bins=256,
-        min_bin_size=1,
-    ):
-        criterion = self._check_criterion(criterion)
-        super().__init__(
-            DecisionTreeRegressor(),
-            n_estimators=n_estimators,
-            estimator_params=(
-                "criterion",
-                "max_depth",
-                "min_samples_split",
-                "min_samples_leaf",
-                "min_weight_fraction_leaf",
-                "max_features",
-                "max_leaf_nodes",
-                "min_impurity_decrease",
-                "random_state",
-                "ccp_alpha",
-                "monotonic_cst",
-            ),
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
-            max_samples=max_samples,
-        )
+    if sklearn_check_version("1.10"):
 
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_weight_fraction_leaf = min_weight_fraction_leaf
-        self.max_features = max_features
-        self.max_leaf_nodes = max_leaf_nodes
-        self.min_impurity_decrease = min_impurity_decrease
-        self.ccp_alpha = ccp_alpha
-        self.max_bins = max_bins
-        self.min_bin_size = min_bin_size
-        self.monotonic_cst = monotonic_cst
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="squared_error",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features=1.0,
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            categorical_features=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            criterion = self._check_criterion(criterion)
+            super().__init__(
+                DecisionTreeRegressor(),
+                n_estimators=n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                    "categorical_features",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
+            self.categorical_features = categorical_features
+
+    else:
+
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="squared_error",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features=1.0,
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            criterion = self._check_criterion(criterion)
+            super().__init__(
+                DecisionTreeRegressor(),
+                n_estimators=n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
 
 
 @enable_array_api
@@ -1215,69 +1371,140 @@ class ExtraTreesClassifier(ForestClassifier):
         "min_bin_size": [Interval(numbers.Integral, 1, None, closed="left")],
     }
 
-    def __init__(
-        self,
-        n_estimators=100,
-        *,
-        criterion="gini",
-        max_depth=None,
-        min_samples_split=2,
-        min_samples_leaf=1,
-        min_weight_fraction_leaf=0.0,
-        max_features="sqrt",
-        max_leaf_nodes=None,
-        min_impurity_decrease=0.0,
-        bootstrap=False,
-        oob_score=False,
-        n_jobs=None,
-        random_state=None,
-        verbose=0,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
-        max_samples=None,
-        monotonic_cst=None,
-        max_bins=256,
-        min_bin_size=1,
-    ):
-        super().__init__(
-            ExtraTreeClassifier(),
-            n_estimators,
-            estimator_params=(
-                "criterion",
-                "max_depth",
-                "min_samples_split",
-                "min_samples_leaf",
-                "min_weight_fraction_leaf",
-                "max_features",
-                "max_leaf_nodes",
-                "min_impurity_decrease",
-                "random_state",
-                "ccp_alpha",
-                "monotonic_cst",
-            ),
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            max_samples=max_samples,
-        )
+    if sklearn_check_version("1.10"):
 
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_weight_fraction_leaf = min_weight_fraction_leaf
-        self.max_features = max_features
-        self.max_leaf_nodes = max_leaf_nodes
-        self.min_impurity_decrease = min_impurity_decrease
-        self.ccp_alpha = ccp_alpha
-        self.max_bins = max_bins
-        self.min_bin_size = min_bin_size
-        self.monotonic_cst = monotonic_cst
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="gini",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features="sqrt",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=False,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            class_weight=None,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            categorical_features=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            super().__init__(
+                ExtraTreeClassifier(),
+                n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                    "categorical_features",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                class_weight=class_weight,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
+            self.categorical_features = categorical_features
+
+    else:
+
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="gini",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features="sqrt",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=False,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            class_weight=None,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            super().__init__(
+                ExtraTreeClassifier(),
+                n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                class_weight=class_weight,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
 
 
 @enable_array_api
@@ -1292,68 +1519,138 @@ class ExtraTreesRegressor(ForestRegressor):
         "min_bin_size": [Interval(numbers.Integral, 1, None, closed="left")],
     }
 
-    def __init__(
-        self,
-        n_estimators=100,
-        *,
-        criterion="squared_error",
-        max_depth=None,
-        min_samples_split=2,
-        min_samples_leaf=1,
-        min_weight_fraction_leaf=0.0,
-        max_features=1.0,
-        max_leaf_nodes=None,
-        min_impurity_decrease=0.0,
-        bootstrap=False,
-        oob_score=False,
-        n_jobs=None,
-        random_state=None,
-        verbose=0,
-        warm_start=False,
-        ccp_alpha=0.0,
-        max_samples=None,
-        monotonic_cst=None,
-        max_bins=256,
-        min_bin_size=1,
-    ):
-        criterion = self._check_criterion(criterion)
-        super().__init__(
-            ExtraTreeRegressor(),
-            n_estimators=n_estimators,
-            estimator_params=(
-                "criterion",
-                "max_depth",
-                "min_samples_split",
-                "min_samples_leaf",
-                "min_weight_fraction_leaf",
-                "max_features",
-                "max_leaf_nodes",
-                "min_impurity_decrease",
-                "random_state",
-                "ccp_alpha",
-                "monotonic_cst",
-            ),
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
-            max_samples=max_samples,
-        )
+    if sklearn_check_version("1.10"):
 
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_weight_fraction_leaf = min_weight_fraction_leaf
-        self.max_features = max_features
-        self.max_leaf_nodes = max_leaf_nodes
-        self.min_impurity_decrease = min_impurity_decrease
-        self.ccp_alpha = ccp_alpha
-        self.max_bins = max_bins
-        self.min_bin_size = min_bin_size
-        self.monotonic_cst = monotonic_cst
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="squared_error",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features=1.0,
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=False,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            categorical_features=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            criterion = self._check_criterion(criterion)
+            super().__init__(
+                ExtraTreeRegressor(),
+                n_estimators=n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                    "categorical_features",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
+            self.categorical_features = categorical_features
+
+    else:
+
+        def __init__(
+            self,
+            n_estimators=100,
+            *,
+            criterion="squared_error",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features=1.0,
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=False,
+            oob_score=False,
+            n_jobs=None,
+            random_state=None,
+            verbose=0,
+            warm_start=False,
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+            max_bins=256,
+            min_bin_size=1,
+        ):
+            criterion = self._check_criterion(criterion)
+            super().__init__(
+                ExtraTreeRegressor(),
+                n_estimators=n_estimators,
+                estimator_params=(
+                    "criterion",
+                    "max_depth",
+                    "min_samples_split",
+                    "min_samples_leaf",
+                    "min_weight_fraction_leaf",
+                    "max_features",
+                    "max_leaf_nodes",
+                    "min_impurity_decrease",
+                    "random_state",
+                    "ccp_alpha",
+                    "monotonic_cst",
+                ),
+                bootstrap=bootstrap,
+                oob_score=oob_score,
+                n_jobs=n_jobs,
+                random_state=random_state,
+                verbose=verbose,
+                warm_start=warm_start,
+                max_samples=max_samples,
+            )
+
+            self.criterion = criterion
+            self.max_depth = max_depth
+            self.min_samples_split = min_samples_split
+            self.min_samples_leaf = min_samples_leaf
+            self.min_weight_fraction_leaf = min_weight_fraction_leaf
+            self.max_features = max_features
+            self.max_leaf_nodes = max_leaf_nodes
+            self.min_impurity_decrease = min_impurity_decrease
+            self.ccp_alpha = ccp_alpha
+            self.max_bins = max_bins
+            self.min_bin_size = min_bin_size
+            self.monotonic_cst = monotonic_cst
 
 
 # Allow for isinstance calls without inheritance changes using ABCMeta
