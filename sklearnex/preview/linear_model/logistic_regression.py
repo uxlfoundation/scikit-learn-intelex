@@ -18,7 +18,7 @@ from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegressionCV as _daal4py_LogisticRegressionCV,
 )
 
-from ...base import Tags
+from ...base import Tags, _to_onedal_tags
 from ...linear_model.logistic_regression import (
     LogisticRegression as _sklearnex_LogisticRegression,
 )
@@ -34,6 +34,7 @@ class LogisticRegressionCV(_daal4py_LogisticRegressionCV, _sklearnex_LogisticReg
     __doc__ = _daal4py_LogisticRegressionCV.__doc__
 
     def __sklearn_tags__(self) -> Tags:
-        tags = super().__sklearn_tags__()
+        # sklearn>=1.10 LogisticRegressionCV skips oneDALEstimator when building tags
+        tags = _to_onedal_tags(super().__sklearn_tags__())
         tags.onedal_array_api = False
         return tags
