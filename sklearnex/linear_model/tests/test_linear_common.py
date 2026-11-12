@@ -19,7 +19,11 @@ import array_api_strict
 import numpy as np
 import pytest
 
-from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     dpnp_available,
@@ -296,6 +300,8 @@ def test_linear_move_estimator_to(
 def test_incremental_linear_move_estimator_to(
     estimator, array_input_like, array_move_like, num_targets, with_array_api
 ):
+    from sklearnex import linear_model
+
     # TODO: remove this skip once issue in sklearn is fixed:
     # https://github.com/scikit-learn/scikit-learn/issues/35088
     if (
