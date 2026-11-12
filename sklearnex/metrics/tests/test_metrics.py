@@ -31,7 +31,7 @@ def test_sklearnex_import_roc_auc():
     from sklearnex.metrics import roc_auc_score
 
     X, y = load_breast_cancer(return_X_y=True)
-    clf = LogisticRegression(solver="liblinear", random_state=0).fit(X, y)
+    clf = LogisticRegression(max_iter=1000).fit(X, y)
     res = roc_auc_score(y, clf.decision_function(X))
     assert_allclose(res, 0.99, atol=1e-2)
 
