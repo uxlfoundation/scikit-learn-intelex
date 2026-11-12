@@ -182,6 +182,37 @@ Example:
                model.fit(X, y)
                pred = model.predict(X)
 
+The result from a model that was fitted under ``target_offload`` can be moved to
+a different device under :doc:`array API <array_api>` using the function
+``sklearn.utils._array_api.move_estimator_to`` when supported, but this function
+must be called outside of the configuration context or with the ``target_offload``
+option disabled. The resulting moved estimator will also need to be used without
+``target_offload`` - example:
+
+.. code-block:: python
+
+    import os
+    os.environ["SCIPY_ARRAY_API"] = "1"
+    
+    import numpy as np
+    from sklearnex import config_context
+    from sklearnex.linear_model import LinearRegression
+    from sklearn.datasets import make_regression
+    from sklearn.utils._array_api import move_estimator_to
+    X, y = make_regression()
+    model_gpu = LinearRegression()
+
+    # If fitted under `target_offload="gpu"`, should
+    # always be used under the same option
+    with config_context(target_offload="gpu"):
+        model_gpu.fit(X, y)
+        pred = model_gpu.predict(X)
+    
+    # If the estimator is to be moved, the move should
+    # happen without `target_offload`, and the result
+    # should also be used without it
+    model_cpu = move_estimator_to(model_gpu, xp=np, device="cpu")
+    pred_cpu = model_cpu.predict(X)
 
 .. warning::
     When using ``target_offload``, operations on a fitted model must be executed under a context or global option with the same device or queue where the model was fitted - meaning: a model fitted on GPU cannot make predictions on CPU, and vice-versa. Note that upon serialization and subsequent deserialization of models, data is moved to the CPU.
