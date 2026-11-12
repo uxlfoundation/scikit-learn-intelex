@@ -21,7 +21,7 @@ from sklearn.utils._param_validation import Interval
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._utils import _add_inc_serialization_note
-from .incremental_linear import _BaseIncrementalLinearModel
+from ._base_linear_model import _BaseIncrementalLinearModel
 
 
 class IncrementalRidge(_BaseIncrementalLinearModel):

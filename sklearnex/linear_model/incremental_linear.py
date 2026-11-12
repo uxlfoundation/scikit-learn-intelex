@@ -25,7 +25,7 @@ from onedal.linear_model import (
 from .._utils import (
     _add_inc_serialization_note,
 )
-from ._base_incremental_linear import _BaseIncrementalLinearModel
+from ._base_linear_model import _BaseIncrementalLinearModel
 
 
 class IncrementalLinearRegression(_BaseIncrementalLinearModel):
