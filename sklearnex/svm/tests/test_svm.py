@@ -594,3 +594,13 @@ def test_svc_mixed_devices(X_xp, X_device, y_xp, y_device, with_array_api):
     decision_scores = model.decision_function(X)
     assert decision_scores.__class__ == X.__class__
     _ = model.score(X, y)
+
+
+def test_sparse_support_vectors_retain_shape():
+    from sklearnex.svm import SVC
+
+    X, y = make_classification(n_samples=20, n_features=5, random_state=123)
+    X = np.c_[X, np.zeros((X.shape[0], 10))]
+    X_sp = csr_class(X, shape=X.shape)
+    model = SVC().fit(X_sp, y)
+    assert model.support_vectors_.shape[1] == X.shape[1]
