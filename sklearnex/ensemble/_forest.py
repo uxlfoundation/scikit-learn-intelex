@@ -748,6 +748,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 )
 
         if hasattr(self, "_onedal_estimator"):
+            if self.warm_start and self._cached_estimators_ is None:
+                self._estimators_()
             del self._onedal_estimator
         dispatch(
             self,
@@ -997,6 +999,8 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                 )
 
         if hasattr(self, "_onedal_estimator"):
+            if self.warm_start and self._cached_estimators_ is None:
+                self._estimators_()
             del self._onedal_estimator
         dispatch(
             self,

@@ -364,3 +364,51 @@ def test_predict_with_nan(estimator_class):
     if not is_regressor(model):
         proba = model.predict_proba(X_nan)
         assert not np.any(np.isnan(proba))
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize(
+    "estimator_class",
+    [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+        "ExtraTreesRegressor",
+        "ExtraTreesClassifier",
+    ],
+)
+def test_warm_start_with_fallback(estimator_class):
+    from sklearnex import ensemble
+
+    model = getattr(ensemble, estimator_class)(n_estimators=2)
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 4))
+    w = rng.standard_gamma(1, size=X.shape[0])
+    if is_regressor(model):
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(2, size=X.shape[0])
+
+    model.fit(X[:10], y[:10])
+    assert hasattr(model, "_onedal_estimator")
+    if is_regressor(model):
+        pred_before = model.predict(X)
+    else:
+        pred_before = model.predict_proba(X)
+
+    # These should make it trigger a fallback to scikit-learn
+    model.set_params(
+        warm_start=True,
+        ccp_alpha=1e-10,
+        n_estimators=5,
+    )
+    model.fit(X[10:], y[10:], w[10:])
+    assert len(model.estimators_) == 5
+    assert not hasattr(model, "_onedal_estimator")
+
+    if is_regressor(model):
+        pred_after = model.predict(X)
+    else:
+        pred_after = model.predict_proba(X)
+    with pytest.raises(AssertionError):
+        np.testing.assert_allclose(pred_after, pred_before)
