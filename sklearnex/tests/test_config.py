@@ -160,10 +160,12 @@ def test_host_backend_target_offload(target):
             est.fit(np.eye(5, 8))
 
 
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.skipif(
     not is_sycl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
-def test_fallback_to_host(caplog):
+@pytest.mark.parametrize("sklearn_fallback", [True, False])
+def test_fallback_to_host(sklearn_fallback, caplog):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
     # it should complete with allow_fallback_to_host. The queue should be preserved
     # and properly used in the second round on gpu
@@ -179,7 +181,9 @@ def test_fallback_to_host(caplog):
     class _Estimator:
         def _onedal_gpu_supported(self, method_name, *data):
             patching_status = PatchingConditionsChain("")
-            patching_status.and_condition(data[0] == "gpu", "")
+            patching_status.and_conditions(
+                [(data[0] == "gpu", ""), (not sklearn_fallback, "")]
+            )
             return patching_status
 
         def _onedal_cpu_supported(self, method_name, *data):
@@ -202,7 +206,13 @@ def test_fallback_to_host(caplog):
     ):
         # True == with cpu (eventually), False == with gpu
         for fallback in [True, False]:
-            with sklearnex.config_context(allow_fallback_to_host=fallback):
+            err_msg = "Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option"
+            sklearn_ctx = (
+                nullcontext()
+                if fallback or not sklearn_fallback
+                else pytest.raises(RuntimeError, match=err_msg)
+            )
+            with sklearnex.config_context(allow_fallback_to_host=fallback), sklearn_ctx:
                 dispatch(
                     est,
                     "test",
@@ -215,6 +225,7 @@ def test_fallback_to_host(caplog):
             assert (
                 f": running accelerated version on {'CPU' if fallback else 'GPU'}"
                 in caplog.messages[start:]
+                or (sklearn_fallback and not fallback)
             )
             start = len(caplog.messages)
 
