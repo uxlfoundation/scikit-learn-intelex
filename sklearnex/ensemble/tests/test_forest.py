@@ -379,7 +379,7 @@ def test_predict_with_nan(estimator_class):
 def test_warm_start_with_fallback(estimator_class):
     from sklearnex import ensemble
 
-    model = getattr(ensemble, estimator_class)(n_estimators=2)
+    model = getattr(ensemble, estimator_class)(n_estimators=2, random_state=123)
 
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(20, 4))
@@ -412,3 +412,15 @@ def test_warm_start_with_fallback(estimator_class):
         pred_after = model.predict_proba(X)
     with pytest.raises(AssertionError):
         np.testing.assert_allclose(pred_after, pred_before)
+
+    # This intentionally refits from scratch in order to avoid constructing
+    # the cached 'estimators_' before the warm-started refit.
+    model2 = getattr(ensemble, estimator_class)(n_estimators=2, random_state=123)
+    model2.fit(X[:10], y[:10])
+    leafs_first = model2.apply(X)
+    leafs = model.apply(X)
+
+    np.testing.assert_array_equal(
+        leafs[:, :2],
+        leafs_first,
+    )
