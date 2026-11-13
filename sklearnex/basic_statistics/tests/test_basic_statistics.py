@@ -19,19 +19,46 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _assert_in_namespace,
     _convert_to_dataframe,
     assert_allclose_numpy,
+    dpnp_available,
+    dpnp_to_strict_working,
     get_dataframes_and_queues,
     get_queues,
+    torch_available,
+    torch_xpu_available,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.tests.utils import gen_sparse_dataset
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 
 # Compute the basic statistics on sparse data on CPU or GPU depending on the queue
@@ -438,3 +465,78 @@ def test_bs_weights_in_different_namespace(X_xp, w_xp, with_array_api):
     w = w_xp.asarray(w)
 
     BasicStatistics().fit(X, w)
+
+
+# TODO: update this once scikit-learn introduces a config option
+# to control whether the attributes are always numpy or follow 'X'
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_input_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "result_options",
+    ["mean", "all", ["mean", "max"]],
+)
+def test_bs_move_estimator_to(
+    array_input_like, array_move_like, result_options, with_array_api
+):
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
+    ):
+        pytest.skip()
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+    y_in = move_to(y, xp=xp_in, device=device_in)
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+
+    estimator = BasicStatistics(result_options=result_options).fit(X_in, y_in)
+    estimator_moved = move_estimator_to(estimator, xp_move, device_move)
+
+    assert_same_attributes(estimator_moved, estimator)
+    assert_public_attributes_are_in_namespace(estimator, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(estimator_moved, xp_move, device_move)
