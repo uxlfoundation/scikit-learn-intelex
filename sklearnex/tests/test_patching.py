@@ -579,6 +579,11 @@ def test_standard_estimator_patching_array_api(
         pytest.skip(
             "Array API inputs are not supported for LogisticRegression in sklearn <1.9"
         )
+    # Under default parameters, this falls back to sklearn, and sklearn has no
+    # array API support, but if they add this support, predictions through oneDAL
+    # should work.
+    if estimator == "DummyRegressor" and not get_tags(est).array_api_support:
+        pytest.skip("Array API and/or GPU inputs not supported in estimator")
 
     tags = get_tags(est)
     array_api_check = (hasattr(tags, "array_api_support") and tags.array_api_support) or (
