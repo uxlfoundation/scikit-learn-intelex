@@ -156,9 +156,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             ensure_all_finite=False,
         )
 
-        self.n_samples_seen_ = 0
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator._reset()
+        self._reset()  # <- method comes from scikit-learn
 
         # Execute partial fit just once on the entire dataset.
         self._onedal_partial_fit(X, queue=queue, check_input=False)
@@ -185,8 +183,21 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
+    # Note: this overrides a method from scikit-learn, which makes
+    # the assumption that existence of 'scale_' implies existence
+    # of other attributes, but this class defines it as '@property'.
+    def _reset(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._scale_ = None
+            self._max_abs_ = None
+            self._need_to_finalize = False
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+        super()._reset()
+
     def fit(self, X, y=None):
         self._validate_params()
+        self._reset()
 
         dispatch(
             self,
@@ -199,10 +210,15 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
+    def fit_transform(self, X, y=None, **fit_params):
+        self._reset()
+        return super().fit_transform(X, y, **fit_params)
+
     # transform is inherited unchanged from scikit-learn: it relies only on the fitted
     # scale vectors and array API operations, so no oneDAL override is needed.
 
     fit.__doc__ = _sklearn_MaxAbsScaler.fit.__doc__
+    fit_transform.__doc__ = _sklearn_MaxAbsScaler.fit_transform.__doc__
     partial_fit.__doc__ = _sklearn_MaxAbsScaler.partial_fit.__doc__
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
