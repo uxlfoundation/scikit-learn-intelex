@@ -149,6 +149,18 @@ class BaseIncrementalLinear(BaseLinearRegression):
 
         return self
 
+    def _create_model(self, coef, intercept, xp, xtx, xty, n_features_in) -> None:
+        self._reset()
+        self._partial_result = self.partial_train_result()
+        self._partial_result.partial_xtx = to_table(xtx)
+        self._partial_result.partial_xty = to_table(xty)
+        self._outtype = return_type_constructor(xty)
+        self.n_features_in_ = n_features_in
+        self._params = self._get_onedal_params(self._partial_result.partial_xtx.dtype)
+        self._outtype = None
+        self._need_to_finalize = False
+        super()._create_model(coef, intercept, xp)
+
 
 class IncrementalLinearRegression(BaseIncrementalLinear):
     """Incremental Linear Regression oneDAL implementation.

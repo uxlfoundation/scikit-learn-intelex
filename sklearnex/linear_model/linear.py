@@ -24,9 +24,8 @@ from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
 
-from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
+from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
@@ -41,7 +40,6 @@ if sklearn_check_version("1.9"):
 
 
 @enable_array_api
-@register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearModel):
     __doc__ = _sklearn_LinearRegression.__doc__

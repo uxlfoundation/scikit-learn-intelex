@@ -19,7 +19,11 @@ import array_api_strict
 import numpy as np
 import pytest
 
-from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     dpnp_available,
@@ -43,7 +47,11 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
-    from sklearnex.tests.utils.misc import assert_same_namespace
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 
 @pytest.mark.parametrize("fit_intercept", [True, False])
@@ -137,7 +145,10 @@ def test_predict_after_fallback_array_api(
     not _package_check_version("2.2", np.__version__),
     reason="Requires more recent NumPy version",
 )
-@pytest.mark.parametrize("estimator", ["LinearRegression", "Ridge"])
+@pytest.mark.parametrize(
+    "estimator",
+    ["LinearRegression", "Ridge", "IncrementalLinearRegression", "IncrementalRidge"],
+)
 @pytest.mark.parametrize(
     "array_input_like",
     [np.arange(1), array_api_strict.arange(1)]
@@ -169,9 +180,11 @@ def test_predict_after_fallback_array_api(
     ),
 )
 @pytest.mark.parametrize("num_targets", [1, 2])
-def test_move_estimator_to(
+def test_incremental_linear_move_estimator_to(
     estimator, array_input_like, array_move_like, num_targets, with_array_api
 ):
+    from sklearnex import linear_model
+
     # TODO: remove this skip once issue in sklearn is fixed:
     # https://github.com/scikit-learn/scikit-learn/issues/35088
     if (
@@ -181,10 +194,9 @@ def test_move_estimator_to(
         and not dpnp_to_strict_working
     ):
         pytest.skip()
-    from sklearnex import linear_model
 
     rng = np.random.default_rng(seed=123)
-    X = rng.standard_normal(size=(10, 3), dtype=np.float32)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
     y = rng.standard_normal(
         size=X.shape[0] if num_targets == 1 else (X.shape[0], num_targets),
         dtype=np.float32,
@@ -197,12 +209,14 @@ def test_move_estimator_to(
     xp_move, _, device_move = get_namespace_and_device(array_move_like)
     X_move = move_to(X, xp=xp_move, device=device_move)
 
-    model = getattr(linear_model, estimator)().fit(X_in, y_in)
+    model = getattr(linear_model, estimator)().fit(X_in[:10, :], y_in[:10, ...])
     pred_orig = model.predict(X_in)
 
     model_moved = move_estimator_to(model, xp_move, device_move)
-    assert_same_namespace(model.coef_, array_input_like)
-    assert_same_namespace(model_moved.coef_, array_move_like)
+
+    assert_same_attributes(model_moved, model)
+    assert_public_attributes_are_in_namespace(model, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(model_moved, xp_move, device_move)
 
     pred_moved = model_moved.predict(X_move)
     assert_same_namespace(pred_orig, array_input_like)
@@ -223,3 +237,53 @@ def test_move_estimator_to(
         attrs_moved = dir(model_moved)
     for attr in attrs_orig:
         assert attr in attrs_moved
+
+    # After the move, the oneDAL object and the sklearnex object should both
+    # share the same memory for the coefficients, which involves creating a
+    # new array after the move to hold the 'packed' form with the intercepts.
+    if isinstance(array_move_like, np.ndarray):
+        ptr_coefs_sklearnex = model_moved.coef_.__array_interface__["data"][0]
+        ptr_coefs_onedal = model_moved._onedal_estimator.coef_.__array_interface__[
+            "data"
+        ][0]
+        assert ptr_coefs_sklearnex == ptr_coefs_onedal
+
+        # When both the coefficients and intercepts are arrays,
+        # they should be allocated in a single memory chunk as
+        # part of a broader oneDAL array
+        if num_targets > 1:
+            ptr_intercept = model_moved.intercept_.__array_interface__["data"][0]
+            assert (
+                ptr_coefs_sklearnex
+                == ptr_intercept + model_moved.intercept_.dtype.itemsize
+            )
+
+    if estimator.startswith("Incremental"):
+
+        # Partial fits should still work, and produce independent arrays
+        # of coefficients and intercepts
+        model_ref = getattr(linear_model, estimator)().fit(X, y)
+        model.partial_fit(X_in[10:, :], y_in[10:, ...])
+        model_moved.partial_fit(X_move[10:, :], y_in[10:, ...])
+        pref_ref = model_ref.predict(X)
+        pred_orig = model.predict(X_in)
+        pred_moved = model_moved.predict(X_move)
+
+        if isinstance(array_input_like, np.ndarray) and isinstance(
+            array_move_like, np.ndarray
+        ):
+            ptr_orig = model.coef_.__array_interface__["data"][0]
+            ptr_moved = model_moved.coef_.__array_interface__["data"][0]
+            assert ptr_orig != ptr_moved
+
+        assert_same_namespace(pred_orig, array_input_like)
+        assert_same_namespace(pred_moved, array_move_like)
+
+        # Note: previous versions of oneDAL had a bug that made the tests fail
+        if daal_check_version((2026, "P", 300)):
+            np.testing.assert_allclose(
+                _as_numpy(pred_orig), _as_numpy(pref_ref), atol=1e-6
+            )
+            np.testing.assert_allclose(
+                _as_numpy(pred_moved), _as_numpy(pref_ref), atol=1e-6
+            )
