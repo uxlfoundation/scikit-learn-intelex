@@ -175,7 +175,9 @@ def base_move_estimator_to(
     attr_no_convert = ["classes_"]
 
     def is_numpy_non_numeric(arr) -> bool:
-        return isinstance(arr, np.ndarray) and not np.issubdtype(arr.dtype, np.number)
+        return isinstance(arr, np.ndarray) and not (
+            np.issubdtype(arr.dtype, np.number) or np.issubdtype(arr.dtype, np.bool_)
+        )
 
     out = clone(estimator)
     out.__dict__ = {
