@@ -170,9 +170,20 @@ def check_is_onedal_supported_device(arr) -> bool:
 def base_move_estimator_to(
     estimator, converter, attrs_exclude: list[str]
 ) -> tuple[object, bool]:
+    # TODO: revisit the logic for this once scikit-learn decides
+    # how to handle 'classes_' and similar during device movements.
+    attr_no_convert = ["classes_"]
+
+    def is_numpy_non_numeric(arr) -> bool:
+        return isinstance(arr, np.ndarray) and not np.issubdtype(arr.dtype, np.number)
+
     out = clone(estimator)
     out.__dict__ = {
-        k: _estimator_with_converted_arrays(v, converter)
+        k: (
+            _estimator_with_converted_arrays(v, converter)
+            if not ((k in attr_no_convert) or is_numpy_non_numeric(k))
+            else v
+        )
         for k, v in estimator.__dict__.items()
         if k not in attrs_exclude
     }
