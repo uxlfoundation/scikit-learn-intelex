@@ -20,14 +20,21 @@ import math
 from collections.abc import Callable
 from typing import Union
 
+import numpy as np
 import scipy.linalg as linalg
+from sklearn.base import clone
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 from sklearn.utils._array_api import get_namespace
+from sklearn.utils.validation import NotFittedError, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal import _default_backend
 from onedal.utils._array_api import _is_numpy_namespace
 
 from ..base import Tags, oneDALEstimator
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import _estimator_with_converted_arrays
 
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
@@ -143,3 +150,36 @@ def log_likelihood(emp_cov, precision):
 
 
 log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
+
+
+def check_is_onedal_supported_device(arr) -> bool:
+    if isinstance(arr, np.ndarray):
+        return True
+    if not hasattr(arr, "__dlpack_device__"):
+        return False
+    device = arr.__dlpack_device__()[0]
+    return device in [_default_backend.kDLCPU, _default_backend.kDLOneAPI]
+
+
+# Akin to calling scikit-learn's `_estimator_with_converted_arrays` on an
+# sklearnex estimator, but without triggering `__sklearn_array_api_convert__`
+# as defined in the estimator, and excluding some of the attributes.
+# In addition to returning the base of the converted object, it also
+# returns a boolean signaling whether the `estimator` argument has been
+# fitted to data or not.
+def base_move_estimator_to(
+    estimator, converter, attrs_exclude: list[str]
+) -> tuple[object, bool]:
+    out = clone(estimator)
+    out.__dict__ = {
+        k: _estimator_with_converted_arrays(v, converter)
+        for k, v in estimator.__dict__.items()
+        if k not in attrs_exclude
+    }
+    is_fitted = False
+    try:
+        check_is_fitted(estimator)
+        is_fitted = True
+    except NotFittedError:
+        pass
+    return out, is_fitted

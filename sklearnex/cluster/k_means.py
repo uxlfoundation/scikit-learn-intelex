@@ -15,12 +15,10 @@
 # ==============================================================================
 
 import logging
-import numbers
 import warnings
 
 import numpy as np
 from scipy.sparse import issparse
-from sklearn.base import clone
 from sklearn.cluster import KMeans as _sklearn_KMeans
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances as _sklearn_euclidean_distances
@@ -39,7 +37,11 @@ from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api
+from ..utils._array_api import (
+    base_move_estimator_to,
+    check_is_onedal_supported_device,
+    enable_array_api,
+)
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
@@ -471,22 +473,15 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
             )
 
     def __sklearn_array_api_convert__(self, converter):
-        out = clone(self)
-        out.__dict__ = {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in ["_onedal_estimator", "cluster_centers_", "labels_"]
-        }
-        out.cluster_centers_ = converter(self.cluster_centers_)
-        out.labels_ = converter(self.labels_)
-        if hasattr(out.init, "__dlpack__") or hasattr(out.init, "shape"):
-            # This only happens when there are sklearn fallbacks
-            out.init = converter(out.init)
-        out._initialize_onedal_estimator()
-        out._onedal_estimator._create_model(
-            out.cluster_centers_,
-            out.labels_,
-        )
+        out, is_fitted = base_move_estimator_to(self, converter, ["_onedal_estimator"])
+        if not is_fitted:
+            return out
+        if check_is_onedal_supported_device(out.cluster_centers_):
+            out._initialize_onedal_estimator()
+            out._onedal_estimator._create_model(
+                out.cluster_centers_,
+                out.labels_,
+            )
         return out
 
     fit.__doc__ = _sklearn_KMeans.fit.__doc__
