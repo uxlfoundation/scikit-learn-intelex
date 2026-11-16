@@ -181,7 +181,7 @@ def base_move_estimator_to(
     out.__dict__ = {
         k: (
             _estimator_with_converted_arrays(v, converter)
-            if not ((k in attr_no_convert) or is_numpy_non_numeric(k))
+            if not ((k in attr_no_convert) or is_numpy_non_numeric(v))
             else v
         )
         for k, v in estimator.__dict__.items()
