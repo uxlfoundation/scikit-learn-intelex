@@ -749,7 +749,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if hasattr(self, "_onedal_estimator"):
             # Note: if using warm-start when fitting, there will be
-            # a fallback to scikit-learn and one oneDAL model, but this
+            # a fallback to scikit-learn and no oneDAL estimator, but this
             # `warm_start` parameter can also be changed after the model
             # has already been first fitted through oneDAL.
             if self.warm_start and self._cached_estimators_ is None:
