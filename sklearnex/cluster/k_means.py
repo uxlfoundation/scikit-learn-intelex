@@ -32,6 +32,7 @@ from sklearn.utils.validation import (
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster import KMeans as onedal_KMeans
+from onedal.datatypes import is_onedal_supported_device
 from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
 from .._device_offload import dispatch, wrap_output_data
@@ -39,7 +40,6 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import (
     base_move_estimator_to,
-    check_is_onedal_supported_device,
     enable_array_api,
 )
 from ..utils.validation import validate_data
@@ -476,7 +476,7 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
         out, is_fitted = base_move_estimator_to(self, converter, ["_onedal_estimator"])
         if not is_fitted:
             return out
-        if check_is_onedal_supported_device(out.cluster_centers_):
+        if is_onedal_supported_device(out.cluster_centers_):
             out._initialize_onedal_estimator()
             out._onedal_estimator._create_model(
                 out.cluster_centers_,

@@ -152,15 +152,6 @@ def log_likelihood(emp_cov, precision):
 log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 
 
-def check_is_onedal_supported_device(arr) -> bool:
-    if isinstance(arr, np.ndarray):
-        return True
-    if not hasattr(arr, "__dlpack_device__"):
-        return False
-    device = arr.__dlpack_device__()[0]
-    return device in [_default_backend.kDLCPU, _default_backend.kDLOneAPI]
-
-
 # Akin to calling scikit-learn's `_estimator_with_converted_arrays` on an
 # sklearnex estimator, but without triggering `__sklearn_array_api_convert__`
 # as defined in the estimator, and excluding some of the attributes.
