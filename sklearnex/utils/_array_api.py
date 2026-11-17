@@ -28,7 +28,6 @@ from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import NotFittedError, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal import _default_backend
 from onedal.datatypes import is_onedal_supported_device
 from onedal.utils._array_api import _is_numpy_namespace
 
