@@ -29,6 +29,7 @@ from sklearn.utils.validation import NotFittedError, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal import _default_backend
+from onedal.datatypes import is_onedal_supported_device
 from onedal.utils._array_api import _is_numpy_namespace
 
 from ..base import Tags, oneDALEstimator
@@ -157,10 +158,14 @@ log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 # as defined in the estimator, and excluding some of the attributes.
 # In addition to returning the base of the converted object, it also
 # returns a boolean signaling whether the `estimator` argument has been
-# fitted to data or not.
+# fitted to data or not, and another boolean signaling whether the attribute
+# under `attr_check_for_device` is on a device supported by oneDAL or not.
 def base_move_estimator_to(
-    estimator, converter, attrs_exclude: list[str]
-) -> tuple[object, bool]:
+    estimator,
+    converter,
+    attrs_exclude: list[str],
+    attr_check_for_device: str | None,
+) -> tuple[object, bool, bool]:
     # TODO: revisit the logic for this once scikit-learn decides
     # how to handle 'classes_' and similar during device movements.
     attr_no_convert = ["classes_"]
@@ -186,4 +191,9 @@ def base_move_estimator_to(
         is_fitted = True
     except NotFittedError:
         pass
-    return out, is_fitted
+    is_supported_device = False
+    if is_fitted:
+        is_supported_device = is_onedal_supported_device(
+            getattr(out, attr_check_for_device, None)
+        )
+    return out, is_fitted, is_supported_device

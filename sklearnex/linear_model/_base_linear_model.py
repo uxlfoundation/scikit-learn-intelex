@@ -17,8 +17,6 @@ from abc import ABC, abstractmethod
 
 from sklearn.utils._array_api import get_namespace
 
-from onedal.datatypes import is_onedal_supported_device
-
 from ..utils._array_api import base_move_estimator_to
 
 
@@ -44,9 +42,11 @@ class _BaseLinearModel(ABC):
         self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
 
     def __sklearn_array_api_convert__(self, converter):
-        out, is_fitted = base_move_estimator_to(self, converter, ["_onedal_estimator"])
+        out, is_fitted, is_supported_device = base_move_estimator_to(
+            self, converter, ["_onedal_estimator"], "_coef_"
+        )
         if not is_fitted:
             return out
-        if is_onedal_supported_device(out._coef_):
+        if is_supported_device:
             out._initialize_onedal_estimator_from_coefs()
         return out
