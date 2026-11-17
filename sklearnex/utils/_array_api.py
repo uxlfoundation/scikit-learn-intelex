@@ -165,10 +165,6 @@ def base_move_estimator_to(
     attrs_exclude: list[str],
     attr_check_for_device: str | None,
 ) -> tuple[object, bool, bool]:
-    # TODO: revisit the logic for this once scikit-learn decides
-    # how to handle 'classes_' and similar during device movements.
-    attr_no_convert = ["classes_"]
-
     def is_numpy_non_numeric(arr) -> bool:
         return isinstance(arr, np.ndarray) and not (
             np.issubdtype(arr.dtype, np.number) or np.issubdtype(arr.dtype, np.bool_)
@@ -178,7 +174,7 @@ def base_move_estimator_to(
     out.__dict__ = {
         k: (
             _estimator_with_converted_arrays(v, converter)
-            if not ((k in attr_no_convert) or is_numpy_non_numeric(v))
+            if not is_numpy_non_numeric(v)
             else v
         )
         for k, v in estimator.__dict__.items()
