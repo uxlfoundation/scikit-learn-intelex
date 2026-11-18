@@ -33,12 +33,16 @@ from daal4py.sklearn._utils import (
 )
 from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
 from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
+from onedal.utils import _sycl_queue_manager as QM
 
-from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api
+from ..utils._array_api import (
+    _NUMPY_FITTED_ATTRS,
+    base_move_estimator_to,
+    enable_array_api,
+)
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
@@ -214,6 +218,8 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             y,
             sample_weight,
         )
+        if sklearn_check_version("1.10") and len(_NUMPY_FITTED_ATTRS):
+            self._move_attributes_to_numpy()
         return self
 
     @wrap_output_data
@@ -505,11 +511,27 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
                 ConvergenceWarning,
             )
 
+    def _move_attributes_to_numpy(self) -> None:
+        # Note: this avoids directly using 'move_to(.., xp=np, device="cpu")
+        # in order to be compatible with older NumPy versions. The namespace
+        # obtained here is wrapped by array_api_compat.
+        arr_np = np.empty(0)
+        xp_np, _, device_np = get_namespace_and_device(arr_np)
+        for attr in ["coef_", "intercept_", "classes_", "n_iter_"]:
+            arr = getattr(self, attr)
+            if not isinstance(arr, np.ndarray):
+                setattr(self, attr, move_to(arr, xp=xp_np, device=device_np))
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
+
     # This should only be called when 'X' is on CPU
     def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
         # This can happen when fitting on GPU and then passing a CPU array to predict
         if not isinstance(self.coef_, np.ndarray) and not issparse(self.coef_):
-            if sklearn_check_version("1.9"):
+            if sklearn_check_version("1.10"):
+                if not len(_NUMPY_FITTED_ATTRS):
+                    check_same_namespace(X, self, attribute="coef_", method=method_name)
+            elif sklearn_check_version("1.9"):
                 check_same_namespace(X, self, attribute="coef_", method=method_name)
             else:
                 raise ValueError("Attempting to predict on incompatible device")
@@ -518,15 +540,20 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         if queue is None or queue.sycl_device.is_cpu:
             self._error_out_on_incompatible_devices(X, "predict")
 
-            # TODO add array-api support for CPU
-            return daal4py_predict(self, X, "computeClassLabels")
+            if isinstance(self.coef_, np.ndarray):
+                return daal4py_predict(self, X, "computeClassLabels")
+            else:
+                return super().predict(X)
 
         if sklearn_check_version("1.9"):
             xp_y, _, device_y = get_namespace_and_device(self.classes_)
         else:
             xp_y, _ = get_namespace(self.classes_)
 
-        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.10"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X)
         X = validate_data(
             self,
             X,
@@ -536,7 +563,10 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             dtype=[xp.float64, xp.float32],
         )
 
-        if sklearn_check_version("1.9"):
+        if sklearn_check_version("1.10"):
+            if not len(_NUMPY_FITTED_ATTRS):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
+        elif sklearn_check_version("1.9"):
             check_same_namespace(X, self, attribute="coef_", method="predict")
 
         if not hasattr(self, "_onedal_estimator"):
@@ -550,12 +580,23 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             res = move_to(res, xp=xp_y, device=device_y)
         y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
 
+        if (
+            sklearn_check_version("1.10")
+            and len(_NUMPY_FITTED_ATTRS)
+            and isinstance(y, np.ndarray)
+            and (np.issubdtype(y.dtype, np.number) or np.issubdtype(y.dtype, np.bool_))
+        ):
+            y = move_to(y, xp=xp, device=device)
+
         return y
 
     def _onedal_predict_proba(self, X, queue=None):
         if queue is None or queue.sycl_device.is_cpu:
             self._error_out_on_incompatible_devices(X, "predict_proba")
-            return daal4py_predict(self, X, "computeClassProbabilities")
+            if isinstance(self.coef_, np.ndarray):
+                return daal4py_predict(self, X, "computeClassProbabilities")
+            else:
+                return super().predict_proba(X)
 
         xp, _ = get_namespace(X)
         X = validate_data(
@@ -567,7 +608,10 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
             dtype=[xp.float64, xp.float32],
         )
 
-        if sklearn_check_version("1.9"):
+        if sklearn_check_version("1.10"):
+            if not len(_NUMPY_FITTED_ATTRS):
+                check_same_namespace(X, self, attribute="coef_", method="predict_proba")
+        elif sklearn_check_version("1.9"):
             check_same_namespace(X, self, attribute="coef_", method="predict_proba")
 
         if not hasattr(self, "_onedal_estimator"):
@@ -588,6 +632,8 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
     # because array API support here is limited to GPU only, which could
     # lead to issues when scikit-learn's code paths look at that tag.
     def _onedal_predict_log_proba(self, X, queue=None):
+        if sklearn_check_version("1.10"):
+            return super().predict_log_proba(X)
         if queue is None or queue.sycl_device.is_cpu:
             self._error_out_on_incompatible_devices(X, "predict_log_proba")
             return daal4py_predict(self, X, "computeClassLogProbabilities")
@@ -606,9 +652,10 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         return xp.log(y_proba)
 
     def _onedal_decision_function(self, X, queue=None):
+        if sklearn_check_version("1.10"):
+            return super().decision_function(X)
         if queue is None or queue.sycl_device.is_cpu:
             self._error_out_on_incompatible_devices(X, "decision_function")
-            # TODO add array-api support for CPU
             return super().decision_function(X)
 
         xp, _ = get_namespace(X)
@@ -628,6 +675,18 @@ class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         if self.fit_intercept:
             raw += self.intercept_
         return raw
+
+    def __sklearn_array_api_convert__(self, converter):
+        out, is_fitted, is_supported_device = base_move_estimator_to(
+            self, converter, ["_onedal_estimator"], "coef_"
+        )
+        if not is_fitted or not is_supported_device:
+            return out
+        with QM.manage_global_queue(None, out.coef_) as queue:
+            is_gpu = queue is not None and not queue.sycl_device.is_cpu
+        if is_gpu:
+            out._onedal_gpu_initialize_from_coefs()
+        return out
 
     fit.__doc__ = _sklearn_LogisticRegression.fit.__doc__
     predict.__doc__ = _sklearn_LogisticRegression.predict.__doc__

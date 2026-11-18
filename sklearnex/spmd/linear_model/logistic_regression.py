@@ -37,3 +37,7 @@ class LogisticRegression(LogisticRegression_Batch):
         raise RuntimeError(
             "score method is not supported for LogisticRegression SPMD estimator."
         )
+
+    # There's no CPU support in SPMD classes, so this step is not done
+    def _move_attributes_to_numpy(self) -> None:
+        pass

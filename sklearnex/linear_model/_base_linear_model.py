@@ -35,7 +35,11 @@ from .._utils import (
     register_hyperparameters,
 )
 from ..base import oneDALEstimator
-from ..utils._array_api import base_move_estimator_to, enable_array_api
+from ..utils._array_api import (
+    _NUMPY_FITTED_ATTRS,
+    base_move_estimator_to,
+    enable_array_api,
+)
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.9"):
@@ -84,7 +88,10 @@ class _BaseLinearModel(ABC):
             self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
         )
 
-        if sklearn_check_version("1.9"):
+        if sklearn_check_version("1.10"):
+            if not len(_NUMPY_FITTED_ATTRS):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
+        elif sklearn_check_version("1.9"):
             check_same_namespace(X, self, attribute="coef_", method="predict")
 
         if not hasattr(self, "_onedal_estimator"):
@@ -208,7 +215,10 @@ class _BaseIncrementalLinearModel(
             reset=False,
         )
 
-        if sklearn_check_version("1.9"):
+        if sklearn_check_version("1.10"):
+            if not len(_NUMPY_FITTED_ATTRS):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
+        elif sklearn_check_version("1.9"):
             check_same_namespace(X, self, attribute="coef_", method="predict")
 
         assert hasattr(self, "_onedal_estimator")

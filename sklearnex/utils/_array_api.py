@@ -36,6 +36,18 @@ from ..base import Tags, oneDALEstimator
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import _estimator_with_converted_arrays
 
+if sklearn_check_version("1.10"):
+    # This was added around the time of code freezes of both sklearn1.10
+    # and sklearnex2026.3. At the time of writing, it wasn't certain
+    # whether this feature was going to make it into sklearn1.10 or not,
+    # hence trying to maintain compatibility with both scenarios.
+    try:
+        from sklearn.utils._array_api import _NUMPY_FITTED_ATTRS
+    except (ImportError, AttributeError):
+        _NUMPY_FITTED_ATTRS = list()
+else:
+    _NUMPY_FITTED_ATTRS = list()
+
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
     def __sklearn_tags__(self) -> Tags:
