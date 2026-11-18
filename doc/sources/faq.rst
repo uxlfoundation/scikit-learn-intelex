@@ -83,12 +83,31 @@ Will all workflows run faster under patching?
 
 No. The |sklearnex| only accelerates a selected subset of routines from |sklearn|. See :doc:`algorithms` for details.
 
+Does patching affect all objects?
+---------------------------------
+
+After applying patching, it will only be able to affect estimator objects that are instantiated from the ``sklearn`` module after the patch is applied, and only for classes that are supported by the |sklearnex| (see :doc:`algorithms` for more information). Estimator instances that were instantiated from the ``sklearn`` module before patching will not be affected.
+
 What happens when some routine is not supported?
 ------------------------------------------------
 
 When an operation is not supported by the |sklearnex|, the original code branches from |sklearn| will be called instead, which is referred throughout these docs as a 'fallback'. Therefore, results are the same as what would be obtained when not using the |sklearnex|.
 
 In these cases however, there will be no acceleration. The underlying library being used for a given computation can be verified using :doc:`verbose mode <verbose>`. See :doc:`algorithms` for more information about what is covered by the |sklearnex|.
+
+Will predictions/inference be accelerated if fitting is through |sklearn|?
+--------------------------------------------------------------------------
+
+Yes, under patching and when using classes from the ``sklearnex`` module, if an estimator falls back to |sklearn| during a call to ``.fit()``, subsequent calls to methods that use the fitted state such as ``.predict()``, ``.predict_proba()``, ``.transform()``, and so on will be able to call accelerated routines from the |onedal| when supported. For instance, :obj:`~sklearn.linear_model.LinearRegression` with sample weights cannot be fitted through the |onedal|, so a fallback to |sklearn| will occur when calling ``.fit()``, but subsequent calls to ``.predict()`` on dense data (which is supported, whereas sparse data is not) will be handled through the |onedal| based on the coefficients obtained by |sklearn|.
+
+Note however that, in the case of patching, this only applies to estimators that were instantiated **after** patching is applied.
+
+Can I convert a fitted estimator from |sklearn| to its accelerated version from the |sklearnex|?
+------------------------------------------------------------------------------------------------
+
+At the moment, if an estimator object from the ``sklearn`` module is instantiated and fitted without patching, it is not possible to turn the result into the equivalent class from the |sklearnex| with accelerated ``.predict()`` / ``.transform()`` methods.
+
+However, it is possible to convert some classes of models - namely :obj:`sklearn.linear_model.LogisticRegression` and decision tree ensembles (such as :obj:`sklearn.ensemble.RandomForestRegressor` or :obj:`sklearn.ensemble.HistGradientBoostingClassifier`), the latter through `TreeLite <https://treelite.readthedocs.io>`__ - to an inference-only object from the :doc:`daal4py module <daal4py>`. See :doc:`model_builders` and :doc:`logistic_model_builder` for more information.
 
 Should I use the |sklearnex| if I already use |sklearn| with :external+numpy:doc:`NumPy <user/whatisnumpy>` and SciPy `backed by oneMKL <https://github.com/intel/optimization-zone/blob/main/software/numpy/README.md>`__?
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
