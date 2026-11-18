@@ -45,8 +45,6 @@ class _BaseLinearModel(ABC):
         out, is_fitted, is_supported_device = base_move_estimator_to(
             self, converter, ["_onedal_estimator"], "_coef_"
         )
-        if not is_fitted:
-            return out
-        if is_supported_device:
+        if is_fitted and is_supported_device:
             out._initialize_onedal_estimator_from_coefs()
         return out
