@@ -14,6 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
+
+from .. import _default_backend
 from ._data_conversion import from_table, return_type_constructor, to_table
 from ._dlpack import dlpack_to_numpy, get_torch_queue
 
@@ -23,4 +26,14 @@ __all__ = [
     "get_torch_queue",
     "to_table",
     "return_type_constructor",
+    "is_onedal_supported_device",
 ]
+
+
+def is_onedal_supported_device(arr) -> bool:
+    if isinstance(arr, np.ndarray):
+        return True
+    if not hasattr(arr, "__dlpack_device__"):
+        return False
+    device = arr.__dlpack_device__()[0]
+    return device in [_default_backend.kDLCPU, _default_backend.kDLOneAPI]
