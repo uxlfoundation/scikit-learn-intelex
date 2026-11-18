@@ -51,13 +51,13 @@ To install the necessary Python dependencies:
 
 .. code-block:: bash
 
-    conda install -c conda-forge numpy cython jinja2 pybind11 "setuptools<=79"
+    conda install -c conda-forge numpy cython jinja2 "pybind11>=2.13" "setuptools<=79"
 
 - Using ``pip``:
 
 .. code-block:: bash
 
-    pip install numpy cython jinja2 pybind11 "setuptools<=79"
+    pip install numpy cython jinja2 "pybind11>=2.13" "setuptools<=79"
 
 .. hint:: Using the compiled library after building it has a different set of requirements, such as the |sklearn| package along with its dependencies. Executing the tests also adds additional dependencies such as ``pytest``. These test dependencies can be installed from file `requirements-test.txt <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/requirements-test.txt>`__.
 
@@ -68,7 +68,7 @@ Apart from Python libraries and from the |onedal| (version ``2025.0`` or higher)
 
 - A C++ compiler.
 - clang-format.
-- CMake.
+- CMake (version ``3.18`` or higher).
 - A DPC++ compiler (required for GPU components).
 - An MPI backend and its headers (required for distributed components).
 

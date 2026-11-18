@@ -54,9 +54,9 @@ DEBUG_BUILD: bool = check_for_build_arg("--debug")
 USING_LLD: bool = check_for_build_arg("--using-lld")
 # Which Python ABI the extension modules are built for. It defaults to the
 # interpreter driving the build, but is a build parameter in its own right so
-# that the free-threaded build path - the generator mode, the CMake
-# find_package(Python) branch and the pybind11 2.13 requirement it brings - can
-# be exercised from a regular interpreter as well. Note that the C++ side reads
+# that the free-threaded daal4py generator mode can be exercised from a regular
+# interpreter as well. The CMake side needs no such switch: it locates Python
+# through FindPython for every build. Note that the C++ side reads
 # Py_GIL_DISABLED from the Python headers, so forcing this on under a
 # GIL-enabled interpreter selects the free-threaded build configuration, not a
 # free-threaded ABI.
@@ -468,7 +468,6 @@ class onedal_build:
             is_lin=IS_LIN,
             debug_build=DEBUG_BUILD,
             using_lld=USING_LLD,
-            free_threading=FREE_THREADING_BUILD,
         )
         build_onedal("host")
         if dpcpp:
