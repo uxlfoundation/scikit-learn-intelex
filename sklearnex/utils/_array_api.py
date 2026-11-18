@@ -187,7 +187,7 @@ def base_move_estimator_to(
     except NotFittedError:
         pass
     is_supported_device = False
-    if is_fitted:
+    if is_fitted and attr_check_for_device is not None:
         is_supported_device = is_onedal_supported_device(
             getattr(out, attr_check_for_device, None)
         )
