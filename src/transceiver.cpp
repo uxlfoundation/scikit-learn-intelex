@@ -74,7 +74,7 @@ std::shared_ptr<transceiver> create_transceiver()
     void * raw = PyLong_AsVoidPtr(ptr.get());
     if (PyErr_Occurred() || !raw) throw_python_error("Invalid transceiver pointer exported by Python module");
 
-    auto iface = reinterpret_cast<std::shared_ptr<transceiver_iface> *>(raw);
+    auto iface = static_cast<std::shared_ptr<transceiver_iface> *>(raw);
     return std::make_shared<transceiver>(*iface);
 }
 } // namespace
