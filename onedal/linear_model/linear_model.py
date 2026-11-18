@@ -87,7 +87,9 @@ class BaseLinearRegression(metaclass=ABCMeta):
             else:
                 # Note: on numpy<2, these objects and functions do not have
                 # the 'device' attribute/argument.
-                packed_coefficients = xp.zeros((dim0, coef_.shape[1] + 1))
+                packed_coefficients = xp.zeros(
+                    (dim0, coef_.shape[1] + 1), dtype=coef_.dtype
+                )
             packed_coefficients[:, 1:] = coef_
 
         model.packed_coefficients = to_table(packed_coefficients)
