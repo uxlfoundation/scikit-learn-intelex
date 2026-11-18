@@ -159,6 +159,10 @@ log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 # returns a boolean signaling whether the `estimator` argument has been
 # fitted to data or not, and another boolean signaling whether the attribute
 # under `attr_check_for_device` is on a device supported by oneDAL or not.
+# Note: the private method `__sklearn_array_api_convert__` is only ever
+# called by scikit-learn through `move_estimator_to`, which was introduced
+# in version 1.9 together with `_estimator_with_converted_arrays`, so there's
+# no further version checks here.
 def base_move_estimator_to(
     estimator,
     converter,
@@ -186,9 +190,9 @@ def base_move_estimator_to(
         is_fitted = True
     except NotFittedError:
         pass
-    is_supported_device = False
-    if is_fitted and attr_check_for_device is not None:
-        is_supported_device = is_onedal_supported_device(
-            getattr(out, attr_check_for_device, None)
-        )
+    is_supported_device = (
+        is_fitted
+        and attr_check_for_device is not None
+        and is_onedal_supported_device(getattr(out, attr_check_for_device, None))
+    )
     return out, is_fitted, is_supported_device
