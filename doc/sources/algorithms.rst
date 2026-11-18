@@ -186,7 +186,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
-     - 
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -195,7 +195,7 @@ Regression
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
-     - The Cholesky solver might fall back to spectral decomposition when regularization is too low instead of erroring out, but the ``solver_`` attribute will still be reported as ``'cholesky'``.
+     - The Cholesky solver might fall back to spectral decomposition when regularization is too low instead of erroring out, but the ``solver_`` attribute will still be reported as ``'cholesky'``. With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
@@ -457,13 +457,14 @@ Regression
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 40 10 10
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
@@ -478,6 +479,7 @@ Regression
        - ``categorical_features`` != ``None``
        - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - 
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -492,6 +494,7 @@ Regression
        - ``categorical_features`` != ``None``
        - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - 
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -504,6 +507,14 @@ Regression
        array API inputs:
        :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors`,
        :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors_graph`.
+     - 
+   * - :obj:`sklearn.linear_model.LinearRegression`
+     - All parameters are supported except:
+
+       - ``sample_weight`` != `None`
+       - ``positive`` = `True`
+     - Only dense data is supported.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -512,13 +523,7 @@ Regression
        - ``positive`` = `True`
        - ``alpha`` must be a scalar
      - Only dense data is supported.
-
-   * - :obj:`sklearn.linear_model.LinearRegression`
-     - All parameters are supported except:
-
-       - ``sample_weight`` != `None`
-       - ``positive`` = `True`
-     - Only dense data is supported.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
 
 Clustering
 **********
@@ -719,13 +724,14 @@ Regression
 **********
 
 .. list-table::
-   :widths: 10 30 20
+   :widths: 10 40 10 10
    :header-rows: 1
    :align: left
 
    * - Algorithm
      - Parameters & Methods
      - Data formats
+     - Other limitations
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
@@ -740,6 +746,7 @@ Regression
        - ``categorical_features`` != ``None``
        - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - 
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -754,6 +761,7 @@ Regression
        - ``categorical_features`` != ``None``
        - Nothing will be printed if ``verbose > 0``
      - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
+     - 
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -761,12 +769,14 @@ Regression
        - ``weights`` = `'callable'`
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
+     - 
    * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
 
 Clustering
 **********

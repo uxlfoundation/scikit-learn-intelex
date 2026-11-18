@@ -15,7 +15,6 @@
 # ===============================================================================
 
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
-from sklearn.metrics import r2_score
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.validation import check_is_fitted
 
@@ -24,24 +23,15 @@ from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
 
-from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
+from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 from ._base_linear_model import _BaseLinearModel
 
-if sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import (
-        check_same_namespace,
-        get_namespace_and_device,
-        move_to,
-    )
-
 
 @enable_array_api
-@register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearModel):
     __doc__ = _sklearn_LinearRegression.__doc__
@@ -214,21 +204,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
 
         return patching_status
 
-    def _onedal_predict_supported(self, patching_status, method_name, *data):
-        n_samples = _num_samples(data[0])
-        model_is_sparse = is_sparse(self.coef_) or (
-            self.fit_intercept and is_sparse(self.intercept_)
-        )
-        patching_status.and_conditions(
-            [
-                (n_samples > 0, "Number of samples is less than 1."),
-                (not is_sparse(data[0]), "Sparse input is not supported."),
-                (not model_is_sparse, "Sparse coefficients are not supported."),
-            ]
-        )
-
-        return patching_status
-
     def _initialize_onedal_estimator(self, override_fit_intercept: bool = False) -> None:
         onedal_params = {
             "fit_intercept": self._get_fit_intercept(override_fit_intercept),
@@ -267,63 +242,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
         if self._coef_.shape[0] == 1 and y.ndim == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
-
-    def _onedal_predict(self, X, queue=None):
-        xp, _ = get_namespace(X)
-
-        X = validate_data(
-            self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
-        )
-
-        if sklearn_check_version("1.9"):
-            check_same_namespace(X, self, attribute="coef_", method="predict")
-
-        if not hasattr(self, "_onedal_estimator"):
-            self._initialize_onedal_estimator_from_coefs()
-
-        res = self._onedal_estimator.predict(X, queue=queue)
-        if res.shape[1] == 1 and self.coef_.ndim == 1:
-            res = xp.reshape(res, (-1,))
-
-        return res
-
-    def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        if sklearn_check_version("1.9"):
-            xp, _, device_ = get_namespace_and_device(X)
-            y = move_to(y, xp=xp, device=device_)
-        return r2_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
-
-    @property
-    def coef_(self):
-        return self._coef_
-
-    @coef_.setter
-    def coef_(self, value):
-        self._coef_ = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.coef_ = value
-            self._onedal_estimator._onedal_model = None
-
-    @coef_.deleter
-    def coef_(self):
-        del self._coef_
-
-    @property
-    def intercept_(self):
-        return self._intercept_
-
-    @intercept_.setter
-    def intercept_(self, value):
-        self._intercept_ = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.intercept_ = value
-            self._onedal_estimator._onedal_model = None
-
-    @intercept_.deleter
-    def intercept_(self):
-        del self._intercept_
 
     fit.__doc__ = _sklearn_LinearRegression.fit.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__

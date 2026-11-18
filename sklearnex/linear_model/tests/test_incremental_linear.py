@@ -39,7 +39,7 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block
     X = np.array([[1], [2]])
     X = X.astype(dtype=dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    y = np.array([[1], [2]])
+    y = np.array([1, 2])
     y = y.astype(dtype=dtype)
     y_df = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
 
@@ -70,7 +70,7 @@ def test_sklearnex_partial_fit_on_gold_data(
     X = np.array([[1], [2], [3], [4]])
     X = X.astype(dtype=dtype)
     y = X + 3
-    y = y.astype(dtype=dtype)
+    y = y.astype(dtype=dtype).reshape(-1)
     X_split = np.array_split(X, 2)
     y_split = np.array_split(y, 2)
 
@@ -94,7 +94,7 @@ def test_sklearnex_partial_fit_on_gold_data(
 
     assert inclin.n_features_in_ == 1
     tol = 1e-5 if dtype == np.float32 else 1e-7
-    assert_allclose_numpy(inclin.coef_, [[1]], atol=tol)
+    assert_allclose_numpy(inclin.coef_, [1], atol=tol)
     if fit_intercept:
         assert_allclose_numpy(inclin.intercept_, 3, atol=tol)
 
