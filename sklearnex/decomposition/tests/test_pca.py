@@ -172,7 +172,10 @@ def test_create_model_behavior():
     est.fit(X_sp)
     # In the case of a fallback, the model should be set to none by clobbered
     # fitted attributes
-    assert est._onedal_estimator._onedal_model is None
+    assert (
+        not hasattr(est, "_onedal_estimator")
+        or est._onedal_estimator._onedal_model is None
+    )
 
     X_trans_sparse = est.transform(X)
     # use allclose as data was fit with sklearn and onedal on the same data

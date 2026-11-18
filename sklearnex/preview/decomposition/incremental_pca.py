@@ -291,6 +291,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     def fit(self, X, y=None):
         self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
 
         dispatch(
             self,
@@ -319,6 +321,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     @wrap_output_data
     def fit_transform(self, X, y=None, **fit_params):
         self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         return dispatch(
             self,
             "fit_transform",

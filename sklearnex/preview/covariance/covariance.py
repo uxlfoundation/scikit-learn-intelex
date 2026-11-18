@@ -67,10 +67,9 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         else:
             self.precision_ = None
 
-    def _save_attributes(self):
-        assert hasattr(self, "_onedal_estimator")
-        self._set_covariance(self._onedal_estimator.covariance_)
-        self.location_ = self._onedal_estimator.location_
+    def _save_attributes(self, onedal_estimator):
+        self._set_covariance(onedal_estimator.covariance_)
+        self.location_ = onedal_estimator.location_
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
@@ -83,11 +82,12 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
                 "Only one sample available. You may want to reshape your data array"
             )
 
-        self._onedal_estimator = self._onedal_covariance(
+        # Note: the oneDAL estimator is not used in any further method.
+        onedal_estimator = self._onedal_covariance(
             method="dense", bias=True, assume_centered=self.assume_centered
         )
-        self._onedal_estimator.fit(X, queue=queue)
-        self._save_attributes()
+        onedal_estimator.fit(X, queue=queue)
+        self._save_attributes(onedal_estimator)
 
     def _onedal_supported(self, method_name, *data):
         class_name = self.__class__.__name__

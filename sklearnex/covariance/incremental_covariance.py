@@ -279,6 +279,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             Returns the instance itself.
         """
         self._validate_params()
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         return dispatch(
             self,
             "fit",
