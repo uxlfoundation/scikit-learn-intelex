@@ -425,11 +425,10 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
   # Linear regression with non-PSD systems doesn't have a unique solution.
-  # OneDAL prefers minimum-norm solution, but sklearn doesn't.
-  # Note that all the cases here have 'wide' or 'square' shape (i.e. covariance is not full-rank)
+  # OneDAL prefers minimum-norm solution in case n_features == n_samples, but sklearn doesn't.
+  # Note that all the cases here have 'square' shape (i.e. covariance is not full-rank)
   # and 'zero_alpha' (result should match against unregularized) together.
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-svd-zero_alpha]
-  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-cholesky-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-lsqr-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-sparse_cg-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_matrix-wide-True-lsqr-zero_alpha]
