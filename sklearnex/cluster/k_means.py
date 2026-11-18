@@ -475,9 +475,7 @@ class KMeans(oneDALEstimator, _sklearn_KMeans):
         out, is_fitted, is_supported_device = base_move_estimator_to(
             self, converter, ["_onedal_estimator"], "cluster_centers_"
         )
-        if not is_fitted:
-            return out
-        if is_supported_device:
+        if is_fitted and is_supported_device:
             out._initialize_onedal_estimator()
             out._onedal_estimator._create_model(
                 out.cluster_centers_,
