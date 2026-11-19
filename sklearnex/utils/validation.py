@@ -27,7 +27,6 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 # Note: 'check_feature_names' is reimported from this file elsewhere
 from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
-from onedal import _default_backend
 from onedal.utils.validation import check_all_finite, is_contiguous
 
 if sklearn_check_version("1.9"):
@@ -44,16 +43,6 @@ def _onedal_supported_format(X, xp):
     # data from sklearnex. Unlike other oneDAL offloading, copying the data is
     # specifically avoided as it has a non-negligible impact on speed. In that
     # case use native sklearn ``_assert_all_finite``
-    if hasattr(X, "__dlpack_device__"):
-        try:
-            device = X.__dlpack_device__()[0]
-            if device not in [
-                _default_backend.kDLCPU,
-                _default_backend.kDLOneAPI,
-            ]:
-                return False
-        except BufferError:
-            pass
     return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 
@@ -170,6 +159,15 @@ def validate_data(
     check_x = not isinstance(X, str) or X != "no_validation"
     check_y = not (y is None or isinstance(y, str) and y == "no_validation")
 
+    if (
+        check_x
+        and check_y
+        and kwargs.get("y_numeric", False)
+        and sklearn_check_version("1.9")
+    ):
+        xp, _, device = get_namespace_and_device(out[0])
+        out[1] = move_to(out[1], xp=xp, device=device)
+
     if ensure_all_finite:
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
@@ -200,12 +198,7 @@ def validate_data(
         # a dtype check and conversion. This will query the array_namespace and
         # convert y as necessary. This is important especially for regressors.
         outx, outy = out if check_x else (None, out)
-        if outx is not None and sklearn_check_version("1.9"):
-            yp, _, device = get_namespace_and_device(outx)
-            outy = move_to(outy, xp=yp, device=device)
-            out = outx, outy
-        else:
-            yp, _ = get_namespace(outy)
+        yp, _ = get_namespace(outy)
 
         # avoid using ``kwargs.get("dtype")`` as it will always set up the default
         dtype = kwargs.get("dtype", (yp.float64, yp.float32, yp.int32))
