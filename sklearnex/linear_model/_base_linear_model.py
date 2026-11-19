@@ -284,19 +284,22 @@ class _BaseIncrementalLinearModel(
                 y_numeric=True,
             )
 
-            expect_y_2d = getattr(self, "_force_coef_2d", False)
-            if len(y.shape) < 2 and expect_y_2d:
-                raise ValueError(
-                    "Attempting `partial_fit` on a single-dimensional 'y' on"
-                    " a multi-dimensional estimator. Call `.fit()` again with"
-                    " the new dimension of 'y' to reset expected shapes."
-                )
-            elif len(y.shape) > 1 and not expect_y_2d:
-                raise ValueError(
-                    "Attempting `partial_fit` on a multi-dimensional 'y' on"
-                    " a single-dimensional estimator. Call `.fit() again with"
-                    " the new dimension of 'y' to reset expected shapes."
-                )
+            if not first_pass:
+                expect_y_2d = getattr(self, "_force_coef_2d", False)
+                if len(y.shape) < 2 and expect_y_2d:
+                    raise ValueError(
+                        "Attempting `partial_fit` on a single-dimensional 'y' on"
+                        " a multi-dimensional estimator. Call `.fit()` again with"
+                        " the new dimension of 'y' to reset expected shapes."
+                    )
+                elif len(y.shape) > 1 and not expect_y_2d:
+                    raise ValueError(
+                        "Attempting `partial_fit` on a multi-dimensional 'y' on"
+                        " a single-dimensional estimator. Call `.fit() again with"
+                        " the new dimension of 'y' to reset expected shapes."
+                    )
+            else:
+                self._force_coef_2d = len(y.shape) > 1
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
