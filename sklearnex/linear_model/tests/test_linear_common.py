@@ -302,6 +302,7 @@ def test_linear_move_estimator_to(
             )
 
 
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.parametrize(
     "estimator,sklearn_estimator",
     [
@@ -319,7 +320,7 @@ def test_linear_move_estimator_to(
 def test_coefs_shape_matches_sklearn(
     estimator, sklearn_estimator, X_shape, y_shape, fit_intercept
 ):
-    from sklearn import linear_model as _sklearn_linear_model
+    from sklearn import linear_model as sklearn_linear_model
 
     from sklearnex import linear_model
 
@@ -328,36 +329,58 @@ def test_coefs_shape_matches_sklearn(
     y = rng.standard_normal(size=y_shape)
 
     model = getattr(linear_model, estimator)(fit_intercept=fit_intercept).fit(X, y)
-    _sklearn_model = getattr(_sklearn_linear_model, sklearn_estimator)(
+    sklearn_model = getattr(sklearn_linear_model, sklearn_estimator)(
         fit_intercept=fit_intercept
     ).fit(X, y)
 
-    np.testing.assert_array_equal(model.coef_.shape, _sklearn_model.coef_.shape)
-    if not hasattr(_sklearn_model.intercept_, "shape"):
+    if not estimator.startswith("Incremental"):
+        w = np.ones(X.shape[0])
+        fallback_model = getattr(linear_model, estimator)(
+            fit_intercept=fit_intercept
+        ).fit(X, y, w)
+        assert not hasattr(fallback_model, "_onedal_estimator")
+        pred_fallback = fallback_model.predict(X)
+        assert hasattr(fallback_model, "_onedal_estimator")
+
+    np.testing.assert_array_equal(model.coef_.shape, sklearn_model.coef_.shape)
+    if not hasattr(sklearn_model.intercept_, "shape"):
         assert not hasattr(model.intercept_, "shape")
     else:
         np.testing.assert_array_equal(
-            model.intercept_.shape, _sklearn_model.intercept_.shape
+            model.intercept_.shape, sklearn_model.intercept_.shape
         )
 
     pred = model.predict(X)
-    pred_sklearn = _sklearn_model.predict(X)
+    pred_sklearn = sklearn_model.predict(X)
     np.testing.assert_array_equal(pred.shape, pred_sklearn.shape)
+
+    if not estimator.startswith("Incremental"):
+        np.testing.assert_array_equal(
+            fallback_model.coef_.shape, sklearn_model.coef_.shape
+        )
+        if not hasattr(sklearn_model.intercept_, "shape"):
+            assert not hasattr(fallback_model.intercept_, "shape")
+        else:
+            np.testing.assert_array_equal(
+                fallback_model.intercept_.shape, sklearn_model.intercept_.shape
+            )
+        np.testing.assert_array_equal(pred_fallback.shape, pred_sklearn.shape)
+        np.testing.assert_allclose(pred_fallback, pred_sklearn)
 
     if sklearn_check_version("1.9"):
         xp, _, device = get_namespace_and_device(X)
         model_moved = move_estimator_to(model, xp=xp, device=device)
-        _sklearn_model_moved = move_estimator_to(_sklearn_model, xp=xp, device=device)
-        np.testing.assert_array_equal(model_moved.coef_.shape, _sklearn_model.coef_.shape)
-        if not hasattr(_sklearn_model_moved.intercept_, "shape"):
+        sklearn_model_moved = move_estimator_to(sklearn_model, xp=xp, device=device)
+        np.testing.assert_array_equal(model_moved.coef_.shape, sklearn_model.coef_.shape)
+        if not hasattr(sklearn_model_moved.intercept_, "shape"):
             assert not hasattr(model_moved.intercept_, "shape")
         else:
             np.testing.assert_array_equal(
-                model_moved.intercept_.shape, _sklearn_model_moved.intercept_.shape
+                model_moved.intercept_.shape, sklearn_model_moved.intercept_.shape
             )
 
         pred = model_moved.predict(X)
-        pred_sklearn = _sklearn_model_moved.predict(X)
+        pred_sklearn = sklearn_model_moved.predict(X)
         np.testing.assert_array_equal(pred.shape, pred_sklearn.shape)
 
 
