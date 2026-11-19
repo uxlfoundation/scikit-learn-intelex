@@ -131,6 +131,10 @@ class _BaseLinearModel(ABC):
         self._intercept_ = value
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
+        if hasattr(self._intercept_, "shape") and len(self._intercept_.shape):
+            self._force_intercept_1d = True
+        else:
+            self._force_intercept_1d = False
 
     @intercept_.deleter
     def intercept_(self):

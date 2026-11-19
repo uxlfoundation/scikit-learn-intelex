@@ -235,6 +235,7 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
             y_numeric=True,
             multi_output=True,
         )
+        self._force_coef_2d = False
         self._force_intercept_1d = len(y.shape) > 1
 
         self._initialize_onedal_estimator()
