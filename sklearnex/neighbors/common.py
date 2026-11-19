@@ -637,7 +637,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if self.effective_metric_ in aliases:
                 self.effective_metric_ = origin
                 break
-
         onedal_brute_metrics = [
             "manhattan",
             "minkowski",

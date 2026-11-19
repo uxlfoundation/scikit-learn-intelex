@@ -195,16 +195,16 @@ def test_sklearnex_partial_fit_on_random_data(
     _assert_in_namespace(inclin.coef_, dataframe)
     coef_ = _as_numpy(inclin.coef_)
     tol = 1e-4 if coef_.dtype == np.float32 else 1e-7
-    assert_allclose(coef.T.squeeze(), coef_, atol=tol)
+    assert_allclose(coef.T.squeeze(), coef_.squeeze(), atol=tol)
 
     if fit_intercept:
         assert_allclose_numpy(intercept, inclin.intercept_, atol=tol)
 
     X_test = gen.random(size=(num_samples, num_features), dtype=dtype)
     if fit_intercept:
-        expected_y_pred = (X_test @ coef + intercept[np.newaxis, :]).squeeze()
+        expected_y_pred = X_test @ coef + intercept[np.newaxis, :]
     else:
-        expected_y_pred = (X_test @ coef).squeeze()
+        expected_y_pred = X_test @ coef
 
     X_test_df = _convert_to_dataframe(X_test, sycl_queue=queue, target_df=dataframe)
 

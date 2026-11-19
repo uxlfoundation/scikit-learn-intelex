@@ -229,6 +229,8 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
             y_numeric=True,
             multi_output=supports_multi_output,
         )
+        self._force_coef_2d = len(y.shape) > 1
+        self._force_intercept_1d = len(y.shape) > 1
 
         self._initialize_onedal_estimator()
 
@@ -239,9 +241,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
         self._coef_ = self._onedal_estimator.coef_
         self._intercept_ = self._onedal_estimator.intercept_
 
-        if self._coef_.shape[0] == 1 and y.ndim == 1:
-            self._coef_ = self._coef_[0, ...]  # set to 1d
-            self._intercept_ = self._intercept_[0]  # set 1d to scalar
+        self._reshape_coefficients_from_onedal()
 
     fit.__doc__ = _sklearn_LinearRegression.fit.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__

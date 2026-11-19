@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from array_api_compat import is_array_api_obj
+
 from daal4py.sklearn._utils import sklearn_check_version
 
 if sklearn_check_version("1.9"):
@@ -32,9 +34,6 @@ if sklearn_check_version("1.9"):
         assert xp_a == xp_b
         assert device_a == device_b
 
-    def check_is_array(obj) -> bool:
-        return hasattr(obj, "__dlpack__") or hasattr(obj, "shape")
-
     # TODO: revisit these attributes once scikit-learn 1.10 decides
     # on the logic for their type and what happens after moving estimators.
     UNMOVABLE_ATTRIBUTES = [
@@ -48,11 +47,15 @@ if sklearn_check_version("1.9"):
                 attr not in UNMOVABLE_ATTRIBUTES
                 and not attr.startswith("_")
                 and attr.endswith("_")
-                and check_is_array(getattr(estimator, attr))
+                and is_array_api_obj(getattr(estimator, attr))
             ):
                 xp_obj, _, device_obj = get_namespace_and_device(getattr(estimator, attr))
-                assert xp_obj == xp
-                assert device_obj == device
+                assert (
+                    xp_obj == xp
+                ), f"Failed namespace check for '{attr}' (got: {xp_obj}, expected: {xp})"
+                assert (
+                    device_obj == device
+                ), f"Failed device check for '{attr}' (got: {device_obj}, expected: {device})"
 
     def assert_same_attributes(obj_check, obj_reference, attrs_skip=None):
         # Warning is thrown whenever oneDAL hyperparameters (like block sizes)

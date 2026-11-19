@@ -120,6 +120,10 @@ class _BaseLinearModel(ABC):
         self._coef_ = value
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
+        if hasattr(self._coef_, "shape") and len(self._coef_.shape) > 1:
+            self._force_coef_2d = True
+        else:
+            self._force_coef_2d = False
 
     @coef_.deleter
     def coef_(self):
@@ -134,6 +138,10 @@ class _BaseLinearModel(ABC):
         self._intercept_ = value
         if hasattr(self, "_onedal_estimator"):
             del self._onedal_estimator
+        if hasattr(self._intercept_, "shape") and len(self._intercept_.shape):
+            self._force_intercept_1d = True
+        else:
+            self._force_intercept_1d = False
 
     @intercept_.deleter
     def intercept_(self):
@@ -159,9 +167,26 @@ class _BaseLinearModel(ABC):
         # arrays in the sklearnex estimator end up sharing memory.
         self._coef_ = self._onedal_estimator.coef_
         self._intercept_ = self._onedal_estimator.intercept_
+        self._reshape_coefficients_from_onedal()
+
+    def _reshape_coefficients_from_onedal(self):
         if self._coef_.shape[0] == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
+
+        if not len(self._coef_.shape):
+            xp, _ = get_namespace(self._coef_)
+            self._coef_ = xp.reshape(self._coef_, (-1,))
+
+        if len(self._coef_.shape) < 2 and getattr(self, "_force_coef_2d", False):
+            xp, _ = get_namespace(self._coef_)
+            self._coef_ = xp.reshape(self._coef_, (1, -1))
+
+        if not len(self._intercept_.shape) and getattr(
+            self, "_force_intercept_1d", False
+        ):
+            xp, _ = get_namespace(self._coef_)
+            self._intercept_ = xp.reshape(self._intercept_, (-1,))
 
     def __sklearn_array_api_convert__(self, converter):
         out, is_fitted, is_supported_device = base_move_estimator_to(
@@ -269,6 +294,23 @@ class _BaseIncrementalLinearModel(
                 y_numeric=True,
             )
 
+            if not first_pass:
+                expect_y_2d = getattr(self, "_force_coef_2d", False)
+                if len(y.shape) < 2 and expect_y_2d:
+                    raise ValueError(
+                        "Attempting `partial_fit` on a single-dimensional 'y' on"
+                        " a multi-dimensional estimator. Call `.fit()` again with"
+                        " the new dimension of 'y' to reset expected shapes."
+                    )
+                elif len(y.shape) > 1 and not expect_y_2d:
+                    raise ValueError(
+                        "Attempting `partial_fit` on a multi-dimensional 'y' on"
+                        " a single-dimensional estimator. Call `.fit() again with"
+                        " the new dimension of 'y' to reset expected shapes."
+                    )
+            else:
+                self._force_coef_2d = len(y.shape) > 1
+
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
             self.n_features_in_ = X.shape[1]
@@ -310,17 +352,14 @@ class _BaseIncrementalLinearModel(
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
-        # This can happen when there is a single feature in 'X'
-        if (
-            len(self._intercept_.shape)
-            and (self._intercept_.shape[0] > 0)
-            and len(self._coef_.shape) == 1
-        ):
-            xp, _ = get_namespace(self._coef_)
-            self._coef_ = xp.reshape(self._coef_, (-1, 1))
-        elif not len(self._coef_.shape):
+        if not len(self._coef_.shape):
             xp, _ = get_namespace(self._coef_)
             self._coef_ = xp.reshape(self._coef_, (-1,))
+
+        if len(self._coef_.shape) < 2 and getattr(self, "_force_coef_2d", False):
+            xp, _ = get_namespace(self._coef_)
+            self._intercept_ = xp.reshape(self._intercept_, (-1,))
+            self._coef_ = xp.reshape(self._coef_, (self._intercept_.shape[0], -1))
 
     def _onedal_fit(self, X, y, queue=None):
 
@@ -338,6 +377,7 @@ class _BaseIncrementalLinearModel(
             multi_output=True,
             y_numeric=True,
         )
+        self._force_coef_2d = len(y.shape) > 1
 
         n_samples, n_features = X.shape
 
