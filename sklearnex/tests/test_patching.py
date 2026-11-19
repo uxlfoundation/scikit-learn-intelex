@@ -59,6 +59,9 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
+from sklearnex.utils._array_api import _NUMPY_FITTED_ATTRS
+
+KEEP_LOGREG_AS_NUMPY: bool = len(_NUMPY_FITTED_ATTRS) > 0
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -536,6 +539,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 def test_standard_estimator_patching_array_api(
     with_array_api, caplog, dataframe, queue, dtype, estimator, method
 ):
+    # TODO: add special tests for this case later on
+    if estimator == "LogisticRegression" and KEEP_LOGREG_AS_NUMPY:
+        pytest.skip("Changes in scikit-learn behavior")
     # array API inputs (dpnp, array_api_strict) run with array_api_dispatch enabled
     # via the with_array_api fixture, so fit and all methods use array API natively.
     kwargs = {}

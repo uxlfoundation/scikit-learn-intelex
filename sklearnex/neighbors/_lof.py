@@ -44,6 +44,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     # structure and violate the sklearn inheritance path.
     _save_attributes = NearestNeighbors._save_attributes
     _onedal_knn_fit = NearestNeighbors._onedal_fit
+    _fit_onedal_estimator = NearestNeighbors._fit_onedal_estimator
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
 
     def _local_reachability_density(self, distances_X, neighbors_indices):
@@ -118,6 +119,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
     def fit(self, X, y=None):
         xp, is_array_api = get_namespace(X)
+        if "_onedal_estimator" in self.__dict__:
+            del self.__dict__["_onedal_estimator"]
         dispatch(
             self,
             "fit",

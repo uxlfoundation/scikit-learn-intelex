@@ -29,6 +29,7 @@ from onedal.tests.utils._dataframes_support import (
     torch_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
+from sklearnex.utils._array_api import _NUMPY_FITTED_ATTRS
 
 if dpnp_available:
     import dpnp
@@ -48,6 +49,8 @@ all_estimators = non_incremental_estimators + incremental_estimators
 
 
 host_df_series = tuple(m.Series for m in host_df_modules)
+
+NO_ERROR_ON_MIXED_DEVICES: bool = len(_NUMPY_FITTED_ATTRS) > 0
 
 
 def _expected_type(X, X_xp):
@@ -139,6 +142,9 @@ def test_linreg_mixed_array_namespaces(
     _check_attributes_and_output(model, X, y, X_xp)
 
 
+@pytest.mark.skipif(
+    NO_ERROR_ON_MIXED_DEVICES, reason="Changes in expected scikit-learn behavior"
+)
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",

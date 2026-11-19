@@ -65,7 +65,14 @@ class BaseLinearRegression(metaclass=ABCMeta):
         dim0 = coef_.shape[0] if len(coef_.shape) > 1 else 1
         if dim0 == 1:
             coef_ = xp.reshape(coef_, (1, -1))
-        if self.fit_intercept:
+        fit_intercept = self.fit_intercept
+        if not fit_intercept:
+            if isinstance(intercept_, (float, int)):
+                fit_intercept = intercept_ != 0
+            else:
+                fit_intercept = xp.any(xp.reshape(intercept_, (-1,)) != 0)
+        if fit_intercept:
+            self.fit_intercept = True
             intercept_ = xp.reshape(intercept_, (dim0, -1))
             if xp is np:
                 # workaround for numpy<2
@@ -75,18 +82,21 @@ class BaseLinearRegression(metaclass=ABCMeta):
         else:
             if hasattr(coef_, "device"):
                 packed_coefficients = xp.zeros(
-                    (dim0, coef_.shape[1] + 1), device=coef_.device
+                    (dim0, coef_.shape[1] + 1), device=coef_.device, dtype=coef_.dtype
                 )
             else:
                 # Note: on numpy<2, these objects and functions do not have
                 # the 'device' attribute/argument.
-                packed_coefficients = xp.zeros((dim0, coef_.shape[1] + 1))
+                packed_coefficients = xp.zeros(
+                    (dim0, coef_.shape[1] + 1), dtype=coef_.dtype
+                )
             packed_coefficients[:, 1:] = coef_
 
-        # packed_coefficients = xp.reshape(packed_coefficients, (1, -1))
         model.packed_coefficients = to_table(packed_coefficients)
-        self.coef_ = coef_
-        self.intercept_ = intercept_
+        self.coef_, self.intercept_ = (
+            packed_coefficients[:, 1:],
+            packed_coefficients[:, 0],
+        )
         self._onedal_model = model
 
     @supports_queue
