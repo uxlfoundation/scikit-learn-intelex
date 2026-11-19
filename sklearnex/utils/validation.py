@@ -166,7 +166,7 @@ def validate_data(
         and sklearn_check_version("1.9")
     ):
         xp, _, device = get_namespace_and_device(out[0])
-        out[1] = move_to(out[1], xp=xp, device=device)
+        out = out[0], move_to(out[1], xp=xp, device=device)
 
     if ensure_all_finite:
         # run local finite check
