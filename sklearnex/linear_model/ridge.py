@@ -235,6 +235,7 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
             y_numeric=True,
             multi_output=True,
         )
+        self._force_intercept_1d = len(y.shape) > 1
 
         self._initialize_onedal_estimator()
         self._onedal_estimator.fit(X, y, queue=queue)
@@ -244,9 +245,7 @@ class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         self.solver_ = "cholesky"
         self.n_iter_ = None
 
-        if y.ndim == 1 or y.shape[1] == 1:
-            self._coef_ = self._coef_[0, ...]  # set to 1d
-            self._intercept_ = self._intercept_[0]  # set 1d to scalar
+        self._reshape_coefficients_from_onedal()
 
     fit.__doc__ = _sklearn_Ridge.fit.__doc__
     predict.__doc__ = _sklearn_Ridge.predict.__doc__

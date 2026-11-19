@@ -186,7 +186,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
-     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python ``float``.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -195,7 +195,7 @@ Regression
        - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
-     - The Cholesky solver might fall back to spectral decomposition when regularization is too low instead of erroring out, but the ``solver_`` attribute will still be reported as ``'cholesky'``. With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
+     - The Cholesky solver might fall back to spectral decomposition when regularization is too low instead of erroring out, but the ``solver_`` attribute will still be reported as ``'cholesky'``. With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python ``float``.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
@@ -514,7 +514,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python ``float``.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -523,7 +523,7 @@ Regression
        - ``positive`` = `True`
        - ``alpha`` must be a scalar
      - Only dense data is supported.
-     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python ``float``.
 
 Clustering
 **********
@@ -776,7 +776,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python float, and same for ``fit_intercept=True`` and a single-target regression with a 2d ``y``.
+     - With ``fit_intercept=False`` and a single-target regression, the ``intercept_`` attribute will be a NumPy or array API scalar rather than a Python ``float``.
 
 Clustering
 **********

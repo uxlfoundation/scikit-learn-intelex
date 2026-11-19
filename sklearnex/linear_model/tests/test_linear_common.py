@@ -303,14 +303,23 @@ def test_linear_move_estimator_to(
 
 
 @pytest.mark.parametrize(
-    "estimator",
-    ["LinearRegression", "Ridge", "IncrementalLinearRegression", "IncrementalRidge"],
+    "estimator,sklearn_estimator",
+    [
+        ("LinearRegression", "LinearRegression"),
+        ("Ridge", "Ridge"),
+        # Incremental estimators are not in scikit-learn and do no
+        # strictly need to conform to all patterns there.
+        ("IncrementalLinearRegression", "LinearRegression"),
+        ("IncrementalRidge", "LinearRegression"),
+    ],
 )
 @pytest.mark.parametrize("X_shape", [(10, 1), (10, 2)])
-@pytest.mark.parametrize("y_shape", [10, (10, 2)])
+@pytest.mark.parametrize("y_shape", [10, (10, 2), (10, 1)])
 @pytest.mark.parametrize("fit_intercept", [True])  # TODO: make sklearnex use 'float' type
-def test_coefs_shape_matches_sklearn(estimator, X_shape, y_shape, fit_intercept):
-    from sklearn.linear_model import Ridge as _sklearn_Ridge
+def test_coefs_shape_matches_sklearn(
+    estimator, sklearn_estimator, X_shape, y_shape, fit_intercept
+):
+    from sklearn import linear_model as _sklearn_linear_model
 
     from sklearnex import linear_model
 
@@ -319,7 +328,9 @@ def test_coefs_shape_matches_sklearn(estimator, X_shape, y_shape, fit_intercept)
     y = rng.standard_normal(size=y_shape)
 
     model = getattr(linear_model, estimator)(fit_intercept=fit_intercept).fit(X, y)
-    _sklearn_model = _sklearn_Ridge(fit_intercept=fit_intercept).fit(X, y)
+    _sklearn_model = getattr(_sklearn_linear_model, sklearn_estimator)(
+        fit_intercept=fit_intercept
+    ).fit(X, y)
 
     np.testing.assert_array_equal(model.coef_.shape, _sklearn_model.coef_.shape)
     if not hasattr(_sklearn_model.intercept_, "shape"):
@@ -328,6 +339,10 @@ def test_coefs_shape_matches_sklearn(estimator, X_shape, y_shape, fit_intercept)
         np.testing.assert_array_equal(
             model.intercept_.shape, _sklearn_model.intercept_.shape
         )
+
+    pred = model.predict(X)
+    pred_sklearn = _sklearn_model.predict(X)
+    np.testing.assert_array_equal(pred.shape, pred_sklearn.shape)
 
     if sklearn_check_version("1.9"):
         xp, _, device = get_namespace_and_device(X)
@@ -340,6 +355,10 @@ def test_coefs_shape_matches_sklearn(estimator, X_shape, y_shape, fit_intercept)
             np.testing.assert_array_equal(
                 model_moved.intercept_.shape, _sklearn_model_moved.intercept_.shape
             )
+
+        pred = model_moved.predict(X)
+        pred_sklearn = _sklearn_model_moved.predict(X)
+        np.testing.assert_array_equal(pred.shape, pred_sklearn.shape)
 
 
 @pytest.mark.parametrize(
