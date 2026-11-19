@@ -50,8 +50,12 @@ if sklearn_check_version("1.9"):
                 and is_array_api_obj(getattr(estimator, attr))
             ):
                 xp_obj, _, device_obj = get_namespace_and_device(getattr(estimator, attr))
-                assert xp_obj == xp
-                assert device_obj == device
+                assert (
+                    xp_obj == xp
+                ), f"Failed namespace check for '{attr}' (got: {xp_obj}, expected: {xp})"
+                assert (
+                    device_obj == device
+                ), f"Failed device check for '{attr}' (got: {device_obj}, expected: {device})"
 
     def assert_same_attributes(obj_check, obj_reference, attrs_skip=None):
         # Warning is thrown whenever oneDAL hyperparameters (like block sizes)
