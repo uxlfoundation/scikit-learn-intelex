@@ -43,7 +43,11 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
-    from sklearnex.tests.utils.misc import assert_same_namespace
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
 
 
 @pytest.mark.parametrize("fit_intercept", [True, False])
@@ -169,7 +173,7 @@ def test_predict_after_fallback_array_api(
     ),
 )
 @pytest.mark.parametrize("num_targets", [1, 2])
-def test_move_estimator_to(
+def test_linear_move_estimator_to(
     estimator, array_input_like, array_move_like, num_targets, with_array_api
 ):
     # TODO: remove this skip once issue in sklearn is fixed:
@@ -201,8 +205,10 @@ def test_move_estimator_to(
     pred_orig = model.predict(X_in)
 
     model_moved = move_estimator_to(model, xp_move, device_move)
-    assert_same_namespace(model.coef_, array_input_like)
-    assert_same_namespace(model_moved.coef_, array_move_like)
+
+    assert_same_attributes(model_moved, model)
+    assert_public_attributes_are_in_namespace(model, xp_in, device_in)
+    assert_public_attributes_are_in_namespace(model_moved, xp_move, device_move)
 
     pred_moved = model_moved.predict(X_move)
     assert_same_namespace(pred_orig, array_input_like)
