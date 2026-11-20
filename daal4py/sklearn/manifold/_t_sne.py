@@ -353,7 +353,23 @@ class TSNE(BaseTSNE):
             X_embedded = pca.fit_transform(X).astype(np.float32, copy=False)
             # PCA is rescaled so that PC1 has standard deviation 1e-4 which is
             # the default value for random initialization. See issue #18018.
-            X_embedded = X_embedded / np.std(X_embedded[:, 0]) * 1e-4
+            if sklearn_check_version("1.10"):
+                std_pc1 = np.std(X_embedded[:, 0])
+                # Avoid division by zero and crashing on constant data, see #28368
+                if std_pc1 < 1e-12:
+                    warnings.warn(
+                        "Input data is (near) constant. "
+                        "PCA initialization is not meaningful. "
+                        "Falling back to random initialization.",
+                        RuntimeWarning,
+                    )
+                    X_embedded = 1e-4 * random_state.standard_normal(
+                        size=(n_samples, self.n_components)
+                    ).astype(np.float32)
+                else:
+                    X_embedded = X_embedded / std_pc1 * 1e-4
+            else:
+                X_embedded = X_embedded / np.std(X_embedded[:, 0]) * 1e-4
         elif self._init == "random":
             # The embedding is initialized with iid samples from Gaussians with
             # standard deviation 1e-4.

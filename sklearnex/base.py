@@ -25,6 +25,12 @@ class Tags(_sklearn_Tags):
     onedal_array_api: bool = False
 
 
+def _to_onedal_tags(sktags: _sklearn_Tags) -> Tags:
+    if isinstance(sktags, Tags):
+        return sktags
+    return Tags(**{field.name: getattr(sktags, field.name) for field in fields(sktags)})
+
+
 class oneDALEstimator:
     """Inherited class for all oneDAL-based estimators.
 
@@ -49,9 +55,7 @@ class oneDALEstimator:
         # alternatives but it best follows sklearn. Subclasses will now only need
         # to set `onedal_array_api` to True to signify gpu zero-copy support
         # and maintenance is smaller because of underlying sklearn infrastructure
-        sktags = super().__sklearn_tags__()
-        tag_dict = {field.name: getattr(sktags, field.name) for field in fields(sktags)}
-        return Tags(**tag_dict)
+        return _to_onedal_tags(super().__sklearn_tags__())
 
     @property
     def _doc_link_module(self) -> str:

@@ -20,14 +20,21 @@ import math
 from collections.abc import Callable
 from typing import Union
 
+import numpy as np
 import scipy.linalg as linalg
+from sklearn.base import clone
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 from sklearn.utils._array_api import get_namespace
+from sklearn.utils.validation import NotFittedError, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.datatypes import is_onedal_supported_device
 from onedal.utils._array_api import _is_numpy_namespace
 
 from ..base import Tags, oneDALEstimator
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import _estimator_with_converted_arrays
 
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
@@ -143,3 +150,49 @@ def log_likelihood(emp_cov, precision):
 
 
 log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
+
+
+# Akin to calling scikit-learn's `_estimator_with_converted_arrays` on an
+# sklearnex estimator, but without triggering `__sklearn_array_api_convert__`
+# as defined in the estimator, and excluding some of the attributes.
+# In addition to returning the base of the converted object, it also
+# returns a boolean signaling whether the `estimator` argument has been
+# fitted to data or not, and another boolean signaling whether the attribute
+# under `attr_check_for_device` is on a device supported by oneDAL or not.
+# Note: the private method `__sklearn_array_api_convert__` is only ever
+# called by scikit-learn through `move_estimator_to`, which was introduced
+# in version 1.9 together with `_estimator_with_converted_arrays`, so there's
+# no further version checks here.
+def base_move_estimator_to(
+    estimator,
+    converter,
+    attrs_exclude: list[str],
+    attr_check_for_device: str | None,
+) -> tuple[object, bool, bool]:
+    def is_numpy_non_numeric(arr) -> bool:
+        return isinstance(arr, np.ndarray) and not (
+            np.issubdtype(arr.dtype, np.number) or np.issubdtype(arr.dtype, np.bool_)
+        )
+
+    out = clone(estimator)
+    out.__dict__ = {
+        k: (
+            _estimator_with_converted_arrays(v, converter)
+            if not is_numpy_non_numeric(v)
+            else v
+        )
+        for k, v in estimator.__dict__.items()
+        if k not in attrs_exclude
+    }
+    is_fitted = False
+    try:
+        check_is_fitted(estimator)
+        is_fitted = True
+    except NotFittedError:
+        pass
+    is_supported_device = (
+        is_fitted
+        and attr_check_for_device is not None
+        and is_onedal_supported_device(getattr(out, attr_check_for_device, None))
+    )
+    return out, is_fitted, is_supported_device
