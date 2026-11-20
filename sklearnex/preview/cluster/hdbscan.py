@@ -19,16 +19,12 @@ import warnings
 from copy import copy
 
 import numpy as np
-from sklearn.base import clone
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 from sklearn.cluster._hdbscan.hdbscan import (
     _OUTLIER_ENCODING,
     remap_single_linkage_tree,
 )
-from sklearn.utils._array_api import (
-    _estimator_with_converted_arrays,
-    _max_precision_float_dtype,
-)
+from sklearn.utils._array_api import _max_precision_float_dtype
 from sklearn.utils._array_api import device as _device
 from sklearn.utils.validation import check_array
 
@@ -40,7 +36,11 @@ from onedal.utils._array_api import _is_numpy_namespace
 from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace
+from ...utils._array_api import (
+    base_move_estimator_to,
+    enable_array_api,
+    get_namespace,
+)
 from ...utils.validation import validate_data
 
 # 'sklearn.cluster._hdbscan._tree.HIERARCHY_dtype', repeated so that a rename in
@@ -427,17 +427,7 @@ if daal_check_version((2026, "P", 300)):
         dbscan_clustering.__doc__ = _sklearn_HDBSCAN.dbscan_clustering.__doc__
 
         def __sklearn_array_api_convert__(self, converter):
-            # the dendrogram is a record array that no other namespace can hold, so
-            # it stays on host and everything else goes through the default movers
-            state = {
-                k: v
-                for k, v in vars(self).items()
-                if k not in ("_onedal_estimator", "_single_linkage_tree_")
-            }
-            out = clone(self)
-            out.__dict__.update(_estimator_with_converted_arrays(state, converter))
-            if hasattr(self, "_single_linkage_tree_"):
-                out._single_linkage_tree_ = self._single_linkage_tree_
-            return out
+            # the record-array dendrogram is left on host by the helper
+            return base_move_estimator_to(self, converter, ["_onedal_estimator"], None)[0]
 
     __all__ += ["HDBSCAN"]
