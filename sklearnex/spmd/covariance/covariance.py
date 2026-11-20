@@ -16,7 +16,7 @@
 
 from onedal.spmd.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 
-from ...preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+from ...covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
 
 
 class EmpiricalCovariance(EmpiricalCovariance_Batch):

@@ -79,7 +79,6 @@ Experimental algorithms in `sklearnex/preview/`. Activate via `export SKLEARNEX_
 
 **Available in Preview:**
 - `sklearnex.preview.decomposition.IncrementalPCA`: Enhanced incremental PCA
-- `sklearnex.preview.covariance`: Enhanced covariance implementations
 
 **Note**: Preview APIs may change without deprecation warnings.
 
