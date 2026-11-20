@@ -30,11 +30,11 @@ from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features
 from sklearnex import config_context
 
-from ..._device_offload import dispatch, support_input_format, wrap_output_data
-from ..._utils import PatchingConditionsChain, register_hyperparameters
-from ...base import oneDALEstimator
-from ...utils._array_api import _pinvh, enable_array_api, log_likelihood
-from ...utils.validation import assert_all_finite, validate_data
+from .._device_offload import dispatch, support_input_format, wrap_output_data
+from .._utils import PatchingConditionsChain, register_hyperparameters
+from ..base import oneDALEstimator
+from ..utils._array_api import _pinvh, enable_array_api, log_likelihood
+from ..utils.validation import assert_all_finite, validate_data
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace

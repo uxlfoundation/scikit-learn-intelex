@@ -26,7 +26,7 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
-from sklearnex.preview.covariance import EmpiricalCovariance
+from sklearnex.covariance import EmpiricalCovariance
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def test_non_batched_covariance(hyperparameters, dataframe, queue, assume_center
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Test for CPU-only functionality")
 
-    from sklearnex.preview.covariance import EmpiricalCovariance
+    from sklearnex.covariance import EmpiricalCovariance
 
     X = np.random.default_rng(seed=123).random(size=(20, 5))
 

@@ -58,20 +58,15 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     if preview:
         mapping = get_patch_map_core(preview=False)
 
-        import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
         import sklearn.linear_model as linear_model_module
         import sklearn.preprocessing as preprocessing_module
-        from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
         from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
         from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
         from sklearn.linear_model import Lasso as Lasso_sklearn
         from sklearn.preprocessing import MaxAbsScaler as MaxAbsScaler_sklearn
 
         # Preview classes for patching
-        from .preview.covariance import (
-            EmpiricalCovariance as EmpiricalCovariance_sklearnex,
-        )
         from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
         from .preview.linear_model import ElasticNet as ElasticNet_sklearnex
         from .preview.linear_model import Lasso as Lasso_sklearnex
@@ -82,14 +77,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         # when preview is used, setting the mapping element[1] to None
         # should NOT be done. This may lose track of the unpatched
         # sklearn estimator or function.
-        # Covariance
         preview_mapping = {
-            "sklearn.covariance.EmpiricalCovariance": (
-                covariance_module,
-                "EmpiricalCovariance",
-                EmpiricalCovariance_sklearnex,
-                EmpiricalCovariance_sklearn,
-            ),
             "sklearn.decomposition.IncrementalPCA": (
                 decomposition_module,
                 "IncrementalPCA",
@@ -152,6 +140,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn import set_config as set_config_sklearn
     from sklearn.cluster import DBSCAN as DBSCAN_sklearn
     from sklearn.cluster import KMeans as KMeans_sklearn
+    from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
     from sklearn.decomposition import PCA as PCA_sklearn
     from sklearn.dummy import DummyRegressor as DummyRegressor_sklearn
     from sklearn.ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearn
@@ -183,6 +172,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from ._config import set_config as set_config_sklearnex
     from .cluster import DBSCAN as DBSCAN_sklearnex
     from .cluster import KMeans as KMeans_sklearnex
+    from .covariance import EmpiricalCovariance as EmpiricalCovariance_sklearnex
     from .covariance import (
         IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_sklearnex,
     )
@@ -326,6 +316,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             "RandomForestRegressor",
             RandomForestRegressor_sklearnex,
             RandomForestRegressor_sklearn,
+        ),
+        "sklearn.covariance.EmpiricalCovariance": (
+            covariance_module,
+            "EmpiricalCovariance",
+            EmpiricalCovariance_sklearnex,
+            EmpiricalCovariance_sklearn,
         ),
         "sklearn.covariance.IncrementalEmpiricalCovariance": (
             covariance_module,

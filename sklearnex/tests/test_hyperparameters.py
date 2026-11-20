@@ -19,10 +19,10 @@ import pytest
 from sklearn.datasets import make_classification, make_regression
 
 from daal4py.sklearn._utils import daal_check_version
+from sklearnex.covariance import EmpiricalCovariance
 from sklearnex.decomposition import PCA
 from sklearnex.ensemble import RandomForestClassifier
 from sklearnex.linear_model import IncrementalLinearRegression, LinearRegression
-from sklearnex.preview.covariance import EmpiricalCovariance
 
 # Table of estimators to test hyperparameter reset functionality.
 # Each row contains the following elements:
