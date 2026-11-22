@@ -374,6 +374,7 @@ deselected_tests:
   - model_selection/tests/test_search.py::test_search_cv_sample_weight_equivalence[estimator0]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_matrix]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_array]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_callback_fitted_estimator
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False
@@ -401,6 +402,11 @@ deselected_tests:
 
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
+  - linear_model/tests/test_logistic.py::test_n_iter[True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_n_iter[False-newton-cg]
+
+  # Preview newton-cg does not converge at alpha=1e5, so the 1-ulp gap between alpha and 1/C changes the result
+  - linear_model/tests/test_logistic.py::test_equivalence_of_default_C_and_alpha[newton-cg-False
 
   # These fail due to not printing everything that scikit-learn prints on verbose mode
   - cluster/tests/test_k_means.py::test_kmeans_verbose
@@ -467,6 +473,7 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized[42-wide-True-cholesky]
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[42-wide-True-cholesky]
   - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_vstacked_X[42-wide-True-cholesky]
+  - linear_model/tests/test_ridge.py::test_ridge_regression_unpenalized_hstacked_X[long-42-True-cholesky]
 
   # Fails due to numerical tolerances slightly outside scikit-learn's thresholds
   - linear_model/tests/test_ridge.py::test_solver_consistency[42-20-float32-0.1-cholesky-None]

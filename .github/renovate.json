@@ -16,12 +16,17 @@
       "matchUpdateTypes": ["patch", "minor"],
       "schedule": ["before 2am on the first day of the month"],
       "matchFileNames": ["requirements-doc.txt"]
+    },
+    {
+      "groupName": "dppy",
+      "matchDatasources": ["pypi"],
+      "matchDepNames": ["dpctl", "dpnp"]
     }
   ],
   "pre-commit": {
     "enabled": true
   },
-"customManagers": [
+  "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": [
@@ -54,7 +59,7 @@
       ],
       "depNameTemplate": "dpcpp_linux-64",
       "datasourceTemplate": "conda",
-      "registryUrlTemplate": "https://conda.anaconda.org/conda-forge"
+      "registryUrlTemplate": "https://api.anaconda.org/package/conda-forge"
     },
     {
       "customType": "regex",
@@ -65,10 +70,10 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["(^|/)meta\\.ya?ml$/"],
+      "managerFilePatterns": ["/(^|/)meta\\.ya?ml$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s*-\\s*[\"']\\S+\\s+<=(?<currentValue>[^\"']+)[\"']"
-      ],
+      ]
     }
   ]
 }
