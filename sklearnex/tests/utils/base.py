@@ -138,15 +138,11 @@ mixin_map = [
         "classification",
     ],
     [RegressorMixin, ["predict", "score"], "regression"],
-    [ClusterMixin, ["fit_predict", "dbscan_clustering"], "classification"],
+    [ClusterMixin, ["fit_predict"], "classification"],
     [TransformerMixin, ["fit_transform", "transform", "score"], "classification"],
     [OutlierMixin, ["fit_predict", "predict"], "classification"],
     [KNeighborsMixin, ["kneighbors"], None],
 ]
-
-
-# arguments of the methods that take neither X nor y
-_METHOD_ARGS = {"dbscan_clustering": (0.5,)}
 
 
 class sklearn_clone_dict(dict):
@@ -251,9 +247,7 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
                     attribute = attribute.fn
                 if callable(attribute):
                     params = signature(attribute).parameters
-                    if attr in _METHOD_ARGS or any(
-                        [inp in params for inp in required_inputs]
-                    ):
+                    if any([inp in params for inp in required_inputs]):
                         methods += [attr]
         else:
             methods = candidates
@@ -320,9 +314,7 @@ def call_method(estimator, method, X, y, **kwargs):
         ]
     )
 
-    if method in _METHOD_ARGS:
-        data = _METHOD_ARGS[method]
-    elif method == "inverse_transform" and hasattr(estimator, "n_components_"):
+    if method == "inverse_transform" and hasattr(estimator, "n_components_"):
         # PCA's inverse_transform takes (n_samples, n_components)
         data = (
             (X[:, : estimator.n_components_],)
