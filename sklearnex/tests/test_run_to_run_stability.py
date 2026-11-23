@@ -188,6 +188,8 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         and method == "mahalanobis"
     ):
         pytest.skip("allowed fallback to sklearn occurs")
+    if estimator == "EmpiricalCovariance" and dataframe == "numpy":
+        pytest.skip("small numpy inputs fall back to sklearn")
     if (
         (dataframe == "array_api")
         and (estimator in ["IncrementalPCA", "PCA"])
