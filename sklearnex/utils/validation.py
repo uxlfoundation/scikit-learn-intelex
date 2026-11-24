@@ -159,6 +159,15 @@ def validate_data(
     check_x = not isinstance(X, str) or X != "no_validation"
     check_y = not (y is None or isinstance(y, str) and y == "no_validation")
 
+    if (
+        check_x
+        and check_y
+        and kwargs.get("y_numeric", False)
+        and sklearn_check_version("1.9")
+    ):
+        xp, _, device = get_namespace_and_device(out[0])
+        out = out[0], move_to(out[1], xp=xp, device=device)
+
     if ensure_all_finite:
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
@@ -189,12 +198,7 @@ def validate_data(
         # a dtype check and conversion. This will query the array_namespace and
         # convert y as necessary. This is important especially for regressors.
         outx, outy = out if check_x else (None, out)
-        if outx is not None and sklearn_check_version("1.9"):
-            yp, _, device = get_namespace_and_device(outx)
-            outy = move_to(outy, xp=yp, device=device)
-            out = outx, outy
-        else:
-            yp, _ = get_namespace(outy)
+        yp, _ = get_namespace(outy)
 
         # avoid using ``kwargs.get("dtype")`` as it will always set up the default
         dtype = kwargs.get("dtype", (yp.float64, yp.float32, yp.int32))
