@@ -28,5 +28,5 @@ lightgbm==4.7.0
 treelite==4.8.1
 array-api-compat==1.16.0
 array-api-strict==2.6.1
-packaging==26.3
+packaging==26.4
 pyyaml==6.0.4
