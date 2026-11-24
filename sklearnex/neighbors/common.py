@@ -759,7 +759,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             or not is_supported_device
             or not hasattr(self, "_fit_method")
             or self._fit_method != "brute"
-            or not hasattr(self, "_onedal_estimator")
+            or not ("_onedal_estimator" in self.__dict__)
         ):
             return out
         data = (out._fit_X,) if not hasattr(self, "_y") else (out._fit_X, out._y)
