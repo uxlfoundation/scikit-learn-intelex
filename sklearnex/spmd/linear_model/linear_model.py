@@ -16,9 +16,11 @@
 
 from onedal.spmd.linear_model import LinearRegression as onedal_LinearRegression
 
+from ...base import onedal_spmd_estimator
 from ...linear_model import LinearRegression as LinearRegression_Batch
 
 
+@onedal_spmd_estimator
 class LinearRegression(LinearRegression_Batch):
     __doc__ = LinearRegression_Batch.__doc__
     _onedal_LinearRegression = staticmethod(onedal_LinearRegression)

@@ -51,7 +51,7 @@ will be performed on the device where the data lives, without involving any data
 
 If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
-through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
+through options ``allow_sklearn_fallback`` (default is ``True``) and ``allow_fallback_to_host`` (default is
 ``False``), respectively, which are accepted by :obj:`config_context <sklearnex.config_context>` and :obj:`set_config <sklearnex.set_config>` after
 :doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex`` (see :doc:`config-contexts`).
 
@@ -62,7 +62,7 @@ through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow
 If array API is enabled for |sklearn| and the estimator being used has array API support on |sklearn| (which can be
 verified by attribute ``array_api_support`` from :obj:`sklearn.utils.get_tags`), then array API inputs whose data
 is allocated neither on CPU nor on a SYCL device will be forwarded directly to the unpatched methods from |sklearn|,
-without using the accelerated versions from this library, regardless of option ``allow_sklearn_after_onedal``.
+without using the accelerated versions from this library dictated by the ``allow_sklearn_fallback`` option.
 
 While other array API inputs (e.g. torch arrays with data allocated on a non-SYCL device) might be supported
 by the |sklearnex| in cases where the same class from |sklearn| doesn't support array API, note that the data will

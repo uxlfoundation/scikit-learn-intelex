@@ -18,9 +18,11 @@ from onedal.spmd.basic_statistics import (
     IncrementalBasicStatistics as onedalSPMD_IncrementalBasicStatistics,
 )
 
+from ...base import onedal_spmd_estimator
 from ...preview.preprocessing import MaxAbsScaler as base_MaxAbsScaler
 
 
+@onedal_spmd_estimator
 class MaxAbsScaler(base_MaxAbsScaler):
     _onedal_incremental_basic_statistics = staticmethod(
         onedalSPMD_IncrementalBasicStatistics
