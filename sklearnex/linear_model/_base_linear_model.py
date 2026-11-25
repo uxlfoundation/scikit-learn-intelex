@@ -279,12 +279,14 @@ class _BaseIncrementalLinearModel(
         # user might reassign the attributes to an different namespace
         # and leave things in an inconsistent state until assignments
         # are done and 'predict' is called.
-        elif not hasattr(self._onedal_estimator, "_onedal_model"):
-            xp, _ = get_namespace(self._coef_, self._intercept_)
-            self._onedal_estimator._create_prediction_only_model(
-                self._coef_, self._intercept_, xp
-            )
-            self._assign_coefficients_from_onedal_estimator()
+        else:
+            with self._finalize_lock:
+                if not hasattr(self._onedal_estimator, "_onedal_model"):
+                    xp, _ = get_namespace(self._coef_, self._intercept_)
+                    self._onedal_estimator._create_prediction_only_model(
+                        self._coef_, self._intercept_, xp
+                    )
+                    self._assign_coefficients_from_onedal_estimator()
         res = self._onedal_estimator.predict(X, queue=queue)
 
         if res.shape[1] == 1 and self.coef_.ndim == 1:
