@@ -36,6 +36,15 @@ class BaseLinearRegression(metaclass=ABCMeta):
         self.algorithm = algorithm
         self._onedal_model = None
 
+    def __getstate__(self):
+        out = self.__dict__.copy()
+        if hasattr(out, "_onedal_model"):
+            # Note: this is not recreated in a deserializer because it needs access
+            # to the 'xp' (namespace), which is obtained from sklearn utils that
+            # are not meant to be imported in the onedal module.
+            del out["_onedal_model"]
+        return out
+
     @bind_default_backend("linear_model.regression")
     def train(self, *args, **kwargs): ...
 

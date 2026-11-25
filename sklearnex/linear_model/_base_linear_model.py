@@ -45,14 +45,6 @@ if sklearn_check_version("1.9"):
         move_to,
     )
 
-# Note: this is a global object that would make all instances
-# of these estimators compete for the same lock. These are not
-# serializable, so if assigned inside an object, it would
-# prevent serialization. But maybe the class using it could
-# define a custom serializer that would avoid serializing a
-# lock and then re-create it from scratch upon deserialization.
-_inclinear_finalize_lock = Lock()
-
 
 # Adds common methods to create oneDAL objects after a fallback
 @register_hyperparameters({"fit": ("linear_regression", "train")})
@@ -60,6 +52,23 @@ class _BaseLinearModel(ABC):
     @abstractmethod
     def _initialize_onedal_estimator(self, override_fit_intercept: bool = False) -> None:
         raise NotImplementedError()
+
+    def __getstate__(self):
+        out = self.__dict__.copy()
+        if hasattr(out, "_coef_"):
+            del out["_coef_"]
+        if hasattr(out, "_intercept_"):
+            del out["_intercept_"]
+        return out
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        if hasattr(self, "_onedal_estimator") and (
+            getattr(self._onedal_estimator, "coef_", None) is not None
+        ):
+            self._coef_ = self._onedal_estimator.coef_
+            self._intercept_ = self._onedal_estimator.intercept_
+            self._initialize_onedal_estimator_from_coefs()
 
     def _onedal_predict_supported(self, patching_status, method_name, *data):
         assert method_name in ["predict", "score"]
@@ -206,6 +215,31 @@ class _BaseIncrementalLinearModel(
     # Note: this is needed in order for the 'control_n_jobs' decorator to work
     def __init__(self, n_jobs):
         self.n_jobs = n_jobs
+        self._finalize_lock = Lock()
+
+    def __getstate__(self):
+        out = self.__dict__.copy()
+        del out["_finalize_lock"]
+        if hasattr(out, "_coef_"):
+            del out["_coef_"]
+        if hasattr(out, "_intercept_"):
+            del out["_intercept_"]
+        return out
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._finalize_lock = Lock()
+        if (
+            hasattr(self, "_onedal_estimator")
+            and (getattr(self._onedal_estimator, "coef_", None) is not None)
+            and not self._onedal_estimator._need_to_finalize
+        ):
+            xp, _ = get_namespace(self._onedal_estimator.coef_)
+            self._onedal_estimator._create_prediction_only_model(
+                self._onedal_estimator.coef_, self._onedal_estimator.intercept_, xp
+            )
+            self._assign_coefficients_from_onedal_estimator()
+            self._need_to_finalize = False
 
     @abstractmethod
     def _initialize_empty_onedal_estimator(self, fit_intercept=None, alpha=None) -> None:
@@ -332,7 +366,7 @@ class _BaseIncrementalLinearModel(
         # Note that, just like in the non-incremental case, the
         # coefficients and intercepts should be part of the same
         # memory allocation chunk and share addresses with oneDAL.
-        with _inclinear_finalize_lock:
+        with self._finalize_lock:
             self._onedal_estimator.finalize_fit()
 
             self.n_features_in_ = self._onedal_estimator.n_features_in_

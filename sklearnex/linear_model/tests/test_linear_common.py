@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import pickle
 import sys
 import time
 import warnings
@@ -436,6 +437,29 @@ def test_manually_setting_intercept(estimator):
     pred = model_fresh.predict(X)
 
     np.testing.assert_almost_equal(pred_plus1, pred + 1)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    ["LinearRegression", "Ridge", "IncrementalLinearRegression", "IncrementalRidge"],
+)
+def test_coefficients_is_shared_array(estimator):
+    from sklearnex import linear_model
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(10, 3))
+    y = rng.standard_normal(size=X.shape[0])
+
+    model = getattr(linear_model, estimator)(fit_intercept=False).fit(X, y)
+    model2 = pickle.loads(pickle.dumps(model))
+    model2.coef_[:] = 0.0
+    pred = model2.predict(X)
+    np.testing.assert_almost_equal(pred, model.intercept_)
+
+    assert not np.any(model.coef_ == 0)
+    model.coef_[:] = 0.0
+    pred = model.predict(X)
+    np.testing.assert_almost_equal(pred, model.intercept_)
 
 
 # This test tries to check that if two threads simultaneously attempt

@@ -79,14 +79,12 @@ class IncrementalRidge(_BaseIncrementalLinearModel):
     batch_size_ : int
         Inferred batch size from ``batch_size``.
 
-    Notes
-    -----
-    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
-
     %incremental_serialization_note%
+
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
     """
 
-    __doc__ = _add_inc_serialization_note(__doc__)
+    __doc__ = _add_inc_serialization_note(__doc__, plural=True)
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)
 
