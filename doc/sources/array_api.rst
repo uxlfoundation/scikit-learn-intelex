@@ -181,6 +181,7 @@ another.
 
 This function is only supported for the following estimators from the |sklearnex|:
 
+- :obj:`sklearnex.basic_statistics.BasicStatistics`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearn.cluster.DBSCAN`
