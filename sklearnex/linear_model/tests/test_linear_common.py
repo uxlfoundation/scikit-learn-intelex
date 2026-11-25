@@ -445,8 +445,11 @@ def test_manually_setting_intercept(estimator):
 # do the finalization, but the test is stochastic in nature - it is
 # not guaranteed that the conditions will trigger a scenario where
 # this would fail without mechanisms to prevent it.
-@pytest.mark.skipif(not hasattr(sys, "_is_gil_enabled") or sys._is_gil_enabled()),reason="test requires free-threaded python")
-def test_finalization_is_thread_sage(monkeypatch):
+@pytest.mark.skipif(
+    not hasattr(sys, "_is_gil_enabled") or sys._is_gil_enabled(),
+    reason="test requires free-threaded python",
+)
+def test_finalization_is_thread_safe(monkeypatch):
     from onedal.linear_model.incremental_linear_model import BaseIncrementalLinear
     from sklearnex.linear_model import IncrementalRidge
 
