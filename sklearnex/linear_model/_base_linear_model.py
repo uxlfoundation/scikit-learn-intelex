@@ -274,13 +274,13 @@ class _BaseIncrementalLinearModel(
 
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        # This can happen after manually reassigning attributes.
-        # Should not be done directly when reassigning, since a
-        # user might reassign the attributes to an different namespace
-        # and leave things in an inconsistent state until assignments
-        # are done and 'predict' is called.
         else:
             with self._finalize_lock:
+                # This can happen after manually reassigning attributes.
+                # Should not be done directly when reassigning, since a
+                # user might reassign the attributes to an different namespace
+                # and leave things in an inconsistent state until assignments
+                # are done and 'predict' is called.
                 if not hasattr(self._onedal_estimator, "_onedal_model"):
                     xp, _ = get_namespace(self._coef_, self._intercept_)
                     self._onedal_estimator._create_prediction_only_model(
