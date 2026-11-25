@@ -35,11 +35,13 @@ if sklearn_check_version("1.9"):
 
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes._dlpack import dlpack_to_numpy
+from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
+from ..utils._array_api import base_move_estimator_to
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
@@ -746,3 +748,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return kneighbors_graph
 
     kneighbors_graph.__doc__ = KNeighborsMixin.kneighbors_graph.__doc__
+
+    # TODO: update this if scikit-learn introduces support for array API
+    def __sklearn_array_api_convert__(self, converter):
+        out, is_fitted, is_supported_device = base_move_estimator_to(
+            self, converter, ["_onedal_estimator"], "_fit_X"
+        )
+        if (
+            not is_fitted
+            or not is_supported_device
+            or not hasattr(self, "_fit_method")
+            or self._fit_method != "brute"
+            or not ("_onedal_estimator" in self.__dict__)
+        ):
+            return out
+        data = (out._fit_X,) if not hasattr(self, "_y") else (out._fit_X, out._y)
+        with QM.manage_global_queue(None, *data) as queue:
+            out._fit_onedal_estimator(queue=queue)
+        return out
