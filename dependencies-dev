@@ -1,4 +1,4 @@
-Cython==3.3.1
+Cython==3.3.2
 Jinja2==3.1.6
 numpy==2.4.6 ; python_version == '3.11'
 numpy==2.5.5 ; python_version >= '3.12'
