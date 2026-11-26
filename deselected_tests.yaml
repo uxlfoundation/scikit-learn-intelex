@@ -507,6 +507,12 @@ deselected_tests:
   # Unsupported features in sklearnex
   - linear_model/tests/test_logistic.py::test_logistic_regression_callback_support
 
+  # sklearnex-only estimators are not in sklearn's NO_CALLBACK_SUPPORT skip list and do
+  # not inherit CallbackSupportMixin, so the common callback check expects set_callbacks()
+  - tests/test_common.py::test_callback_support[IncrementalEmpiricalCovariance()]
+  - tests/test_common.py::test_callback_support[IncrementalLinearRegression()]
+  - tests/test_common.py::test_callback_support[IncrementalRidge()]
+
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
 
