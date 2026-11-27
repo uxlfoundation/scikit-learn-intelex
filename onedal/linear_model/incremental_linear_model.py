@@ -49,7 +49,11 @@ class BaseIncrementalLinear(BaseLinearRegression):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-
+        if "_onedal_model" in data:
+            # Note: this is not recreated in a deserializer because it needs access
+            # to the 'xp' (namespace), which is obtained from sklearn utils that
+            # are not meant to be imported in the onedal module.
+            del data["_onedal_model"]
         return data
 
     @supports_queue
@@ -98,7 +102,7 @@ class BaseIncrementalLinear(BaseLinearRegression):
             )
 
         # If a secondary fit occurs in any form, set model to None.
-        if self._onedal_model is not None:
+        if hasattr(self, "_onedal_model") and self._onedal_model is not None:
             self._onedal_model = None
 
         self._need_to_finalize = True
@@ -148,6 +152,27 @@ class BaseIncrementalLinear(BaseLinearRegression):
             self._need_to_finalize = False
 
         return self
+
+    def _create_model(self, coef, intercept, xp, xtx, xty, n_features_in) -> None:
+        self._reset()
+        self._partial_result = self.partial_train_result()
+        self._partial_result.partial_xtx = to_table(xtx)
+        self._partial_result.partial_xty = to_table(xty)
+        self._outtype = return_type_constructor(xty)
+        self.n_features_in_ = n_features_in
+        self._params = self._get_onedal_params(self._partial_result.partial_xtx.dtype)
+        self._outtype = None
+        self._need_to_finalize = False
+        super()._create_model(coef, intercept, xp)
+
+    def _create_prediction_only_model(self, coef, intercept, xp) -> None:
+        super()._create_model(coef, intercept, xp)
+
+    def get_xtx_xty(self) -> tuple:
+        return (
+            from_table(self._partial_result.partial_xtx),
+            from_table(self._partial_result.partial_xty),
+        )
 
 
 class IncrementalLinearRegression(BaseIncrementalLinear):

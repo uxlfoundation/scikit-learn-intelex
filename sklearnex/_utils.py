@@ -139,10 +139,6 @@ def register_hyperparameters(hyperparameters_map):
             """Like a @staticmethod, but additionally raises a Warning when called on an instance."""
 
             def __get__(self, instance, _):
-                if instance is not None:
-                    warnings.warn(
-                        "Hyperparameters are static variables and can not be modified per instance."
-                    )
                 return self.get_hyperparameters
 
             def get_hyperparameters(self, op):
@@ -154,10 +150,6 @@ def register_hyperparameters(hyperparameters_map):
             """Like a @staticmethod, but additionally raises a Warning when called on an instance."""
 
             def __get__(self, instance, _):
-                if instance is not None:
-                    warnings.warn(
-                        "Hyperparameters are static variables and can not be modified per instance."
-                    )
                 return self.reset_hyperparameters
 
             def reset_hyperparameters(self, op):

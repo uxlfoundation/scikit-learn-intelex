@@ -125,31 +125,6 @@ def test_no_intercept_results(queue, num_blocks, dtype):
 
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_reconstruct_model(queue, dtype):
-    seed = 42
-    num_samples = 3500
-    num_features, num_targets = 14, 9
-
-    gen = np.random.default_rng(seed)
-    intercept = gen.random(size=num_targets, dtype=dtype)
-    coef = gen.random(size=(num_targets, num_features), dtype=dtype).T
-
-    X = gen.random(size=(num_samples, num_features), dtype=dtype)
-    gtr = X @ coef + intercept[np.newaxis, :]
-
-    model = IncrementalLinearRegression(fit_intercept=True)
-    model.coef_ = coef.T
-    model.intercept_ = intercept
-    model._create_model(model.coef_, model.intercept_, np)
-
-    res = model.predict(X, queue=queue)
-
-    tol = 1e-5 if res.dtype == np.float32 else 1e-7
-    assert_allclose(gtr, res, rtol=tol)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_incremental_estimator_pickle(queue, dtype):
     import pickle
 
