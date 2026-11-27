@@ -180,6 +180,8 @@ class _BaseLinearModel(ABC):
             xp, _ = get_namespace(self._coef_)
             self._coef_ = xp.reshape(self._coef_, (-1,))
 
+        # Note: these are in order to keep compatibility with scikit-learn's
+        # logic for 2d 'y', which differs on an estimator basis.
         if len(self._coef_.shape) < 2 and getattr(self, "_force_coef_2d", False):
             xp, _ = get_namespace(self._coef_)
             self._coef_ = xp.reshape(self._coef_, (1, -1))
