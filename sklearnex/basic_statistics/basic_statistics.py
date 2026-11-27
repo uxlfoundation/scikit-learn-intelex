@@ -121,11 +121,10 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         ],
     }
 
-    def _save_attributes(self):
-        assert hasattr(self, "_onedal_estimator")
-        for option in self._onedal_estimator.options:
+    def _save_attributes(self, onedal_estimator):
+        for option in onedal_estimator.options:
             option += "_"
-            setattr(self, option, getattr(self._onedal_estimator, option))
+            setattr(self, option, getattr(onedal_estimator, option))
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
@@ -161,7 +160,7 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
         if sklearn_check_version("1.9"):
-            xp, _, device = get_namespace_and_device(X)
+            xp, _, _ = get_namespace_and_device(X)
         else:
             xp, _ = get_namespace(X, sample_weight)
         X = validate_data(
@@ -186,10 +185,10 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
             "result_options": self.result_options,
         }
 
-        if not hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator = self._onedal_basic_statistics(**onedal_params)
-        self._onedal_estimator.fit(X, sample_weight, queue=queue)
-        self._save_attributes()
+        # Note: the oneDAL estimator is not used in any further method.
+        onedal_estimator = self._onedal_basic_statistics(**onedal_params)
+        onedal_estimator.fit(X, sample_weight, queue=queue)
+        self._save_attributes(onedal_estimator)
         self.n_features_in_ = X.shape[1] if len(X.shape) > 1 else 1
 
     def fit(self, X, y=None, sample_weight=None):
