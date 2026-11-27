@@ -38,7 +38,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
     def __getstate__(self):
         out = self.__dict__.copy()
-        if hasattr(out, "_onedal_model"):
+        if "_onedal_model" in out:
             # Note: this is not recreated in a deserializer because it needs access
             # to the 'xp' (namespace), which is obtained from sklearn utils that
             # are not meant to be imported in the onedal module.

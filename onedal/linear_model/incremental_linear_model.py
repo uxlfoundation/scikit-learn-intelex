@@ -49,7 +49,7 @@ class BaseIncrementalLinear(BaseLinearRegression):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-        if hasattr(data, "_onedal_model"):
+        if "_onedal_model" in data:
             # Note: this is not recreated in a deserializer because it needs access
             # to the 'xp' (namespace), which is obtained from sklearn utils that
             # are not meant to be imported in the onedal module.

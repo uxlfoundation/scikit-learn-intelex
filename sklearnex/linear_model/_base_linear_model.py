@@ -221,9 +221,9 @@ class _BaseIncrementalLinearModel(
     def __getstate__(self):
         out = self.__dict__.copy()
         del out["_finalize_lock"]
-        if hasattr(out, "_coef_"):
+        if "_coef_" in out:
             del out["_coef_"]
-        if hasattr(out, "_intercept_"):
+        if "_intercept_" in out:
             del out["_intercept_"]
         return out
 
