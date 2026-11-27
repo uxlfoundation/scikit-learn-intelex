@@ -211,8 +211,6 @@ deselected_tests:
 
   # Tests try to access private attribute '_tol' which is not part of the
   # public API, and not defined by sklearnex.
-  # TODO: this will need revisiting once the new tolerance methodology
-  # is applied to oneDAL.
   - test_k_means.py::test_kmeans_tol_scaled_by_mean_feature_variance
 
   # Logistic Regression coeffs change due to fix for loss scaling
