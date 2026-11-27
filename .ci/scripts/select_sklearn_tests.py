@@ -35,7 +35,7 @@ def parse_tests_tree(entry, prefix=""):
 
 # Reduced sklearn tests suite covering all patched functions in the shortest running time
 tests_map = {
-    "cluster/tests": ["test_dbscan.py", "test_k_means.py"],
+    "cluster/tests": ["test_dbscan.py", "test_hdbscan.py", "test_k_means.py"],
     "covariance/tests": "test_covariance.py",
     "decomposition/tests": ["test_pca.py", "test_incremental_pca.py"],
     "ensemble/tests": "test_forest.py",
