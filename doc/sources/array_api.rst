@@ -184,6 +184,7 @@ This function is only supported for the following estimators from the |sklearnex
 - :obj:`sklearnex.basic_statistics.BasicStatistics`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
+- :obj:`sklearn.linear_model.LogisticRegression`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
 - :obj:`sklearn.cluster.DBSCAN`
