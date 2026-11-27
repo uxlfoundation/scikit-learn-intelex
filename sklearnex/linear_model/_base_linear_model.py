@@ -170,7 +170,7 @@ class _BaseLinearModel(ABC):
         self._intercept_ = self._onedal_estimator.intercept_
         self._reshape_coefficients_from_onedal()
 
-    def _reshape_coefficients_from_onedal(self):
+    def _reshape_coefficients_from_onedal(self) -> None:
         if self._coef_.shape[0] == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
@@ -384,7 +384,9 @@ class _BaseIncrementalLinearModel(
     def _assign_coefficients_from_onedal_estimator(self) -> None:
         self._coef_ = self._onedal_estimator.coef_
         self._intercept_ = self._onedal_estimator.intercept_
+        self._reshape_coefficients_from_onedal()
 
+    def _reshape_coefficients_from_onedal(self) -> None:
         if self._coef_.shape[0] == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
