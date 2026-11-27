@@ -16,9 +16,11 @@
 
 from onedal.spmd.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 
-from ...preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+from ...covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
 
 
 class EmpiricalCovariance(EmpiricalCovariance_Batch):
     __doc__ = EmpiricalCovariance_Batch.__doc__
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
+    # Each rank sees only its local shard; falling back would compute a local result.
+    _fallback_on_small_data = False

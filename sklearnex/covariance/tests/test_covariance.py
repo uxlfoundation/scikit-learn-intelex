@@ -21,12 +21,14 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _assert_in_namespace,
     _convert_to_dataframe,
+    array_api_frameworks,
     assert_allclose_numpy,
     dpnp_available,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
-from sklearnex.preview.covariance import EmpiricalCovariance
+from sklearnex import config_context
+from sklearnex.covariance import EmpiricalCovariance
 
 
 @pytest.fixture
@@ -47,7 +49,8 @@ def hyperparameters(request):
 def test_sklearnex_import_covariance(
     hyperparameters, dataframe, queue, macro_block, grain_size, assume_centered
 ):
-    X = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
+    # Duplicating rows keeps the expected statistics and avoids the small-data fallback.
+    X = np.tile([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]], (200, 1))
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
@@ -76,7 +79,7 @@ def test_sklearnex_import_covariance(
     assert_allclose_numpy(expected_covariance, result.covariance_)
     assert_allclose_numpy(expected_means, result.location_)
 
-    X = np.array([[1, 2], [3, 6]])
+    X = np.tile([[1, 2], [3, 6]], (600, 1))
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = empcov.fit(X)
@@ -91,6 +94,21 @@ def test_sklearnex_import_covariance(
     assert_allclose_numpy(expected_means, result.location_)
 
 
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "n_samples,n_features,uses_onedal",
+    [(1024, 64, False), (100, 10, False), (1025, 10, True), (100, 65, True)],
+)
+def test_small_data_fallback(dataframe, queue, n_samples, n_features, uses_onedal):
+    X = np.random.default_rng(seed=123).random(size=(n_samples, n_features))
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    array_api = dataframe in array_api_frameworks
+    with config_context(array_api_dispatch=array_api):
+        est = EmpiricalCovariance().fit(X)
+    assert hasattr(est, "_onedal_estimator") == (uses_onedal or array_api)
+
+
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 700)),
     reason="Functionality introduced in a later version",
@@ -101,9 +119,9 @@ def test_non_batched_covariance(hyperparameters, dataframe, queue, assume_center
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Test for CPU-only functionality")
 
-    from sklearnex.preview.covariance import EmpiricalCovariance
+    from sklearnex.covariance import EmpiricalCovariance
 
-    X = np.random.default_rng(seed=123).random(size=(20, 5))
+    X = np.random.default_rng(seed=123).random(size=(2000, 5))
 
     hyperparameters.cpu_max_cols_batched = np.iinfo(np.int32).max
     res_batched = EmpiricalCovariance(assume_centered=assume_centered).fit(X).covariance_

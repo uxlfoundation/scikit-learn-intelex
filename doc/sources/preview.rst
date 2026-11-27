@@ -70,7 +70,7 @@ patching and without setting environment variable ``SKLEARNEX_PREVIEW``:
 
 .. code-block:: python
 
-    from sklearnex.preview.covariance import EmpiricalCovariance
+    from sklearnex.preview.decomposition import IncrementalPCA
 
 
 Current list of preview estimators:
@@ -85,8 +85,6 @@ Current list of preview estimators:
    * - :obj:`sklearn.linear_model.Lasso`
      - Yes
    * - :obj:`sklearn.linear_model.ElasticNet`
-     - Yes
-   * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - Yes
    * - :obj:`sklearn.decomposition.IncrementalPCA`
      - Yes

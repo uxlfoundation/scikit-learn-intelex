@@ -76,6 +76,8 @@ _DESIGN_RULE_VIOLATIONS = {
     "DummyRegressor-fit-n_jobs_check": "default parameters use sklearn",
     "DummyRegressor-predict-n_jobs_check": "default parameters use sklearn",
     "DummyRegressor-score-n_jobs_check": "default parameters use sklearn",
+    "EmpiricalCovariance-fit-n_jobs_check": "small data falls back to sklearn",
+    "EmpiricalCovariance-score-n_jobs_check": "small data falls back to sklearn",
     "EmpiricalCovariance-mahalanobis-n_jobs_check": "reuses scikit-learn methods",
     "EmpiricalCovariance-score-call_validate_data": "reuses scikit-learn methods",
 }

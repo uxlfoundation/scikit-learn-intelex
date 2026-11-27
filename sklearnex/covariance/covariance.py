@@ -27,14 +27,14 @@ from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
-from onedal.utils.validation import _num_features
+from onedal.utils.validation import _num_features, _num_samples
 from sklearnex import config_context
 
-from ..._device_offload import dispatch, support_input_format, wrap_output_data
-from ..._utils import PatchingConditionsChain, register_hyperparameters
-from ...base import oneDALEstimator
-from ...utils._array_api import _pinvh, enable_array_api, log_likelihood
-from ...utils.validation import assert_all_finite, validate_data
+from .._device_offload import dispatch, support_input_format, wrap_output_data
+from .._utils import PatchingConditionsChain, register_hyperparameters
+from ..base import oneDALEstimator
+from ..utils._array_api import _pinvh, enable_array_api, log_likelihood
+from ..utils.validation import assert_all_finite, validate_data
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace
@@ -73,6 +73,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         self.location_ = self._onedal_estimator.location_
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
+    # scikit-learn is faster on small inputs.
+    _fallback_on_small_data = True
 
     def _onedal_fit(self, X, queue=None):
         xp, _ = get_namespace(X)
@@ -96,8 +98,19 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         )
         if method_name in ["fit", "mahalanobis"]:
             X = data[0]
+            n_samples = _num_samples(X)
+            n_features = _num_features(X)
+            xp, _ = get_namespace(X)
+            # Array API inputs stay in oneDAL so fitted attributes keep their namespace.
             patching_status.and_conditions(
                 [
+                    (
+                        not self._fallback_on_small_data
+                        or not _is_numpy_namespace(xp)
+                        or n_features > 64
+                        or n_samples > 1024,
+                        "Input is too small: n_features <= 64 and n_samples <= 1024.",
+                    ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]
             )
