@@ -17,6 +17,7 @@
 import os
 import warnings
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
@@ -27,22 +28,44 @@ from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegressi
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     dpnp_available,
+    dpnp_to_strict_working,
     get_dataframes_and_queues,
     get_queues,
     torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
+from sklearnex.utils._array_api import _NUMPY_FITTED_ATTRS
 
 if dpnp_available:
     import dpnp
 if torch_available:
     import torch
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_estimator_to,
+        move_to,
+    )
+
+    from sklearnex.tests.utils.misc import (
+        assert_public_attributes_are_in_namespace,
+        assert_same_attributes,
+        assert_same_namespace,
+    )
+
+KEEP_LOGREG_AS_NUMPY: bool = len(_NUMPY_FITTED_ATTRS) > 0
 
 
 def prepare_input(X, y, dataframe, queue):
@@ -104,7 +127,12 @@ def test_sklearnex_binary_classification(dataframe, queue):
         ).fit(X_train, y_train)
 
     assert "sklearnex" in logreg.__module__
-    if dataframe != "numpy" and queue is not None and queue.sycl_device.is_gpu:
+    if (
+        dataframe != "numpy"
+        and queue is not None
+        and queue.sycl_device.is_gpu
+        and not KEEP_LOGREG_AS_NUMPY
+    ):
         # fit was done on gpu
         assert hasattr(logreg, "_onedal_estimator")
 
@@ -632,7 +660,7 @@ def test_array_api_logreg(dataframe, queue, y_type):
         model = LogisticRegression(solver=solver).fit(X_arr, y_arr)
 
     # 1. Check no fallback to sklearn on GPU
-    if is_gpu:
+    if is_gpu and not KEEP_LOGREG_AS_NUMPY:
         assert hasattr(
             model, "_onedal_estimator"
         ), "Model should not fall back to sklearn on GPU with array API"
@@ -654,20 +682,34 @@ def test_array_api_logreg(dataframe, queue, y_type):
 
     device_check = dataframe != "pandas"
 
-    coef_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
-    _check_predict_type_and_shape(
-        model.coef_, coef_expected_type, (1, X.shape[1]), device_check
+    coef_expected_type = (
+        type(X_arr)
+        if (dataframe != "pandas" and not KEEP_LOGREG_AS_NUMPY)
+        else np.ndarray
     )
     _check_predict_type_and_shape(
-        model.intercept_, coef_expected_type, (1,), device_check
+        model.coef_,
+        coef_expected_type,
+        (1, X.shape[1]),
+        device_check and not KEEP_LOGREG_AS_NUMPY,
+    )
+    _check_predict_type_and_shape(
+        model.intercept_,
+        coef_expected_type,
+        (1,),
+        device_check and not KEEP_LOGREG_AS_NUMPY,
     )
 
     # 3. Check predict returns correct type and shape
     with config_context(array_api_dispatch=True):
         pred = model.predict(X_arr)
 
+    # if KEEP_LOGREG_AS_NUMPY and y_type != "numeric"
     if y_type == "numeric" and dataframe != "pandas":
-        pred_expected_type = type(y_arr)
+        if KEEP_LOGREG_AS_NUMPY:
+            pred_expected_type = type(X_arr)
+        else:
+            pred_expected_type = type(y_arr)
     else:
         pred_expected_type = np.ndarray
 
@@ -709,6 +751,9 @@ def test_array_api_logreg(dataframe, queue, y_type):
 
 
 @pytest.mark.skipif(
+    KEEP_LOGREG_AS_NUMPY, reason="Changes in expected scikit-learn behavior"
+)
+@pytest.mark.skipif(
     not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
 )
 @pytest.mark.skipif(
@@ -733,6 +778,9 @@ def test_error_on_incompatible_devices_gpufirst(with_array_api, X_xp, X_device):
         model_gpu.predict(X)
 
 
+@pytest.mark.skipif(
+    KEEP_LOGREG_AS_NUMPY, reason="Changes in expected scikit-learn behavior"
+)
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
 )
@@ -845,3 +893,97 @@ def test_dtype_is_preserved(dtype):
     model = LogisticRegression().fit(X, y)
     assert model.coef_.dtype == X.dtype
     assert model.intercept_.dtype == X.dtype
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.2", np.__version__),
+    reason="Requires more recent NumPy version",
+)
+@pytest.mark.parametrize(
+    "array_input_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    # Note: 'move_to' has issues with Torch inputs
+    # in older sklearn versions.
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "array_move_like",
+    [np.arange(1), array_api_strict.arange(1)]
+    + (
+        [dpnp.arange(1, device="gpu")]
+        if dpnp_available and is_sycl_device_available("gpu")
+        else []
+    )
+    + (
+        [torch.arange(1, device="xpu")]
+        if torch_available and torch_xpu_available and sklearn_check_version("1.10")
+        else []
+    ),
+)
+@pytest.mark.parametrize(
+    "solver", (["lbfgs"] + (["newton-cg"] if sklearn_check_version("1.10") else []))
+)
+def test_logreg_move_estimator_to(
+    array_input_like, array_move_like, solver, with_array_api
+):
+    # TODO: remove this skip once issue in sklearn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/35088
+    if (
+        isinstance(array_move_like, array_api_strict._array_object.Array)
+        and dpnp_available
+        and isinstance(array_input_like, dpnp.ndarray)
+        and not dpnp_to_strict_working
+    ):
+        pytest.skip()
+
+    from sklearnex.linear_model import LogisticRegression
+
+    estimator = LogisticRegression(solver=solver, max_iter=3)
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    xp_np, _, device_np = get_namespace_and_device(X)
+
+    xp_in, _, device_in = get_namespace_and_device(array_input_like)
+    X_in = move_to(X, xp=xp_in, device=device_in)
+    y_in = move_to(y, xp=xp_in, device=device_in)
+
+    xp_move, _, device_move = get_namespace_and_device(array_move_like)
+    X_move = move_to(X, xp=xp_move, device=device_move)
+
+    estimator.fit(X_in, y_in)
+    estimator_moved = move_estimator_to(estimator, xp_move, device_move)
+
+    pred_orig = estimator.predict_proba(X_in)
+    assert_same_namespace(pred_orig, array_input_like)
+
+    pred_moved = estimator_moved.predict_proba(X_move)
+    assert_same_namespace(pred_moved, array_move_like)
+    np.testing.assert_allclose(_as_numpy(pred_moved), _as_numpy(pred_orig), atol=1e-6)
+
+    assert_same_attributes(
+        estimator_moved,
+        estimator,
+        attrs_skip=["_onedal_estimator"],
+    )
+    assert_public_attributes_are_in_namespace(estimator_moved, xp_move, device_move)
+    if KEEP_LOGREG_AS_NUMPY:
+        assert_public_attributes_are_in_namespace(estimator, xp_np, device_np)
+    else:
+        assert_public_attributes_are_in_namespace(estimator, xp_in, device_in)
