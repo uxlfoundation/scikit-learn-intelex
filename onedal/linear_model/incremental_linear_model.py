@@ -168,6 +168,12 @@ class BaseIncrementalLinear(BaseLinearRegression):
     def _create_prediction_only_model(self, coef, intercept, xp) -> None:
         super()._create_model(coef, intercept, xp)
 
+    def get_xtx_xty(self) -> tuple:
+        return (
+            from_table(self._partial_result.partial_xtx),
+            from_table(self._partial_result.partial_xty),
+        )
+
 
 class IncrementalLinearRegression(BaseIncrementalLinear):
     """Incremental Linear Regression oneDAL implementation.

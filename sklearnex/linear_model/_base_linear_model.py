@@ -26,7 +26,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
-from onedal.datatypes import from_table
 from onedal.utils.validation import _num_samples
 
 from .._device_offload import dispatch, wrap_output_data
@@ -613,8 +612,9 @@ class _BaseIncrementalLinearModel(
         coef = out._coef_
         intercept = out._intercept_
         xp, _ = get_namespace(coef, intercept)
-        xtx = converter(from_table(self._onedal_estimator._partial_result.partial_xtx))
-        xty = converter(from_table(self._onedal_estimator._partial_result.partial_xty))
+        xtx, xty = self._onedal_estimator.get_xtx_xty()
+        xtx = converter(xtx)
+        xty = converter(xty)
         out._initialize_empty_onedal_estimator(
             fit_intercept=self._onedal_estimator.fit_intercept,
             alpha=self._onedal_estimator.alpha,
