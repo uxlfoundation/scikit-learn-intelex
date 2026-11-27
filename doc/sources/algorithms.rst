@@ -231,7 +231,10 @@ Clustering
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
+       - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
@@ -548,7 +551,10 @@ Clustering
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` != `'euclidean'`
+       - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
@@ -801,7 +807,10 @@ Clustering
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
-       - ``metric`` != `'euclidean'`
+       - ``metric`` not in [`'euclidean'`, `'l2'`, `'manhattan'`, `'l1'`, `'cityblock'`, `'chebyshev'`, `'minkowski'`, `'cosine'`]
+       - ``metric`` = `'minkowski'` with ``p`` = `None` or ``p`` < `1`
+       - ``metric_params`` with keys other than `'p'`
+       - With the |onedal| before 2026.3, any distance other than the euclidean one
        - ``algorithm`` not in [`'brute'`, `'auto'`]
      - Only dense data is supported
 
