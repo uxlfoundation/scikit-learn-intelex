@@ -172,20 +172,12 @@ class _BaseLinearModel(ABC):
 
     def _reshape_coefficients_from_onedal(self) -> None:
         if self._coef_.shape[0] == 1:
-            self._coef_ = self._coef_[0, ...]  # set to 1d
-            self._intercept_ = self._intercept_[0]  # set 1d to scalar
-
-        # Note: these are in order to keep compatibility with scikit-learn's
-        # logic for 2d 'y', which differs on an estimator basis.
-        if len(self._coef_.shape) < 2 and getattr(self, "_force_coef_2d", False):
-            xp, _ = get_namespace(self._coef_)
-            self._coef_ = xp.reshape(self._coef_, (1, -1))
-
-        if not len(self._intercept_.shape) and getattr(
-            self, "_force_intercept_1d", False
-        ):
-            xp, _ = get_namespace(self._coef_)
-            self._intercept_ = xp.reshape(self._intercept_, (-1,))
+            # Note: these are in order to keep compatibility with scikit-learn's
+            # logic for 2d 'y', which differs on an estimator basis.
+            if not getattr(self, "_force_coef_2d", False):
+                self._coef_ = self._coef_[0, ...]
+            if not getattr(self, "_force_intercept_1d", False):
+                self._intercept_ = self._intercept_[0]
 
     def __sklearn_array_api_convert__(self, converter):
         out, is_fitted, is_supported_device = base_move_estimator_to(
