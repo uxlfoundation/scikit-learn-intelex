@@ -34,6 +34,9 @@ deselected_tests:
   # sklearn 1.7 unsupported features
   - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data]
 
+  # callbacks are not supported
+  - tests/test_common.py::test_callback_support
+
   # numpy < 2.1 cannot export readonly arrays via DLPack, so array_api_strict inputs fail to
   # convert to a oneDAL table. Only reachable on sklearn 1.6, which is tested against numpy 1.x.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None] <1.7
@@ -59,6 +62,11 @@ deselected_tests:
   # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[torch]
+
+  # Ridge defaults to different solvers under array API in scikit-learn and oneDAL.
+  # Deselection should not be necessary once scikit-learn implements a Cholesky
+  # or Cholesky-like solver under array API.
+  - linear_model/tests/test_ridge.py::test_ridge_cholesky_singular_array_api >=1.9,<1.11
 
   # RidgeClassifier passes Array to xp.full() fill_value instead of Python scalar (sklearn bug with array_api_strict)
   - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[RidgeClassifier(solver='svd')-check_array_api_attributes-array_api_strict-CPU_DEVICE-float64] >=1.8,<1.9
@@ -200,6 +208,12 @@ deselected_tests:
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
   - cluster/tests/test_k_means.py::test_kmeans_convergence >=0.23
   - cluster/tests/test_k_means.py::test_kmeans_verbose >=0.23
+
+  # Tests try to access private attribute '_tol' which is not part of the
+  # public API, and not defined by sklearnex.
+  # TODO: this will need revisiting once the new tolerance methodology
+  # is applied to oneDAL.
+  - test_k_means.py::test_kmeans_tol_scaled_by_mean_feature_variance
 
   # Logistic Regression coeffs change due to fix for loss scaling
   # (https://github.com/scikit-learn/scikit-learn/pull/26721)
