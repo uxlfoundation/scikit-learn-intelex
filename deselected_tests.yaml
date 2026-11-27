@@ -211,7 +211,7 @@ deselected_tests:
 
   # Tests try to access private attribute '_tol' which is not part of the
   # public API, and not defined by sklearnex.
-  - test_k_means.py::test_kmeans_tol_scaled_by_mean_feature_variance
+  - cluster/tests/test_k_means.py::test_kmeans_tol_scaled_by_mean_feature_variance
 
   # Logistic Regression coeffs change due to fix for loss scaling
   # (https://github.com/scikit-learn/scikit-learn/pull/26721)
