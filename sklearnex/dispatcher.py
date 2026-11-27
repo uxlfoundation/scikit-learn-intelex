@@ -260,6 +260,12 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             IncrementalLinearRegression_sklearnex,
             None,
         ),
+        "sklearn.linear_model.IncrementalRidge": (
+            linear_model_module,
+            "IncrementalRidge",
+            IncrementalRidge_sklearnex,
+            None,
+        ),
         "sklearn.manifold.TSNE": (manifold_module, "TSNE", TSNE_sklearnex, TSNE_sklearn),
         "sklearn.metrics.pairwise_distances": (
             metrics_module,
@@ -333,18 +339,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             IncrementalEmpiricalCovariance_sklearnex,
             None,
         ),
-        "sklearn.dummy.DummyRegressor": (
-            dummy_module,
-            "DummyRegressor",
-            DummyRegressor_sklearnex,
-            DummyRegressor_sklearn,
-        ),
-        "sklearn.ensemble._gb_losses.DummyRegressor": (
-            _gb_module,
-            "DummyRegressor",
-            DummyRegressor_sklearnex,
-            DummyRegressor_sklearn_gb,
-        ),
         # These should be patched even if it applying to a single algorithm
         "sklearn.set_config": (
             base_module,
@@ -382,12 +376,22 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         ),
     }
 
-    mapping["sklearn.linear_model.IncrementalRidge"] = (
-        linear_model_module,
-        "IncrementalRidge",
-        IncrementalRidge_sklearnex,
-        None,
-    )
+    # This class is used as an example only. Its performance is not competitive
+    # against scikit-learn due to additional steps performed on the 'X' data,
+    # so it doesn't get patched by default.
+    if os.getenv("SKLEARNEX_ENABLE_DUMMY", False):
+        mapping["sklearn.dummy.DummyRegressor"] = (
+            dummy_module,
+            "DummyRegressor",
+            DummyRegressor_sklearnex,
+            DummyRegressor_sklearn,
+        )
+        mapping["sklearn.ensemble._gb_losses.DummyRegressor"] = (
+            _gb_module,
+            "DummyRegressor",
+            DummyRegressor_sklearnex,
+            DummyRegressor_sklearn_gb,
+        )
 
     return mapping
 
