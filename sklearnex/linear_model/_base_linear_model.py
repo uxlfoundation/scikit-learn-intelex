@@ -175,10 +175,6 @@ class _BaseLinearModel(ABC):
             self._coef_ = self._coef_[0, ...]  # set to 1d
             self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
-        if not len(self._coef_.shape):
-            xp, _ = get_namespace(self._coef_)
-            self._coef_ = xp.reshape(self._coef_, (-1,))
-
         # Note: these are in order to keep compatibility with scikit-learn's
         # logic for 2d 'y', which differs on an estimator basis.
         if len(self._coef_.shape) < 2 and getattr(self, "_force_coef_2d", False):
